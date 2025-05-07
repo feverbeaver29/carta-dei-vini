@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login</title>
+<style>
+body { font-family: sans-serif; background: #fff9f4; color: #333; padding: 2em; }
+form { max-width: 400px; margin: auto; background: white; padding: 2em; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+input, button { width: 100%; padding: 0.8em; margin: 0.5em 0; }
+button { background: #b00; color: white; border: none; border-radius: 8px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<h2>Login</h2>
+<form onsubmit="login(event)">
+  <input type="email" id="email" placeholder="Email" required>
+  <input type="password" id="password" placeholder="Password" required>
+  <button>Login</button>
+</form>
+
+<!-- Bottone per login con Google -->
+<button onclick="signInWithGoogle()">Continua con Google</button>
+
+<script>
+const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
+const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
+
+function login(e) {
+  e.preventDefault();
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+
+  fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_API_KEY },
+    body: JSON.stringify({ email, password })
+  }).then(res => res.json()).then(data => {
+    if (data.access_token && data.user) {
+      window.location.href = `dashboard.html?ristorante_id=${data.user.id}`;
+    } else {
+      alert("Errore di login: " + (data.error_description || JSON.stringify(data)));
+    }
+  });
+}
+
+function signInWithGoogle() {
+  const redirectTo = window.location.origin + "/dashboard.html";
+  window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${redirectTo}`;
+}
+</script>
+
+</body>
+</html>
