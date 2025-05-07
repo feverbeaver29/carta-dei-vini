@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Ristorante</title>
+<style>
+body { font-family: sans-serif; background: #fff9f4; padding: 2em; }
+h1 { text-align: center; }
+.container { max-width: 600px; margin: auto; background: white; padding: 2em; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+input, select, button { width: 100%; padding: 0.8em; margin-top: 1em; border-radius: 8px; }
+button { background: #b00; color: white; border: none; cursor: pointer; }
+.success { color: green; margin-top: 1em; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>Dashboard Utente</h1>
+<div class="container">
+  <label>Nome Ristorante</label>
+  <input type="text" id="nomeRistorante" placeholder="Inserisci il nome del ristorante">
+
+  <label>Palette Colori</label>
+  <select id="palette">
+    <option value="rosso">Rosso Classico</option>
+    <option value="oro">Oro Elegante</option>
+    <option value="scuro">Scuro Notturno</option>
+  </select>
+
+  <button onclick="saveSettings()">Salva Impostazioni</button>
+  <button onclick="goToAdmin()">Gestisci Carta Vini</button>
+
+  <div class="success" id="message"></div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
+const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
+
+// Recupero utente loggato
+fetch(`${SUPABASE_URL}/auth/v1/user`, {
+  headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sb-access-token'), 'apikey': SUPABASE_API_KEY }
+}).then(res => res.json()).then(user => {
+  const RESTAURANT_ID = user.id;
+
+  // Carica o crea ristorante
+  fetch(`${SUPABASE_URL}/rest/v1/ristoranti?id=eq.${RESTAURANT_ID}`, {
+    headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.length === 0) {
+      // Non esiste, lo creo
+      fetch(`${SUPABASE_URL}/rest/v1/ristoranti`, {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_API_KEY },
+        body: JSON.stringify({ id: RESTAURANT_ID, nome: "Nuovo Ristorante", palette_color: "rosso" })
+      });
+      document.getElementById('nomeRistorante').value = "Nuovo Ristorante";
+    } else {
+      document.getElementById('nomeRistorante').value = data[0].nome;
+      document.getElementById('palette').value = data[0].palette_color;
+    }
+  });
+
+  window.saveSettings = () => {
+    const nome = document.getElementById('nomeRistorante').value;
+    const palette = document.getElementById('palette').value;
+
+    fetch(`${SUPABASE_URL}/rest/v1/ristoranti?id=eq.${RESTAURANT_ID}`, {
+      method: "PATCH",
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_API_KEY },
+      body: JSON.stringify({ nome, palette_color: palette })
+    }).then(() => {
+      document.getElementById('message').innerText = "Impostazioni salvate con successo!";
+    });
+  };
+
+  window.goToAdmin = () => {
+    window.location.href = `admin.html?ristorante_id=${RESTAURANT_ID}`;
+  };
+});
+</script>
+
+</body>
+</html>
