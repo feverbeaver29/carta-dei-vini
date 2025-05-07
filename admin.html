@@ -58,12 +58,24 @@ th { background-color: #f5f5f5; }
 const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
 const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
 
-const urlParams = new URLSearchParams(window.location.search);
-const RESTAURANT_ID = urlParams.get("ristorante_id");
+let RESTAURANT_ID = null;
 
-if (!RESTAURANT_ID) {
-  alert("Ristorante non valido!");
-  throw new Error("Ristorante ID mancante");
+const urlParams = new URLSearchParams(window.location.search);
+RESTAURANT_ID = urlParams.get("ristorante_id");
+
+async function fetchUserIfNeeded() {
+  if (!RESTAURANT_ID) {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sb-access-token'), 'apikey': SUPABASE_API_KEY }
+    });
+    const user = await res.json();
+    RESTAURANT_ID = user.id;
+
+    if (!RESTAURANT_ID) {
+      alert("Ristorante non valido o non loggato!");
+      throw new Error("Ristorante ID mancante");
+    }
+  }
 }
 
 let winesData = [];
@@ -77,6 +89,7 @@ function showMessage(text, success = true) {
 }
 
 async function loadWines() {
+  await fetchUserIfNeeded();
   const res = await fetch(`${SUPABASE_URL}/rest/v1/wines?ristorante_id=eq.${RESTAURANT_ID}`, {
     headers: {
       'apikey': SUPABASE_API_KEY,
@@ -111,7 +124,8 @@ function fillForm(index) {
   editIndex = index;
 }
 
-function saveWine() {
+async function saveWine() {
+  await fetchUserIfNeeded();
   const wine = {
     ristorante_id: RESTAURANT_ID,
     nome: document.getElementById('nome').value || "",
@@ -182,4 +196,3 @@ loadWines();
 </script>
 </body>
 </html>
-
