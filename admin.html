@@ -61,7 +61,12 @@ const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhY
 let RESTAURANT_ID = null;
 
 const urlParams = new URLSearchParams(window.location.search);
-RESTAURANT_ID = urlParams.get("ristorante_id");
+const urlRistoranteId = urlParams.get("ristorante_id");
+
+if (urlRistoranteId && urlRistoranteId !== "undefined") {
+  RESTAURANT_ID = urlRistoranteId;
+}
+
 
 async function fetchUserIfNeeded() {
   if (!RESTAURANT_ID) {
