@@ -40,10 +40,20 @@ const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhY
 
 let RESTAURANT_ID = null;
 
+const urlParams = new URLSearchParams(window.location.search);
+const urlRistoranteId = urlParams.get("ristorante_id");
+
+if (urlRistoranteId && urlRistoranteId !== "undefined") {
+  RESTAURANT_ID = urlRistoranteId;
+}
+
 fetch(`${SUPABASE_URL}/auth/v1/user`, {
   headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sb-access-token'), 'apikey': SUPABASE_API_KEY }
 }).then(res => res.json()).then(user => {
-  RESTAURANT_ID = user.id;
+
+  if (!RESTAURANT_ID) {
+    RESTAURANT_ID = user.id;
+  }
 
   fetch(`${SUPABASE_URL}/rest/v1/ristoranti?id=eq.${RESTAURANT_ID}`, {
     headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
@@ -77,14 +87,18 @@ fetch(`${SUPABASE_URL}/auth/v1/user`, {
   };
 
   window.goToAdmin = () => {
-  if (!RESTAURANT_ID) {
-    alert("Attendi qualche secondo, caricamento in corso...");
-    return;
-  }
-  window.location.href = `admin.html?ristorante_id=${RESTAURANT_ID}`;
-};
+    if (!RESTAURANT_ID) {
+      alert("Attendi qualche secondo, caricamento in corso...");
+      return;
+    }
+    window.location.href = `admin.html?ristorante_id=${RESTAURANT_ID}`;
+  };
 
   window.viewCarta = () => {
+    if (!RESTAURANT_ID) {
+      alert("Attendi qualche secondo, caricamento in corso...");
+      return;
+    }
     window.location.href = `carta.html?ristorante_id=${RESTAURANT_ID}`;
   };
 });
