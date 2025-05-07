@@ -29,6 +29,7 @@ button { background: #b00; color: white; border: none; cursor: pointer; }
 
   <button onclick="saveSettings()">Salva Impostazioni</button>
   <button onclick="goToAdmin()">Gestisci Carta Vini</button>
+  <button onclick="viewCarta()">Visualizza Carta dei Vini</button>
 
   <div class="success" id="message"></div>
 </div>
@@ -37,20 +38,19 @@ button { background: #b00; color: white; border: none; cursor: pointer; }
 const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
 const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
 
-// Recupero utente loggato
+let RESTAURANT_ID = null;
+
 fetch(`${SUPABASE_URL}/auth/v1/user`, {
   headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sb-access-token'), 'apikey': SUPABASE_API_KEY }
 }).then(res => res.json()).then(user => {
-  const RESTAURANT_ID = user.id;
+  RESTAURANT_ID = user.id;
 
-  // Carica o crea ristorante
   fetch(`${SUPABASE_URL}/rest/v1/ristoranti?id=eq.${RESTAURANT_ID}`, {
     headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
   })
   .then(res => res.json())
   .then(data => {
     if (data.length === 0) {
-      // Non esiste, lo creo
       fetch(`${SUPABASE_URL}/rest/v1/ristoranti`, {
         method: "POST",
         headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_API_KEY },
@@ -78,6 +78,10 @@ fetch(`${SUPABASE_URL}/auth/v1/user`, {
 
   window.goToAdmin = () => {
     window.location.href = `admin.html?ristorante_id=${RESTAURANT_ID}`;
+  };
+
+  window.viewCarta = () => {
+    window.location.href = `carta.html?ristorante_id=${RESTAURANT_ID}`;
   };
 });
 </script>
