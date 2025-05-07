@@ -77,8 +77,12 @@ fetch(`${SUPABASE_URL}/auth/v1/user`, {
   };
 
   window.goToAdmin = () => {
-    window.location.href = `admin.html?ristorante_id=${RESTAURANT_ID}`;
-  };
+  if (!RESTAURANT_ID) {
+    alert("Attendi qualche secondo, caricamento in corso...");
+    return;
+  }
+  window.location.href = `admin.html?ristorante_id=${RESTAURANT_ID}`;
+};
 
   window.viewCarta = () => {
     window.location.href = `carta.html?ristorante_id=${RESTAURANT_ID}`;
