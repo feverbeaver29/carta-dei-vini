@@ -3,59 +3,127 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Registrazione</title>
+<title>Registrati - Wine's Fever</title>
 <style>
-body { font-family: sans-serif; background: #fff9f4; color: #333; padding: 2em; }
-form { max-width: 400px; margin: auto; background: white; padding: 2em; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-input, button { width: 100%; padding: 0.8em; margin: 0.5em 0; }
-button { background: #b00; color: white; border: none; border-radius: 8px; cursor: pointer; }
+body {
+  background-color: #fff9f4;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  color: #333;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+.container {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  animation: fadeIn 1.5s ease;
+}
+h1 {
+  color: #b00;
+  margin-bottom: 20px;
+}
+label {
+  display: block;
+  margin-top: 15px;
+  text-align: left;
+}
+input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1em;
+}
+button, .google-btn {
+  width: 100%;
+  padding: 12px;
+  margin-top: 20px;
+  background-color: #b00;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+  display: inline-block;
+}
+button:hover, .google-btn:hover {
+  background-color: #800000;
+  transform: translateY(-3px);
+}
+.google-btn {
+  background-color: #4285F4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+}
+.google-btn img {
+  width: 24px;
+  height: 24px;
+}
+footer {
+  margin-top: 20px;
+  color: #aaa;
+  font-size: 0.9em;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 </style>
 </head>
 <body>
 
-<h2>Registrati</h2>
-<form onsubmit="register(event)">
-  <input type="email" id="email" placeholder="Email" required>
-  <input type="password" id="password" placeholder="Password" required>
-  <input type="text" id="nomeRistorante" placeholder="Nome Ristorante" required>
-  <button>Registrati</button>
-</form>
+<div class="container">
+  <h1>Registrati</h1>
 
-<!-- Bottone per registrarsi con Google -->
-<button onclick="signInWithGoogle()">Registrati con Google</button>
+  <label>Email <span style="color: red">*</span></label>
+  <input type="email" id="email" placeholder="Inserisci la tua email">
+
+  <label>Password <span style="color: red">*</span></label>
+  <input type="password" id="password" placeholder="Crea una password">
+
+  <label>Conferma Password <span style="color: red">*</span></label>
+  <input type="password" id="confirmPassword" placeholder="Ripeti la password">
+
+  <label>Nome Ristorante <span style="color: red">*</span></label>
+  <input type="text" id="ristorante" placeholder="Nome del ristorante">
+
+  <button onclick="validateForm()">Registrati</button>
+
+  <div class="google-btn">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Icon">
+    Registrati con Google
+  </div>
+
+  <footer>
+    © 2025 Wine's Fever - Tutti i diritti riservati
+  </footer>
+</div>
 
 <script>
-const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
-const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
-
-function register(e) {
-  e.preventDefault();
-  const email = document.getElementById('email').value;
+function validateForm() {
   const password = document.getElementById('password').value;
-  const nomeRistorante = document.getElementById('nomeRistorante').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
 
-  fetch(`${SUPABASE_URL}/auth/v1/signup`, {
-    method: "POST",
-    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_API_KEY },
-    body: JSON.stringify({ email, password })
-  }).then(res => res.json()).then(data => {
-    if (!data.error) {
-      fetch(`${SUPABASE_URL}/rest/v1/ristoranti`, {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_API_KEY, 'Prefer': 'return=representation' },
-        body: JSON.stringify({ id: data.id || data.user?.id, nome: nomeRistorante, palette_color: "rosso", email: email })
-      });
-      alert("Registrazione completata!");
-      window.location.href = "login.html";
-    } else {
-      alert("Errore nella registrazione: " + (data.msg || JSON.stringify(data)));
-    }
-  });
-}
+  if (password !== confirmPassword) {
+    alert("Le password non coincidono!");
+    return false;
+  }
 
-function signInWithGoogle() {
-  const redirectTo = window.location.origin + "/dashboard.html";
-  window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${redirectTo}`;
+  alert("Registrazione completata! (Da integrare con backend)");
+  return true;
 }
 </script>
 

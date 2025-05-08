@@ -3,19 +3,141 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Benvenuto - Carta dei Vini per Ristoratori</title>
+<title>Wine's Fever - La Carta dei Vini Digitale</title>
 <style>
-body { font-family: sans-serif; background: #fff9f4; color: #333; padding: 2em; text-align: center; }
-h1 { color: #b00; }
-a { display: inline-block; margin: 1em; padding: 1em 2em; background: #b00; color: white; text-decoration: none; border-radius: 8px; }
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  background-color: #fff9f4;
+  color: #333;
+  overflow-x: hidden;
+}
+h1 {
+  color: #b00;
+  text-align: center;
+  font-size: 3em;
+  margin-top: 40px;
+  animation: fadeIn 1.5s ease;
+}
+h2 {
+  text-align: center;
+  font-style: italic;
+  color: #555;
+  margin-top: 10px;
+  animation: fadeIn 2s ease;
+}
+.container {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 40px;
+}
+.features {
+  flex: 1;
+  min-width: 300px;
+  animation: fadeInUp 2s ease;
+}
+.features ul {
+  list-style: none;
+  padding: 0;
+  font-size: 1.2em;
+}
+.features ul li {
+  margin: 15px 0;
+}
+.features ul li::before {
+  content: "✅ ";
+  color: #b00;
+}
+.buttons {
+  margin-top: 30px;
+}
+.buttons a {
+  display: inline-block;
+  background-color: #b00;
+  color: white;
+  padding: 15px 30px;
+  margin: 10px;
+  border-radius: 25px;
+  text-decoration: none;
+  font-size: 1.2em;
+  transition: background 0.3s, transform 0.2s;
+}
+.buttons a:hover {
+  background-color: #800000;
+  transform: translateY(-3px);
+}
+.mockup {
+  flex: 1;
+  min-width: 300px;
+  animation: fadeInUp 2.5s ease;
+}
+.mockup img {
+  max-width: 100%;
+  border-radius: 20px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
+footer {
+  text-align: center;
+  padding: 20px;
+  color: #aaa;
+  font-size: 0.9em;
+  margin-top: 40px;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2.2em;
+  }
+  .container {
+    flex-direction: column;
+  }
+  .buttons a {
+    width: 80%;
+  }
+}
 </style>
 </head>
 <body>
 
-<h1>Crea la tua Carta dei Vini Digitale</h1>
-<p>Offri ai tuoi clienti un'esperienza unica. Personalizza la tua carta e gestisci i vini facilmente.</p>
-<a href="register.html">Registrati Gratis</a>
-<a href="login.html">Login</a>
+<h1>WINE'S FEVER</h1>
+<h2>La Carta dei Vini Digitale per il tuo Ristorante</h2>
+
+<div class="container">
+  <div class="features">
+    <ul>
+      <li>Facile e veloce da configurare</li>
+      <li>Aggiorna i vini quando vuoi</li>
+      <li>Personalizza colori e nome del ristorante</li>
+      <li>QR code pronto per i tuoi clienti</li>
+      <li>Online in pochi minuti</li>
+    </ul>
+
+    <div class="buttons">
+      <a href="register.html">Registrati</a>
+      <a href="login.html">Login</a>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <img src="Wine’s Fever.png" alt="Mockup Carta dei Vini">
+  </div>
+</div>
+
+<footer>
+  © 2025 Wine's Fever - Tutti i diritti riservati
+</footer>
 
 </body>
 </html>
