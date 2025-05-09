@@ -10,15 +10,202 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background-color: #fff9f4;
+      display: flex;
+    }
+    .sidebar {
+      width: 250px;
+      background-color: #fff2ec;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-height: 100vh;
+    }
+    .sidebar h2 {
+      font-size: 1.5em;
+      margin-bottom: 30px;
+    }
+    .sidebar button {
+      padding: 15px;
+      background-color: #b00;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .sidebar button:hover {
+      background-color: #800000;
+    }
+    .main {
+      flex: 1;
+      padding: 40px;
+    }
+    .main h1 {
+      font-size: 2.5em;
+      margin-bottom: 30px;
+    }
+    label {
+      display: block;
+      margin-top: 20px;
+      font-size: 1.2em;
+    }
+    input, select {
+      width: 300px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-top: 5px;
+    }
+    .preview {
+      margin-top: 10px;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      font-size: 1.5em;
+      font-weight: bold;
+      max-width: 300px;
+      background-color: #fff;
+    }
+    .wine-preview {
+      margin-top: 30px;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      background-color: #fff9f4;
+      width: 320px;
+    }
+    .wine-card {
+      background-color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin-bottom: 15px;
+    }
+    .wine-card .title {
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    .wine-card .price {
+      margin-top: 8px;
+    }
+    .wine-card .details {
+      margin-top: 4px;
+      font-size: 0.95em;
+    }
+    .save {
+      margin-top: 30px;
+      background-color: #b00;
+      color: white;
+      padding: 15px 30px;
+      border: none;
+      border-radius: 25px;
+      font-size: 1.2em;
+      cursor: pointer;
+    }
+    .save:hover {
+      background-color: #800000;
+    }
+    #qrPopup {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+    #qrPopupContent {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+    }
+    #qrPopupContent img {
+      width: 250px;
+      height: 250px;
+    }
+    #qrPopupContent a {
+      display: block;
+      margin-top: 10px;
+      background-color: #b00;
+      color: white;
+      padding: 10px;
+      text-decoration: none;
+      border-radius: 8px;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Raleway&family=Dancing+Script&family=Montserrat&family=Roboto&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
 
-<!-- CONTENUTO INVARIATO -->
+<div class="sidebar">
+  <h2 id="ristoranteName">Ristorante Nome</h2>
+  <button onclick="window.location.href='admin.html'">Gestisci Carta</button>
+  <button onclick="window.location.href='carta.html'">Visualizza Carta</button>
+  <button onclick="generateQRCode()">Genera QR Code</button>
+</div>
+
+<div class="main">
+  <h1>Design Carta dei Vini</h1>
+
+  <label>Nome da visualizzare in carta</label>
+  <input type="text" id="displayName" oninput="updatePreview()">
+  <div class="preview" id="namePreview">Anteprima Nome</div>
+
+  <label>Font</label>
+  <select id="fontSelector" onchange="updatePreview()">
+    <option value="Arial">Arial</option>
+    <option value="Montserrat">Montserrat</option>
+    <option value="Raleway">Raleway</option>
+    <option value="Dancing Script">Dancing Script</option>
+    <option value="Playfair Display">Playfair Display</option>
+  </select>
+
+  <label>Palette Colori</label>
+  <select id="paletteSelector" onchange="updateColorPreview()">
+    <option value="#b00">Rosso</option>
+    <option value="#d4af37">Oro</option>
+    <option value="#005f73">Blu Elegante</option>
+    <option value="#a3b18a">Verde Salvia</option>
+    <option value="#888">Grigio Minimal</option>
+    <option value="#000">Black & White</option>
+  </select>
+
+  <div class="wine-preview" id="winePreview">
+    <div class="wine-card">
+      <div class="title">Chianti DOCG</div>
+      <div class="price">25€</div>
+      <div class="details">Uvaggio: Sangiovese</div>
+    </div>
+    <div class="wine-card">
+      <div class="title">Barolo</div>
+      <div class="price">45€</div>
+      <div class="details">Uvaggio: Nebbiolo</div>
+    </div>
+  </div>
+
+  <button class="save" onclick="saveSettings()">Salva Impostazioni</button>
+</div>
+
+<div id="qrPopup">
+  <div id="qrPopupContent"></div>
+</div>
 
 <script>
   let supabase, RESTAURANT_ID = null;
 
   document.addEventListener("DOMContentLoaded", () => {
     const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     initDashboard();
   });
