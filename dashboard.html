@@ -159,7 +159,7 @@ input, select {
     <div class="palette-sample">Prezzo: 25€</div>
   </div>
 
-  <button class="save">Salva Impostazioni</button>
+  <button class="save" onclick="saveSettings()">Salva Impostazioni</button>
 </div>
 
 <div id="qrPopup">
@@ -169,6 +169,7 @@ input, select {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 document.getElementById('ristoranteName').innerText = "Wine's Fever - Dashboard";
+const RESTAURANT_ID = "ristorante-id-da-supabase"; // questo dovrà essere dinamico in futuro
 
 function updatePreview() {
   const name = document.getElementById('displayName').value;
@@ -187,13 +188,30 @@ function updateColorPreview() {
   });
 }
 
+function saveSettings() {
+  const displayName = document.getElementById('displayName').value;
+  const font = document.getElementById('fontSelector').value;
+  const paletteColor = document.getElementById('paletteSelector').value;
+
+  fetch(`https://ldunvbftxhbtuyabgxwh.supabase.co/rest/v1/ristoranti?id=eq.${RESTAURANT_ID}`, {
+    method: "PATCH",
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo"
+    },
+    body: JSON.stringify({ nome: displayName, font, palette_color: paletteColor })
+  }).then(() => {
+    alert("Impostazioni salvate con successo!");
+  });
+}
+
 function generateQRCode() {
   const popup = document.getElementById('qrPopup');
   const content = document.getElementById('qrPopupContent');
   popup.style.display = "flex";
   content.innerHTML = "";
 
-  const url = "https://carta-dei-vini.vercel.app/carta.html?ristorante_id=123";
+  const url = `https://carta-dei-vini.vercel.app/carta.html?ristorante_id=${RESTAURANT_ID}`;
   const qr = new QRCode(content, {
     text: url,
     width: 250,
@@ -217,3 +235,4 @@ function generateQRCode() {
 
 </body>
 </html>
+

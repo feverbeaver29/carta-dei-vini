@@ -12,6 +12,88 @@ nav button { background: none; border: none; font-size: 1em; cursor: pointer; co
 .category, .wine-card { background: #fff; margin-bottom: 0.6em; padding: 1em; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; }
 .subcategory-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6em; }
 .subcategory { background: #fff; padding: 1em; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; text-align: center; }
+
+/* Sommelier Styles */
+#sommelierBtn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #b00;
+  color: white;
+  border: none;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  font-size: 1.5em;
+  cursor: pointer;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#tooltipSommelier {
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  padding: 10px 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  font-size: 0.9em;
+  animation: tooltipSlide 3s ease-in-out;
+  z-index: 999;
+  display: none;
+}
+@keyframes tooltipSlide {
+  0% { opacity: 0; transform: translateY(10px); }
+  50% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+#sommelierOverlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+#sommelierPopup {
+  background: #fff;
+  border-radius: 16px;
+  padding: 30px;
+  width: 60vw;
+  max-width: 500px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  position: relative;
+  animation: fadeIn 0.3s ease-out;
+}
+#sommelierPopup h3 {
+  margin-top: 0;
+}
+#sommelierPopup input {
+  width: 100%;
+  padding: 12px;
+  font-size: 1em;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-top: 10px;
+}
+#sommelierPopup .close-btn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: none;
+  border: none;
+  font-size: 1.2em;
+  cursor: pointer;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
 </style>
 </head>
 <body>
@@ -28,6 +110,18 @@ nav button { background: none; border: none; font-size: 1em; cursor: pointer; co
   <div class="wine-list" id="wine-list"></div>
 </div>
 
+<!-- Sommelier UI -->
+<button id="sommelierBtn">🍷</button>
+<div id="tooltipSommelier">Fatti dare una mano dal nostro sommelier artificiale</div>
+<div id="sommelierOverlay">
+  <div id="sommelierPopup">
+    <button class="close-btn" onclick="closeSommelierPopup()">✖</button>
+    <h3>Dimmi che piatto hai scelto e io ti dirò cosa bere!</h3>
+    <input type="text" id="foodInput" placeholder="Es. Peposo, Risotto ai funghi..." onkeydown="handleSommelierKey(event)">
+    <div id="wineSuggestion" style="margin-top: 15px; font-size: 0.95em;"></div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
 const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
@@ -37,6 +131,40 @@ const RESTAURANT_ID = urlParams.get("ristorante_id");
 let wines = [];
 let currentCategory = '';
 let currentView = 'categories';
+
+function toggleSommelier() {
+  document.getElementById('sommelierOverlay').style.display = 'flex';
+  document.getElementById('foodInput').focus();
+}
+function closeSommelierPopup() {
+  document.getElementById('sommelierOverlay').style.display = 'none';
+  document.getElementById('foodInput').value = '';
+  document.getElementById('wineSuggestion').innerHTML = '';
+}
+function handleSommelierKey(e) {
+  if (e.key === 'Enter') suggestWine();
+}
+function suggestWine() {
+  const input = document.getElementById('foodInput').value.toLowerCase();
+  const suggestion = document.getElementById('wineSuggestion');
+  const matches = wines.filter(w => w.abbinamenti && w.abbinamenti.toLowerCase().includes(input));
+  if (matches.length > 0) {
+    suggestion.innerHTML = '<strong>Ti consigliamo:</strong><br>' + matches.map(w => `${w.nome} (${w.annata})`).join('<br>');
+  } else {
+    suggestion.innerText = "Nessun abbinamento trovato, prova con un altro piatto.";
+  }
+}
+setTimeout(() => {
+  const tip = document.getElementById('tooltipSommelier');
+  tip.style.display = 'block';
+  setTimeout(() => tip.style.display = 'none', 3000);
+}, 1000);
+
+document.getElementById('sommelierBtn').onclick = toggleSommelier;
+window.addEventListener('click', e => {
+  const overlay = document.getElementById('sommelierOverlay');
+  if (e.target === overlay) closeSommelierPopup();
+});
 
 async function loadRestaurantData() {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/ristoranti?id=eq.${RESTAURANT_ID}`, {
