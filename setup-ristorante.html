@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Completa Profilo Ristorante</title>
+  <style>
+    body { background-color: #fff9f4; font-family: 'Segoe UI', Tahoma, sans-serif; color: #333; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+    h1 { color: #b00; margin-bottom: 20px; }
+    input { width: 100%; padding: 12px; margin-top: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 1em; }
+    button { width: 100%; padding: 12px; margin-top: 20px; background-color: #b00; color: white; border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer; }
+    button:hover { background-color: #800000; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="container">
+  <h1>Completa il tuo Profilo</h1>
+  <input type="text" id="ristorante" placeholder="Nome del ristorante">
+  <button onclick="salvaNomeRistorante()">Salva e continua</button>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", async () => {
+    const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
+      alert("Non sei autenticato. Ritorna alla homepage.");
+      window.location.href = "/";
+    }
+
+    window.salvaNomeRistorante = async function () {
+      const nome = document.getElementById("ristorante").value;
+      if (!nome) return alert("Inserisci il nome del ristorante.");
+
+      const { error: insertError } = await supabase
+        .from("ristoranti")
+        .insert([{ id: user.id, nome }]);
+
+      if (insertError) return alert("Errore nel salvataggio: " + insertError.message);
+      window.location.href = `dashboard.html?ristorante_id=${user.id}`;
+    }
+  });
+</script>
+</body>
+</html>

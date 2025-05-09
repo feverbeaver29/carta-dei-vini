@@ -1,152 +1,85 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login - Wine's Fever</title>
-<style>
-body {
-  background-color: #fff9f4;
-  font-family: 'Segoe UI', Tahoma, sans-serif;
-  color: #333;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
-.container {
-  background: white;
-  padding: 40px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  width: 100%;
-  max-width: 400px;
-  text-align: center;
-  animation: fadeIn 1.5s ease;
-}
-h1 {
-  color: #b00;
-  margin-bottom: 20px;
-}
-label {
-  display: block;
-  margin-top: 15px;
-  text-align: left;
-}
-input[type="email"], input[type="password"] {
-  width: 100%;
-  padding: 12px;
-  margin-top: 5px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 1em;
-}
-button, .google-btn {
-  width: 100%;
-  padding: 12px;
-  margin-top: 20px;
-  background-color: #b00;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1.1em;
-  cursor: pointer;
-  transition: background 0.3s, transform 0.2s;
-  display: inline-block;
-}
-button:hover, .google-btn:hover {
-  background-color: #800000;
-  transform: translateY(-3px);
-}
-.google-btn {
-  background-color: #4285F4;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  text-align: center;
-}
-.google-btn img {
-  width: 24px;
-  height: 24px;
-}
-.remember {
-  text-align: left;
-  margin-top: 10px;
-  font-size: 0.9em;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-footer {
-  margin-top: 20px;
-  color: #aaa;
-  font-size: 0.9em;
-}
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Wine's Fever</title>
+  <style>
+    body { background-color: #fff9f4; font-family: 'Segoe UI', Tahoma, sans-serif; color: #333; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+    h1 { color: #b00; margin-bottom: 20px; }
+    label { display: block; margin-top: 15px; text-align: left; }
+    input[type="email"], input[type="password"] { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; font-size: 1em; }
+    button, .google-btn { width: 100%; padding: 12px; margin-top: 20px; background-color: #b00; color: white; border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer; transition: background 0.3s, transform 0.2s; display: inline-block; }
+    button:hover, .google-btn:hover { background-color: #800000; transform: translateY(-3px); }
+    .google-btn { background-color: #4285F4; display: flex; align-items: center; justify-content: center; gap: 10px; text-align: center; }
+    .google-btn img { width: 24px; height: 24px; }
+    .remember { text-align: left; margin-top: 10px; font-size: 0.9em; display: flex; align-items: center; gap: 10px; }
+    footer { margin-top: 20px; color: #aaa; font-size: 0.9em; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-
 <div class="container">
   <h1>Login</h1>
-
   <label>Email <span style="color: red">*</span></label>
   <input type="email" id="email" placeholder="Inserisci la tua email">
-
   <label>Password <span style="color: red">*</span></label>
   <input type="password" id="password" placeholder="Inserisci la password">
-
   <div class="remember">
     <input type="checkbox" id="remember">
     <label for="remember">Ricordati di me</label>
   </div>
-
   <button onclick="login()">Accedi</button>
-
-  <div class="google-btn">
+  <div class="google-btn" onclick="loginWithGoogle()">
     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Icon">
     Accedi con Google
   </div>
-
-  <footer>
-    © 2025 Wine's Fever - Tutti i diritti riservati
-  </footer>
+  <footer>© 2025 Wine's Fever - Tutti i diritti riservati</footer>
 </div>
 
 <script>
-function login() {
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
-  const remember = document.getElementById('remember').checked;
+  document.addEventListener("DOMContentLoaded", () => {
+    const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  if (!email || !password) {
-    alert("Compila tutti i campi obbligatori.");
-    return;
-  }
+    window.login = async function () {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const remember = document.getElementById('remember').checked;
 
-  if (remember) {
-    localStorage.setItem("rememberedEmail", email);
-  } else {
-    localStorage.removeItem("rememberedEmail");
-  }
+      if (!email || !password) return alert("Compila tutti i campi.");
 
-  alert("Login eseguito! (Da integrare con backend)");
-}
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) return alert("Errore login: " + error.message);
 
-window.onload = () => {
-  const rememberedEmail = localStorage.getItem("rememberedEmail");
-  if (rememberedEmail) {
-    document.getElementById('email').value = rememberedEmail;
-    document.getElementById('remember').checked = true;
-  }
-}
+      localStorage.setItem("sb-access-token", data.session.access_token);
+      if (remember) {
+        localStorage.setItem("rememberedEmail", email);
+      } else {
+        localStorage.removeItem("rememberedEmail");
+      }
+
+      window.location.href = `dashboard.html?ristorante_id=${data.user.id}`;
+    }
+
+    window.loginWithGoogle = async function () {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/dashboard.html'
+        }
+      });
+      if (error) alert("Errore login con Google: " + error.message);
+    }
+
+    const rememberedEmail = localStorage.getItem("rememberedEmail");
+    if (rememberedEmail) {
+      document.getElementById('email').value = rememberedEmail;
+      document.getElementById('remember').checked = true;
+    }
+  });
 </script>
-
 </body>
 </html>
