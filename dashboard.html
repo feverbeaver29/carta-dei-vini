@@ -58,8 +58,8 @@
 <body>
 <div class="sidebar">
   <h2 id="ristoranteName">Ristorante Nome</h2>
-  <button onclick="window.location.href='admin.html'">Gestisci Carta</button>
-  <button onclick="window.location.href='carta.html'">Visualizza Carta</button>
+  <button onclick="window.location.href = `admin.html?ristorante_id=${RESTAURANT_ID}`;">Gestisci Carta</button>
+  <button onclick="window.location.href = `carta.html?ristorante_id=${RESTAURANT_ID}`;">Visualizza Carta</button>
   <button onclick="generateQRCode()">Genera QR Code</button>
 </div>
 <div class="main">
