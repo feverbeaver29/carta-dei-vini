@@ -118,7 +118,9 @@
       return;
     }
     RESTAURANT_ID = user.id;
-    document.getElementById('ristoranteName').innerText = "Dashboard - " + (user.email || "Ristorante");
+    const { data: ristoranteData, error: ristoranteError } = await supabase.from("ristoranti").select("nome").eq("id", user.id).single();
+    const nomeRistorante = ristoranteData?.nome || "Ristorante";
+    document.getElementById('ristoranteName').innerText = "Dashboard - " + nomeRistorante;
     fetchRistoranteData();
   }
 
