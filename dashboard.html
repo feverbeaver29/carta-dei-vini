@@ -211,40 +211,56 @@
   </div>
   <footer>© 2025 Wine's Fever - Tutti i diritti riservati</footer>
   <script>
-    let supabase, RESTAURANT_ID = null;
-    document.addEventListener("DOMContentLoaded", async () => {
-      supabase = window.supabase.createClient("https://ldunvbftxhbtuyabgxwh.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo");
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (!user) return (window.location.href = '/');
-      RESTAURANT_ID = user.id;
-      const { data: info } = await supabase.from("ristoranti").select("nome, font, palette_color, logo_url").eq("id", RESTAURANT_ID).single();
-      document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
-      document.getElementById("displayName").value = info?.nome || "";
-      document.getElementById("fontSelector").value = info?.font || "Arial";
-      document.getElementById("paletteSelector").value = info?.palette_color || "rosso";
-      if (info?.logo_url) {
-        const preview = document.createElement("img");
-        preview.src = info.logo_url;
-        preview.alt = "Anteprima Logo";
-        preview.className = "logo-preview";
-        document.getElementById("logoUpload").insertAdjacentElement("afterend", preview);
-      }
-      updatePreview();
-    });
+  let supabase, RESTAURANT_ID = null;
+  document.addEventListener("DOMContentLoaded", async () => {
+    supabase = window.supabase.createClient("https://ldunvbftxhbtuyabgxwh.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo");
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (!user) return (window.location.href = '/');
+    RESTAURANT_ID = user.id;
+    const { data: info } = await supabase.from("ristoranti").select("nome, font, palette_color, logo_url").eq("id", RESTAURANT_ID).single();
+    document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
+    document.getElementById("displayName").value = info?.nome || "";
+    document.getElementById("fontSelector").value = info?.font || "Arial";
+    document.getElementById("paletteSelector").value = info?.palette_color || "rosso";
+    if (info?.logo_url) {
+      const preview = document.createElement("img");
+      preview.src = info.logo_url;
+      preview.alt = "Anteprima Logo";
+      preview.className = "logo-preview";
+      preview.id = "previewLogo";
+      document.getElementById("logoUpload").insertAdjacentElement("afterend", preview);
+      const removeBtn = document.createElement("button");
+      removeBtn.textContent = "Rimuovi logo";
+      removeBtn.className = "save-btn";
+      removeBtn.style.marginTop = "10px";
+      removeBtn.onclick = async () => {
+        const ext = preview.src.split('.').pop().split('?')[0];
+        const filePath = `${RESTAURANT_ID}.${ext}`;
+        await supabase.storage.from("loghi").remove([filePath]);
+        await supabase.from("ristoranti").update({ logo_url: null }).eq("id", RESTAURANT_ID);
+        preview.remove();
+        removeBtn.remove();
+        alert("Logo rimosso con successo!");
+        updatePreview();
+      };
+      preview.insertAdjacentElement("afterend", removeBtn);
+    }
+    updatePreview();
+  });
 
-    document.getElementById("logoUpload").addEventListener("change", async (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
-      const ext = file.name.split('.').pop();
-      const fileName = `${RESTAURANT_ID}.${ext}`;
-      const filePath = `loghi/${fileName}`;
-      const { error: uploadError } = await supabase.storage.from("loghi").upload(filePath, file, { upsert: true });
-      if (uploadError) return alert("Errore nel caricamento del logo.");
-      const { data: { publicUrl } } = supabase.storage.from("loghi").getPublicUrl(filePath);
-      await supabase.from("ristoranti").update({ logo_url: publicUrl }).eq("id", RESTAURANT_ID);
-      alert("Logo caricato con successo!");
-      updatePreview();
-    });
+  document.getElementById("logoUpload").addEventListener("change", async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const ext = file.name.split('.').pop();
+    const fileName = `${RESTAURANT_ID}.${ext}`;
+    const filePath = `${fileName}`;
+    const { error: uploadError } = await supabase.storage.from("loghi").upload(filePath, file, { upsert: true });
+    if (uploadError) return alert("Errore nel caricamento del logo.");
+    const { data: { publicUrl } } = supabase.storage.from("loghi").getPublicUrl(filePath);
+    await supabase.from("ristoranti").update({ logo_url: publicUrl }).eq("id", RESTAURANT_ID);
+    alert("Logo caricato con successo!");
+    updatePreview();
+  });
 
     function updatePreview() {
       const url = `carta.html?ristorante_id=${RESTAURANT_ID}`;
