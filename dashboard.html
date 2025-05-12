@@ -209,7 +209,7 @@
   <script>
     let supabase, RESTAURANT_ID = null;
     document.addEventListener("DOMContentLoaded", async () => {
-      supabase = window.supabase.createClient("https://ldunvbftxhbtuyabgxwh.supabase.co", "INSERISCI_LA_TUA_ANON_KEY_COMPLETA_QUI");
+      supabase = window.supabase.createClient("https://ldunvbftxhbtuyabgxwh.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo");
       const { data: { user }, error } = await supabase.auth.getUser();
       if (!user) return (window.location.href = '/');
       RESTAURANT_ID = user.id;
