@@ -30,10 +30,13 @@
     header h1 {
       margin: 0;
       font-size: 1.5em;
+      text-align: center;
     }
     nav {
       margin-top: 0.5em;
       display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
       gap: 1em;
     }
     nav button {
@@ -50,9 +53,14 @@
       padding: 140px 20px 60px;
       max-width: 1200px;
       margin: auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 40px;
+      justify-content: center;
     }
     .section {
-      margin-bottom: 40px;
+      flex: 1;
+      min-width: 280px;
     }
     label {
       display: block;
@@ -79,7 +87,6 @@
       border-radius: 3px;
     }
     .mockup {
-      margin-top: 30px;
       border: 1px solid #ccc;
       border-radius: 16px;
       width: 360px;
@@ -108,6 +115,40 @@
       margin-top: 60px;
       padding-bottom: 20px;
     }
+    #qrPopup {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    }
+    #qrPopupContent {
+      background: #fff;
+      padding: 20px;
+      border-radius: 16px;
+      text-align: center;
+    }
+    #qrPopupContent button {
+      margin-top: 10px;
+      background-color: #b00;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #qrPopupContent button:hover {
+      background-color: #800000;
+    }
+    @media (max-width: 768px) {
+      main { flex-direction: column; align-items: center; }
+      .mockup { width: 100%; max-width: 360px; height: 600px; }
+    }
   </style>
 </head>
 <body>
@@ -116,7 +157,7 @@
     <nav>
       <button onclick="goTo('admin.html')">Gestisci Carta</button>
       <button onclick="goTo('carta.html')">Visualizza Carta</button>
-      <button onclick="generateQRCode()">Scarica QR Code</button>
+      <button onclick="showQRCode()">Scarica QR Code</button>
       <button onclick="logout()">Logout</button>
     </nav>
   </header>
@@ -152,19 +193,23 @@
         <div class="color-box" style="background:#fff"></div>
       </div>
 
-      <div class="mockup" id="previewMockup">
-        <!-- Qui verrà caricato in tempo reale l’anteprima carta.html -->
-        <iframe id="previewFrame" src="" style="width:100%; height:100%; border:none;"></iframe>
-      </div>
-
       <button class="save-btn" onclick="saveSettings()">Salva Impostazioni</button>
     </div>
-    <footer>© 2025 Wine's Fever - Tutti i diritti riservati</footer>
+    <div class="mockup">
+      <iframe id="previewFrame" src="" style="width:100%; height:100%; border:none;"></iframe>
+    </div>
   </main>
+  <div id="qrPopup">
+    <div id="qrPopupContent">
+      <div id="qrCodeContainer"></div>
+      <button id="downloadQr">Scarica QR Code</button>
+    </div>
+  </div>
+  <footer>© 2025 Wine's Fever - Tutti i diritti riservati</footer>
   <script>
     let supabase, RESTAURANT_ID = null;
     document.addEventListener("DOMContentLoaded", async () => {
-      supabase = window.supabase.createClient("https://ldunvbftxhbtuyabgxwh.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo");
+      supabase = window.supabase.createClient("https://ldunvbftxhbtuyabgxwh.supabase.co", "INSERISCI_LA_TUA_ANON_KEY_COMPLETA_QUI");
       const { data: { user }, error } = await supabase.auth.getUser();
       if (!user) return (window.location.href = '/');
       RESTAURANT_ID = user.id;
@@ -190,14 +235,23 @@
       window.location.href = "/";
     }
 
-    function generateQRCode() {
+    function showQRCode() {
+      const popup = document.getElementById('qrPopup');
+      const container = document.getElementById('qrCodeContainer');
+      container.innerHTML = '';
       const url = `https://carta-dei-vini.vercel.app/carta.html?ristorante_id=${RESTAURANT_ID}`;
-      const win = window.open();
-      win.document.write(`<h2>Scansiona il QR</h2><br><div id='qrcode'></div>`);
-      const script = win.document.createElement('script');
-      script.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
-      script.onload = () => new win.QRCode(win.document.getElementById("qrcode"), url);
-      win.document.body.appendChild(script);
+      new QRCode(container, { text: url, width: 250, height: 250 });
+      popup.style.display = 'flex';
+      setTimeout(() => {
+        const img = container.querySelector('img');
+        document.getElementById('downloadQr').onclick = () => {
+          const a = document.createElement('a');
+          a.href = img.src;
+          a.download = 'qr-code.png';
+          a.click();
+        }
+      }, 500);
+      popup.onclick = (e) => { if (e.target === popup) popup.style.display = 'none'; }
     }
 
     async function saveSettings() {
@@ -211,3 +265,4 @@
   </script>
 </body>
 </html>
+

@@ -8,6 +8,8 @@
 body { font-family: sans-serif; background: #fff9f4; color: #333; margin: 0; padding-top: 60px; }
 nav { position: fixed; top: 0; left: 0; right: 0; background: #fff; display: flex; justify-content: space-between; align-items: center; padding: 0.5em 1em; border-bottom: 1px solid #ddd; z-index: 1000; }
 nav button { background: none; border: none; font-size: 1em; cursor: pointer; color: #b00; }
+#restaurantName { display: flex; align-items: center; gap: 10px; font-size: 1.2em; }
+#restaurantLogo { height: 32px; border-radius: 6px; }
 .category-list, .subcategory-list, .wine-list { padding: 1em; margin-top: 100px; }
 .category, .wine-card { background: #fff; margin-bottom: 0.6em; padding: 1em; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; }
 .subcategory-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6em; }
@@ -174,25 +176,27 @@ async function loadRestaurantData() {
   const ristorante = data[0];
 
   if (ristorante) {
-    document.getElementById("restaurantName").innerHTML = `<strong>${ristorante.nome || 'Carta dei Vini'}</strong>`;
+    const nameElem = document.getElementById("restaurantName");
+    nameElem.innerHTML = '';
+    if (ristorante.logo_url) {
+      const img = document.createElement('img');
+      img.src = ristorante.logo_url;
+      img.alt = ristorante.nome;
+      img.id = "restaurantLogo";
+      nameElem.appendChild(img);
+    }
+    const span = document.createElement('span');
+    span.textContent = ristorante.nome || 'Carta dei Vini';
+    span.style.fontFamily = ristorante.font || 'sans-serif';
+    nameElem.appendChild(span);
     applyPalette(ristorante.palette_color);
   }
 }
 
 function applyPalette(palette) {
-  let primary = "#b00";
+  let primary = palette || "#b00";
   let background = "#fff9f4";
   let cardBackground = "#fff";
-
-  if (palette === "oro") {
-    primary = "#c9a64d";
-    background = "#fff";
-    cardBackground = "#fff8dc";
-  } else if (palette === "scuro") {
-    primary = "#fff";
-    background = "#333";
-    cardBackground = "#444";
-  }
 
   document.body.style.backgroundColor = background;
   document.body.style.color = primary;
