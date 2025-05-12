@@ -217,7 +217,7 @@
       document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
       document.getElementById("displayName").value = info?.nome || "";
       document.getElementById("fontSelector").value = info?.font || "Arial";
-      document.getElementById("paletteSelector").value = info?.palette_color || "#b00";
+      document.getElementById("paletteSelector").value = info?.palette_color || "rosso";
       updatePreview();
     });
 
@@ -257,7 +257,8 @@
     async function saveSettings() {
       const nome = document.getElementById("displayName").value;
       const font = document.getElementById("fontSelector").value;
-      const palette_color = document.getElementById("paletteSelector").value;
+      const paletteSelect = document.getElementById("paletteSelector");
+      const palette_color = paletteSelect.options[paletteSelect.selectedIndex].text.toLowerCase().replace(/ /g, "-");
       await supabase.from("ristoranti").update({ nome, font, palette_color }).eq("id", RESTAURANT_ID);
       alert("Impostazioni salvate!");
       updatePreview();

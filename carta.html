@@ -194,9 +194,42 @@ async function loadRestaurantData() {
 }
 
 function applyPalette(palette) {
-  let primary = palette || "#b00";
+  let primary = "#b00";
   let background = "#fff9f4";
   let cardBackground = "#fff";
+
+  switch (palette) {
+    case "rosso":
+      primary = "#b00";
+      background = "#fff9f4";
+      cardBackground = "#fff";
+      break;
+    case "oro":
+      primary = "#c9a64d";
+      background = "#fff8dc";
+      cardBackground = "#fff";
+      break;
+    case "blu-elegante":
+      primary = "#005f73";
+      background = "#e0f7fa";
+      cardBackground = "#ffffff";
+      break;
+    case "verde-salvia":
+      primary = "#3a5a40";
+      background = "#f0f5f1";
+      cardBackground = "#ffffff";
+      break;
+    case "grigio-minimal":
+      primary = "#888";
+      background = "#f7f7f7";
+      cardBackground = "#fff";
+      break;
+    case "black-white":
+      primary = "#fff";
+      background = "#000";
+      cardBackground = "#111";
+      break;
+  }
 
   document.body.style.backgroundColor = background;
   document.body.style.color = primary;
@@ -210,6 +243,7 @@ function applyPalette(palette) {
     card.style.color = primary;
   });
 }
+
 
 function normalize(str) {
   return str ? str.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim() : '';
