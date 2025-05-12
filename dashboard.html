@@ -86,6 +86,10 @@
       height: 16px;
       border-radius: 3px;
     }
+    .logo-preview {
+      margin-top: 10px;
+      max-height: 60px;
+    }
     .mockup {
       border: 1px solid #ccc;
       border-radius: 16px;
@@ -213,11 +217,32 @@
       const { data: { user }, error } = await supabase.auth.getUser();
       if (!user) return (window.location.href = '/');
       RESTAURANT_ID = user.id;
-      const { data: info } = await supabase.from("ristoranti").select("nome, font, palette_color").eq("id", RESTAURANT_ID).single();
+      const { data: info } = await supabase.from("ristoranti").select("nome, font, palette_color, logo_url").eq("id", RESTAURANT_ID).single();
       document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
       document.getElementById("displayName").value = info?.nome || "";
       document.getElementById("fontSelector").value = info?.font || "Arial";
       document.getElementById("paletteSelector").value = info?.palette_color || "rosso";
+      if (info?.logo_url) {
+        const preview = document.createElement("img");
+        preview.src = info.logo_url;
+        preview.alt = "Anteprima Logo";
+        preview.className = "logo-preview";
+        document.getElementById("logoUpload").insertAdjacentElement("afterend", preview);
+      }
+      updatePreview();
+    });
+
+    document.getElementById("logoUpload").addEventListener("change", async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const ext = file.name.split('.').pop();
+      const fileName = `${RESTAURANT_ID}.${ext}`;
+      const filePath = `loghi/${fileName}`;
+      const { error: uploadError } = await supabase.storage.from("loghi").upload(filePath, file, { upsert: true });
+      if (uploadError) return alert("Errore nel caricamento del logo.");
+      const { data: { publicUrl } } = supabase.storage.from("loghi").getPublicUrl(filePath);
+      await supabase.from("ristoranti").update({ logo_url: publicUrl }).eq("id", RESTAURANT_ID);
+      alert("Logo caricato con successo!");
       updatePreview();
     });
 
