@@ -254,7 +254,12 @@
     const ext = file.name.split('.').pop();
     const fileName = `${RESTAURANT_ID}.${ext}`;
     const filePath = `${fileName}`;
-    const { error: uploadError } = await supabase.storage.from("loghi").upload(filePath, file, { upsert: true });
+    const { error: uploadError } = await supabase.storage
+      .from("loghi")
+      .upload(filePath, file, {
+         upsert: true, 
+         contentType: file.type 
+      });
     if (uploadError) return alert("Errore nel caricamento del logo.");
     const { data: { publicUrl } } = supabase.storage.from("loghi").getPublicUrl(filePath);
     await supabase.from("ristoranti").update({ logo_url: publicUrl }).eq("id", RESTAURANT_ID);
