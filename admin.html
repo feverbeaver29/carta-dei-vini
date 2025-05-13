@@ -23,7 +23,7 @@ th { background-color: #f5f5f5; }
 
 <h1>Gestione Carta dei Vini</h1>
 <div class="admin-panel">
-  <h2 id="formTitle">Aggiungi Vino</h2>
+  <h2 id="formTitle">Aggiungi Vino <button id="resetButton" style="display:none; margin-left: 10px; padding: 0.3em 0.6em; font-size: 0.8em;">Aggiungi nuovo</button></h2>
   <label>Nome:</label>
   <input type="text" id="nome">
   <label>Annata:</label>
@@ -129,7 +129,8 @@ function fillForm(index) {
   editIndex = index;
   document.getElementById("formTitle").innerText = "Modifica Vino";
   document.getElementById("saveButton").innerText = "Aggiorna";
-}
+  document.getElementById("resetButton").style.display = "inline-block";
+};
 
 async function saveWine() {
   await fetchUserIfNeeded();
@@ -164,6 +165,8 @@ async function saveWine() {
     showMessage(editIndex !== null ? "Vino aggiornato!" : "Vino aggiunto!");
     document.getElementById("formTitle").innerText = "Aggiungi Vino";
     document.getElementById("saveButton").innerText = "Salva";
+    document.getElementById("resetButton").style.display = "none";
+    resetForm();
     loadWines();
   });
   editIndex = null;
@@ -194,6 +197,38 @@ async function loadWines() {
   const json = await res.json();
   winesData = Array.isArray(json) ? json : [];
   renderTable();
+}
+document.getElementById("resetButton").addEventListener("click", () => {
+  resetForm();
+  document.getElementById("formTitle").innerText = "Aggiungi Vino";
+  document.getElementById("saveButton").innerText = "Salva";
+  document.getElementById("resetButton").style.display = "none";
+});
+
+function resetForm() {
+  ["nome", "annata", "prezzo", "categoria", "sottocategoria", "uvaggio", "abbinamenti"].forEach(key => {
+    document.getElementById(key).value = '';
+  });
+  editIndex = null;
+}
+
+function deleteWine(id) {
+  if (confirm("Vuoi eliminare questo vino?")) {
+    fetch(`${SUPABASE_URL}/rest/v1/wines?id=eq.${id}`, {
+      method: "DELETE",
+      headers: {
+        'apikey': SUPABASE_API_KEY,
+        'Prefer': 'return=minimal'
+      }
+    }).then(response => {
+      if (response.ok) {
+        showMessage("Vino eliminato!");
+        loadWines();
+      } else {
+        showMessage("Errore nell'eliminazione del vino", false);
+      }
+    });
+  }
 }
 </script>
 </body>
