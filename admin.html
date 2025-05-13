@@ -29,7 +29,16 @@ th { background-color: #f5f5f5; }
   <label>Annata:</label>
   <input type="text" id="annata">
   <label>Prezzo:</label>
-  <input type="text" id="prezzo">
+<div style="display: flex; gap: 8px; align-items: center;">
+  <select id="valuta" style="padding: 0.4em; border-radius: 8px;">
+    <option value="€" selected>€</option>
+    <option value="$">$</option>
+    <option value="£">£</option>
+    <option value="¥">¥</option>
+    <option value="CHF">CHF</option>
+  </select>
+  <input type="text" id="prezzo" style="flex: 1;">
+</div>
   <label>Categoria:</label>
   <input type="text" id="categoria">
   <label>Sottocategoria:</label>
@@ -122,9 +131,13 @@ function renderTable() {
 }
 function fillForm(index) {
   const wine = winesData[index];
-  ["nome", "annata", "prezzo", "categoria", "sottocategoria", "uvaggio", "abbinamenti"].forEach(key => {
+  ["nome", "annata", "categoria", "sottocategoria", "uvaggio", "abbinamenti"].forEach(key => {
     document.getElementById(key).value = wine[key] || '';
   });
+  const prezzoVal = wine["prezzo"] || '';
+  const match = prezzoVal.match(/^(€|\$|£|¥|CHF)?(.*)$/);
+  document.getElementById("valuta").value = match?.[1] || '€';
+  document.getElementById("prezzo").value = match?.[2]?.trim() || '';
   editIndex = index;
   document.getElementById("formTitle").innerHTML = 'Modifica Vino <button id="resetButton" style="margin-left: 10px; padding: 0.3em 0.6em; font-size: 0.8em;">Aggiungi nuovo</button>';
   document.getElementById("saveButton").innerText = "Aggiorna";
@@ -138,7 +151,7 @@ async function saveWine() {
     ristorante_id: RESTAURANT_ID,
     nome: document.getElementById('nome').value || "",
     annata: document.getElementById('annata').value || "",
-    prezzo: document.getElementById('prezzo').value || "",
+    prezzo: (document.getElementById('valuta').value || '€') + (document.getElementById('prezzo').value || ''),
     categoria: document.getElementById('categoria').value || "",
     sottocategoria: document.getElementById('sottocategoria').value || "",
     uvaggio: document.getElementById('uvaggio').value || "",
@@ -227,6 +240,7 @@ function resetForm() {
   ["nome", "annata", "prezzo", "categoria", "sottocategoria", "uvaggio", "abbinamenti"].forEach(key => {
     document.getElementById(key).value = '';
   });
+  document.getElementById("valuta").value = '€';
   editIndex = null;
 }
 
