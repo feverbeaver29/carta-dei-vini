@@ -120,7 +120,6 @@ function renderTable() {
     tableBody.appendChild(tr);
   });
 }
-
 function fillForm(index) {
   const wine = winesData[index];
   ["nome", "annata", "prezzo", "categoria", "sottocategoria", "uvaggio", "abbinamenti"].forEach(key => {
@@ -176,10 +175,32 @@ function renderTable() {
   tableBody.innerHTML = '';
   winesData.forEach((wine, index) => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${wine.nome}</td><td class="actions"><button type="button" onclick="fillForm(${index})">Modifica</button><button type="button" onclick="deleteWine(${wine.id})">Elimina</button></td>`;
+
+    const tdNome = document.createElement('td');
+    tdNome.textContent = wine.nome;
+
+    const tdAzioni = document.createElement('td');
+    tdAzioni.className = 'actions';
+
+    const btnModifica = document.createElement('button');
+    btnModifica.type = 'button';
+    btnModifica.textContent = 'Modifica';
+    btnModifica.onclick = () => fillForm(index);
+
+    const btnElimina = document.createElement('button');
+    btnElimina.type = 'button';
+    btnElimina.textContent = 'Elimina';
+    btnElimina.onclick = () => deleteWine(wine.id);
+
+    tdAzioni.appendChild(btnModifica);
+    tdAzioni.appendChild(btnElimina);
+
+    tr.appendChild(tdNome);
+    tr.appendChild(tdAzioni);
     tableBody.appendChild(tr);
   });
 }
+    tableBody.appendChild(tr);
 
 async function loadWines() {
   await fetchUserIfNeeded();
@@ -226,7 +247,6 @@ function deleteWine(id) {
   }
 }
 loadWines();
-</script>
 </script>
 </body>
 </html>
