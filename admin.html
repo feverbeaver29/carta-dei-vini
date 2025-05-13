@@ -23,7 +23,7 @@ th { background-color: #f5f5f5; }
 
 <h1>Gestione Carta dei Vini</h1>
 <div class="admin-panel">
-  <h2>Aggiungi/Modifica Vino</h2>
+  <h2 id="formTitle">Aggiungi Vino</h2>
   <label>Nome:</label>
   <input type="text" id="nome">
   <label>Annata:</label>
@@ -38,7 +38,7 @@ th { background-color: #f5f5f5; }
   <input type="text" id="uvaggio">
   <label>Abbinamenti:</label>
   <input type="text" id="abbinamenti">
-  <button onclick="saveWine()">Salva</button>
+  <button id="saveButton" onclick="saveWine()">Salva</button>
 
   <h2>Lista Vini</h2>
   <input type="text" id="searchInput" oninput="filterTable()" placeholder="Cerca vino per nome...">
@@ -127,6 +127,8 @@ function fillForm(index) {
     document.getElementById(key).value = wine[key] || '';
   });
   editIndex = index;
+  document.getElementById("formTitle").innerText = "Modifica Vino";
+  document.getElementById("saveButton").innerText = "Aggiorna";
 }
 
 async function saveWine() {
@@ -160,44 +162,12 @@ async function saveWine() {
       return;
     }
     showMessage(editIndex !== null ? "Vino aggiornato!" : "Vino aggiunto!");
+    document.getElementById("formTitle").innerText = "Aggiungi Vino";
+    document.getElementById("saveButton").innerText = "Salva";
     loadWines();
   });
   editIndex = null;
 }
-
-function deleteWine(id) {
-  if (confirm("Vuoi eliminare questo vino?")) {
-    fetch(`${SUPABASE_URL}/rest/v1/wines?id=eq.${id}`, {
-      method: "DELETE",
-      headers: {
-        'apikey': SUPABASE_API_KEY
-      }
-    }).then(() => {
-      showMessage("Vino eliminato!");
-      loadWines();
-    });
-  }
-}
-
-function filterTable() {
-  const searchValue = document.getElementById('searchInput').value.toLowerCase();
-  const tableBody = document.getElementById('wineTableBody');
-  tableBody.innerHTML = '';
-  winesData.forEach((wine, index) => {
-    if (wine.nome.toLowerCase().includes(searchValue)) {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${wine.nome}</td>
-        <td class="actions">
-          <button onclick="fillForm(${index})">Modifica</button>
-          <button onclick="deleteWine(${wine.id})">Elimina</button>
-        </td>`;
-      tableBody.appendChild(tr);
-    }
-  });
-}
-
-loadWines();
 </script>
 </body>
 </html>
