@@ -27,7 +27,7 @@ th { background-color: #f5f5f5; }
 <label>Nome:</label>
 <input type="text" id="nome">
 <label>Annata:</label>
-<input type="text" id="annata">
+<input type="text" id="annata" placeholder="non obbligatorio">
 <label>Prezzo:</label>
 <div style="display: flex; gap: 8px; align-items: center;">
   <select id="valuta" style="padding: 0.4em; border-radius: 8px;">
@@ -172,7 +172,7 @@ async function saveWine() {
   const wine = {
     ristorante_id: RESTAURANT_ID,
     nome: document.getElementById('nome').value || "",
-    annata: document.getElementById('annata').value || "",
+    annata: /^[0-9]{2,4}$/.test(document.getElementById('annata').value) ? document.getElementById('annata').value : "",
     prezzo: (document.getElementById('valuta').value || '€') + (document.getElementById('prezzo').value || ''),
     categoria: formatText(document.getElementById('categoria').value || ''),
     sottocategoria: formatText(document.getElementById('sottocategoria').value || ''),
@@ -241,7 +241,6 @@ function renderTable() {
     tableBody.appendChild(tr);
   });
 }
-
 async function loadWines() {
   await fetchUserIfNeeded();
   const res = await fetch(`${SUPABASE_URL}/rest/v1/wines?ristorante_id=eq.${RESTAURANT_ID}`, {

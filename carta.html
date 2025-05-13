@@ -273,7 +273,7 @@ function showCategories() {
   categories.forEach(cat => {
     const div = document.createElement('div');
     div.className = 'category';
-    div.textContent = 'Vini ' + (cat.charAt(0).toUpperCase() + cat.slice(1));
+    div.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
     div.onclick = () => showSubcategories(cat);
     container.appendChild(div);
   });
