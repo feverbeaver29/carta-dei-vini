@@ -183,13 +183,14 @@ async function loadRestaurantData() {
       img.src = ristorante.logo_url;
       img.alt = ristorante.nome;
       img.id = "restaurantLogo";
+      img.style.height = '40px';
       nameElem.appendChild(img);
-    }
+    } else {
     const span = document.createElement('span');
     span.textContent = ristorante.nome || 'Carta dei Vini';
     span.style.fontFamily = ristorante.font || 'sans-serif';
     nameElem.appendChild(span);
-    applyPalette(ristorante.palette_color);
+    applyPalette(ristorante.palette_color);}
   }
 }
 
@@ -233,6 +234,9 @@ function applyPalette(palette) {
 
   document.body.style.backgroundColor = background;
   document.body.style.color = primary;
+
+  const sommelierBtn = document.getElementById('sommelierBtn');
+if (sommelierBtn) sommelierBtn.style.backgroundColor = primary;
 
   document.querySelectorAll('nav button').forEach(btn => {
     btn.style.color = primary;
