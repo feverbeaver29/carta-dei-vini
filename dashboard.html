@@ -248,24 +248,45 @@
     updatePreview();
   });
 
-  document.getElementById("logoUpload").addEventListener("change", async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    const ext = file.name.split('.').pop();
-    const fileName = `${RESTAURANT_ID}.${ext}`;
-    const filePath = `${fileName}`;
-    const { error: uploadError } = await supabase.storage
-      .from("loghi")
-      .upload(filePath, file, {
-         upsert: true, 
-         contentType: file.type 
-      });
-    if (uploadError) return alert("Errore nel caricamento del logo.");
-    const { data: { publicUrl } } = supabase.storage.from("loghi").getPublicUrl(filePath);
-    await supabase.from("ristoranti").update({ logo_url: publicUrl }).eq("id", RESTAURANT_ID);
-    alert("Logo caricato con successo!");
-    updatePreview();
-  });
+document.getElementById("logoUpload").addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const ext = file.name.split('.').pop();
+  const fileName = `${RESTAURANT_ID}.${ext}`;
+
+  // Controlla se il file esiste già e lo rimuove
+  const { data: existing, error: listError } = await supabase
+    .storage
+    .from("loghi")
+    .list('', { search: fileName });
+
+  if (existing?.length > 0) {
+    await supabase.storage.from("loghi").remove([fileName]);
+  }
+
+  const { error: uploadError } = await supabase.storage
+    .from("loghi")
+    .upload(fileName, file, {
+      contentType: file.type
+    });
+
+  if (uploadError) return alert("Errore nel caricamento del logo.");
+
+  const { data: { publicUrl } } = supabase
+    .storage
+    .from("loghi")
+    .getPublicUrl(fileName);
+
+  await supabase
+    .from("ristoranti")
+    .update({ logo_url: publicUrl })
+    .eq("id", RESTAURANT_ID);
+
+  alert("Logo caricato con successo!");
+  updatePreview();
+});
+
 
     function updatePreview() {
       const url = `carta.html?ristorante_id=${RESTAURANT_ID}`;
