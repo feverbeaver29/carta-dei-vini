@@ -174,10 +174,10 @@ async function saveWine() {
     nome: document.getElementById('nome').value || "",
     annata: document.getElementById('annata').value || "",
     prezzo: (document.getElementById('valuta').value || '€') + (document.getElementById('prezzo').value || ''),
-    categoria: document.getElementById('categoria').value || "",
-    sottocategoria: document.getElementById('sottocategoria').value || "",
-    uvaggio: document.getElementById('uvaggio').value || "",
-    abbinamenti: document.getElementById('abbinamenti').value || ""
+    categoria: formatText(document.getElementById('categoria').value || ''),
+    sottocategoria: formatText(document.getElementById('sottocategoria').value || ''),
+    uvaggio: formatText(document.getElementById('uvaggio').value || ''),
+    abbinamenti: formatText(document.getElementById('abbinamenti').value || '')
   };
 
   const method = editIndex !== null ? "PATCH" : "POST";
@@ -203,7 +203,11 @@ async function saveWine() {
     const resetBtn = document.getElementById("resetButton");
     if (resetBtn) resetBtn.style.display = "none";
     resetForm();
-    loadWines();
+    function formatText(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+loadWines();
   });
   editIndex = null;
 }
@@ -249,8 +253,10 @@ async function loadWines() {
   const json = await res.json();
   winesData = Array.isArray(json) ? json : [];
 
-  const categorie = [...new Set(winesData.map(w => w.categoria).filter(Boolean))];
-  const sottocategorie = [...new Set(winesData.map(w => w.sottocategoria).filter(Boolean))];
+  const categorie = [...new Set(winesData.map(w => w.categoria?.toLowerCase()).filter(Boolean))]
+    .map(c => c.charAt(0).toUpperCase() + c.slice(1));
+  const sottocategorie = [...new Set(winesData.map(w => w.sottocategoria?.toLowerCase()).filter(Boolean))]
+    .map(s => s.charAt(0).toUpperCase() + s.slice(1));
 
   const catList = document.getElementById("categoriaList");
   const sottoList = document.getElementById("sottocategoriaList");
