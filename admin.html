@@ -121,7 +121,7 @@ function renderTable() {
   });
 }
 
-function fillForm(index) {
+function fillForm(index) {{
   const wine = winesData[index];
   ["nome", "annata", "prezzo", "categoria", "sottocategoria", "uvaggio", "abbinamenti"].forEach(key => {
     document.getElementById(key).value = wine[key] || '';
@@ -131,6 +131,10 @@ function fillForm(index) {
   document.getElementById("saveButton").innerText = "Aggiorna";
   document.getElementById("resetButton").style.display = "inline-block";
 };
+  editIndex = index;
+  document.getElementById("formTitle").innerText = "Modifica Vino";
+  document.getElementById("saveButton").innerText = "Aggiorna";
+}
 
 async function saveWine() {
   await fetchUserIfNeeded();
