@@ -126,7 +126,7 @@ function fillForm(index) {
     document.getElementById(key).value = wine[key] || '';
   });
   editIndex = index;
-  document.getElementById("formTitle").innerText = "Modifica Vino";
+  document.getElementById("formTitle").innerHTML = 'Modifica Vino <button id="resetButton" style="margin-left: 10px; padding: 0.3em 0.6em; font-size: 0.8em;">Aggiungi nuovo</button>';
   document.getElementById("saveButton").innerText = "Aggiorna";
   const resetBtn = document.getElementById("resetButton");
   if (resetBtn) resetBtn.style.display = "inline-block";
@@ -163,7 +163,7 @@ async function saveWine() {
       return;
     }
     showMessage(editIndex !== null ? "Vino aggiornato!" : "Vino aggiunto!");
-    document.getElementById("formTitle").innerText = "Aggiungi Vino";
+    document.getElementById("formTitle").innerHTML = 'Aggiungi Vino';
     document.getElementById("saveButton").innerText = "Salva";
     const resetBtn = document.getElementById("resetButton");
     if (resetBtn) resetBtn.style.display = "none";
@@ -215,11 +215,12 @@ async function loadWines() {
   winesData = Array.isArray(json) ? json : [];
   renderTable();
 }
-document.getElementById("resetButton").addEventListener("click", () => {
-  resetForm();
-  document.getElementById("formTitle").innerText = "Aggiungi Vino";
-  document.getElementById("saveButton").innerText = "Salva";
-  document.getElementById("resetButton").style.display = "none";
+document.body.addEventListener("click", e => {
+  if (e.target.id === "resetButton") {
+    resetForm();
+    document.getElementById("formTitle").innerHTML = 'Aggiungi Vino';
+    document.getElementById("saveButton").innerText = "Salva";
+  }
 });
 
 function resetForm() {
