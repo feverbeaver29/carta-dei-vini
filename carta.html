@@ -305,7 +305,8 @@ function showWinesBySubcategory(subcat) {
   filtered.forEach(w => {
     const card = document.createElement('div');
     card.className = 'wine-card';
-    card.innerHTML = `<strong>${w.nome} (${w.annata})</strong><br><em>${w.prezzo}</em><br><small>Uvaggio: ${w.uvaggio}</small>`;
+    const annata = w.annata ? ` (${w.annata})` : '';
+    card.innerHTML = `<strong>${w.nome}${annata}</strong><br><em>${w.prezzo}</em><br><small>Uvaggio: ${w.uvaggio}</small>`;
     wineList.appendChild(card);
   });
   document.getElementById('subcategory-list').style.display = 'none';
