@@ -254,29 +254,35 @@ document.getElementById("logoUpload").addEventListener("change", async (event) =
 
   const ext = file.name.split('.').pop();
   const fileName = `${RESTAURANT_ID}.${ext}`;
+  const filePath = `ristoranti/${fileName}`;
 
-  // Controlla se il file esiste già e lo rimuove
-  const { data: existing, error: listError } = await supabase
+  // Prova a rimuovere un file esistente prima di caricare
+  const { data: existing } = await supabase
     .storage
     .from("loghi")
-    .list('', { search: fileName });
+    .list("ristoranti", { search: fileName });
 
   if (existing?.length > 0) {
-    await supabase.storage.from("loghi").remove([fileName]);
+    await supabase.storage.from("loghi").remove([filePath]);
   }
 
+  // Upload nuovo file
   const { error: uploadError } = await supabase.storage
     .from("loghi")
-    .upload(fileName, file, {
+    .upload(filePath, file, {
       contentType: file.type
     });
 
-  if (uploadError) return alert("Errore nel caricamento del logo.");
+  if (uploadError) {
+    console.error(uploadError);
+    return alert("Errore nel caricamento del logo.");
+  }
 
+  // Ottieni URL pubblico
   const { data: { publicUrl } } = supabase
     .storage
     .from("loghi")
-    .getPublicUrl(fileName);
+    .getPublicUrl(filePath);
 
   await supabase
     .from("ristoranti")
@@ -286,6 +292,7 @@ document.getElementById("logoUpload").addEventListener("change", async (event) =
   alert("Logo caricato con successo!");
   updatePreview();
 });
+
 
 
     function updatePreview() {
