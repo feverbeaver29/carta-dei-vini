@@ -66,6 +66,9 @@ th { background-color: #f5f5f5; }
 </div>
 
 <script>
+  function formatText(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
 const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
 const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
 
@@ -203,9 +206,7 @@ async function saveWine() {
     const resetBtn = document.getElementById("resetButton");
     if (resetBtn) resetBtn.style.display = "none";
     resetForm();
-    function formatText(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-}
+    
 
 loadWines();
   });
@@ -241,6 +242,7 @@ function renderTable() {
     tableBody.appendChild(tr);
   });
 }
+
 async function loadWines() {
   await fetchUserIfNeeded();
   const res = await fetch(`${SUPABASE_URL}/rest/v1/wines?ristorante_id=eq.${RESTAURANT_ID}`, {
