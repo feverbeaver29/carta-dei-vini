@@ -40,9 +40,13 @@ th { background-color: #f5f5f5; }
   <input type="text" id="prezzo" style="flex: 1;">
 </div>
   <label>Categoria:</label>
-  <input type="text" id="categoria">
-  <label>Sottocategoria:</label>
-  <input type="text" id="sottocategoria">
+<input type="text" id="categoria" list="categoriaList">
+<datalist id="categoriaList"></datalist>
+
+<label>Sottocategoria:</label>
+<input type="text" id="sottocategoria" list="sottocategoriaList">
+<datalist id="sottocategoriaList"></datalist>
+
   <label>Uvaggio:</label>
   <input type="text" id="uvaggio">
   <label>Abbinamenti:</label>
@@ -112,6 +116,26 @@ async function loadWines() {
   });
   const json = await res.json();
   winesData = Array.isArray(json) ? json : [];
+
+  const categorie = [...new Set(winesData.map(w => w.categoria).filter(Boolean))];
+  const sottocategorie = [...new Set(winesData.map(w => w.sottocategoria).filter(Boolean))];
+
+  const catList = document.getElementById("categoriaList");
+  const sottoList = document.getElementById("sottocategoriaList");
+  if (catList && sottoList) {
+    catList.innerHTML = '';
+    sottoList.innerHTML = '';
+    categorie.forEach(cat => {
+      const opt = document.createElement("option");
+      opt.value = cat;
+      catList.appendChild(opt);
+    });
+    sottocategorie.forEach(sub => {
+      const opt = document.createElement("option");
+      opt.value = sub;
+      sottoList.appendChild(opt);
+    });
+  }
   renderTable();
 }
 
