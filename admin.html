@@ -168,6 +168,33 @@ async function saveWine() {
   });
   editIndex = null;
 }
+function renderTable() {
+  const tableBody = document.getElementById('wineTableBody');
+  tableBody.innerHTML = '';
+  winesData.forEach((wine, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${wine.nome}</td>
+      <td class="actions">
+        <button onclick="fillForm(${index})">Modifica</button>
+        <button onclick="deleteWine(${wine.id})">Elimina</button>
+      </td>`;
+    tableBody.appendChild(tr);
+  });
+}
+
+async function loadWines() {
+  await fetchUserIfNeeded();
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/wines?ristorante_id=eq.${RESTAURANT_ID}`, {
+    headers: {
+      'apikey': SUPABASE_API_KEY,
+      'Accept': 'application/json'
+    }
+  });
+  const json = await res.json();
+  winesData = Array.isArray(json) ? json : [];
+  renderTable();
+}
 </script>
 </body>
 </html>
