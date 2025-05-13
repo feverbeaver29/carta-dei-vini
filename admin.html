@@ -24,11 +24,11 @@ th { background-color: #f5f5f5; }
 <h1>Gestione Carta dei Vini</h1>
 <div class="admin-panel">
   <h2 id="formTitle">Aggiungi Vino <button id="resetButton" style="display:none; margin-left: 10px; padding: 0.3em 0.6em; font-size: 0.8em;">Aggiungi nuovo</button></h2>
-  <label>Nome:</label>
-  <input type="text" id="nome">
-  <label>Annata:</label>
-  <input type="text" id="annata">
-  <label>Prezzo:</label>
+<label>Nome:</label>
+<input type="text" id="nome">
+<label>Annata:</label>
+<input type="text" id="annata">
+<label>Prezzo:</label>
 <div style="display: flex; gap: 8px; align-items: center;">
   <select id="valuta" style="padding: 0.4em; border-radius: 8px;">
     <option value="€" selected>€</option>
@@ -39,19 +39,17 @@ th { background-color: #f5f5f5; }
   </select>
   <input type="text" id="prezzo" style="flex: 1;">
 </div>
-  <label>Categoria:</label>
+<label>Categoria:</label>
 <input type="text" id="categoria" list="categoriaList">
 <datalist id="categoriaList"></datalist>
-
 <label>Sottocategoria:</label>
 <input type="text" id="sottocategoria" list="sottocategoriaList">
 <datalist id="sottocategoriaList"></datalist>
-
-  <label>Uvaggio:</label>
-  <input type="text" id="uvaggio">
-  <label>Abbinamenti:</label>
-  <input type="text" id="abbinamenti">
-  <button id="saveButton" onclick="saveWine()">Salva</button>
+<label>Uvaggio:</label>
+<input type="text" id="uvaggio">
+<label>Abbinamenti:</label>
+<input type="text" id="abbinamenti">
+<button id="saveButton" onclick="saveWine()">Salva</button>
 
   <h2>Lista Vini</h2>
   <input type="text" id="searchInput" oninput="filterTable()" placeholder="Cerca vino per nome...">
@@ -250,6 +248,26 @@ async function loadWines() {
   });
   const json = await res.json();
   winesData = Array.isArray(json) ? json : [];
+
+  const categorie = [...new Set(winesData.map(w => w.categoria).filter(Boolean))];
+  const sottocategorie = [...new Set(winesData.map(w => w.sottocategoria).filter(Boolean))];
+
+  const catList = document.getElementById("categoriaList");
+  const sottoList = document.getElementById("sottocategoriaList");
+  if (catList && sottoList) {
+    catList.innerHTML = '';
+    sottoList.innerHTML = '';
+    categorie.forEach(cat => {
+      const opt = document.createElement("option");
+      opt.value = cat;
+      catList.appendChild(opt);
+    });
+    sottocategorie.forEach(sub => {
+      const opt = document.createElement("option");
+      opt.value = sub;
+      sottoList.appendChild(opt);
+    });
+  }
   renderTable();
 }
 document.body.addEventListener("click", e => {
