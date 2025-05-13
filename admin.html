@@ -128,7 +128,8 @@ function fillForm(index) {
   editIndex = index;
   document.getElementById("formTitle").innerText = "Modifica Vino";
   document.getElementById("saveButton").innerText = "Aggiorna";
-  document.getElementById("resetButton").style.display = "inline-block";
+  const resetBtn = document.getElementById("resetButton");
+  if (resetBtn) resetBtn.style.display = "inline-block";
 }
 
 async function saveWine() {
@@ -164,7 +165,8 @@ async function saveWine() {
     showMessage(editIndex !== null ? "Vino aggiornato!" : "Vino aggiunto!");
     document.getElementById("formTitle").innerText = "Aggiungi Vino";
     document.getElementById("saveButton").innerText = "Salva";
-    document.getElementById("resetButton").style.display = "none";
+    const resetBtn = document.getElementById("resetButton");
+    if (resetBtn) resetBtn.style.display = "none";
     resetForm();
     loadWines();
   });
