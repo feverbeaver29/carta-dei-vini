@@ -176,12 +176,7 @@ function renderTable() {
   tableBody.innerHTML = '';
   winesData.forEach((wine, index) => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${wine.nome}</td>
-      <td class="actions">
-  <button type="button" onclick="fillForm(${index}\)">Modifica</button>
-  <button type="button" onclick="deleteWine(${wine.id}\)">Elimina</button>
-</td>`;
+    tr.innerHTML = `<td>${wine.nome}</td><td class="actions"><button type="button" onclick="fillForm(${index})">Modifica</button><button type="button" onclick="deleteWine(${wine.id})">Elimina</button></td>`;
     tableBody.appendChild(tr);
   });
 }
