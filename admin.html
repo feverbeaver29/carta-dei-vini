@@ -13,6 +13,32 @@
     button { margin-top: 1em; padding: 0.7em 1em; background-color: #b00; color: white; border: none; border-radius: 8px; cursor: pointer; }
     #searchInput { margin-top: 1em; padding: 0.5em; width: 100%; border-radius: 8px; border: 1px solid #ccc; }
     #message { margin: 1em auto; text-align: center; color: green; max-width: 600px; }
+    @media (max-width: 768px) {
+  .admin-panel {
+    padding: 1em;
+  }
+
+  #wineCardContainer {
+    justify-content: center;
+    gap: 0.5em;
+  }
+
+  #wineCardContainer > div {
+    width: calc(50% - 1em); /* due per riga su mobile */
+    min-width: 150px;
+  }
+
+  input[type="text"],
+  select,
+  button {
+    font-size: 1rem;
+    padding: 0.8em;
+  }
+
+  #searchInput {
+    min-width: 100%;
+  }
+}
   </style>
 </head>
 <body>
