@@ -299,71 +299,7 @@ loadWines();
   });
   editIndex = null;
 }
-function renderTable() {
-  const tableBody = document.getElementById('wineTableBody');
-  tableBody.innerHTML = '';
-  winesData.forEach((wine, index) => {
-    const tr = document.createElement('tr');
 
-    const tdNome = document.createElement('td');
-    tdNome.textContent = wine.nome;
-
-    const tdAzioni = document.createElement('td');
-    tdAzioni.className = 'actions';
-
-    const btnModifica = document.createElement('button');
-    btnModifica.type = 'button';
-    btnModifica.textContent = 'Modifica';
-    btnModifica.onclick = () => fillForm(index);
-
-    const btnElimina = document.createElement('button');
-    btnElimina.type = 'button';
-    btnElimina.textContent = 'Elimina';
-    btnElimina.onclick = () => deleteWine(wine.id);
-
-    tdAzioni.appendChild(btnModifica);
-    tdAzioni.appendChild(btnElimina);
-
-    tr.appendChild(tdNome);
-    tr.appendChild(tdAzioni);
-    tableBody.appendChild(tr);
-  });
-}
-
-async function loadWines() {
-  await fetchUserIfNeeded();
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/wines?ristorante_id=eq.${RESTAURANT_ID}`, {
-    headers: {
-      'apikey': SUPABASE_API_KEY,
-      'Accept': 'application/json'
-    }
-  });
-  const json = await res.json();
-  winesData = Array.isArray(json) ? json : [];
-
-  const categorie = [...new Set(winesData.map(w => w.categoria?.toLowerCase()).filter(Boolean))]
-    .map(c => c.charAt(0).toUpperCase() + c.slice(1));
-  const sottocategorie = [...new Set(winesData.map(w => w.sottocategoria?.toLowerCase()).filter(Boolean))]
-    .map(s => s.charAt(0).toUpperCase() + s.slice(1));
-
-  const catList = document.getElementById("categoriaList");
-  const sottoList = document.getElementById("sottocategoriaList");
-  if (catList && sottoList) {
-    catList.innerHTML = '';
-    sottoList.innerHTML = '';
-    categorie.forEach(cat => {
-      const opt = document.createElement("option");
-      opt.value = cat;
-      catList.appendChild(opt);
-    });
-    sottocategorie.forEach(sub => {
-      const opt = document.createElement("option");
-      opt.value = sub;
-      sottoList.appendChild(opt);
-    });
-  }
-  renderTable();
-}
 document.body.addEventListener("click", e => {
   if (e.target.id === "resetButton") {
     resetForm();
