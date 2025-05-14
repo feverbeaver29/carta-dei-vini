@@ -149,7 +149,7 @@ function renderTable() {
   container.innerHTML = '';
   pagination.innerHTML = '';
 
-  const filteredData = winesData; // eventualmente aggiungeremo filtri
+  const filteredData = winesData.slice(); // eventualmente aggiungeremo filtri
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -191,11 +191,14 @@ function renderTable() {
   }
 }
 
-document.getElementById('itemsPerPage').addEventListener('change', (e) => {
-  itemsPerPage = parseInt(e.target.value, 10);
-  currentPage = 1;
-  renderTable();
-});
+const itemsPerPageSelect = document.getElementById('itemsPerPage');
+if (itemsPerPageSelect) {
+  itemsPerPageSelect.addEventListener('change', (e) => {
+    itemsPerPage = parseInt(e.target.value, 10);
+    currentPage = 1;
+    renderTable();
+  });
+}
 
 function fillForm(index) {
   const wine = winesData[index];
