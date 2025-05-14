@@ -52,7 +52,15 @@ th { background-color: #f5f5f5; }
 <button id="saveButton" onclick="saveWine()">Salva</button>
 
   <h2>Lista Vini</h2>
-<input type="text" id="searchInput" oninput="filterTable()" placeholder="Cerca vino per nome...">
+<div style="display: flex; flex-wrap: wrap; gap: 1em; margin-top: 1em; align-items: center; justify-content: center;">
+  <input type="text" id="searchInput" oninput="renderTable()" placeholder="Cerca vino per nome..." style="padding: 0.5em; border-radius: 8px; border: 1px solid #ccc; min-width: 200px;">
+  <select id="filterCategoria" onchange="renderTable()" style="padding: 0.5em; border-radius: 8px;">
+    <option value="">Tutte le categorie</option>
+  </select>
+  <select id="filterSottocategoria" onchange="renderTable()" style="padding: 0.5em; border-radius: 8px;">
+    <option value="">Tutte le sottocategorie</option>
+  </select>
+</div>
 <div id="wineCardContainer" style="display: flex; flex-wrap: wrap; gap: 1em; justify-content: center; margin-top: 2em;"></div>
 <div style="display: flex; justify-content: center; align-items: center; margin-top: 1em; flex-wrap: wrap; gap: 1em;">
   <label for="itemsPerPage">Mostra:</label>
