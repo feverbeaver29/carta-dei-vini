@@ -318,7 +318,14 @@ async function loadWineData() {
     headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
   });
   const json = await res.json();
-  wines = Array.isArray(json) ? json : [];
+
+  // Ordina per prezzo numerico
+  wines = (Array.isArray(json) ? json : []).sort((a, b) => {
+    const priceA = parseFloat((a.prezzo || '').replace(/[^0-9,.]/g, '').replace(',', '.')) || 0;
+    const priceB = parseFloat((b.prezzo || '').replace(/[^0-9,.]/g, '').replace(',', '.')) || 0;
+    return priceA - priceB;
+  });
+
   showCategories();
 }
 
