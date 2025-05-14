@@ -11,10 +11,6 @@
     label { display: block; margin-top: 1em; }
     input[type="text"] { width: 100%; padding: 0.5em; margin-top: 0.3em; border: 1px solid #ccc; border-radius: 8px; }
     button { margin-top: 1em; padding: 0.7em 1em; background-color: #b00; color: white; border: none; border-radius: 8px; cursor: pointer; }
-    table { width: 100%; margin-top: 2em; border-collapse: collapse; }
-    th, td { border: 1px solid #ddd; padding: 0.5em; text-align: center; }
-    th { background-color: #f5f5f5; }
-    .actions button { margin: 0 0.2em; }
     #searchInput { margin-top: 1em; padding: 0.5em; width: 100%; border-radius: 8px; border: 1px solid #ccc; }
     #message { margin: 1em auto; text-align: center; color: green; max-width: 600px; }
   </style>
@@ -50,22 +46,18 @@
   <input type="text" id="uvaggio">
   <label>Abbinamenti:</label>
   <input type="text" id="abbinamenti">
-  <button id="saveButton" onclick="saveWine()">Salva</button>
+  <button id="saveButton">Salva</button>
 
   <h2>Lista Vini</h2>
   <div style="display: flex; flex-wrap: wrap; gap: 1em; margin-top: 1em; align-items: center; justify-content: center;">
-    <input type="text" id="searchInput" oninput="renderTable()" placeholder="Cerca vino per nome..." style="padding: 0.5em; border-radius: 8px; border: 1px solid #ccc; min-width: 200px;">
-    <select id="filterCategoria" onchange="renderTable()" style="padding: 0.5em; border-radius: 8px;">
-      <option value="">Tutte le categorie</option>
-    </select>
-    <select id="filterSottocategoria" onchange="renderTable()" style="padding: 0.5em; border-radius: 8px;">
-      <option value="">Tutte le sottocategorie</option>
-    </select>
+    <input type="text" id="searchInput" placeholder="Cerca vino per nome...">
+    <select id="filterCategoria"></select>
+    <select id="filterSottocategoria"></select>
   </div>
   <div id="wineCardContainer" style="display: flex; flex-wrap: wrap; gap: 1em; justify-content: center; margin-top: 2em;"></div>
   <div style="display: flex; justify-content: center; align-items: center; margin-top: 1em; flex-wrap: wrap; gap: 1em;">
     <label for="itemsPerPage">Mostra:</label>
-    <select id="itemsPerPage" onchange="renderTable()">
+    <select id="itemsPerPage">
       <option value="10" selected>10</option>
       <option value="20">20</option>
       <option value="40">40</option>
@@ -76,21 +68,24 @@
 </div>
 
 <script>
-  function formatText(str) {
+function normalizeAndCapitalize(arr) {
+  const map = new Map();
+  arr.forEach(item => {
+    if (!item) return;
+    const normalized = item.trim().toLowerCase();
+    const capitalized = normalized.charAt(0).toUpperCase() + normalized.slice(1);
+    map.set(normalized, capitalized);
+  });
+  return Array.from(map.values()).sort();
+}
+
+function formatText(str) {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
+
 const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
-const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
-
-let RESTAURANT_ID = null;
-
-const urlParams = new URLSearchParams(window.location.search);
-const urlRistoranteId = urlParams.get("ristorante_id");
-
-if (urlRistoranteId && urlRistoranteId !== "undefined") {
-  RESTAURANT_ID = urlRistoranteId;
-}
-
+const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
+let RESTAURANT_ID = new URLSearchParams(window.location.search).get("ristorante_id") || null;
 
 async function fetchUserIfNeeded() {
   if (!RESTAURANT_ID) {
@@ -99,243 +94,142 @@ async function fetchUserIfNeeded() {
     });
     const user = await res.json();
     RESTAURANT_ID = user.id;
-
-    if (!RESTAURANT_ID) {
-      alert("Ristorante non valido o non loggato!");
-      throw new Error("Ristorante ID mancante");
-    }
   }
 }
 
-let winesData = [];
-let editIndex = null;
+let winesData = [], editIndex = null;
 
-function showMessage(text, success = true) {
-  const message = document.getElementById('message');
-  message.style.color = success ? 'green' : 'red';
-  message.textContent = text;
-  setTimeout(() => { message.textContent = ''; }, 3000);
+function showMessage(msg, ok = true) {
+  const el = document.getElementById("message");
+  el.style.color = ok ? "green" : "red";
+  el.textContent = msg;
+  setTimeout(() => el.textContent = "", 3000);
 }
 
-async function loadWines() {
-  await fetchUserIfNeeded();
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/wines?ristorante_id=eq.${RESTAURANT_ID}`, {
-    headers: {
-      'apikey': SUPABASE_API_KEY,
-      'Accept': 'application/json'
-    }
-  });
-  const json = await res.json();
-  winesData = Array.isArray(json) ? json : [];
-
-  const categorie = [...new Set(winesData.map(w => w.categoria).filter(Boolean))];
-  const sottocategorie = [...new Set(winesData.map(w => w.sottocategoria).filter(Boolean))];
-
-  const catList = document.getElementById("categoriaList");
-  const sottoList = document.getElementById("sottocategoriaList");
-  if (catList && sottoList) {
-    catList.innerHTML = '';
-    sottoList.innerHTML = '';
-    categorie.forEach(cat => {
-      const opt = document.createElement("option");
-      opt.value = cat;
-      catList.appendChild(opt);
-    });
-    sottocategorie.forEach(sub => {
-      const opt = document.createElement("option");
-      opt.value = sub;
-      sottoList.appendChild(opt);
-    });
-  }
-  renderTable();
+function resetForm() {
+  ["nome", "annata", "prezzo", "categoria", "sottocategoria", "uvaggio", "abbinamenti"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("valuta").value = "€";
+  editIndex = null;
 }
 
-let currentPage = 1;
-let itemsPerPage = 10;
+function fillForm(index) {
+  const wine = winesData[index];
+  ["nome", "annata", "categoria", "sottocategoria", "uvaggio", "abbinamenti"].forEach(id => document.getElementById(id).value = wine[id] || "");
+  const match = wine.prezzo?.match(/^(€|$|£|¥|CHF)?(.*)$/);
+  document.getElementById("valuta").value = match?.[1] || "€";
+  document.getElementById("prezzo").value = match?.[2]?.trim() || "";
+  editIndex = index;
+  document.getElementById("formTitle").innerHTML = 'Modifica Vino <button id="resetButton">Aggiungi nuovo</button>';
+  document.getElementById("saveButton").textContent = "Aggiorna";
+}
 
 function renderTable() {
-  const container = document.getElementById('wineCardContainer');
-  const pagination = document.getElementById('paginationControls') || document.createElement('div');
-  container.innerHTML = '';
-  if (pagination.id !== 'paginationControls') pagination.id = 'paginationControls';
-document.getElementById('wineCardContainer')?.after(pagination);
-pagination.innerHTML = '';
+  const container = document.getElementById("wineCardContainer");
+  container.innerHTML = "";
+  const search = document.getElementById("searchInput").value.toLowerCase();
+  const cat = document.getElementById("filterCategoria").value.toLowerCase();
+  const sub = document.getElementById("filterSottocategoria").value.toLowerCase();
+  const perPage = parseInt(document.getElementById("itemsPerPage").value);
 
-  const categoriaSelect = document.getElementById('filterCategoria');
-  const sottocategoriaSelect = document.getElementById('filterSottocategoria');
-  const uniqueCategorie = [...new Set(winesData.map(w => w.categoria).filter(Boolean))].sort();
-  const uniqueSottocategorie = [...new Set(winesData.map(w => w.sottocategoria).filter(Boolean))].sort();
+  let filtered = winesData.filter(w =>
+    (!search || w.nome?.toLowerCase().includes(search)) &&
+    (!cat || w.categoria?.toLowerCase() === cat) &&
+    (!sub || w.sottocategoria?.toLowerCase() === sub)
+  );
 
-  if (categoriaSelect && categoriaSelect.options.length <= 1) {
-    uniqueCategorie.forEach(cat => {
-      const opt = document.createElement('option');
-      opt.value = cat;
-      opt.textContent = cat;
-      categoriaSelect.appendChild(opt);
-    });
-  }
-  if (sottocategoriaSelect && sottocategoriaSelect.options.length <= 1) {
-    uniqueSottocategorie.forEach(sub => {
-      const opt = document.createElement('option');
-      opt.value = sub;
-      opt.textContent = sub;
-      sottocategoriaSelect.appendChild(opt);
-    });
-  }
-
-  let filteredData = winesData.slice();
-  const searchValue = document.getElementById('searchInput')?.value.toLowerCase() || '';
-  const categoriaFilter = document.getElementById('filterCategoria')?.value.toLowerCase() || '';
-  const sottocategoriaFilter = document.getElementById('filterSottocategoria')?.value.toLowerCase() || '';
-
-  filteredData = filteredData.filter(w =>
-    (!searchValue || w.nome.toLowerCase().includes(searchValue)) &&
-    (!categoriaFilter || (w.categoria || '').toLowerCase() === categoriaFilter) &&
-    (!sottocategoriaFilter || (w.sottocategoria || '').toLowerCase() === sottocategoriaFilter)
-  ); // eventualmente aggiungeremo filtri
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentItems = filteredData.slice(startIndex, endIndex);
-
-  currentItems.forEach((wine, index) => {
-    const card = document.createElement('div');
-    card.style.border = '1px solid #ccc';
-    card.style.borderRadius = '12px';
-    card.style.padding = '1em';
-    card.style.background = '#fff';
-    card.style.width = '260px';
-    card.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-
-    card.innerHTML = `
+  filtered.forEach((wine, index) => {
+    const div = document.createElement("div");
+    div.style = "border:1px solid #ccc; padding:1em; border-radius:8px; width:240px; background:#fff";
+    div.innerHTML = `
       <strong>${wine.nome}</strong><br>
       ${wine.annata ? `<small>Annata: ${wine.annata}</small><br>` : ''}
       <small>Prezzo: ${wine.prezzo}</small><br>
       ${wine.categoria ? `<small>Categoria: ${wine.categoria}</small><br>` : ''}
       ${wine.sottocategoria ? `<small>Sottocategoria: ${wine.sottocategoria}</small><br>` : ''}
-      <div style="margin-top: 0.5em; display: flex; gap: 0.5em;">
-        <button onclick="fillForm(${startIndex + index})">Modifica</button>
-        <button onclick="deleteWine(${wine.id})">Elimina</button>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-
-  // Paginazione
-  for (let i = 1; i <= totalPages; i++) {
-    const btn = document.createElement('button');
-    btn.textContent = i;
-    btn.disabled = i === currentPage;
-    btn.onclick = () => {
-      currentPage = i;
-      renderTable();
-    };
-    pagination.appendChild(btn);
-  }
-}
-
-const itemsPerPageSelect = document.getElementById('itemsPerPage');
-if (itemsPerPageSelect) {
-  itemsPerPageSelect.addEventListener('change', (e) => {
-    itemsPerPage = parseInt(e.target.value, 10);
-    currentPage = 1;
-    renderTable();
+      <button onclick="fillForm(${index})">Modifica</button>
+      <button onclick="deleteWine(${wine.id})">Elimina</button>`;
+    container.appendChild(div);
   });
 }
 
-function fillForm(index) {
-  const wine = winesData[index];
-  ["nome", "annata", "categoria", "sottocategoria", "uvaggio", "abbinamenti"].forEach(key => {
-    document.getElementById(key).value = wine[key] || '';
+async function loadWines() {
+  await fetchUserIfNeeded();
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/wines?ristorante_id=eq.${RESTAURANT_ID}`, {
+    headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
   });
-  const prezzoVal = wine["prezzo"] || '';
-  const match = prezzoVal.match(/^(€|\$|£|¥|CHF)?(.*)$/);
-  document.getElementById("valuta").value = match?.[1] || '€';
-  document.getElementById("prezzo").value = match?.[2]?.trim() || '';
-  editIndex = index;
-  document.getElementById("formTitle").innerHTML = 'Modifica Vino <button id="resetButton" style="margin-left: 10px; padding: 0.3em 0.6em; font-size: 0.8em;">Aggiungi nuovo</button>';
-  document.getElementById("saveButton").innerText = "Aggiorna";
-  const resetBtn = document.getElementById("resetButton");
-  if (resetBtn) resetBtn.style.display = "inline-block";
+  winesData = await res.json();
+
+  const categorie = normalizeAndCapitalize(winesData.map(w => w.categoria));
+  const sottocategorie = normalizeAndCapitalize(winesData.map(w => w.sottocategoria));
+
+  const catList = document.getElementById("categoriaList");
+  const subList = document.getElementById("sottocategoriaList");
+  const catFilter = document.getElementById("filterCategoria");
+  const subFilter = document.getElementById("filterSottocategoria");
+
+  catList.innerHTML = subList.innerHTML = catFilter.innerHTML = subFilter.innerHTML = "";
+  catFilter.innerHTML = subFilter.innerHTML = '<option value="">Tutte</option>';
+
+  categorie.forEach(c => {
+    catList.innerHTML += `<option value="${c}">`;
+    catFilter.innerHTML += `<option value="${c}">${c}</option>`;
+  });
+  sottocategorie.forEach(s => {
+    subList.innerHTML += `<option value="${s}">`;
+    subFilter.innerHTML += `<option value="${s}">${s}</option>`;
+  });
+
+  renderTable();
 }
 
 async function saveWine() {
   await fetchUserIfNeeded();
   const wine = {
     ristorante_id: RESTAURANT_ID,
-    nome: document.getElementById('nome').value || "",
-    annata: /^[0-9]{2,4}$/.test(document.getElementById('annata').value) ? document.getElementById('annata').value : "",
-    prezzo: (document.getElementById('valuta').value || '€') + (document.getElementById('prezzo').value || ''),
-    categoria: formatText(document.getElementById('categoria').value || ''),
-    sottocategoria: formatText(document.getElementById('sottocategoria').value || ''),
-    uvaggio: formatText(document.getElementById('uvaggio').value || ''),
-    abbinamenti: formatText(document.getElementById('abbinamenti').value || '')
+    nome: document.getElementById("nome").value,
+    annata: document.getElementById("annata").value,
+    prezzo: document.getElementById("valuta").value + document.getElementById("prezzo").value,
+    categoria: formatText(document.getElementById("categoria").value),
+    sottocategoria: formatText(document.getElementById("sottocategoria").value),
+    uvaggio: formatText(document.getElementById("uvaggio").value),
+    abbinamenti: formatText(document.getElementById("abbinamenti").value),
   };
 
+  const url = editIndex !== null ? `${SUPABASE_URL}/rest/v1/wines?id=eq.${winesData[editIndex].id}` : `${SUPABASE_URL}/rest/v1/wines`;
   const method = editIndex !== null ? "PATCH" : "POST";
-  const url = editIndex !== null
-    ? `${SUPABASE_URL}/rest/v1/wines?id=eq.${winesData[editIndex].id}`
-    : `${SUPABASE_URL}/rest/v1/wines`;
 
-  fetch(url, {
-    method: method,
-    headers: {
-      'Content-Type': 'application/json',
-      'apikey': SUPABASE_API_KEY
-    },
+  const res = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_API_KEY },
     body: JSON.stringify(wine)
-  }).then(response => {
-    if (!response.ok) {
-      showMessage("Errore nel salvataggio del vino", false);
-      return;
-    }
-    showMessage(editIndex !== null ? "Vino aggiornato!" : "Vino aggiunto!");
-    document.getElementById("formTitle").innerHTML = 'Aggiungi Vino';
-    document.getElementById("saveButton").innerText = "Salva";
-    const resetBtn = document.getElementById("resetButton");
-    if (resetBtn) resetBtn.style.display = "none";
-    resetForm();
-    
-
-loadWines();
   });
-  editIndex = null;
+
+  if (!res.ok) return showMessage("Errore salvataggio", false);
+  showMessage(editIndex !== null ? "Vino aggiornato" : "Vino aggiunto");
+  resetForm();
+  loadWines();
 }
 
+async function deleteWine(id) {
+  if (!confirm("Eliminare questo vino?")) return;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/wines?id=eq.${id}`, {
+    method: "DELETE",
+    headers: { 'apikey': SUPABASE_API_KEY, 'Prefer': 'return=minimal' }
+  });
+  if (!res.ok) return showMessage("Errore eliminazione", false);
+  showMessage("Vino eliminato");
+  loadWines();
+}
+
+document.getElementById("saveButton").onclick = saveWine;
 document.body.addEventListener("click", e => {
   if (e.target.id === "resetButton") {
     resetForm();
-    document.getElementById("formTitle").innerHTML = 'Aggiungi Vino';
-    document.getElementById("saveButton").innerText = "Salva";
+    document.getElementById("formTitle").innerHTML = 'Aggiungi Vino <button id="resetButton" style="display:none; margin-left: 10px; padding: 0.3em 0.6em; font-size: 0.8em;">Aggiungi nuovo</button>';
+    document.getElementById("saveButton").textContent = "Salva";
   }
 });
 
-function resetForm() {
-  ["nome", "annata", "prezzo", "categoria", "sottocategoria", "uvaggio", "abbinamenti"].forEach(key => {
-    document.getElementById(key).value = '';
-  });
-  document.getElementById("valuta").value = '€';
-  editIndex = null;
-}
-
-function deleteWine(id) {
-  if (confirm("Vuoi eliminare questo vino?")) {
-    fetch(`${SUPABASE_URL}/rest/v1/wines?id=eq.${id}`, {
-      method: "DELETE",
-      headers: {
-        'apikey': SUPABASE_API_KEY,
-        'Prefer': 'return=minimal'
-      }
-    }).then(response => {
-      if (response.ok) {
-        showMessage("Vino eliminato!");
-        loadWines();
-      } else {
-        showMessage("Errore nell'eliminazione del vino", false);
-      }
-    });
-  }
-}
 loadWines();
 </script>
 </body>
