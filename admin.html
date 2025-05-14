@@ -126,31 +126,32 @@ function fillForm(index) {
 function renderTable() {
   const container = document.getElementById("wineCardContainer");
   container.innerHTML = "";
-  const search = document.getElementById("searchInput").value.toLowerCase();
-  const cat = document.getElementById("filterCategoria").value.toLowerCase();
-  const sub = document.getElementById("filterSottocategoria").value.toLowerCase();
+
+  const search = document.getElementById("searchInput").value.trim().toLowerCase();
+  const cat = document.getElementById("filterCategoria").value.trim().toLowerCase();
+  const sub = document.getElementById("filterSottocategoria").value.trim().toLowerCase();
   const perPage = parseInt(document.getElementById("itemsPerPage").value);
 
-  let filtered = winesData.filter(w =>
-    (!search || w.nome?.toLowerCase().includes(search)) &&
-    (!cat || w.categoria?.toLowerCase() === cat) &&
-    (!sub || w.sottocategoria?.toLowerCase() === sub)
-  );
+  let filtered = winesData.filter(w => {
+    const nome = (w.nome || '').toLowerCase();
+    const categoria = (w.categoria || '').toLowerCase();
+    const sottocategoria = (w.sottocategoria || '').toLowerCase();
+    return (!search || nome.includes(search)) &&
+           (!cat || categoria === cat) &&
+           (!sub || sottocategoria === sub);
+  });
 
   filtered.forEach((wine, index) => {
     const div = document.createElement("div");
     div.style = "border:1px solid #ccc; padding:1em; border-radius:8px; width:240px; background:#fff";
     div.innerHTML = `
       <strong>${wine.nome}</strong><br>
-      ${wine.annata ? `<small>Annata: ${wine.annata}</small><br>` : ''}
-      <small>Prezzo: ${wine.prezzo}</small><br>
-      ${wine.categoria ? `<small>Categoria: ${wine.categoria}</small><br>` : ''}
-      ${wine.sottocategoria ? `<small>Sottocategoria: ${wine.sottocategoria}</small><br>` : ''}
       <button onclick="fillForm(${index})">Modifica</button>
       <button onclick="deleteWine(${wine.id})">Elimina</button>`;
     container.appendChild(div);
   });
 }
+
 
 async function loadWines() {
   await fetchUserIfNeeded();
