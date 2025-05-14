@@ -153,11 +153,44 @@ let itemsPerPage = 10;
 
 function renderTable() {
   const container = document.getElementById('wineCardContainer');
-  const pagination = document.getElementById('paginationControls');
+  const pagination = document.getElementById('paginationControls') || document.createElement('div');
   container.innerHTML = '';
-  pagination.innerHTML = '';
+  if (pagination.id !== 'paginationControls') pagination.id = 'paginationControls';
+document.getElementById('wineCardContainer')?.after(pagination);
+pagination.innerHTML = '';
 
-  const filteredData = winesData.slice(); // eventualmente aggiungeremo filtri
+  const categoriaSelect = document.getElementById('filterCategoria');
+  const sottocategoriaSelect = document.getElementById('filterSottocategoria');
+  const uniqueCategorie = [...new Set(winesData.map(w => w.categoria).filter(Boolean))].sort();
+  const uniqueSottocategorie = [...new Set(winesData.map(w => w.sottocategoria).filter(Boolean))].sort();
+
+  if (categoriaSelect && categoriaSelect.options.length <= 1) {
+    uniqueCategorie.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat;
+      opt.textContent = cat;
+      categoriaSelect.appendChild(opt);
+    });
+  }
+  if (sottocategoriaSelect && sottocategoriaSelect.options.length <= 1) {
+    uniqueSottocategorie.forEach(sub => {
+      const opt = document.createElement('option');
+      opt.value = sub;
+      opt.textContent = sub;
+      sottocategoriaSelect.appendChild(opt);
+    });
+  }
+
+  let filteredData = winesData.slice();
+  const searchValue = document.getElementById('searchInput')?.value.toLowerCase() || '';
+  const categoriaFilter = document.getElementById('filterCategoria')?.value.toLowerCase() || '';
+  const sottocategoriaFilter = document.getElementById('filterSottocategoria')?.value.toLowerCase() || '';
+
+  filteredData = filteredData.filter(w =>
+    (!searchValue || w.nome.toLowerCase().includes(searchValue)) &&
+    (!categoriaFilter || (w.categoria || '').toLowerCase() === categoriaFilter) &&
+    (!sottocategoriaFilter || (w.sottocategoria || '').toLowerCase() === sottocategoriaFilter)
+  ); // eventualmente aggiungeremo filtri
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
