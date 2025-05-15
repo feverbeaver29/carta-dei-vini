@@ -344,8 +344,6 @@ async function loadWineData() {
     const priceB = parseFloat((b.prezzo || '').replace(/[^0-9,.]/g, '').replace(',', '.')) || 0;
     return priceA - priceB;
   });
-
-  showCategories();
 }
 
 let reorderMode = null;
@@ -354,6 +352,11 @@ let categoriaOrder = [];
 let sottocategoriaOrderMap = {};
 
 window.addEventListener("message", (event) => {
+  if (event.data?.action === "checkSubcategoryContext") {
+    const allowed = currentView === "subcategory" && currentCategory;
+    parent.postMessage({ action: "subcatReady", allowed }, "*");
+  }
+
   if (event.data?.action === "startReorder") {
     reorderMode = true;
     reorderType = event.data.type;
@@ -370,8 +373,16 @@ window.addEventListener("message", (event) => {
         ghostClass: 'sortable-ghost'
       });
     } else if (reorderType === "sottocategorie") {
-      const firstCategory = document.querySelector(".category");
-      if (firstCategory) firstCategory.click();
+      const subContainer = document.getElementById("subcategory-list");
+      [...subContainer.children].forEach(el => {
+        el.style.cursor = "grab";
+        el.innerHTML = `<span style='opacity:0.5;margin-right:0.5em;'>☰</span>${el.innerHTML}`;
+      });
+
+      new Sortable(subContainer, {
+        animation: 150,
+        ghostClass: 'sortable-ghost'
+      });
     }
   }
 
@@ -476,8 +487,9 @@ window.showSubcategories = function (category) {
 
 (async () => {
   await fetchCategoryOrder();
-  loadRestaurantData();
-  loadWineData();
+  await loadRestaurantData();
+  await loadWineData();
+  showCategories();
 })();
 </script>
 </body>

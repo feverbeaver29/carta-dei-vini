@@ -303,13 +303,17 @@ function toggleReorder(type) {
   const iframe = document.getElementById("previewFrame");
   const btn = document.getElementById(`ordina${capitalize(type)}Btn`);
 
+  if (type === 'sottocategorie') {
+    // chiedi a carta se sei dentro una categoria
+    iframe.contentWindow.postMessage({ action: 'checkSubcategoryContext' }, '*');
+    return; // il resto viene gestito dopo la conferma dal messaggio di ritorno
+  }
+
   if (reorderMode === type) {
-    // SALVA ordine
     iframe.contentWindow.postMessage({ action: 'getReorder', type }, '*');
     btn.textContent = `Ordina ${capitalize(type)}`;
     reorderMode = null;
   } else {
-    // ATTIVA riordinamento
     iframe.contentWindow.postMessage({ action: 'startReorder', type }, '*');
     btn.textContent = "Salva Ordine";
     reorderMode = type;
@@ -331,7 +335,28 @@ window.addEventListener("message", async (event) => {
     alert(`Ordine ${type} salvato!`);
     updatePreview();
   }
+
+  if (event.data?.action === 'subcatReady') {
+    const iframe = document.getElementById("previewFrame");
+    const btn = document.getElementById("ordinaSottocategorieBtn");
+
+    if (!event.data.allowed) {
+      alert("Devi prima aprire una categoria per ordinare le sottocategorie.");
+      return;
+    }
+
+    if (reorderMode === 'sottocategorie') {
+      iframe.contentWindow.postMessage({ action: 'getReorder', type: 'sottocategorie' }, '*');
+      btn.textContent = `Ordina Sottocategorie`;
+      reorderMode = null;
+    } else {
+      iframe.contentWindow.postMessage({ action: 'startReorder', type: 'sottocategorie' }, '*');
+      btn.textContent = "Salva Ordine";
+      reorderMode = 'sottocategorie';
+    }
+  }
 });
+
 
 function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
