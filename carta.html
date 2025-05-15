@@ -124,6 +124,7 @@ nav button { background: none; border: none; font-size: 1em; cursor: pointer; co
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
 const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
@@ -347,8 +348,137 @@ async function loadWineData() {
   showCategories();
 }
 
-loadRestaurantData();
-loadWineData();
+let reorderMode = null;
+let reorderType = null;
+let categoriaOrder = [];
+let sottocategoriaOrderMap = {};
+
+window.addEventListener("message", (event) => {
+  if (event.data?.action === "startReorder") {
+    reorderMode = true;
+    reorderType = event.data.type;
+
+    if (reorderType === "categorie") {
+      const container = document.getElementById("category-list");
+      [...container.children].forEach(el => {
+        el.style.cursor = "grab";
+        el.innerHTML = `<span style='opacity:0.5;margin-right:0.5em;'>☰</span>${el.innerHTML}`;
+      });
+
+      new Sortable(container, {
+        animation: 150,
+        ghostClass: 'sortable-ghost'
+      });
+    } else if (reorderType === "sottocategorie") {
+      const firstCategory = document.querySelector(".category");
+      if (firstCategory) firstCategory.click();
+    }
+  }
+
+  if (event.data?.action === "getReorder") {
+    if (reorderType === "categorie") {
+      const container = document.getElementById("category-list");
+      const ordine = [...container.children].map(el => el.textContent.trim());
+      parent.postMessage({ action: "saveReorder", type: "categorie", ordine }, "*");
+    } else if (reorderType === "sottocategorie") {
+      const subContainer = document.getElementById("subcategory-list");
+      const ordine = [...subContainer.children].map(el => el.textContent.trim());
+      const sottocategorieMap = { [currentCategory]: ordine };
+      parent.postMessage({ action: "saveReorder", type: "sottocategorie", sottocategorieMap }, "*");
+    }
+  }
+});
+
+async function fetchCategoryOrder() {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/ristoranti?id=eq.${RESTAURANT_ID}`, {
+    headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
+  });
+  const data = await res.json();
+  const ristorante = data[0];
+  categoriaOrder = ristorante.ordine_categorie || [];
+  sottocategoriaOrderMap = ristorante.ordine_sottocategorie || {};
+}
+
+function sortByOrder(array, orderArray) {
+  return array.sort((a, b) => {
+    const i1 = orderArray.indexOf(a);
+    const i2 = orderArray.indexOf(b);
+    if (i1 === -1) return 1;
+    if (i2 === -1) return -1;
+    return i1 - i2;
+  });
+}
+
+// override showCategories and showSubcategories to apply order
+const originalShowCategories = window.showCategories;
+const originalShowSubcategories = window.showSubcategories;
+
+window.showCategories = function () {
+  const seen = new Map();
+  wines.forEach(w => {
+    const key = normalize(w.categoria);
+    if (key && !seen.has(key)) {
+      seen.set(key, w.categoria);
+    }
+  });
+
+  let orderedKeys = Array.from(seen.keys());
+  if (categoriaOrder.length) {
+    orderedKeys = sortByOrder(orderedKeys, categoriaOrder.map(normalize));
+  }
+
+  const container = document.getElementById('category-list');
+  container.innerHTML = '';
+  for (const key of orderedKeys) {
+    const display = seen.get(key);
+    const div = document.createElement('div');
+    div.className = 'category';
+    div.textContent = display.charAt(0).toUpperCase() + display.slice(1).toLowerCase();
+    div.onclick = () => showSubcategories(key);
+    container.appendChild(div);
+  }
+};
+
+window.showSubcategories = function (category) {
+  currentCategory = category;
+  currentView = 'subcategory';
+  const seen = new Map();
+  wines.forEach(w => {
+    if (normalize(w.categoria) === category) {
+      const key = normalize(w.sottocategoria);
+      if (key && !seen.has(key)) {
+        seen.set(key, w.sottocategoria);
+      }
+    }
+  });
+
+  let orderedKeys = Array.from(seen.keys());
+  const order = sottocategoriaOrderMap[category];
+  if (Array.isArray(order)) {
+    orderedKeys = sortByOrder(orderedKeys, order.map(normalize));
+  }
+
+  const container = document.getElementById('subcategory-list');
+  container.innerHTML = '';
+  for (const key of orderedKeys) {
+    const display = seen.get(key);
+    const div = document.createElement('div');
+    div.className = 'subcategory';
+    div.textContent = display.charAt(0).toUpperCase() + display.slice(1).toLowerCase();
+    div.onclick = () => showWinesBySubcategory(key);
+    container.appendChild(div);
+  }
+
+  document.getElementById('category-list').style.display = 'none';
+  container.style.display = 'grid';
+  document.getElementById('wine-list').style.display = 'none';
+};
+
+(async () => {
+  await fetchCategoryOrder();
+  loadRestaurantData();
+  loadWineData();
+})();
 </script>
 </body>
 </html>

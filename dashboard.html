@@ -198,6 +198,10 @@
       </div>
 
       <button class="save-btn" onclick="saveSettings()">Salva Impostazioni</button>
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button class="save-btn" onclick="toggleReorder('categorie')" id="ordinaCategorieBtn">Ordina Categorie</button>
+        <button class="save-btn" onclick="toggleReorder('sottocategorie')" id="ordinaSottocategorieBtn">Ordina Sottocategorie</button>
+      </div>
     </div>
     <div class="mockup">
       <iframe id="previewFrame" src="" style="width:100%; height:100%; border:none;"></iframe>
@@ -293,7 +297,45 @@ document.getElementById("logoUpload").addEventListener("change", async (event) =
   updatePreview();
 });
 
+let reorderMode = null;
 
+function toggleReorder(type) {
+  const iframe = document.getElementById("previewFrame");
+  const btn = document.getElementById(`ordina${capitalize(type)}Btn`);
+
+  if (reorderMode === type) {
+    // SALVA ordine
+    iframe.contentWindow.postMessage({ action: 'getReorder', type }, '*');
+    btn.textContent = `Ordina ${capitalize(type)}`;
+    reorderMode = null;
+  } else {
+    // ATTIVA riordinamento
+    iframe.contentWindow.postMessage({ action: 'startReorder', type }, '*');
+    btn.textContent = "Salva Ordine";
+    reorderMode = type;
+  }
+}
+
+window.addEventListener("message", async (event) => {
+  if (event.data?.action === 'saveReorder') {
+    const type = event.data.type;
+    const ordine = event.data.ordine;
+    if (!type || !Array.isArray(ordine)) return;
+
+    const update = type === 'categorie'
+      ? { ordine_categorie: ordine }
+      : { ordine_sottocategorie: event.data.sottocategorieMap };
+
+    const { error } = await supabase.from("ristoranti").update(update).eq("id", RESTAURANT_ID);
+    if (error) return alert("Errore durante il salvataggio dell'ordine");
+    alert(`Ordine ${type} salvato!`);
+    updatePreview();
+  }
+});
+
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
     function updatePreview() {
       const url = `carta.html?ristorante_id=${RESTAURANT_ID}`;
