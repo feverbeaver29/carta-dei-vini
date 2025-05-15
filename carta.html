@@ -439,11 +439,15 @@ if (categoriaOrder.length) {
   const mapByNormalized = Object.fromEntries(
     Array.from(seen.entries()).map(([norm, raw]) => [normalize(raw), norm])
   );
-  orderedKeys = categoriaOrder
-    .map(name => normalize(name))
-    .map(norm => mapByNormalized[norm])
-    .filter(Boolean);
+  const orderedFromSupabase = categoriaOrder
+  .map(name => normalize(name))
+  .map(norm => mapByNormalized[norm])
+  .filter(Boolean);
+
+if (orderedFromSupabase.length > 0) {
+  orderedKeys = orderedFromSupabase;
 }
+};
 
   const container = document.getElementById('category-list');
   container.innerHTML = '';
@@ -471,7 +475,10 @@ window.showSubcategories = function (category) {
   });
 
   let orderedKeys = Array.from(seen.keys());
-  const order = sottocategoriaOrderMap[category];
+  const order = Object.entries(sottocategoriaOrderMap).find(
+  ([key]) => normalize(key) === category
+)?.[1];
+
   if (Array.isArray(order)) {
     orderedKeys = sortByOrder(orderedKeys, order.map(normalize));
   }

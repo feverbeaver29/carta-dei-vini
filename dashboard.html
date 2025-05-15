@@ -323,8 +323,7 @@ function toggleReorder(type) {
 window.addEventListener("message", async (event) => {
   if (event.data?.action === 'saveReorder') {
     const type = event.data.type;
-    const ordine = event.data.ordine;
-    if (!type || (type === 'categorie' && !Array.isArray(event.data.ordine))) return;
+   if (!type || (type === 'categorie' && !Array.isArray(event.data.ordine))) return;
 
 const update = type === 'categorie'
   ? { ordine_categorie: event.data.ordine }
