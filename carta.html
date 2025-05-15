@@ -280,7 +280,7 @@ function showCategories() {
   for (const [norm, display] of seen) {
     const div = document.createElement('div');
     div.className = 'category';
-    div.textContent = display;
+    div.textContent = display.charAt(0).toUpperCase() + display.slice(1).toLowerCase();
     div.onclick = () => showSubcategories(norm);
     container.appendChild(div);
   }
@@ -305,7 +305,7 @@ function showSubcategories(category) {
   for (const [norm, display] of seen) {
     const div = document.createElement('div');
     div.className = 'subcategory';
-    div.textContent = display;
+    div.textContent = display.charAt(0).toUpperCase() + display.slice(1).toLowerCase();
     div.onclick = () => showWinesBySubcategory(norm);
     container.appendChild(div);
   }
