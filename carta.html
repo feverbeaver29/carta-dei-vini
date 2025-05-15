@@ -267,31 +267,49 @@ function goBack() {
 }
 
 function showCategories() {
-  const categories = [...new Set(wines.map(w => normalize(w.categoria)))];
+  const seen = new Map();
+  wines.forEach(w => {
+    const key = normalize(w.categoria);
+    if (key && !seen.has(key)) {
+      seen.set(key, w.categoria); // salva l'originale per visualizzazione
+    }
+  });
+
   const container = document.getElementById('category-list');
   container.innerHTML = '';
-  categories.forEach(cat => {
+  for (const [norm, display] of seen) {
     const div = document.createElement('div');
     div.className = 'category';
-    div.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
-    div.onclick = () => showSubcategories(cat);
+    div.textContent = display;
+    div.onclick = () => showSubcategories(norm);
     container.appendChild(div);
-  });
+  }
 }
 
 function showSubcategories(category) {
   currentCategory = category;
   currentView = 'subcategory';
-  const subcats = [...new Set(wines.filter(w => normalize(w.categoria) === category).map(w => normalize(w.sottocategoria)))];
+
+  const seen = new Map();
+  wines.forEach(w => {
+    if (normalize(w.categoria) === category) {
+      const subKey = normalize(w.sottocategoria);
+      if (subKey && !seen.has(subKey)) {
+        seen.set(subKey, w.sottocategoria);
+      }
+    }
+  });
+
   const container = document.getElementById('subcategory-list');
   container.innerHTML = '';
-  subcats.forEach(sub => {
+  for (const [norm, display] of seen) {
     const div = document.createElement('div');
     div.className = 'subcategory';
-    div.textContent = sub.charAt(0).toUpperCase() + sub.slice(1);
-    div.onclick = () => showWinesBySubcategory(sub);
+    div.textContent = display;
+    div.onclick = () => showWinesBySubcategory(norm);
     container.appendChild(div);
-  });
+  }
+
   document.getElementById('category-list').style.display = 'none';
   container.style.display = 'grid';
   document.getElementById('wine-list').style.display = 'none';
