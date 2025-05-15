@@ -323,12 +323,12 @@ function toggleReorder(type) {
 window.addEventListener("message", async (event) => {
   if (event.data?.action === 'saveReorder') {
     const type = event.data.type;
-    const ordine = event.data.ordine;
-    if (!type || !Array.isArray(ordine)) return;
+    if (!type || (type === 'categorie' && !Array.isArray(event.data.ordine))) return;
 
-    const update = type === 'categorie'
-      ? { ordine_categorie: ordine }
-      : { ordine_sottocategorie: event.data.sottocategorieMap };
+const update = type === 'categorie'
+  ? { ordine_categorie: event.data.ordine }
+  : { ordine_sottocategorie: event.data.sottocategorieMap };
+
 
     const { error } = await supabase.from("ristoranti").update(update).eq("id", RESTAURANT_ID);
     if (error) return alert("Errore durante il salvataggio dell'ordine");

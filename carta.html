@@ -434,9 +434,16 @@ window.showCategories = function () {
   });
 
   let orderedKeys = Array.from(seen.keys());
-  if (categoriaOrder.length) {
-    orderedKeys = sortByOrder(orderedKeys, categoriaOrder.map(normalize));
-  }
+
+if (categoriaOrder.length) {
+  const mapByNormalized = Object.fromEntries(
+    Array.from(seen.entries()).map(([norm, raw]) => [normalize(raw), norm])
+  );
+  orderedKeys = categoriaOrder
+    .map(name => normalize(name))
+    .map(norm => mapByNormalized[norm])
+    .filter(Boolean);
+}
 
   const container = document.getElementById('category-list');
   container.innerHTML = '';
