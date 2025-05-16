@@ -386,16 +386,11 @@ window.showCategories = function () {
 
   let orderedKeys = Array.from(seen.keys());
 
-if (categoriaOrder.length) {
-const orderedFromSupabase = categoriaOrder
-  .map(name => normalize(name))
-  .map(norm => seen.has(norm) ? norm : null)
-  .filter(Boolean);
-
-if (orderedFromSupabase.length > 0) {
-  orderedKeys = orderedFromSupabase;
-}
-};
+  if (categoriaOrder.length) {
+    orderedKeys = categoriaOrder
+      .map(name => normalize(name))
+      .filter(n => seen.has(n));
+  }
 
   const container = document.getElementById('category-list');
   container.innerHTML = '';
@@ -424,12 +419,14 @@ window.showSubcategories = function (category) {
 
   let orderedKeys = Array.from(seen.keys());
 
-const order = sottocategoriaOrderMap[currentCategory] || [];
-if (Array.isArray(order) && order.length) {
-  const normalizedOrder = order.map(normalize);
-  orderedKeys = normalizedOrder.filter(key => seen.has(key));
-}
+  const order = Object.entries(sottocategoriaOrderMap).find(
+    ([key]) => normalize(key) === category
+  )?.[1] || [];
 
+  if (Array.isArray(order) && order.length) {
+    const normalizedOrder = order.map(normalize);
+    orderedKeys = normalizedOrder.filter(key => seen.has(key));
+  }
 
   const container = document.getElementById('subcategory-list');
   container.innerHTML = '';
@@ -446,6 +443,7 @@ if (Array.isArray(order) && order.length) {
   container.style.display = 'grid';
   document.getElementById('wine-list').style.display = 'none';
 };
+
 
 (async () => {
   await fetchCategoryOrder();
