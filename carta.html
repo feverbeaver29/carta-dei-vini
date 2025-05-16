@@ -386,15 +386,19 @@ window.showCategories = function () {
 
   let orderedKeys = Array.from(seen.keys());
 
-  if (categoriaOrder.length) {
-    const seenKeys = Array.from(seen.keys());
-    orderedKeys = categoriaOrder
-      .map(name => {
-        const normalized = normalize(name);
-        return seenKeys.find(k => normalize(k) === normalized);
-      })
-      .filter(Boolean);
+ if (categoriaOrder.length) {
+  const seenKeys = Array.from(seen.keys());
+  const customOrder = categoriaOrder
+    .map(name => {
+      const normalized = normalize(name);
+      return seenKeys.find(k => normalize(k) === normalized);
+    })
+    .filter(Boolean);
+
+  if (customOrder.length > 0) {
+    orderedKeys = customOrder;
   }
+}
 
   const container = document.getElementById('category-list');
   container.innerHTML = '';
