@@ -357,14 +357,28 @@ async function fetchCategoryOrder() {
   });
   const data = await res.json();
   const ristorante = data[0];
-  categoriaOrder = ristorante.ordine_categorie || [];
-  sottocategoriaOrderMap = ristorante.ordine_sottocategorie || {};
+
+  // Normalizza le categorie
+  categoriaOrder = (ristorante.ordine_categorie || []).map(normalize);
+
+  // Normalizza le sottocategorie
+  const rawMap = ristorante.ordine_sottocategorie || {};
+  sottocategoriaOrderMap = {};
+  for (const [key, value] of Object.entries(rawMap)) {
+    const normalizedKey = normalize(key);
+    sottocategoriaOrderMap[normalizedKey] = Array.isArray(value)
+      ? value.map(normalize)
+      : [];
+  }
+
+  console.log("Ordine categorie:", categoriaOrder);
+  console.log("Mappa sottocategorie:", sottocategoriaOrderMap);
 }
 
 function sortByOrder(array, orderArray) {
   return array.sort((a, b) => {
-    const i1 = orderArray.indexOf(a);
-    const i2 = orderArray.indexOf(b);
+    const i1 = orderArray.indexOf(normalize(a));
+    const i2 = orderArray.indexOf(normalize(b));
     if (i1 === -1) return 1;
     if (i2 === -1) return -1;
     return i1 - i2;
