@@ -340,11 +340,15 @@ window.addEventListener("message", (event) => {
   if (event.data?.action === "getReorder") {
     if (reorderType === "categorie") {
       const container = document.getElementById("category-list");
-      const ordine = [...container.children].map(el => el.textContent.trim());
+      const ordine = [...container.children].map(el =>
+  el.textContent.replace(/^☰\s*/, '').trim()
+);
       parent.postMessage({ action: "saveReorder", type: "categorie", ordine }, "*");
     } else if (reorderType === "sottocategorie") {
       const subContainer = document.getElementById("subcategory-list");
-      const ordine = [...subContainer.children].map(el => el.textContent.trim());
+      const ordine = [...subContainer.children].map(el =>
+  el.textContent.replace(/^☰\s*/, '').trim()
+);
       const sottocategorieMap = { [currentCategory]: ordine };
       parent.postMessage({ action: "saveReorder", type: "sottocategorie", sottocategorieMap }, "*");
     }
