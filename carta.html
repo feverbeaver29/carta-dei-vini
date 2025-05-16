@@ -386,19 +386,19 @@ window.showCategories = function () {
 
   let orderedKeys = Array.from(seen.keys());
 
- if (categoriaOrder.length) {
-  const seenKeys = Array.from(seen.keys());
-  const customOrder = categoriaOrder
-    .map(name => {
-      const normalized = normalize(name);
-      return seenKeys.find(k => normalize(k) === normalized);
-    })
-    .filter(Boolean);
+  if (categoriaOrder.length) {
+    const seenKeys = Array.from(seen.keys());
+    const customOrder = categoriaOrder
+      .map(name => {
+        const normalized = normalize(name);
+        return seenKeys.find(k => normalize(k) === normalized);
+      })
+      .filter(Boolean);
 
-  if (customOrder.length > 0) {
-    orderedKeys = customOrder;
+    if (customOrder.length > 0) {
+      orderedKeys = customOrder;
+    }
   }
-}
 
   const container = document.getElementById('category-list');
   container.innerHTML = '';
@@ -417,7 +417,7 @@ window.showSubcategories = function (category) {
   currentView = 'subcategory';
   const seen = new Map();
   wines.forEach(w => {
-    if (normalize(w.categoria) === category) {
+    if (normalize(w.categoria) === normalize(category)) {
       const key = normalize(w.sottocategoria);
       if (key && !seen.has(key)) {
         seen.set(key, w.sottocategoria);
@@ -428,17 +428,21 @@ window.showSubcategories = function (category) {
   let orderedKeys = Array.from(seen.keys());
 
   const order = Object.entries(sottocategoriaOrderMap).find(
-    ([key]) => normalize(key) === category
+    ([key]) => normalize(key) === normalize(category)
   )?.[1] || [];
 
   if (Array.isArray(order) && order.length) {
     const seenKeys = Array.from(seen.keys());
-    orderedKeys = order
+    const customOrder = order
       .map(name => {
         const normalized = normalize(name);
         return seenKeys.find(k => normalize(k) === normalized);
       })
       .filter(Boolean);
+
+    if (customOrder.length > 0) {
+      orderedKeys = customOrder;
+    }
   }
 
   const container = document.getElementById('subcategory-list');
