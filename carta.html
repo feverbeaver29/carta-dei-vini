@@ -147,16 +147,45 @@ function closeSommelierPopup() {
 function handleSommelierKey(e) {
   if (e.key === 'Enter') suggestWine();
 }
-function suggestWine() {
-  const input = document.getElementById('foodInput').value.toLowerCase();
+async function suggestWine() {
+  const input = document.getElementById('foodInput').value.trim();
   const suggestion = document.getElementById('wineSuggestion');
-  const matches = wines.filter(w => w.abbinamenti && w.abbinamenti.toLowerCase().includes(input));
-  if (matches.length > 0) {
-    suggestion.innerHTML = '<strong>Ti consigliamo:</strong><br>' + matches.map(w => `${w.nome} (${w.annata})`).join('<br>');
-  } else {
-    suggestion.innerText = "Nessun abbinamento trovato, prova con un altro piatto.";
+
+  if (!input) {
+    suggestion.innerText = "Inserisci un piatto per ricevere un suggerimento.";
+    return;
+  }
+
+  suggestion.innerText = "Sto pensando...";
+
+  const prompt = `Ecco una lista di vini presenti in un ristorante:
+${wines.map(w => `- ${w.nome} (${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || ''})`).join("\n")}
+
+Suggerisci 1 o 2 vini da abbinare al piatto: '${input}'. Rispondi solo con i nomi dei vini, su righe separate.`;
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer REDACTEDproj-hVbW9t31r269SSKjdIT04YJ2r73M96VnPrSm3xkbZMMhzy9FjYAr6L1g_fkp4FWg6ZHBblAEhfT3BlbkFJ_fWNAEq6oKpy6J5YJVX9qP2CV5Vn7z5dmjSMUlnAHGvySexwzR6l0jtTwH1hcGGkA9VzjJEuoA"
+      },
+      body: JSON.stringify({
+        model: "gpt-4-1106-preview",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7
+      })
+    });
+
+    const data = await response.json();
+    const reply = data.choices?.[0]?.message?.content || "Nessuna risposta trovata.";
+    suggestion.innerHTML = `<strong>Ti consigliamo:</strong><br>` + reply.replace(/\n/g, "<br>");
+  } catch (err) {
+    console.error("Errore nella richiesta IA:", err);
+    suggestion.innerText = "Errore nel generare il suggerimento. Riprova più tardi.";
   }
 }
+
 setTimeout(() => {
   const tip = document.getElementById('tooltipSommelier');
   tip.style.display = 'block';
