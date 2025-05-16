@@ -387,9 +387,13 @@ window.showCategories = function () {
   let orderedKeys = Array.from(seen.keys());
 
   if (categoriaOrder.length) {
+    const seenKeys = Array.from(seen.keys());
     orderedKeys = categoriaOrder
-      .map(name => normalize(name))
-      .filter(n => seen.has(n));
+      .map(name => {
+        const normalized = normalize(name);
+        return seenKeys.find(k => normalize(k) === normalized);
+      })
+      .filter(Boolean);
   }
 
   const container = document.getElementById('category-list');
@@ -424,8 +428,13 @@ window.showSubcategories = function (category) {
   )?.[1] || [];
 
   if (Array.isArray(order) && order.length) {
-    const normalizedOrder = order.map(normalize);
-    orderedKeys = normalizedOrder.filter(key => seen.has(key));
+    const seenKeys = Array.from(seen.keys());
+    orderedKeys = order
+      .map(name => {
+        const normalized = normalize(name);
+        return seenKeys.find(k => normalize(k) === normalized);
+      })
+      .filter(Boolean);
   }
 
   const container = document.getElementById('subcategory-list');
@@ -443,7 +452,6 @@ window.showSubcategories = function (category) {
   container.style.display = 'grid';
   document.getElementById('wine-list').style.display = 'none';
 };
-
 
 (async () => {
   await fetchCategoryOrder();
