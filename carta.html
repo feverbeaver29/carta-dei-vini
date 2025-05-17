@@ -168,7 +168,7 @@ Suggerisci 1 o 2 vini da abbinare al piatto: '${input}'. Rispondi solo con i nom
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer REDACTEDproj-hVbW9t31r269SSKjdIT04YJ2r73M96VnPrSm3xkbZMMhzy9FjYAr6L1g_fkp4FWg6ZHBblAEhfT3BlbkFJ_fWNAEq6oKpy6J5YJVX9qP2CV5Vn7z5dmjSMUlnAHGvySexwzR6l0jtTwH1hcGGkA9VzjJEuoA"
+        "Authorization": "Bearer " + import.meta.env.VITE_OPENAI_KEY
       },
       body: JSON.stringify({
         model: "gpt-4-1106-preview",
