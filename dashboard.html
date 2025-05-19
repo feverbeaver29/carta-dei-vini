@@ -186,12 +186,12 @@
       <label for="paletteSelector">Palette Colori</label>
       <div class="palette-option">
         <select id="paletteSelector">
-          <option value="#b00">Rosso</option>
-          <option value="#d4af37">Oro</option>
-          <option value="#005f73">Blu Elegante</option>
-          <option value="#a3b18a">Verde Salvia</option>
-          <option value="#888">Grigio Minimal</option>
-          <option value="#000">Black & White</option>
+          <option value="#b00" data-palette="rosso">Rosso</option>
+          <option value="#d4af37" data-palette="oro">Oro</option>
+          <option value="#005f73" data-palette="blu-elegante">Blu Elegante</option>
+          <option value="#a3b18a" data-palette="verde-salvia">Verde Salvia</option>
+          <option value="#888" data-palette="grigio-minimal">Grigio Minimal</option>
+          <option value="#000" data-palette="black-white">Black & White</option>
         </select>
         <div class="color-box" style="background:#b00"></div>
         <div class="color-box" style="background:#fff"></div>
@@ -399,7 +399,7 @@ function capitalize(str) {
       const nome = document.getElementById("displayName").value;
       const font = document.getElementById("fontSelector").value;
       const paletteSelect = document.getElementById("paletteSelector");
-      const palette_color = paletteSelect.options[paletteSelect.selectedIndex].text.toLowerCase().replace(/ /g, "-");
+      const palette_color = paletteSelect.options[paletteSelect.selectedIndex].getAttribute("data-palette");
       await supabase.from("ristoranti").update({ nome, font, palette_color }).eq("id", RESTAURANT_ID);
       alert("Impostazioni salvate!");
       updatePreview();
