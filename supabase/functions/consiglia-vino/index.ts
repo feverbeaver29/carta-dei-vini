@@ -1,17 +1,34 @@
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*", // Permetti tutte le origini (puoi limitarlo al tuo dominio se vuoi)
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    // Risposta preflight CORS
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   try {
     const { vini, piatto } = await req.json();
 
     if (!vini || !Array.isArray(vini) || vini.length === 0) {
       console.error("❌ Nessun vino ricevuto");
-      return new Response(JSON.stringify({ error: "Nessun vino nel sistema." }), { status: 400 });
+      return new Response(JSON.stringify({ error: "Nessun vino nel sistema." }), {
+        status: 400,
+        headers: corsHeaders,
+      });
     }
 
     if (!piatto) {
       console.error("❌ Piatto non specificato");
-      return new Response(JSON.stringify({ error: "Manca il nome del piatto." }), { status: 400 });
+      return new Response(JSON.stringify({ error: "Manca il nome del piatto." }), {
+        status: 400,
+        headers: corsHeaders,
+      });
     }
 
     const prompt = `Ecco una lista di vini presenti in un ristorante:\n${vini.map(w => `- ${w.nome} (${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || ''})`).join("\n")}\n\nSuggerisci 1 o 2 vini da abbinare al piatto: '${piatto}'. Rispondi solo con i nomi dei vini, su righe separate.`;
@@ -19,7 +36,10 @@ serve(async (req) => {
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
     if (!openaiKey) {
       console.error("❌ OPENAI_API_KEY mancante");
-      return new Response(JSON.stringify({ error: "Chiave OpenAI mancante" }), { status: 500 });
+      return new Response(JSON.stringify({ error: "Chiave OpenAI mancante" }), {
+        status: 500,
+        headers: corsHeaders,
+      });
     }
 
     const completion = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -38,7 +58,10 @@ serve(async (req) => {
     if (!completion.ok) {
       const errText = await completion.text();
       console.error("❌ Errore OpenAI:", errText);
-      return new Response(JSON.stringify({ error: "Errore OpenAI", detail: errText }), { status: 500 });
+      return new Response(JSON.stringify({ error: "Errore OpenAI", detail: errText }), {
+        status: 500,
+        headers: corsHeaders,
+      });
     }
 
     const json = await completion.json();
@@ -47,14 +70,14 @@ serve(async (req) => {
     console.log("✅ Suggerimento generato:", reply);
 
     return new Response(JSON.stringify({ suggestion: reply }), {
-      headers: { "Content-Type": "application/json" },
+      headers: corsHeaders,
     });
 
   } catch (err) {
     console.error("❌ Errore imprevisto:", err);
     return new Response(JSON.stringify({ error: "Errore interno", detail: err.message }), {
       status: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: corsHeaders,
     });
   }
 });
