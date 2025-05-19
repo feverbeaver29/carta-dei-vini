@@ -70,8 +70,6 @@
   <datalist id="sottocategoriaList"></datalist>
   <label>Uvaggio:</label>
   <input type="text" id="uvaggio">
-  <label>Abbinamenti:</label>
-  <input type="text" id="abbinamenti">
   <button id="saveButton">Salva</button>
 
   <h2>Lista Vini</h2>
@@ -137,14 +135,14 @@ function showMessage(msg, ok = true) {
 }
 
 function resetForm() {
-  ["nome", "annata", "prezzo", "categoria", "sottocategoria", "uvaggio", "abbinamenti"].forEach(id => document.getElementById(id).value = "");
+  ["nome", "annata", "prezzo", "categoria", "sottocategoria", "uvaggio"].forEach(id => document.getElementById(id).value = "");
   document.getElementById("valuta").value = "€";
   editIndex = null;
 }
 
 function fillForm(index) {
   const wine = winesData[index];
-  ["nome", "annata", "categoria", "sottocategoria", "uvaggio", "abbinamenti"].forEach(id => document.getElementById(id).value = wine[id] || "");
+  ["nome", "annata", "categoria", "sottocategoria", "uvaggio"].forEach(id => document.getElementById(id).value = wine[id] || "");
   const match = wine.prezzo?.match(/^(€|$|£|¥|CHF)?(.*)$/);
   document.getElementById("valuta").value = match?.[1] || "€";
   document.getElementById("prezzo").value = match?.[2]?.trim() || "";
@@ -223,7 +221,6 @@ async function saveWine() {
     categoria: formatText(document.getElementById("categoria").value),
     sottocategoria: formatText(document.getElementById("sottocategoria").value),
     uvaggio: formatText(document.getElementById("uvaggio").value),
-    abbinamenti: formatText(document.getElementById("abbinamenti").value),
   };
 
   const url = editIndex !== null ? `${SUPABASE_URL}/rest/v1/wines?id=eq.${winesData[editIndex].id}` : `${SUPABASE_URL}/rest/v1/wines`;
