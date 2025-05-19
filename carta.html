@@ -152,11 +152,21 @@ async function suggestWine() {
   const suggestion = document.getElementById('wineSuggestion');
 
   if (!input) {
-    suggestion.innerText = "Inserisci un piatto per ricevere un suggerimento.";
+    suggestion.innerHTML = `
+      <div style="background:#fff3f0; padding:15px; border-radius:12px;">
+        Inserisci un piatto per ricevere un consiglio.
+      </div>`;
     return;
   }
 
-  suggestion.innerText = "Sto pensando...";
+  suggestion.innerHTML = `
+    <div style="display:flex; gap:10px; align-items:flex-start;">
+      <img src="sommelier.png" alt="Sommelier" style="width:48px; border-radius:50%;">
+      <div style="background:#fff3f0; padding:15px; border-radius:12px; flex:1; box-shadow:0 2px 6px rgba(0,0,0,0.1)">
+        <strong style="color:#b00;">Il nostro sommelier ti consiglia:</strong><br>
+        <em>Sto pensando...</em>
+      </div>
+    </div>`;
 
   try {
     const response = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/consiglia-vino", {
@@ -167,10 +177,26 @@ async function suggestWine() {
 
     const data = await response.json();
     const reply = data.suggestion || "Nessuna risposta trovata.";
-    suggestion.innerHTML = `<strong>Ti consigliamo:</strong><br>` + reply.replace(/\n/g, "<br>");
+
+    const finalHtml = `
+      <div style="display:flex; gap:10px; align-items:flex-start;">
+        <img src="sommelier.png" alt="Sommelier" style="width:48px; border-radius:50%;">
+        <div style="background:#fff3f0; padding:15px; border-radius:12px; flex:1; box-shadow:0 2px 6px rgba(0,0,0,0.1)">
+          <strong style="color:#b00;">Il nostro sommelier ti consiglia:</strong><br>
+          ${reply.replace(/\n/g, "<br>")}<br><br>
+          <small>— Il tuo Sommelier Virtuale 🍷</small>
+        </div>
+      </div>`;
+
+    suggestion.innerHTML = finalHtml;
+
   } catch (err) {
     console.error("Errore nella richiesta IA:", err);
-    suggestion.innerText = "Errore nel generare il suggerimento. Riprova più tardi.";
+    suggestion.innerHTML = `
+      <div style="background:#fff3f0; padding:15px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1)">
+        <strong style="color:#b00;">Errore:</strong><br>
+        Errore nel generare il suggerimento. Riprova più tardi.
+      </div>`;
   }
 }
 
