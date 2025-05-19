@@ -4,14 +4,21 @@ serve(async (req) => {
   try {
     const { vini, piatto } = await req.json();
 
-    if (!vini || !piatto) {
-      return new Response(JSON.stringify({ error: "Dati mancanti" }), { status: 400 });
+    if (!vini || !Array.isArray(vini) || vini.length === 0) {
+      console.error("❌ Nessun vino ricevuto");
+      return new Response(JSON.stringify({ error: "Nessun vino nel sistema." }), { status: 400 });
+    }
+
+    if (!piatto) {
+      console.error("❌ Piatto non specificato");
+      return new Response(JSON.stringify({ error: "Manca il nome del piatto." }), { status: 400 });
     }
 
     const prompt = `Ecco una lista di vini presenti in un ristorante:\n${vini.map(w => `- ${w.nome} (${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || ''})`).join("\n")}\n\nSuggerisci 1 o 2 vini da abbinare al piatto: '${piatto}'. Rispondi solo con i nomi dei vini, su righe separate.`;
 
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
     if (!openaiKey) {
+      console.error("❌ OPENAI_API_KEY mancante");
       return new Response(JSON.stringify({ error: "Chiave OpenAI mancante" }), { status: 500 });
     }
 
@@ -30,17 +37,21 @@ serve(async (req) => {
 
     if (!completion.ok) {
       const errText = await completion.text();
+      console.error("❌ Errore OpenAI:", errText);
       return new Response(JSON.stringify({ error: "Errore OpenAI", detail: errText }), { status: 500 });
     }
 
     const json = await completion.json();
     const reply = json.choices?.[0]?.message?.content;
 
+    console.log("✅ Suggerimento generato:", reply);
+
     return new Response(JSON.stringify({ suggestion: reply }), {
       headers: { "Content-Type": "application/json" },
     });
 
   } catch (err) {
+    console.error("❌ Errore imprevisto:", err);
     return new Response(JSON.stringify({ error: "Errore interno", detail: err.message }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
