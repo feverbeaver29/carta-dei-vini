@@ -31,14 +31,19 @@ serve(async (req) => {
       });
     }
 
-    const prompt = `Sei un sommelier elegante e preparato. Ecco una lista di vini presenti in un ristorante:\n${vini.map(w => `- ${w.nome} (${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || ''})`).join("\n")}
+    const prompt = `Sei un sommelier elegante e preparato. Ecco una lista di vini presenti in un ristorante:\n${vini.map(w => `- ${w.nome} (${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || ''}, prezzo: ${w.prezzo})`).join("\n")}
 
-Abbina 3 o 4 vini della lista al piatto: '${piatto}'.
+Abbina 2 o 3 vini della lista al piatto: '${piatto}'.
 
-Spiega brevemente in 1 o 2 frasi perché sono adatti. Usa un tono cordiale e professionale.
+Per ciascun vino, scrivi:
+1. Il nome esatto del vino
+2. L'uvaggio
+3. Il prezzo
+4. Una breve motivazione in massimo 2 frasi
 
-Non inventare vini fuori lista. Massimo 3 frasi in totale.`;
+Non inventare vini: puoi consigliare solo quelli presenti nella lista sopra. Se nessuno è adatto, non suggerire nulla.
 
+Rispondi in formato elenco puntato, ogni vino separato, con le 4 informazioni.`;
 
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
     if (!openaiKey) {
