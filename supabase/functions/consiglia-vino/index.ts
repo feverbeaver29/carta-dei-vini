@@ -33,14 +33,22 @@ serve(async (req) => {
 
     const prompt = `Sei un sommelier elegante e professionale. Ecco una lista di vini disponibili nel ristorante:\n${vini.map(w => `- ${w.nome} (${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || ''}, prezzo: ${w.prezzo})`).join("\n")}
 
-Abbina 2 o 3 vini della lista al piatto '${piatto}'. Per ogni vino, scrivi:
-- Il nome esatto del vino
-- L'uvaggio
-- Il prezzo
-- Una breve motivazione (1-2 frasi) sul perché è adatto
+Abbina 2 o 3 vini della lista al piatto '${piatto}'.
 
-Non suggerire vini che non sono nella lista. Rispondi in blocchi separati, preceduti da "-", uno per vino, con le informazioni su righe diverse.
-`;
+Per ogni vino, rispondi seguendo ESATTAMENTE questo schema:
+
+- [Nome completo del vino]  [Prezzo]
+[Uvaggio]
+[Motivazione in massimo 2 frasi]
+
+Esempio:
+
+- Barolo DOCG  €45
+Nebbiolo
+Tannini eleganti e struttura importante che valorizzano un piatto robusto.
+
+Non suggerire vini che non sono nella lista. Rispondi solo con l’elenco dei vini nel formato sopra. Nessun commento prima o dopo.`;
+
 
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
     if (!openaiKey) {
