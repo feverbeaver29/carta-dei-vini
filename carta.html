@@ -163,7 +163,7 @@ async function suggestWine() {
 
     const data = await response.json();
     const reply = data.suggestion || "";
-    const rawBlocks = reply.split(/\n\s*-\s*/).filter(block => block.trim().length > 0);
+    const rawBlocks = reply.split(/^- /m).map(b => b.trim()).filter(Boolean);
 
     let cardsHtml = rawBlocks.map(block => {
   const lines = block.split(/\n/).map(l => l.trim()).filter(Boolean);
