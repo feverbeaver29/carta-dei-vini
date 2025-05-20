@@ -166,26 +166,22 @@ async function suggestWine() {
     const rawBlocks = reply.split(/\n\s*-\s*/).filter(block => block.trim().length > 0);
 
     let cardsHtml = rawBlocks.map(block => {
-      const lines = block.split(/\n/).map(l => l.trim()).filter(Boolean);
-      if (lines.length < 3) return '';
+  const lines = block.split(/\n/).map(l => l.trim()).filter(Boolean);
+  const [nomeVino, uvaggio, prezzo, ...motivazioneArr] = lines;
+  const motivazione = motivazioneArr.join(" ");
 
-      const firstLine = lines[0];
-      const uvaggioLine = lines.find(l => l.toLowerCase().includes('sangiovese') || l.toLowerCase().includes('cabernet') || l.toLowerCase().includes('merlot') || l.toLowerCase().includes('nebbiolo') || l.toLowerCase().includes('uvaggio'));
-      const prezzoLine = lines.find(l => l.includes("€"));
-      const motivazione = lines[lines.length - 1];
+  if (!nomeVino || !prezzo || !motivazione) return '';
 
-      const nomeVino = firstLine.replace(/\s*\d+[\.\)]$/, "").trim();
-
-      return `
-        <div style="background:#fff; border:1px solid #ddd; border-radius:12px; padding:15px; margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div style="font-weight:bold; font-size:1.05em; color:#b00;">${nomeVino}</div>
-            <div style="font-size:0.95em; color:#444;">${prezzoLine || ""}</div>
-          </div>
-          <div style="font-size:0.9em; color:#666; margin-top:4px;">Uvaggio: ${uvaggioLine || "—"}</div>
-          <div style="margin-top:10px; font-style:italic; font-size:0.95em;">${motivazione}</div>
-        </div>`;
-    }).join('');
+  return `
+    <div style="background:#fff; border:1px solid #ddd; border-radius:12px; padding:15px; margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap;">
+  <div style="font-weight:600; font-size:1em; color:#222; flex:1;">${nomeVino}</div>
+  <div style="font-size:0.95em; color:#b00; white-space:nowrap;">${prezzo}</div>
+</div>
+      ${uvaggio ? `<div style="font-size:0.9em; color:#666; margin-top:4px;">Uvaggio: ${uvaggio}</div>` : ""}
+      <div style="margin-top:10px; font-style:italic; font-size:0.95em;">${motivazione}</div>
+    </div>`;
+}).join('');
 
     suggestion.innerHTML = `
       <div style="display:flex; gap:10px; align-items:flex-start; margin-bottom:10px;">
