@@ -212,7 +212,9 @@ let cardsHtml = rawBlocks.map(block => {
   const motivazione = lines.slice(2).join(" ");
 
   // Estrai nome e prezzo da prima riga
-  const [nomeVino, prezzo] = titleLine.split(/\s{2,}|\t+/); // due spazi o tab
+  const match = titleLine.match(/^(.*)\s+€?(\d+.*)$/);
+const nomeVino = match?.[1] || "";
+const prezzo = match?.[2] ? `€${match[2]}` : "";
 
   if (!nomeVino || !prezzo || !motivazione) return '';
 

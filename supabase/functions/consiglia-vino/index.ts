@@ -46,26 +46,32 @@ const [min, max] = range.split("-").map(n => parseInt(n));
 
 let boostText = "";
 if (boost) {
-  boostText = `\n\nSe coerente con il piatto, considera di consigliare anche il vino: "${boost}". Solo se è adatto, non forzare.`;
+  boostText = `\n\n⚠️ Nota importante: Se è coerente con il piatto, considera anche il vino "${boost}" tra quelli consigliati. Solo se ha senso davvero.`;
 }
 
-const prompt = `Sei un sommelier elegante e professionale. Ecco una lista di vini disponibili:\n${vini.map(w => `- ${w.nome} (${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || ''}, prezzo: ${w.prezzo})`).join("\n")}
+const prompt = `Sei un sommelier elegante e professionale. Ecco una lista di vini disponibili nel ristorante:\n${vini.map(w => `- ${w.nome} (${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || ''}, prezzo: ${w.prezzo})`).join("\n")}
 
-Abbina da ${min} a ${max} vini della lista al piatto: '${piatto}'.
+Abbina da ${min} a ${max} vini della lista al piatto: "${piatto}".
 
-Per ogni vino, rispondi seguendo ESATTAMENTE questo formato:
+Per ogni vino consigliato, rispondi con questo formato preciso:
 
-- [Nome completo del vino]  [Prezzo]
-[Uvaggio]
-[Motivazione in massimo 2 frasi]
+- Nome del vino  Prezzo
+Uvaggio
+
+Motivazione (1 o 2 frasi)
+
+Esempio:
+
+- Chianti Classico DOCG  €24
+Sangiovese
+
+Struttura e tannini che valorizzano i piatti a base di carne stufata.
 
 ${boostText}
 
-Non suggerire vini che non sono presenti nella lista.  
-Se nessuno è perfetto, scegli comunque il più vicino per caratteristiche (senza inventare nulla).  
-Rispondi solo con i blocchi sopra, uno per ogni vino.`;
-
-
+Se non ci sono abbinamenti perfetti, scegli comunque i vini più adatti presenti nella lista.  
+Non inventare vini e non uscire da quelli elencati.  
+Rispondi **solo** con i blocchi nel formato sopra, senza aggiungere altro prima o dopo.`;
 
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
     if (!openaiKey) {
