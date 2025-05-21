@@ -57,12 +57,14 @@ Per ogni vino, rispondi seguendo ESATTAMENTE questo formato:
 
 - [Nome completo del vino]  [Prezzo]
 [Uvaggio]
-
 [Motivazione in massimo 2 frasi]
 
 ${boostText}
 
-Non suggerire vini che non sono nella lista. Rispondi solo con i blocchi come sopra.`;
+Non suggerire vini che non sono presenti nella lista.  
+Se nessuno è perfetto, scegli comunque il più vicino per caratteristiche (senza inventare nulla).  
+Rispondi solo con i blocchi sopra, uno per ogni vino.`;
+
 
 
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
