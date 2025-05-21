@@ -272,6 +272,7 @@ async function loadRestaurantData() {
   const ristorante = data[0];
   ristoranteSommelierURL = ristorante.sommelier_url || "sommelier.png";
 
+const avatar = document.getElementById('sommelierAvatar');
 if (avatar) {
   avatar.src = ristoranteSommelierURL;
 }
@@ -293,10 +294,6 @@ if (avatar) {
     nameElem.appendChild(span);}
     applyPalette(ristorante.palette_color);
   }
-  const avatar = document.getElementById('sommelierAvatar');
-if (avatar) {
-  avatar.src = ristorante.sommelier_url || 'sommelier.png';
-}
 }
 
 function applyPalette(palette) {
