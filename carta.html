@@ -156,6 +156,7 @@ const urlParams = new URLSearchParams(window.location.search);
 const RESTAURANT_ID = urlParams.get("ristorante_id");
 
 let wines = [];
+let ristoranteSommelierURL = null;
 let currentCategory = '';
 let currentView = 'categories';
 
@@ -236,9 +237,9 @@ if (!cardsHtml || cardsHtml.trim() === "") {
     </div>`;
   return;
 }
-    suggestion.innerHTML = `
+suggestion.innerHTML = `
   <div style="display:flex; gap:10px; align-items:flex-start; margin-bottom:10px;">
-    <img id="sommelierAvatar" src="" alt="Sommelier" style="width:48px; border-radius:50%;">
+    <img id="sommelierAvatar" src="${ristoranteSommelierURL || 'sommelier.png'}" alt="Sommelier" style="...">
     <strong style="color:#b00;">Il nostro sommelier ti consiglia:</strong>
   </div>
   ${cardsHtml}
@@ -269,6 +270,11 @@ async function loadRestaurantData() {
   });
   const data = await res.json();
   const ristorante = data[0];
+  ristoranteSommelierURL = ristorante.sommelier_url || "sommelier.png";
+
+if (avatar) {
+  avatar.src = ristoranteSommelierURL;
+}
 
   if (ristorante) {
     const nameElem = document.getElementById("restaurantName");
