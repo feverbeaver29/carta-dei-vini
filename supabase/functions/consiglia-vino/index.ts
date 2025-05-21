@@ -1,15 +1,17 @@
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*", // Permetti tutte le origini (puoi limitarlo al tuo dominio se vuoi)
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
 };
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    // Risposta preflight CORS
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", {
+      headers: corsHeaders,
+      status: 200
+    });
   }
 
   try {

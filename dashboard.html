@@ -276,6 +276,7 @@
       preview.insertAdjacentElement("afterend", removeBtn);
     }
     updatePreview();
+      requestAnimationFrame(() => showSettings('carta'));
   });
 
 document.getElementById("logoUpload").addEventListener("change", async (event) => {
