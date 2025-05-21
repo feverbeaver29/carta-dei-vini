@@ -287,10 +287,10 @@ async function loadRestaurantData() {
     nameElem.appendChild(span);}
     applyPalette(ristorante.palette_color);
   }
-  if (ristorante.sommelier_url) {
   const avatar = document.getElementById('sommelierAvatar');
-  if (avatar) avatar.src = ristorante.sommelier_url;
-  }
+if (avatar) {
+  avatar.src = ristorante.sommelier_url || 'sommelier.png';
+}
 }
 
 function applyPalette(palette) {

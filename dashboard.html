@@ -247,7 +247,7 @@
     const { data: { user }, error } = await supabase.auth.getUser();
     if (!user) return (window.location.href = '/');
     RESTAURANT_ID = user.id;
-    const { data: info } = await supabase.from("ristoranti").select("nome, font, palette_color, logo_url").eq("id", RESTAURANT_ID).single();
+    const { data: info } = await supabase.from("ristoranti").select("nome, font, palette_color, logo_url, sommelier_url").eq("id", RESTAURANT_ID).single();
     document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
     document.getElementById("displayName").value = info?.nome || "";
     document.getElementById("fontSelector").value = info?.font || "Arial";
@@ -427,15 +427,17 @@ function capitalize(str) {
     }
 
     async function saveSettings() {
-      const nome = document.getElementById("displayName").value;
-      const font = document.getElementById("fontSelector").value;
-      const paletteSelect = document.getElementById("paletteSelector");
-      const palette_color = paletteSelect.options[paletteSelect.selectedIndex].getAttribute("data-palette");
-      await supabase.from("ristoranti").update({ nome, font, palette_color }).eq("id", RESTAURANT_ID);
-      alert("Impostazioni salvate!");
-      updatePreview();
-    }
-    async function saveSommelierSettings() {
+  const nome = document.getElementById("displayName").value;
+  const font = document.getElementById("fontSelector").value;
+  const paletteSelect = document.getElementById("paletteSelector");
+  const palette_color = paletteSelect.options[paletteSelect.selectedIndex].getAttribute("data-palette");
+
+  await supabase.from("ristoranti").update({ nome, font, palette_color }).eq("id", RESTAURANT_ID);
+  alert("Impostazioni salvate!");
+  updatePreview();
+}
+
+async function saveSommelierSettings() {
   const range = document.getElementById("sommelierRange").value;
   const boost = document.getElementById("sommelierBoost").value.trim();
 
@@ -446,28 +448,57 @@ function capitalize(str) {
 
   alert("Impostazioni del sommelier salvate!");
 }
+
 document.getElementById("sommelierLogoUpload").addEventListener("change", async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
   const ext = file.name.split('.').pop();
   const fileName = `sommelier_${RESTAURANT_ID}.${ext}`;
-  const filePath = `ristoranti/${fileName}`;
 
-  await supabase.storage.from("loghi").upload(filePath, file, {
-    contentType: file.type,
-    upsert: true
-  });
+  const { error: uploadError } = await supabase.storage
+    .from("sommelier")
+    .upload(fileName, file, {
+      contentType: file.type,
+      upsert: true
+    });
 
-  const { data: { publicUrl } } = supabase.storage.from("loghi").getPublicUrl(filePath);
+  if (uploadError) {
+    console.error(uploadError);
+    return alert("Errore nel caricamento del logo del sommelier.");
+  }
+
+  const { data: { publicUrl } } = supabase
+    .storage
+    .from("sommelier")
+    .getPublicUrl(fileName);
 
   await supabase.from("ristoranti").update({
     sommelier_url: publicUrl
   }).eq("id", RESTAURANT_ID);
 
-  const preview = document.getElementById("sommelierLogoPreview");
-  preview.innerHTML = `<img src="${publicUrl}" alt="Sommelier" style="max-height:60px; margin-top:10px;">`;
+  const sommelierPreview = document.getElementById("sommelierLogoPreview");
+  sommelierPreview.innerHTML = `<img src="${publicUrl}" alt="Sommelier" style="max-height:60px; margin-top:10px;">`;
 
+  const removeBtn = document.createElement("button");
+  removeBtn.textContent = "Rimuovi logo";
+  removeBtn.className = "save-btn";
+  removeBtn.style.marginTop = "10px";
+  removeBtn.onclick = async () => {
+    const ext = publicUrl.split('.').pop().split('?')[0];
+    const fileName = `sommelier_${RESTAURANT_ID}.${ext}`;
+    await supabase.storage.from("sommelier").remove([fileName]);
+
+    await supabase.from("ristoranti").update({
+      sommelier_url: null
+    }).eq("id", RESTAURANT_ID);
+
+    sommelierPreview.innerHTML = `<img src="sommelier.png" alt="Sommelier" style="max-height:60px; margin-top:10px;">`;
+    removeBtn.remove();
+    alert("Logo del sommelier rimosso!");
+  };
+
+  sommelierPreview.appendChild(removeBtn);
   alert("Logo del sommelier caricato!");
 });
 
