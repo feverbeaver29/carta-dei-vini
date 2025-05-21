@@ -42,24 +42,6 @@ const boost = info?.sommelier_boost || "";
       });
     }
 
-    const prompt = `Sei un sommelier elegante e professionale. Ecco una lista di vini disponibili nel ristorante:\n${vini.map(w => `- ${w.nome} (${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || ''}, prezzo: ${w.prezzo})`).join("\n")}
-
-Abbina 2 o 3 vini della lista al piatto '${piatto}'.
-
-Per ogni vino, rispondi seguendo ESATTAMENTE questo schema:
-
-- [Nome completo del vino]  [Prezzo]
-[Uvaggio]
-[Motivazione in massimo 2 frasi]
-
-Esempio:
-
-- Barolo DOCG  €45
-Nebbiolo
-Tannini eleganti e struttura importante che valorizzano un piatto robusto.
-
-Non suggerire vini che non sono nella lista. Rispondi solo con l’elenco dei vini nel formato sopra. Nessun commento prima o dopo.`;
-
 const [min, max] = range.split("-").map(n => parseInt(n));
 
 let boostText = "";
