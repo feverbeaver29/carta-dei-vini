@@ -285,12 +285,14 @@
   .eq("ristorante_id", RESTAURANT_ID)
   .order("nome", { ascending: true });
 
-new Awesomplete(document.getElementById("sommelierBoost"), {
-  list: vini.map(v => v.nome),
-  minChars: 1,
-  maxItems: 10,
-  autoFirst: true
-});
+if (vini && Array.isArray(vini)) {
+  new Awesomplete(document.getElementById("sommelierBoost"), {
+    list: vini.map(v => v.nome),
+    minChars: 1,
+    maxItems: 10,
+    autoFirst: true
+  });
+}
       requestAnimationFrame(() => showSettings('carta'));
   });
 
