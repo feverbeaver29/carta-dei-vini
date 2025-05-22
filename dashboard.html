@@ -280,7 +280,7 @@
     }
     updatePreview();
     const { data: vini } = await supabase
-  .from("vini")
+  .from("wines")
   .select("nome")
   .eq("ristorante_id", RESTAURANT_ID)
   .order("nome", { ascending: true });
