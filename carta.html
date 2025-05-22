@@ -120,6 +120,20 @@ nav button { background: none; border: none; font-size: 1em; cursor: pointer; co
     gap: 4px;
   }
 }
+.sommelier-fadein {
+  animation: fadeSlideIn 0.4s ease-out both;
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 </style>
 </head>
 <body>
@@ -238,7 +252,7 @@ if (!cardsHtml || cardsHtml.trim() === "") {
   return;
 }
 suggestion.innerHTML = `
-  <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px;">
+  <div class="sommelier-fadein" style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px;">
     <img id="sommelierAvatar"
          src="${ristoranteSommelierURL || 'sommelier.png'}"
          alt="Sommelier"
