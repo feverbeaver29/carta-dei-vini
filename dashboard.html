@@ -228,6 +228,7 @@
       </select>
 
       <input type="text" id="sommelierBoost" class="awesomplete" placeholder="Cerca un vino dalla tua carta">
+      <button class="save-btn" onclick="clearBoost()">Rimuovi vino da spingere</button>
 
       <button class="save-btn" onclick="saveSommelierSettings()">Salva Impostazioni Sommelier</button>
     </div>
@@ -248,13 +249,20 @@
     const { data: { user }, error } = await supabase.auth.getUser();
     if (!user) return (window.location.href = '/');
     RESTAURANT_ID = user.id;
-    const { data: info } = await supabase.from("ristoranti").select("nome, font, palette_color, logo_url, sommelier_url").eq("id", RESTAURANT_ID).single();
-    document.getElementById("sommelierBoost").value = info?.sommelier_boost || "";
-    document.getElementById("sommelierRange").value = info?.sommelier_range || "1-3";
-    document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
-    document.getElementById("displayName").value = info?.nome || "";
-    document.getElementById("fontSelector").value = info?.font || "Arial";
-    document.getElementById("paletteSelector").value = info?.palette_color || "rosso";
+    const { data: info } = await supabase
+  .from("ristoranti")
+  .select("nome, font, palette_color, logo_url, sommelier_url, sommelier_boost")
+  .eq("id", RESTAURANT_ID)
+  .single();
+
+// imposta valori iniziali
+document.getElementById("sommelierBoost").value = info?.sommelier_boost || "";
+document.getElementById("sommelierRange").value = info?.sommelier_range || "1-3";
+document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
+document.getElementById("displayName").value = info?.nome || "";
+document.getElementById("fontSelector").value = info?.font || "Arial";
+document.getElementById("paletteSelector").value = info?.palette_color || "rosso";
+
     if (info?.logo_url) {
       const preview = document.createElement("img");
       preview.src = info.logo_url;
@@ -295,6 +303,13 @@ if (vini && Array.isArray(vini)) {
 }
       requestAnimationFrame(() => showSettings('carta'));
   });
+
+  async function clearBoost() {
+  document.getElementById("sommelierBoost").value = "";
+  await supabase.from("ristoranti").update({ sommelier_boost: null }).eq("id", RESTAURANT_ID);
+  alert("Vino da spingere rimosso!");
+}
+
 
 document.getElementById("logoUpload").addEventListener("change", async (event) => {
   const file = event.target.files[0];
