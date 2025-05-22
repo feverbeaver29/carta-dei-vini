@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - Wine's Fever</title>
@@ -225,9 +227,7 @@
         <option value="5-7">Da 5 a 7</option>
       </select>
 
-      <label for="sommelierBoost">Vino da spingere</label>
-      <input type="text" id="sommelierBoost" list="viniSuggeriti" placeholder="Scegli dalla carta o scrivi">
-      <datalist id="viniSuggeriti"></datalist>
+      <input type="text" id="sommelierBoost" class="awesomplete" placeholder="Cerca un vino dalla tua carta">
 
       <button class="save-btn" onclick="saveSommelierSettings()">Salva Impostazioni Sommelier</button>
     </div>
@@ -285,8 +285,13 @@
   .eq("ristorante_id", RESTAURANT_ID)
   .order("nome", { ascending: true });
 
-const datalist = document.getElementById("viniSuggeriti");
-datalist.innerHTML = vini.map(v => `<option value="${v.nome}">`).join("");
+new Awesomplete(document.getElementById("sommelierBoost"), {
+  list: vini.map(v => v.nome),
+  minChars: 1,
+  maxItems: 10,
+  autoFirst: true
+});
+
       requestAnimationFrame(() => showSettings('carta'));
   });
 
