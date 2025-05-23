@@ -317,35 +317,36 @@
     const { data: { user }, error } = await supabase.auth.getUser();
     if (!user) return (window.location.href = '/');
     RESTAURANT_ID = user.id;
+
     const { data: info } = await supabase
-  .from("ristoranti")
-  .select("nome, font, palette_color, logo_url, sommelier_url, sommelier_boost_multi")
-  .eq("id", RESTAURANT_ID)
-  .single();
+      .from("ristoranti")
+      .select("nome, font, palette_color, logo_url, sommelier_url, sommelier_boost_multi")
+      .eq("id", RESTAURANT_ID)
+      .single();
 
-const { data: vini } = await supabase
-  .from("wines")
-  .select("nome")
-  .eq("ristorante_id", RESTAURANT_ID)
-  .order("nome", { ascending: true });
+    const { data: vini } = await supabase
+      .from("wines")
+      .select("nome")
+      .eq("ristorante_id", RESTAURANT_ID)
+      .order("nome", { ascending: true });
 
-if (vini && Array.isArray(vini)) {
-  window.viniList = vini.map(v => v.nome);
-}
+    if (vini && Array.isArray(vini)) {
+    window.viniList = vini.map(v => v.nome);}
 
-const savedBoosts = info?.sommelier_boost_multi;
-if (savedBoosts && Array.isArray(savedBoosts)) {
-  savedBoosts.forEach(val => addBoostInput(val));
-} else {
-  addBoostInput();
-}
+    const savedBoosts = info?.sommelier_boost_multi;
+    if (savedBoosts && Array.isArray(savedBoosts)) {
+      savedBoosts.forEach(val => addBoostInput(val));
+    } else {
+      addBoostInput();
+    }
 
 // imposta valori iniziali
-document.getElementById("sommelierRange").value = info?.sommelier_range || "1-3";
-document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
-document.getElementById("displayName").value = info?.nome || "";
-document.getElementById("fontSelector").value = info?.font || "Arial";
-document.getElementById("paletteSelector").value = info?.palette_color || "rosso";
+    document.getElementById("sommelierRange").value = info?.sommelier_range || "1-3";
+    document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
+    document.getElementById("displayName").value = info?.nome || "";
+    document.getElementById("fontSelector").value = info?.font || "Arial";
+    document.getElementById("paletteSelector").value = info?.palette_color || "rosso";
+
 function setupClearBoostButton() {
   const input = document.getElementById("sommelierBoost");
   const clearBtn = document.getElementById("clearBoostBtn");
