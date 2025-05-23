@@ -255,7 +255,63 @@
   let supabase, RESTAURANT_ID = null;
   let boostCount = 0;
   const maxBoosts = 5;
+  function addBoostInput(value = "") {
+  if (boostCount >= maxBoosts) return;
 
+  const container = document.getElementById("boostContainer");
+
+  const wrapper = document.createElement("div");
+  wrapper.style.position = "relative";
+  wrapper.style.maxWidth = "400px";
+  wrapper.style.marginBottom = "10px";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "awesomplete";
+  input.placeholder = "Cerca un vino dalla tua carta";
+  input.style.paddingRight = "2.2em";
+  input.style.width = "100%";
+  input.style.boxSizing = "border-box";
+  input.value = value;
+
+  const clearBtn = document.createElement("span");
+  clearBtn.textContent = "×";
+  clearBtn.title = "Rimuovi";
+  clearBtn.style.cssText = `
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: bold;
+    color: #b00;
+    font-size: 16px;
+    background: white;
+    padding: 0 5px;
+    border-radius: 50%;
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+  `;
+
+  clearBtn.onclick = () => {
+    wrapper.remove();
+    boostCount--;
+  };
+
+  wrapper.appendChild(input);
+  wrapper.appendChild(clearBtn);
+  container.appendChild(wrapper);
+  boostCount++;
+
+  if (window.viniList) {
+    new Awesomplete(input, {
+      list: window.viniList,
+      minChars: 1,
+      maxItems: 10,
+      autoFirst: true
+    });
+  }
+}
   document.addEventListener("DOMContentLoaded", async () => {
     supabase = window.supabase.createClient("https://ldunvbftxhbtuyabgxwh.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo");
     const { data: { user }, error } = await supabase.auth.getUser();
@@ -313,65 +369,6 @@ function setupClearBoostButton() {
   // mostra X se già c'è un vino salvato
   toggleClearButton();
 }
-
-function addBoostInput(value = "") {
-  if (boostCount >= maxBoosts) return;
-
-  const container = document.getElementById("boostContainer");
-
-  const wrapper = document.createElement("div");
-  wrapper.style.position = "relative";
-  wrapper.style.maxWidth = "400px";
-  wrapper.style.marginBottom = "10px";
-
-  const input = document.createElement("input");
-  input.type = "text";
-  input.className = "awesomplete";
-  input.placeholder = "Cerca un vino dalla tua carta";
-  input.style.paddingRight = "2.2em";
-  input.style.width = "100%";
-  input.style.boxSizing = "border-box";
-  input.value = value;
-
-  const clearBtn = document.createElement("span");
-  clearBtn.textContent = "×";
-  clearBtn.title = "Rimuovi";
-  clearBtn.style.cssText = `
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-weight: bold;
-    color: #b00;
-    font-size: 16px;
-    background: white;
-    padding: 0 5px;
-    border-radius: 50%;
-    line-height: 1;
-    cursor: pointer;
-    user-select: none;
-  `;
-
-  clearBtn.onclick = () => {
-    wrapper.remove();
-    boostCount--;
-  };
-
-  wrapper.appendChild(input);
-  wrapper.appendChild(clearBtn);
-  container.appendChild(wrapper);
-  boostCount++;
-
-  if (window.viniList) {
-    new Awesomplete(input, {
-      list: window.viniList,
-      minChars: 1,
-      maxItems: 10,
-      autoFirst: true
-    });
-  }
-}
-
 
     if (info?.logo_url) {
       const preview = document.createElement("img");
