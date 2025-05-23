@@ -313,8 +313,6 @@ function setupClearBoostButton() {
   // mostra X se già c'è un vino salvato
   toggleClearButton();
 }
-document.getElementById("sommelierBoost").value = info?.sommelier_boost || "";
-  setupClearBoostButton();
 
 function addBoostInput(value = "") {
   if (boostCount >= maxBoosts) return;
