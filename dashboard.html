@@ -260,7 +260,7 @@
     RESTAURANT_ID = user.id;
     const { data: info } = await supabase
   .from("ristoranti")
-  .select("nome, font, palette_color, logo_url, sommelier_url, sommelier_boost, sommelier_boost_multi")
+  .select("nome, font, palette_color, logo_url, sommelier_url, sommelier_boost_multi")
   .eq("id", RESTAURANT_ID)
   .single();
 
