@@ -325,9 +325,11 @@
 
     const { data: info } = await supabase
   .from("ristoranti")
-  .select("nome, font, palette_color, logo_url, sommelier_url, sommelier_boost_multi, sommelier_range")
+  .select("nome, font, palette_color, logo_url, sommelier_url, sommelier_range, sommelier_boost_multi")
   .eq("id", RESTAURANT_ID)
   .single();
+  console.log("🔍 Supabase info:", info);
+console.log("✅ sommelier_boost_multi:", info?.sommelier_boost_multi);
 
     const { data: vini } = await supabase
       .from("wines")
