@@ -264,6 +264,23 @@
   .eq("id", RESTAURANT_ID)
   .single();
 
+const { data: vini } = await supabase
+  .from("wines")
+  .select("nome")
+  .eq("ristorante_id", RESTAURANT_ID)
+  .order("nome", { ascending: true });
+
+if (vini && Array.isArray(vini)) {
+  window.viniList = vini.map(v => v.nome);
+}
+
+const savedBoosts = info?.sommelier_boost_multi;
+if (savedBoosts && Array.isArray(savedBoosts)) {
+  savedBoosts.forEach(val => addBoostInput(val));
+} else {
+  addBoostInput();
+}
+
 // imposta valori iniziali
 document.getElementById("sommelierRange").value = info?.sommelier_range || "1-3";
 document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
@@ -382,22 +399,6 @@ function addBoostInput(value = "") {
       preview.insertAdjacentElement("afterend", removeBtn);
     }
     updatePreview();
-    const { data: vini } = await supabase
-  .from("wines")
-  .select("nome")
-  .eq("ristorante_id", RESTAURANT_ID)
-  .order("nome", { ascending: true });
-
-if (vini && Array.isArray(vini)) {
-  window.viniList = vini.map(v => v.nome);
-
-  const savedBoosts = info?.sommelier_boost_multi;
-  if (savedBoosts && Array.isArray(savedBoosts)) {
-    savedBoosts.forEach(val => addBoostInput(val));
-  } else {
-    addBoostInput();
-  }
-}
       requestAnimationFrame(() => showSettings('carta'));
   });
 
