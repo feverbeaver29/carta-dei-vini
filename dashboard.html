@@ -344,7 +344,15 @@ if (vini && Array.isArray(vini)) {
 }
 
 setTimeout(() => {
-  const savedBoosts = info?.sommelier_boost_multi;
+  let savedBoosts = [];
+
+  try {
+    const raw = info?.sommelier_boost_multi;
+    savedBoosts = typeof raw === "string" ? JSON.parse(raw) : raw;
+  } catch (e) {
+    console.warn("❌ Errore nel parsing sommelier_boost_multi", e);
+  }
+
   if (Array.isArray(savedBoosts)) {
     console.log("🎯 Creo input per:", savedBoosts);
     savedBoosts.forEach(val => addBoostInput(val));
@@ -352,7 +360,7 @@ setTimeout(() => {
     console.log("⚠️ Nessun vino salvato, creo input vuoto");
     addBoostInput();
   }
-}, 0);
+}, 0); 
 
 // imposta valori iniziali
     document.getElementById("sommelierRange").value = info?.sommelier_range || "1-3";
