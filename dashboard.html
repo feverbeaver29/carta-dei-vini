@@ -252,9 +252,11 @@
   </div>
   <footer>© 2025 Wine's Fever - Tutti i diritti riservati</footer>
   <script>
+
   let supabase, RESTAURANT_ID = null;
   let boostCount = 0;
   const maxBoosts = 5;
+
   function addBoostInput(value = "") {
   if (boostCount >= maxBoosts) return;
 
@@ -272,7 +274,7 @@
   input.style.paddingRight = "2.2em";
   input.style.width = "100%";
   input.style.boxSizing = "border-box";
-  input.value = value;
+  input.value = value; // 🔥 essenziale per farlo apparire al refresh
 
   const clearBtn = document.createElement("span");
   clearBtn.textContent = "×";
@@ -304,14 +306,17 @@
   boostCount++;
 
   if (window.viniList) {
-    new Awesomplete(input, {
-      list: window.viniList,
-      minChars: 1,
-      maxItems: 10,
-      autoFirst: true
-    });
+    setTimeout(() => {
+      new Awesomplete(input, {
+        list: window.viniList,
+        minChars: 1,
+        maxItems: 10,
+        autoFirst: true
+      });
+    }, 0);
   }
 }
+
   document.addEventListener("DOMContentLoaded", async () => {
     supabase = window.supabase.createClient("https://ldunvbftxhbtuyabgxwh.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo");
     const { data: { user }, error } = await supabase.auth.getUser();
