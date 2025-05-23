@@ -228,18 +228,22 @@
 </select>
 
 <label for="sommelierBoost">Vino da spingere in carta</label>
-<div style="position: relative; max-width: 400px;">
-  <input type="text" id="sommelierBoost" class="awesomplete" placeholder="Cerca un vino dalla tua carta" style="padding-right: 30px;">
+<div style="position: relative; width: 100%; max-width: 400px;">
+  <input type="text" id="sommelierBoost" class="awesomplete" placeholder="Cerca un vino dalla tua carta" style="width: 100%; padding-right: 2.2em;">
   <span id="clearBoostBtn" style="
     display: none;
     position: absolute;
-    right: 8px;
+    right: 10px;
     top: 50%;
     transform: translateY(-50%);
     cursor: pointer;
     font-weight: bold;
     color: #b00;
-    font-size: 18px;
+    font-size: 16px;
+    background: white;
+    padding: 0 5px;
+    border-radius: 50%;
+    line-height: 1;
   " title="Rimuovi vino da spingere">×</span>
   <button class="save-btn" onclick="saveSommelierSettings()">Salva Impostazioni Sommelier</button>
 </div>
