@@ -335,15 +335,22 @@
       .eq("ristorante_id", RESTAURANT_ID)
       .order("nome", { ascending: true });
 
-    if (vini && Array.isArray(vini)) {
-    window.viniList = vini.map(v => v.nome);}
+    window.viniList = [];
 
-    const savedBoosts = info?.sommelier_boost_multi;
-    if (savedBoosts && Array.isArray(savedBoosts)) {
-      savedBoosts.forEach(val => addBoostInput(val));
-    } else {
-      addBoostInput();
-    }
+if (vini && Array.isArray(vini)) {
+  window.viniList = vini.map(v => v.nome);
+}
+
+setTimeout(() => {
+  const savedBoosts = info?.sommelier_boost_multi;
+  if (Array.isArray(savedBoosts)) {
+    console.log("🎯 Creo input per:", savedBoosts);
+    savedBoosts.forEach(val => addBoostInput(val));
+  } else {
+    console.log("⚠️ Nessun vino salvato, creo input vuoto");
+    addBoostInput();
+  }
+}, 0);
 
 // imposta valori iniziali
     document.getElementById("sommelierRange").value = info?.sommelier_range || "1-3";
