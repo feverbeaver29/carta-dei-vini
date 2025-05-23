@@ -227,33 +227,21 @@
   <option value="5-7">Da 5 a 7</option>
 </select>
 
-<label for="sommelierBoost">Vino da spingere in carta</label>
-<div style="position: relative; width: 100%; max-width: 400px;">
-  <input type="text" id="sommelierBoost" class="awesomplete"
-         placeholder="Cerca un vino dalla tua carta"
-         style="width: 100%; padding-right: 2.5em; box-sizing: border-box;">
+<label>Vini da spingere in carta</label>
+<div id="boostContainer"></div>
+<button type="button" onclick="addBoostInput()" style="
+  margin-top: 10px;
+  background: transparent;
+  color: #b00;
+  border: 1px solid #b00;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.9em;
+  cursor: pointer;
+">+ Aggiungi vino da spingere</button>
 
-  <span id="clearBoostBtn" style="
-    display: none;
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;
-    font-weight: bold;
-    color: #b00;
-    font-size: 20px;
-    background-color: white;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    text-align: center;
-    line-height: 18px;
-    user-select: none;
-  " title="Rimuovi vino da spingere">×</span>
-</div>
 <button class="save-btn" onclick="saveSommelierSettings()">Salva Impostazioni Sommelier</button>
-  </div>
+
 </main>
   </main>
   <div id="qrPopup">
@@ -308,6 +296,68 @@ function setupClearBoostButton() {
 document.getElementById("sommelierBoost").value = info?.sommelier_boost || "";
   setupClearBoostButton();
 
+  let boostCount = 0;
+const maxBoosts = 5;
+
+function addBoostInput(value = "") {
+  if (boostCount >= maxBoosts) return;
+
+  const container = document.getElementById("boostContainer");
+
+  const wrapper = document.createElement("div");
+  wrapper.style.position = "relative";
+  wrapper.style.maxWidth = "400px";
+  wrapper.style.marginBottom = "10px";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "awesomplete";
+  input.placeholder = "Cerca un vino dalla tua carta";
+  input.style.paddingRight = "2.2em";
+  input.style.width = "100%";
+  input.style.boxSizing = "border-box";
+  input.value = value;
+
+  const clearBtn = document.createElement("span");
+  clearBtn.textContent = "×";
+  clearBtn.title = "Rimuovi";
+  clearBtn.style.cssText = `
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: bold;
+    color: #b00;
+    font-size: 16px;
+    background: white;
+    padding: 0 5px;
+    border-radius: 50%;
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+  `;
+
+  clearBtn.onclick = () => {
+    wrapper.remove();
+    boostCount--;
+  };
+
+  wrapper.appendChild(input);
+  wrapper.appendChild(clearBtn);
+  container.appendChild(wrapper);
+  boostCount++;
+
+  if (window.viniList) {
+    new Awesomplete(input, {
+      list: window.viniList,
+      minChars: 1,
+      maxItems: 10,
+      autoFirst: true
+    });
+  }
+}
+
+
     if (info?.logo_url) {
       const preview = document.createElement("img");
       preview.src = info.logo_url;
@@ -339,12 +389,14 @@ document.getElementById("sommelierBoost").value = info?.sommelier_boost || "";
   .order("nome", { ascending: true });
 
 if (vini && Array.isArray(vini)) {
-  new Awesomplete(document.getElementById("sommelierBoost"), {
-    list: vini.map(v => v.nome),
-    minChars: 1,
-    maxItems: 10,
-    autoFirst: true
-  });
+  window.viniList = vini.map(v => v.nome);
+
+  const savedBoosts = info?.sommelier_boost_multi;
+  if (savedBoosts && Array.isArray(savedBoosts)) {
+    savedBoosts.forEach(val => addBoostInput(val));
+  } else {
+    addBoostInput();
+  }
 }
       requestAnimationFrame(() => showSettings('carta'));
   });
@@ -516,12 +568,15 @@ function capitalize(str) {
 
 async function saveSommelierSettings() {
   const range = document.getElementById("sommelierRange").value;
-  const boost = document.getElementById("sommelierBoost").value.trim();
+  const inputs = document.querySelectorAll("#boostContainer input");
+const boostMulti = Array.from(inputs)
+  .map(i => i.value.trim())
+  .filter(Boolean);
 
-  await supabase.from("ristoranti").update({
-    sommelier_range: range,
-    sommelier_boost: boost
-  }).eq("id", RESTAURANT_ID);
+await supabase.from("ristoranti").update({
+  sommelier_range: range,
+  sommelier_boost_multi: boostMulti
+}).eq("id", RESTAURANT_ID);
 
   alert("Impostazioni del sommelier salvate!");
 }
