@@ -347,30 +347,6 @@
     document.getElementById("fontSelector").value = info?.font || "Arial";
     document.getElementById("paletteSelector").value = info?.palette_color || "rosso";
 
-function setupClearBoostButton() {
-  const input = document.getElementById("sommelierBoost");
-  const clearBtn = document.getElementById("clearBoostBtn");
-
-  function toggleClearButton() {
-    clearBtn.style.display = input.value.trim() ? "block" : "none";
-  }
-
-  input.addEventListener("input", toggleClearButton);
-  input.addEventListener("blur", () => {
-    setTimeout(toggleClearButton, 100); // evita conflitto con click sulla X
-  });
-
-  clearBtn.addEventListener("click", async () => {
-    input.value = "";
-    clearBtn.style.display = "none";
-    await supabase.from("ristoranti").update({ sommelier_boost: null }).eq("id", RESTAURANT_ID);
-    alert("Vino da spingere rimosso!");
-  });
-
-  // mostra X se già c'è un vino salvato
-  toggleClearButton();
-}
-
     if (info?.logo_url) {
       const preview = document.createElement("img");
       preview.src = info.logo_url;
@@ -397,12 +373,6 @@ function setupClearBoostButton() {
     updatePreview();
       requestAnimationFrame(() => showSettings('carta'));
   });
-
-  async function clearBoost() {
-  document.getElementById("sommelierBoost").value = "";
-  await supabase.from("ristoranti").update({ sommelier_boost: null }).eq("id", RESTAURANT_ID);
-  alert("Vino da spingere rimosso!");
-}
 
 
 document.getElementById("logoUpload").addEventListener("change", async (event) => {
@@ -565,18 +535,20 @@ function capitalize(str) {
 
 async function saveSommelierSettings() {
   const range = document.getElementById("sommelierRange").value;
-  const inputs = document.querySelectorAll("#boostContainer input");
-const boostMulti = Array.from(inputs)
-  .map(i => i.value.trim())
-  .filter(Boolean);
 
-await supabase.from("ristoranti").update({
-  sommelier_range: range,
-  sommelier_boost_multi: boostMulti
-}).eq("id", RESTAURANT_ID);
+  const inputs = document.querySelectorAll("#boostContainer input");
+  const boostMulti = Array.from(inputs)
+    .map(i => i.value.trim())
+    .filter(Boolean);
+
+  await supabase.from("ristoranti").update({
+    sommelier_range: range,
+    sommelier_boost_multi: boostMulti
+  }).eq("id", RESTAURANT_ID);
 
   alert("Impostazioni del sommelier salvate!");
 }
+
 
 document.getElementById("sommelierLogoUpload").addEventListener("change", async (event) => {
   const file = event.target.files[0];
