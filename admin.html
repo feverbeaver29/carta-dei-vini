@@ -265,6 +265,7 @@ async function deleteWine(id) {
 }
 
 document.getElementById("saveButton").onclick = saveWine;
+document.getElementById("itemsPerPage").addEventListener("change", renderTable);
 document.body.addEventListener("click", e => {
   if (e.target.id === "resetButton") {
     resetForm();
