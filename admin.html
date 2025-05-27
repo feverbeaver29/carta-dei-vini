@@ -149,9 +149,9 @@ function fillForm(index) {
   ["annata", "categoria", "sottocategoria", "uvaggio"].forEach(id => document.getElementById(id).value = wine[id] || "");
 
 // Dividi nome in due parti (grezzo: fino al primo spazio = produttore)
-const [produttore, ...denomParts] = (wine.nome || "").split(" ");
-document.getElementById("produttore").value = produttore || "";
-document.getElementById("denominazione").value = denomParts.join(" ") || "";
+const [produttore, denominazione] = (wine.nome || "").split(" | ");
+document.getElementById("produttore").value = (produttore || "").trim();
+document.getElementById("denominazione").value = (denominazione || "").trim();
   const match = wine.prezzo?.match(/^(€|$|£|¥|CHF)?(.*)$/);
   document.getElementById("valuta").value = match?.[1] || "€";
   document.getElementById("prezzo").value = match?.[2]?.trim() || "";
@@ -224,7 +224,7 @@ async function saveWine() {
   await fetchUserIfNeeded();
   const wine = {
     ristorante_id: RESTAURANT_ID,
-    nome: (document.getElementById("produttore").value + " " + document.getElementById("denominazione").value).trim(),
+    nome: (document.getElementById("produttore").value.trim() + " | " + document.getElementById("denominazione").value.trim()),
     annata: document.getElementById("annata").value,
     prezzo: document.getElementById("valuta").value + document.getElementById("prezzo").value,
     categoria: formatText(document.getElementById("categoria").value),

@@ -400,10 +400,8 @@ function showWinesBySubcategory(subcat) {
 card.className = 'wine-card';
 const annata = w.annata ? ` (${w.annata})` : '';
 
-const [produttore, ...denomParts] = (w.nome || "").split(" ");
-const produttoreUpper = produttore.toUpperCase();
-const denominazione = denomParts.join(" ");
-
+const [produttore, denominazione] = (w.nome || "").split(" | ");
+const produttoreUpper = (produttore || "").toUpperCase();
 card.innerHTML = `<strong>${produttoreUpper} ${denominazione}${annata}</strong><br>
 <em>${w.prezzo}</em><br>
 <small>Uvaggio: ${w.uvaggio}</small>`;
