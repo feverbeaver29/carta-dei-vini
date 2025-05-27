@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+  <script type="module">
+  import { BrowserMultiFormatReader } from 'https://cdn.jsdelivr.net/npm/@zxing/browser@0.0.10/+esm';
+
+  window.BarcodeScanner = new BrowserMultiFormatReader();
+</script>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestione Carta dei Vini - Admin</title>
@@ -48,6 +54,10 @@
 <div class="admin-panel">
   <h2 id="formTitle">Aggiungi Vino <button id="resetButton" style="display:none; margin-left: 10px; padding: 0.3em 0.6em; font-size: 0.8em;">Aggiungi nuovo</button></h2>
   <label>Produttore e Nome / Denominazione:</label>
+  <div style="margin-top: 1em;">
+  <button type="button" onclick="startBarcodeScan()" style="background: #eee; color: #000; border: 1px solid #ccc; border-radius: 6px; padding: 0.5em 1em; cursor: pointer;">📷 Scansiona codice a barre</button>
+  <div id="scannerPreview" style="margin-top: 1em;"></div>
+</div>
 <div style="display: flex; gap: 10px;">
   <input type="text" id="produttore" placeholder="Produttore" style="flex: 1;">
   <input type="text" id="denominazione" placeholder="Nome e/o Denominazione" style="flex: 2;">
@@ -331,6 +341,30 @@ document.body.addEventListener("click", e => {
     document.getElementById("saveButton").textContent = "Salva";
   }
 });
+
+async function startBarcodeScan() {
+  const preview = document.getElementById("scannerPreview");
+  preview.innerHTML = ""; // pulisci ogni volta
+
+  const videoElement = document.createElement("video");
+  preview.appendChild(videoElement);
+
+  try {
+    const result = await window.BarcodeScanner.decodeOnceFromVideoDevice(undefined, videoElement);
+
+    console.log("📦 Codice rilevato:", result.text);
+    preview.innerHTML = `<p>Codice rilevato: <strong>${result.text}</strong></p>`;
+
+    // Precompila il campo denominazione come esempio
+    document.getElementById("denominazione").value = result.text;
+
+    // Ferma la camera
+    window.BarcodeScanner.reset();
+  } catch (err) {
+    console.error("❌ Errore scanner:", err);
+    preview.innerHTML = "<p style='color:red;'>Errore nella scansione</p>";
+  }
+}
 
 loadWines();
 </script>
