@@ -367,7 +367,15 @@ setTimeout(() => {
     document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
     document.getElementById("displayName").value = info?.nome || "";
     document.getElementById("fontSelector").value = info?.font || "Arial";
-    document.getElementById("paletteSelector").value = info?.palette_color || "rosso";
+    const paletteSelector = document.getElementById("paletteSelector");
+const savedPalette = info?.palette_color || "rosso";
+
+for (let option of paletteSelector.options) {
+  if (option.getAttribute("data-palette") === savedPalette) {
+    paletteSelector.value = option.value;
+    break;
+  }
+}
 
     if (info?.logo_url) {
       const preview = document.createElement("img");
