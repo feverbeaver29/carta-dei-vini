@@ -350,7 +350,11 @@ async function startBarcodeScan() {
   preview.appendChild(videoElement);
 
   try {
-    const result = await window.BarcodeScanner.decodeOnceFromVideoDevice(undefined, videoElement);
+    const constraints = {
+  facingMode: { exact: "environment" } // fotocamera posteriore
+};
+
+const result = await window.BarcodeScanner.decodeOnceFromVideoDevice(constraints, videoElement);
 
     console.log("📦 Codice rilevato:", result.text);
     preview.innerHTML = `<p>Codice rilevato: <strong>${result.text}</strong></p>`;
