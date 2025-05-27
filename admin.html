@@ -129,6 +129,7 @@ async function fetchUserIfNeeded() {
 }
 
 let winesData = [], editIndex = null;
+let currentPage = 1;
 
 function showMessage(msg, ok = true) {
   const el = document.getElementById("message");
@@ -162,6 +163,8 @@ document.getElementById("denominazione").value = (denominazione || "").trim();
 }
 
 function renderTable() {
+  if (currentPage < 1) currentPage = 1;
+
   const container = document.getElementById("wineCardContainer");
   container.innerHTML = "";
 
@@ -179,8 +182,13 @@ function renderTable() {
            (!sub || sottocategoria === sub);
   });
 
-  filtered = filtered.slice(0, perPage);
-  filtered.forEach((wine, index) => {
+  const totalPages = Math.ceil(filtered.length / perPage);
+if (currentPage > totalPages) currentPage = 1;
+
+const start = (currentPage - 1) * perPage;
+const end = start + perPage;
+const pageData = filtered.slice(start, end);
+  pageData.forEach((wine, index) => {
     const div = document.createElement("div");
     div.style = "border:1px solid #ccc; padding:1em; border-radius:8px; width:240px; background:#fff";
     div.innerHTML = `
@@ -189,6 +197,35 @@ function renderTable() {
       <button onclick="deleteWine('${wine.id}')">Elimina</button>`;
     container.appendChild(div);
   });
+  const pagination = document.getElementById("paginationControls");
+pagination.innerHTML = "";
+
+if (totalPages > 1) {
+  if (currentPage > 1) {
+    const prevBtn = document.createElement("button");
+    prevBtn.textContent = "◀️ Indietro";
+    prevBtn.onclick = () => {
+      currentPage--;
+      renderTable();
+    };
+    pagination.appendChild(prevBtn);
+  }
+
+  const pageIndicator = document.createElement("span");
+  pageIndicator.textContent = `Pagina ${currentPage} di ${totalPages}`;
+  pageIndicator.style.margin = "0 10px";
+  pagination.appendChild(pageIndicator);
+
+  if (currentPage < totalPages) {
+    const nextBtn = document.createElement("button");
+    nextBtn.textContent = "Avanti ▶️";
+    nextBtn.onclick = () => {
+      currentPage++;
+      renderTable();
+    };
+    pagination.appendChild(nextBtn);
+  }
+}
 }
 function fillFormById(id) {
   const index = winesData.findIndex(w => w.id === id);
@@ -265,7 +302,10 @@ async function deleteWine(id) {
 }
 
 document.getElementById("saveButton").onclick = saveWine;
-document.getElementById("itemsPerPage").addEventListener("change", renderTable);
+document.getElementById("itemsPerPage").addEventListener("change", () => {
+  currentPage = 1;
+  renderTable();
+});
 document.body.addEventListener("click", e => {
   if (e.target.id === "resetButton") {
     resetForm();
