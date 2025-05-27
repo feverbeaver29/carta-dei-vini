@@ -138,9 +138,10 @@ function showMessage(msg, ok = true) {
 }
 
 function resetForm() {
-  ["nome", "annata", "prezzo", "categoria", "sottocategoria", "uvaggio"].forEach(id => document.getElementById(id).value = "");
-  document.getElementById("valuta").value = "€";
-  ["produttore", "denominazione"].forEach(id => document.getElementById(id).value = "");
+  ["annata", "prezzo", "categoria", "sottocategoria", "uvaggio", "produttore", "denominazione"].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.value = "";
+});
   editIndex = null;
 }
 
