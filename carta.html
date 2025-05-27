@@ -596,10 +596,14 @@ window.showSubcategories = function (category) {
     container.appendChild(div);
   }
 
-  document.getElementById('category-list').style.display = 'none';
+    document.getElementById('category-list').style.display = 'none';
   container.style.display = 'grid';
   document.getElementById('wine-list').style.display = 'none';
-  applyPalette();
+
+  // ✅ Riapplica la palette usando quella caricata all'inizio
+  if (window.ristorantePalette) {
+    applyPalette(window.ristorantePalette);
+  }
 };
 
 (async () => {
