@@ -184,10 +184,14 @@ function renderTable() {
     div.style = "border:1px solid #ccc; padding:1em; border-radius:8px; width:240px; background:#fff";
     div.innerHTML = `
       <strong>${wine.nome}</strong><br>
-      <button onclick="fillForm(${index})">Modifica</button>
+      <button onclick="fillFormById(${wine.id})">Modifica</button>
       <button onclick="deleteWine(${wine.id})">Elimina</button>`;
     container.appendChild(div);
   });
+}
+function fillFormById(id) {
+  const index = winesData.findIndex(w => w.id === id);
+  if (index !== -1) fillForm(index);
 }
 
 
