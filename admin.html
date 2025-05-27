@@ -204,6 +204,15 @@ if (totalPages > 1) {
   if (currentPage > 1) {
     const prevBtn = document.createElement("button");
     prevBtn.textContent = "◀️ Indietro";
+    prevBtn.style.cssText = nextBtn.style.cssText = `
+      background: none;
+      border: none;
+      color: #333;
+      font-size: 0.9em;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 2px 6px;
+      `;
     prevBtn.onclick = () => {
       currentPage--;
       renderTable();
@@ -219,6 +228,15 @@ if (totalPages > 1) {
   if (currentPage < totalPages) {
     const nextBtn = document.createElement("button");
     nextBtn.textContent = "Avanti ▶️";
+    prevBtn.style.cssText = nextBtn.style.cssText = `
+      background: none;
+      border: none;
+      color: #333;
+      font-size: 0.9em;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 2px 6px;
+      `;
     nextBtn.onclick = () => {
       currentPage++;
       renderTable();
