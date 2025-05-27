@@ -50,7 +50,7 @@
   <h2 id="formTitle">Aggiungi Vino <button id="resetButton" style="display:none; margin-left: 10px; padding: 0.3em 0.6em; font-size: 0.8em;">Aggiungi nuovo</button></h2>
   <label>Produttore e Nome / Denominazione:</label>
   <label>Oppure carica una foto dell'etichetta:</label>
-<input type="file" accept="image/*" onchange="handleImageUpload(this)" />
+<input type="file" accept="image/*" capture="environment" onchange="handleImageUpload(this)" />
 <div id="ocrResult" style="margin-top: 1em; font-size: 0.9em;"></div>
 <div style="display: flex; gap: 10px;">
   <input type="text" id="produttore" placeholder="Produttore" style="flex: 1;">
