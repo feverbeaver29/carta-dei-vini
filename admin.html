@@ -344,30 +344,39 @@ document.body.addEventListener("click", e => {
 
 async function startBarcodeScan() {
   const preview = document.getElementById("scannerPreview");
-  preview.innerHTML = ""; // pulisci ogni volta
+  preview.innerHTML = "";
 
   const videoElement = document.createElement("video");
   preview.appendChild(videoElement);
 
+  const tryScan = async (constraints) => {
+    try {
+      const result = await window.BarcodeScanner.decodeOnceFromVideoDevice(constraints, videoElement);
+      console.log("📦 Codice rilevato:", result.text);
+      preview.innerHTML = `<p>Codice rilevato: <strong>${result.text}</strong></p>`;
+      document.getElementById("denominazione").value = result.text;
+      window.BarcodeScanner.reset();
+    } catch (err) {
+      throw err;
+    }
+  };
+
   try {
-    const constraints = {
-  video: {
-    facingMode: { ideal: "environment" }
-  }
-};
-const result = await window.BarcodeScanner.decodeOnceFromVideoDevice(constraints, videoElement);
-
-    console.log("📦 Codice rilevato:", result.text);
-    preview.innerHTML = `<p>Codice rilevato: <strong>${result.text}</strong></p>`;
-
-    // Precompila il campo denominazione come esempio
-    document.getElementById("denominazione").value = result.text;
-
-    // Ferma la camera
-    window.BarcodeScanner.reset();
+    // Tenta con camera posteriore
+    await tryScan({ video: { facingMode: { ideal: "environment" } } });
   } catch (err) {
-    console.error("❌ Errore scanner:", err);
-    preview.innerHTML = "<p style='color:red;'>Errore nella scansione</p>";
+    if (err.name === "OverconstrainedError" || err.name === "NotAllowedError") {
+      console.warn("⚠️ Fallback a camera generica", err);
+      try {
+        await tryScan(undefined); // Nessun vincolo
+      } catch (fallbackErr) {
+        console.error("❌ Errore fallback scanner:", fallbackErr);
+        preview.innerHTML = "<p style='color:red;'>Errore nella scansione. Verifica i permessi della fotocamera.</p>";
+      }
+    } else {
+      console.error("❌ Errore scanner:", err);
+      preview.innerHTML = "<p style='color:red;'>Errore nella scansione. Nessuna fotocamera disponibile.</p>";
+    }
   }
 }
 
