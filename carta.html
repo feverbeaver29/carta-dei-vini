@@ -313,7 +313,8 @@ if (avatar) {
     span.textContent = ristorante.nome || 'Carta dei Vini';
     span.style.fontFamily = ristorante.font || 'sans-serif';
     nameElem.appendChild(span);}
-    applyPalette(ristorante.palette_color);
+    window.ristorantePalette = ristorante.palette_color;
+applyPalette(ristorante.palette_color);
   }
 }
 
