@@ -397,9 +397,16 @@ function showWinesBySubcategory(subcat) {
   const filtered = wines.filter(w => normalize(w.categoria) === normalize(currentCategory) && normalize(w.sottocategoria) === normalize(subcat));
   filtered.forEach(w => {
     const card = document.createElement('div');
-    card.className = 'wine-card';
-    const annata = w.annata ? ` (${w.annata})` : '';
-    card.innerHTML = `<strong>${w.nome}${annata}</strong><br><em>${w.prezzo}</em><br><small>Uvaggio: ${w.uvaggio}</small>`;
+card.className = 'wine-card';
+const annata = w.annata ? ` (${w.annata})` : '';
+
+const [produttore, ...denomParts] = (w.nome || "").split(" ");
+const produttoreUpper = produttore.toUpperCase();
+const denominazione = denomParts.join(" ");
+
+card.innerHTML = `<strong>${produttoreUpper} ${denominazione}${annata}</strong><br>
+<em>${w.prezzo}</em><br>
+<small>Uvaggio: ${w.uvaggio}</small>`;
     wineList.appendChild(card);
   });
   document.getElementById('subcategory-list').style.display = 'none';

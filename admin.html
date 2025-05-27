@@ -47,8 +47,11 @@
 <div id="message"></div>
 <div class="admin-panel">
   <h2 id="formTitle">Aggiungi Vino <button id="resetButton" style="display:none; margin-left: 10px; padding: 0.3em 0.6em; font-size: 0.8em;">Aggiungi nuovo</button></h2>
-  <label>Nome:</label>
-  <input type="text" id="nome">
+  <label>Produttore e Nome / Denominazione:</label>
+<div style="display: flex; gap: 10px;">
+  <input type="text" id="produttore" placeholder="Produttore" style="flex: 1;">
+  <input type="text" id="denominazione" placeholder="Nome e/o Denominazione" style="flex: 2;">
+</div>
   <label>Annata:</label>
   <input type="text" id="annata" placeholder="non obbligatorio">
   <label>Prezzo:</label>
@@ -137,12 +140,18 @@ function showMessage(msg, ok = true) {
 function resetForm() {
   ["nome", "annata", "prezzo", "categoria", "sottocategoria", "uvaggio"].forEach(id => document.getElementById(id).value = "");
   document.getElementById("valuta").value = "€";
+  ["produttore", "denominazione"].forEach(id => document.getElementById(id).value = "");
   editIndex = null;
 }
 
 function fillForm(index) {
   const wine = winesData[index];
-  ["nome", "annata", "categoria", "sottocategoria", "uvaggio"].forEach(id => document.getElementById(id).value = wine[id] || "");
+  ["annata", "categoria", "sottocategoria", "uvaggio"].forEach(id => document.getElementById(id).value = wine[id] || "");
+
+// Dividi nome in due parti (grezzo: fino al primo spazio = produttore)
+const [produttore, ...denomParts] = (wine.nome || "").split(" ");
+document.getElementById("produttore").value = produttore || "";
+document.getElementById("denominazione").value = denomParts.join(" ") || "";
   const match = wine.prezzo?.match(/^(€|$|£|¥|CHF)?(.*)$/);
   document.getElementById("valuta").value = match?.[1] || "€";
   document.getElementById("prezzo").value = match?.[2]?.trim() || "";
@@ -215,7 +224,7 @@ async function saveWine() {
   await fetchUserIfNeeded();
   const wine = {
     ristorante_id: RESTAURANT_ID,
-    nome: document.getElementById("nome").value,
+    nome: (document.getElementById("produttore").value + " " + document.getElementById("denominazione").value).trim(),
     annata: document.getElementById("annata").value,
     prezzo: document.getElementById("valuta").value + document.getElementById("prezzo").value,
     categoria: formatText(document.getElementById("categoria").value),
