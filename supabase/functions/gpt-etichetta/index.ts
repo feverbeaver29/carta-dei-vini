@@ -80,15 +80,16 @@ Se un campo non è presente, lascialo vuoto.
     const json = await completion.json();
     const reply = json.choices?.[0]?.message?.content || "{}";
 
+    console.log("📦 Risposta GPT:", reply);
     let parsed;
     try {
-      parsed = JSON.parse(reply);
-    } catch {
-      return new Response(JSON.stringify({ error: "Risposta non in formato JSON", content: reply }), {
-        status: 500,
-        headers: corsHeaders,
-      });
-    }
+  parsed = JSON.parse(reply);
+} catch {
+  return new Response(JSON.stringify({ error: "Risposta non in formato JSON", content: reply }), {
+    status: 500,
+    headers: corsHeaders,
+  });
+}
 
     return new Response(JSON.stringify(parsed), {
       status: 200,
