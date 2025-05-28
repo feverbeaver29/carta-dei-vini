@@ -347,16 +347,22 @@ async function handleImageUpload(input) {
 
     try {
       const text = await performOCR(base64);
-      const prompt = `Testo etichetta: "${text}"
-Estrai i seguenti dati del vino e restituiscili in JSON:
-- produttore
-- denominazione
-- annata
-- uvaggio
-- categoria
-- sottocategoria
+      const prompt = `Ecco il testo letto da un'etichetta di vino:
 
-Formato JSON:`;
+"${text}"
+
+Estrai i seguenti dati e restituiscili solo in JSON:
+{
+  "produttore": "...",
+  "denominazione": "...",
+  "annata": "...",
+  "uvaggio": "...",
+  "categoria": "...",
+  "sottocategoria": "..."
+}
+
+Se un dato non è presente, restituiscilo come stringa vuota.
+`;
 
       const aiData = await fetchGPT(prompt);
 
