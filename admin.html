@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.1/dist/tesseract.min.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestione Carta dei Vini - Admin</title>
@@ -50,7 +49,6 @@
   <h2 id="formTitle">Aggiungi Vino <button id="resetButton" style="display:none; margin-left: 10px; padding: 0.3em 0.6em; font-size: 0.8em;">Aggiungi nuovo</button></h2>
   <label>Produttore e Nome / Denominazione:</label>
   <label>Oppure carica una foto dell'etichetta:</label>
-<input type="file" accept="image/*" capture="environment" onchange="handleImageUpload(this)" />
 <div id="ocrResult" style="margin-top: 1em; font-size: 0.9em;"></div>
 <div style="display: flex; gap: 10px;">
   <input type="text" id="produttore" placeholder="Produttore" style="flex: 1;">
@@ -335,70 +333,6 @@ document.body.addEventListener("click", e => {
     document.getElementById("saveButton").textContent = "Salva";
   }
 });
-
-async function handleImageUpload(input) {
-  const file = input.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = async function () {
-    const base64 = reader.result;
-    document.getElementById("ocrResult").innerHTML = "⏳ Analizzo l'etichetta...";
-
-    try {
-      const text = await performOCR(base64);
-      const prompt = `Ecco il testo letto da un'etichetta di vino:
-
-"${text}"
-
-Estrai i seguenti dati e restituiscili solo in JSON:
-{
-  "produttore": "...",
-  "denominazione": "...",
-  "annata": "...",
-  "uvaggio": "...",
-  "categoria": "...",
-  "sottocategoria": "..."
-}
-
-Se un dato non è presente, restituiscilo come stringa vuota.
-`;
-
-      const aiData = await fetchGPT(prompt);
-
-      document.getElementById("produttore").value = aiData.produttore || "";
-      document.getElementById("denominazione").value = aiData.denominazione || "";
-      document.getElementById("annata").value = aiData.annata || "";
-      document.getElementById("uvaggio").value = aiData.uvaggio || "";
-      document.getElementById("categoria").value = aiData.categoria || "";
-      document.getElementById("sottocategoria").value = aiData.sottocategoria || "";
-
-      document.getElementById("ocrResult").innerHTML = `✅ Etichetta interpretata con successo.`;
-    } catch (err) {
-      console.error("❌ Errore OCR/AI", err);
-      document.getElementById("ocrResult").innerHTML = `<span style='color:red;'>Errore nell'analisi dell'etichetta</span>`;
-    }
-  };
-  reader.readAsDataURL(file);
-}
-
-async function performOCR(base64Image) {
-  const result = await Tesseract.recognize(base64Image, 'eng', {
-    logger: m => console.log(m)
-  });
-  return result.data.text;
-}
-
-async function fetchGPT(prompt) {
-  const res = await fetch("https://ldunvbftxhbtuyabgxwh.supabase.co/functions/v1/gpt-etichetta", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ testo: prompt }) // invii direttamente il testo OCR
-  });
-
-  const data = await res.json();
-  return data;
-}
 
 loadWines();
 </script>
