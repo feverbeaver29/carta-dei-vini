@@ -13,6 +13,7 @@ serve(async (req) => {
 
   try {
     const { testo } = await req.json();
+
     if (!testo || typeof testo !== "string") {
       return new Response(JSON.stringify({ error: "Testo mancante o non valido" }), {
         status: 400,
@@ -21,20 +22,11 @@ serve(async (req) => {
     }
 
     const prompt = `
-Hai il seguente testo OCR proveniente da un'etichetta di vino:
+Testo OCR da etichetta:
 
 "${testo}"
 
-Estrai da questo testo, se presenti, i seguenti campi:
-
-- produttore (nome dell'azienda o cantina)
-- denominazione (nome del vino, DOC, DOCG ecc.)
-- annata (anno del vino, se presente)
-- uvaggio (tipologia di uve, se indicata)
-- categoria (rosso, bianco, rosato, bollicine, passito ecc.)
-- sottocategoria (Bolgheri, Chianti, Langhe, ecc.)
-
-Rispondi solo con un oggetto JSON come questo:
+Estrai i seguenti dati se presenti, e restituiscili solo in formato JSON:
 
 {
   "produttore": "...",
@@ -44,7 +36,9 @@ Rispondi solo con un oggetto JSON come questo:
   "categoria": "...",
   "sottocategoria": "..."
 }
-Se un campo non è presente, lascialo vuoto.
+
+Se mancano dati, restituisci stringa vuota per ciascun campo.
+Nessuna spiegazione, solo JSON.
 `;
 
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
@@ -68,28 +62,21 @@ Se un campo non è presente, lascialo vuoto.
       })
     });
 
-    if (!completion.ok) {
-      const errText = await completion.text();
-      console.error("❌ Errore OpenAI:", errText);
-      return new Response(JSON.stringify({ error: "Errore OpenAI", detail: errText }), {
+    const json = await completion.json();
+    const reply = json.choices?.[0]?.message?.content ?? "";
+
+    console.log("📦 Risposta GPT:", reply);
+
+    // Estrai blocco JSON dalla risposta
+    const match = reply.match(/\{[\s\S]*\}/);
+    if (!match) {
+      return new Response(JSON.stringify({ error: "JSON non trovato nella risposta GPT", reply }), {
         status: 500,
         headers: corsHeaders,
       });
     }
 
-    const json = await completion.json();
-    const reply = json.choices?.[0]?.message?.content || "{}";
-
-    console.log("📦 Risposta GPT:", reply);
-    let parsed;
-    try {
-  parsed = JSON.parse(reply);
-} catch {
-  return new Response(JSON.stringify({ error: "Risposta non in formato JSON", content: reply }), {
-    status: 500,
-    headers: corsHeaders,
-  });
-}
+    const parsed = JSON.parse(match[0]);
 
     return new Response(JSON.stringify(parsed), {
       status: 200,
