@@ -15,7 +15,6 @@ nav button { background: none; border: none; font-size: 1em; cursor: pointer; co
 .subcategory-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6em; }
 .subcategory { background: #fff; padding: 1em; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; text-align: center; }
 
-
 /* Sommelier Styles */
 #sommelierBtn {
   position: fixed;
@@ -113,13 +112,6 @@ nav button { background: none; border: none; font-size: 1em; cursor: pointer; co
     opacity: 1;
   }
 }
-@media (max-width: 480px) {
-  .sommelier-card .vino-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-  }
-}
 .sommelier-fadein {
   animation: fadeSlideIn 0.4s ease-out both;
 }
@@ -134,9 +126,38 @@ nav button { background: none; border: none; font-size: 1em; cursor: pointer; co
     transform: translateY(0);
   }
 }
+
+/* 🔧 Mobile tweaks */
+@media (max-width: 480px) {
+  #restaurantName {
+    font-size: 1em;
+    gap: 6px;
+  }
+  .subcategory-list {
+    grid-template-columns: 1fr;
+  }
+  .wine-card {
+    font-size: 0.95em;
+    padding: 0.8em;
+  }
+  #sommelierPopup {
+    width: 90vw;
+    padding: 20px;
+  }
+  #sommelierPopup input {
+    font-size: 1em;
+  }
+  .vino-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
 </style>
 </head>
 <body>
+<div style="background:#fff3f0; text-align:center; padding:0.8em; font-size:0.9em;">
+  Tocca una categoria o clicca sull'icona 🍷 per ricevere un consiglio!
+</div>
 
 <nav>
   <button onclick="goBack()">⬅</button>

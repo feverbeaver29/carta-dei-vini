@@ -155,6 +155,22 @@
       main { flex-direction: column; align-items: center; }
       .mockup { width: 100%; max-width: 360px; height: 600px; }
     }
+    @media (max-width: 480px) {
+  header h1 {
+    font-size: 1.2em;
+  }
+  nav button {
+    font-size: 0.8em;
+    padding: 8px 12px;
+  }
+  .save-btn {
+    padding: 10px 20px;
+    font-size: 1em;
+  }
+  .mockup {
+    height: 90vh;
+  }
+}
   </style>
 </head>
 <body>
@@ -366,6 +382,9 @@ setTimeout(() => {
     document.getElementById("sommelierRange").value = info?.sommelier_range || "1-3";
     document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
     document.getElementById("displayName").value = info?.nome || "";
+    document.getElementById("displayName").addEventListener("input", (e) => {
+  document.getElementById("ristoranteName").innerText = `${e.target.value || 'Ristorante'} - Dashboard`;
+});
     document.getElementById("fontSelector").value = info?.font || "Arial";
     const paletteSelector = document.getElementById("paletteSelector");
 const savedPalette = info?.palette_color || "rosso";
@@ -559,7 +578,14 @@ function capitalize(str) {
   const palette_color = paletteSelect.options[paletteSelect.selectedIndex].getAttribute("data-palette");
 
   await supabase.from("ristoranti").update({ nome, font, palette_color }).eq("id", RESTAURANT_ID);
-  alert("Impostazioni salvate!");
+
+  const btn = document.querySelector(".save-btn");
+  const originalText = btn.textContent;
+  btn.textContent = "✅ Salvato!";
+  setTimeout(() => {
+    btn.textContent = originalText;
+  }, 2000);
+
   updatePreview();
 }
 

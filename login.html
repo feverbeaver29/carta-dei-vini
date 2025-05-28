@@ -5,17 +5,103 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Wine's Fever</title>
   <style>
-    body { background-color: #fff9f4; font-family: 'Segoe UI', Tahoma, sans-serif; color: #333; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-    h1 { color: #b00; margin-bottom: 20px; }
-    label { display: block; margin-top: 15px; text-align: left; }
-    input[type="email"], input[type="password"] { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; font-size: 1em; }
-    button, .google-btn { width: 100%; padding: 12px; margin-top: 20px; background-color: #b00; color: white; border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer; transition: background 0.3s, transform 0.2s; display: inline-block; }
-    button:hover, .google-btn:hover { background-color: #800000; transform: translateY(-3px); }
-    .google-btn { background-color: #4285F4; display: flex; align-items: center; justify-content: center; gap: 10px; text-align: center; }
-    .google-btn img { width: 24px; height: 24px; }
-    .remember { text-align: left; margin-top: 10px; font-size: 0.9em; display: flex; align-items: center; gap: 10px; }
-    footer { margin-top: 20px; color: #aaa; font-size: 0.9em; }
+    body {
+      background-color: #fff9f4;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    h1 {
+      color: #b00;
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      text-align: left;
+    }
+    .password-wrapper {
+      position: relative;
+    }
+    .password-wrapper input {
+      width: 100%;
+      padding: 12px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1em;
+    }
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+    }
+    input[type="email"] {
+      width: 100%;
+      padding: 12px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1em;
+    }
+    button, .google-btn {
+      width: 100%;
+      padding: 12px;
+      margin-top: 20px;
+      background-color: #b00;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1em;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+      display: inline-block;
+    }
+    button:hover, .google-btn:hover {
+      background-color: #800000;
+      transform: translateY(-3px);
+    }
+    .google-btn {
+      background-color: #4285F4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-align: center;
+    }
+    .google-btn img {
+      width: 24px;
+      height: 24px;
+    }
+    .remember {
+      text-align: left;
+      margin-top: 10px;
+      font-size: 0.9em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    footer {
+      margin-top: 20px;
+      color: #aaa;
+      font-size: 0.9em;
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -23,13 +109,19 @@
 <div class="container">
   <h1>Login</h1>
   <label>Email <span style="color: red">*</span></label>
-  <input type="email" id="email" placeholder="Inserisci la tua email">
+  <input type="email" id="email" placeholder="Inserisci la tua email" required>
+
   <label>Password <span style="color: red">*</span></label>
-  <input type="password" id="password" placeholder="Inserisci la password">
+  <div class="password-wrapper">
+    <input type="password" id="password" placeholder="Inserisci la password" required>
+    <span class="toggle-password" onclick="toggleVisibility('password')">👁️</span>
+  </div>
+
   <div class="remember">
     <input type="checkbox" id="remember">
     <label for="remember">Ricordati di me</label>
   </div>
+
   <button onclick="login()">Accedi</button>
   <div class="google-btn" onclick="loginWithGoogle()">
     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Icon">
@@ -39,11 +131,16 @@
 </div>
 
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+  function toggleVisibility(id) {
+    const field = document.getElementById(id);
+    field.type = field.type === "password" ? "text" : "password";
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
     window.login = async function () {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
@@ -83,3 +180,4 @@
 </script>
 </body>
 </html>
+
