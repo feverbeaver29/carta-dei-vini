@@ -87,8 +87,8 @@ function toggleSommelier() {
 
   // Se non siamo già nello stato sommelier, lo aggiungiamo alla cronologia
   if (!history.state || !history.state.sommelier) {
-    history.pushState({ sommelier: true }, '', location.href);
-  }
+  history.pushState({ sommelier: true }, '', '#sommelier');
+}
 }
 
 function closeSommelierPopup() {
