@@ -222,12 +222,6 @@ window.addEventListener('popstate', (event) => {
   }
 });
 
-window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    closeSommelierPopup();
-  }
-});
-
 async function loadRestaurantData() {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/ristoranti?id=eq.${RESTAURANT_ID}`, {
     headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
