@@ -17,7 +17,7 @@
       background-color: #fff9f4;
     }
     header {
-      position: fixed;
+      position: sticky;
       top: 0;
       left: 0;
       right: 0;
@@ -34,12 +34,29 @@
       font-size: 1.5em;
       text-align: center;
     }
-    nav {
+    .mobile-nav-toggle {
+      display: none;
+      background: #b00;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 0.9em;
       margin-top: 0.5em;
+      cursor: pointer;
+    }
+    nav {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
       gap: 1em;
+      margin-top: 0.5em;
+    }
+    nav.mobile {
+      display: none;
+      flex-direction: column;
+      gap: 0.5em;
+      width: 100%;
     }
     nav button {
       background-color: #b00;
@@ -152,8 +169,11 @@
       background-color: #800000;
     }
     @media (max-width: 768px) {
-      main { flex-direction: column; align-items: center; }
-      .mockup { width: 100%; max-width: 360px; height: 600px; }
+      nav.desktop { display: none; }
+      .mobile-nav-toggle { display: block; }
+      nav.mobile.show { display: flex; animation: slideDown 0.3s ease-out; }
+      .mockup { order: 2; margin-top: 20px; }
+      #mockupWrapper { width: 100%; display: flex; justify-content: center; }
     }
     @media (max-width: 480px) {
   header h1 {
@@ -177,6 +197,7 @@
   <header>
     <h1 id="ristoranteName">Nome Ristorante - Dashboard</h1>
     <nav>
+  <button class="mobile-nav-toggle" onclick="toggleMobileNav()">☰ Menu</button>
   <button onclick="showSettings('carta')">Impostazioni Carta dei Vini</button>
   <button onclick="showSettings('sommelier')">Impostazioni Sommelier Virtuale</button>
   <button onclick="goTo('admin.html')">Gestisci Carta</button>
@@ -184,6 +205,14 @@
   <button onclick="showQRCode()">Scarica QR Code</button>
   <button onclick="logout()">Logout</button>
 </nav>
+<nav class="mobile" id="mobileNav">
+      <button onclick="showSettings('carta')">Impostazioni Carta</button>
+      <button onclick="showSettings('sommelier')">Sommelier</button>
+      <button onclick="goTo('admin.html')">Gestione Vini</button>
+      <button onclick="goTo('carta.html')">Visualizza Carta</button>
+      <button onclick="showQRCode()">QR Code</button>
+      <button onclick="logout()">Logout</button>
+    </nav>
   </header>
   <main>
     <div id="cartaSettings">
@@ -218,16 +247,19 @@
         <div class="color-box" style="background:#fff"></div>
       </div>
 
-      <button class="save-btn" onclick="saveSettings()">Salva Impostazioni</button>
-      <div style="display: flex; gap: 10px; margin-top: 20px;">
-        <button class="save-btn" onclick="toggleReorder('categorie')" id="ordinaCategorieBtn">Ordina Categorie</button>
-        <button class="save-btn" onclick="toggleReorder('sottocategorie')" id="ordinaSottocategorieBtn">Ordina Sottocategorie</button>
+      <button class="save-btn">Salva Impostazioni</button>
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+          <button class="save-btn">Ordina Categorie</button>
+          <button class="save-btn">Ordina Sottocategorie</button>
+        </div>
+      </div>
+      <div id="mockupWrapper">
+        <div class="mockup">
+          <iframe id="previewFrame" src="carta.html" style="width:100%; height:100%; border:none;"></iframe>
+        </div>
       </div>
     </div>
-    <div class="mockup">
-      <iframe id="previewFrame" src="" style="width:100%; height:100%; border:none;"></iframe>
-    </div>
-  </div>
+
   <div id="sommelierSettings" style="display:none;">
     <div class="section">
       <h2>Impostazioni Sommelier Virtuale</h2>
@@ -470,6 +502,11 @@ document.getElementById("logoUpload").addEventListener("change", async (event) =
 });
 
 let reorderMode = null;
+
+function toggleMobileNav() {
+      const nav = document.getElementById('mobileNav');
+      nav.classList.toggle('show');
+    }
 
 function toggleReorder(type) {
   const iframe = document.getElementById("previewFrame");
