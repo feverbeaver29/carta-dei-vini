@@ -13,164 +13,100 @@
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #fff9f4;
+      font-family: sans-serif;
+      background: #fff9f4;
+      color: #333;
     }
     header {
-      position: fixed;
+      position: sticky;
       top: 0;
-      left: 0;
-      right: 0;
       background: #fff;
-      border-bottom: 1px solid #ccc;
-      padding: 1em;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      z-index: 1000;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 1.5em;
-      text-align: center;
+      justify-content: space-between;
+      padding: 1em;
+      border-bottom: 1px solid #ddd;
+      z-index: 100;
     }
     nav {
-      margin-top: 0.5em;
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
       gap: 1em;
+      flex-wrap: wrap;
     }
     nav button {
-      background-color: #b00;
+      background: #b00;
       color: white;
       border: none;
-      padding: 10px 20px;
-      border-radius: 20px;
+      padding: 10px 16px;
+      border-radius: 8px;
       cursor: pointer;
-      font-size: 0.9em;
+      font-size: 1em;
+      margin: 6px 0;
     }
-    nav button:hover { background-color: #800000; }
-    main {
-      padding: 140px 20px 60px;
-      max-width: 1200px;
+    nav button:hover {
+      background: #900;
+    }
+    .admin-panel {
+      max-width: 800px;
       margin: auto;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 40px;
-      justify-content: center;
-    }
-    .section {
-      flex: 1;
-      min-width: 280px;
+      padding: 2em;
     }
     label {
       display: block;
-      margin-top: 20px;
-      font-size: 1.1em;
+      margin-top: 1em;
     }
-    input[type="text"], select {
+    select, input[type="text"] {
       width: 100%;
-      max-width: 400px;
-      padding: 10px;
+      padding: 0.7em;
+      margin-top: 0.4em;
+      font-size: 1em;
+      border: 1px solid #ccc;
       border-radius: 8px;
-      border: 1px solid #ccc;
-      margin-top: 5px;
-    }
-    .palette-option {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 8px;
-    }
-    .color-box {
-      width: 16px;
-      height: 16px;
-      border-radius: 3px;
-    }
-    .logo-preview {
-      margin-top: 10px;
-      max-height: 60px;
-    }
-    .mockup {
-      border: 1px solid #ccc;
-      border-radius: 16px;
-      width: 360px;
-      height: 640px;
-      background: white;
-      overflow: hidden;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
     .save-btn {
-      margin-top: 30px;
-      background-color: #b00;
+      margin-top: 2em;
+      background: #090;
       color: white;
-      padding: 15px 30px;
       border: none;
-      border-radius: 25px;
+      padding: 12px 24px;
       font-size: 1.1em;
+      border-radius: 10px;
       cursor: pointer;
     }
-    .save-btn:hover {
-      background-color: #800000;
+    .mockup {
+      margin-top: 3em;
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      overflow: hidden;
+      height: 80vh;
+      max-width: 100%;
     }
-    footer {
-      text-align: center;
-      font-size: 0.9em;
-      color: #999;
-      margin-top: 60px;
-      padding-bottom: 20px;
-    }
-    #qrPopup {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0,0,0,0.6);
-      justify-content: center;
-      align-items: center;
-      z-index: 2000;
-    }
-    #qrPopupContent {
-      background: #fff;
-      padding: 20px;
-      border-radius: 16px;
-      text-align: center;
-    }
-    #qrPopupContent button {
-      margin-top: 10px;
-      background-color: #b00;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    #qrPopupContent button:hover {
-      background-color: #800000;
-    }
+
     @media (max-width: 768px) {
-      main { flex-direction: column; align-items: center; }
-      .mockup { width: 100%; max-width: 360px; height: 600px; }
+      nav {
+        flex-direction: column;
+        align-items: stretch;
+      }
     }
+
     @media (max-width: 480px) {
-  header h1 {
-    font-size: 1.2em;
-  }
-  nav button {
-    font-size: 0.8em;
-    padding: 8px 12px;
-  }
-  .save-btn {
-    padding: 10px 20px;
-    font-size: 1em;
-  }
-  .mockup {
-    height: 90vh;
-  }
-}
+      nav {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5em;
+      }
+      nav button {
+        font-size: 0.9em;
+        padding: 10px;
+      }
+      .save-btn {
+        font-size: 1em;
+        padding: 10px 20px;
+      }
+      .mockup {
+        height: 70vh;
+      }
+    }
   </style>
 </head>
 <body>
