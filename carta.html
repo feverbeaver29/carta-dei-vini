@@ -83,14 +83,24 @@ let currentView = 'categories';
 function toggleSommelier() {
   document.getElementById('sommelierOverlay').style.display = 'flex';
   document.getElementById('foodInput').focus();
+  history.pushState({ sommelier: true }, 'sommelier');
 }
 function closeSommelierPopup() {
   document.getElementById('sommelierOverlay').style.display = 'none';
   document.getElementById('foodInput').value = '';
   document.getElementById('wineSuggestion').innerHTML = '';
+
+  if (history.state && history.state.sommelier) {
+    history.back();
+  }
 }
+
 function handleSommelierKey(e) {
-  if (e.key === 'Enter') suggestWine();
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    suggestWine();
+    document.getElementById('foodInput').blur(); // chiude la tastiera
+  }
 }
 async function suggestWine() {
   const paroleBloccate = [
@@ -196,6 +206,12 @@ document.getElementById('sommelierBtn').onclick = toggleSommelier;
 window.addEventListener('click', e => {
   const overlay = document.getElementById('sommelierOverlay');
   if (e.target === overlay) closeSommelierPopup();
+});
+
+window.addEventListener('popstate', (event) => {
+  if (event.state && event.state.sommelier) {
+    closeSommelierPopup();
+  }
 });
 
 async function loadRestaurantData() {
