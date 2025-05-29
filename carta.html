@@ -96,9 +96,9 @@ function closeSommelierPopup() {
   document.getElementById('foodInput').value = '';
   document.getElementById('wineSuggestion').innerHTML = '';
 
-  // Torna indietro solo se siamo in uno stato pushato
-  if (history.state && history.state.sommelier) {
-    history.back();
+  // Puliamo l’URL (togliamo #sommelier) e azzeriamo lo stato
+  if (location.hash === "#sommelier") {
+    history.replaceState({}, '', location.pathname); // resetta l’URL
   }
 }
 
@@ -218,6 +218,12 @@ window.addEventListener('click', e => {
 window.addEventListener('popstate', (event) => {
   console.log('popstate event:', event.state); // DEBUG
   if (event.state && event.state.sommelier) {
+    closeSommelierPopup();
+  }
+});
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
     closeSommelierPopup();
   }
 });
