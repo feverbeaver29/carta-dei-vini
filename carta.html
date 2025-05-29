@@ -83,15 +83,21 @@ let currentView = 'categories';
 function toggleSommelier() {
   document.getElementById('sommelierOverlay').style.display = 'flex';
   document.getElementById('foodInput').focus();
-  history.pushState({ sommelier: true }, 'sommelier');
+
+  if (!history.state || !history.state.sommelier) {
+    history.pushState({ sommelier: true }, '', location.href);
+  }
 }
+
 function closeSommelierPopup() {
-  document.getElementById('sommelierOverlay').style.display = 'none';
+  const overlay = document.getElementById('sommelierOverlay');
+  overlay.style.display = 'none';
   document.getElementById('foodInput').value = '';
   document.getElementById('wineSuggestion').innerHTML = '';
 
+  // Rimuove lo stato senza forzare indietro se già triggerato
   if (history.state && history.state.sommelier) {
-    history.back();
+    history.replaceState(null, '', location.href);
   }
 }
 
@@ -209,6 +215,7 @@ window.addEventListener('click', e => {
 });
 
 window.addEventListener('popstate', (event) => {
+  console.log("popstate:", event.state);
   if (event.state && event.state.sommelier) {
     closeSommelierPopup();
   }
