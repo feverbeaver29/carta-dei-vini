@@ -81,12 +81,10 @@ let currentCategory = '';
 let currentView = 'categories';
 
 function toggleSommelier() {
-  const overlay = document.getElementById('sommelierOverlay');
-  overlay.style.display = 'flex';
+  document.getElementById('sommelierOverlay').style.display = 'flex';
   document.getElementById('foodInput').focus();
-
-  // Aggiunge una nuova voce nella cronologia con un hash (funziona sempre)
   history.pushState({ sommelier: true }, '', '#sommelier');
+  sommelierAperto = true;
 }
 
 function closeSommelierPopup() {
@@ -215,9 +213,10 @@ window.addEventListener('click', e => {
 });
 
 window.addEventListener('popstate', (event) => {
-  console.log('popstate event:', event.state); // DEBUG
-  if (event.state && event.state.sommelier) {
+  console.log("popstate event:", event.state);
+  if (event.state?.sommelier || sommelierAperto) {
     closeSommelierPopup();
+    sommelierAperto = false;
   }
 });
 
