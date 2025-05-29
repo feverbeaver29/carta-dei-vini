@@ -91,23 +91,27 @@ function handleSommelierKey(e) {
 }
 async function suggestWine() {
   const paroleBloccate = [
-  "come ti chiami", "come stai", "ciao", "chi sei", "sei reale", "sei umano",
-  "parolacce", "cazzo", "merda", "stronzo", "scemo", "stupido", "ubriaco",
-  "sposato", "fidanzato", "intelligenza", "chi ha vinto", "quanto costi", "gpt"
-];
+    "come ti chiami", "come stai", "ciao", "chi sei", "sei reale", "sei umano",
+    "parolacce", "cazzo", "merda", "stronzo", "scemo", "stupido", "ubriaco",
+    "sposato", "fidanzato", "intelligenza", "chi ha vinto", "quanto costi", "gpt"
+  ];
   const input = document.getElementById('foodInput').value.trim();
   const suggestion = document.getElementById('wineSuggestion');
   const inputLower = input.toLowerCase();
-const contieneOffensivo = paroleBloccate.some(p => inputLower.includes(p));
+  const contieneOffensivo = paroleBloccate.some(p => inputLower.includes(p));
 
-if (contieneOffensivo) {
-  suggestion.innerHTML = `
-    <div style="background:#fff3f0; padding:15px; border-radius:12px; border:1px solid #ddd; color:#333; font-style:italic;">
-      Per favore scrivimi il nome di un piatto, così posso consigliarti il vino perfetto! 🍷
-    </div>`;
-  return;
-}
-  if (!input) return suggestion.innerHTML = "Inserisci un piatto!";
+  if (contieneOffensivo) {
+    suggestion.innerHTML = `
+      <div style="background:#fff3f0; padding:15px; border-radius:12px; border:1px solid #ddd; color:#333; font-style:italic;">
+        Per favore scrivimi il nome di un piatto, così posso consigliarti il vino perfetto! 🍷
+      </div>`;
+    return;
+  }
+
+  if (!input) {
+    suggestion.innerHTML = "Inserisci un piatto!";
+    return;
+  }
 
   suggestion.innerHTML = "Sto pensando...";
 
@@ -120,61 +124,63 @@ if (contieneOffensivo) {
 
     const data = await response.json();
     const reply = data.suggestion || "";
-const rawBlocks = reply.split(/^- /m).map(b => b.trim()).filter(Boolean);
+    const rawBlocks = reply.split(/^- /m).map(b => b.trim()).filter(Boolean);
 
-let cardsHtml = rawBlocks.map(block => {
-  const lines = block.split(/\n/).map(l => l.trim()).filter(Boolean);
+    let cardsHtml = rawBlocks.map(block => {
+      const lines = block.split(/\n/).map(l => l.trim()).filter(Boolean);
+      const titleLine = lines[0] || "";
+      const uvaggio = lines[1] || "";
+      const motivazione = lines.slice(2).join(" ");
 
-  const titleLine = lines[0] || "";
-  const uvaggio = lines[1] || "";
-  const motivazione = lines.slice(2).join(" ");
+      const match = titleLine.match(/^(.*)\\s+€?(\\d+.*)$/);
+      const nomeVino = match?.[1] || "";
+      const prezzo = match?.[2] ? `€${match[2]}` : "";
 
-  // Estrai nome e prezzo da prima riga
-  const match = titleLine.match(/^(.*)\s+€?(\d+.*)$/);
-const nomeVino = match?.[1] || "";
-const prezzo = match?.[2] ? `€${match[2]}` : "";
+      if (!nomeVino || !prezzo || !motivazione) return '';
 
-  if (!nomeVino || !prezzo || !motivazione) return '';
+      return `
+        <div class="sommelier-card" style="background:#fff; border:1px solid #ddd; border-radius:12px; padding:15px; margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+          <div class="vino-header" style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap;">
+            <div style="font-weight:600; font-size:1em; color:#222; flex:1;">${nomeVino}</div>
+            <div style="font-size:0.95em; color:#b00; white-space:nowrap;">${prezzo}</div>
+          </div>
+          ${uvaggio ? `<div style="font-size:0.9em; color:#666; margin-top:4px;">Uvaggio: ${uvaggio}</div>` : ""}
+          <div style="margin-top:10px; font-style:italic; font-size:0.95em;">${motivazione}</div>
+        </div>`;
+    }).join('');
 
-  return `
-    <div class="sommelier-card" style="background:#fff; border:1px solid #ddd; border-radius:12px; padding:15px; margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
-      <div class="vino-header" style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap;">
-        <div style="font-weight:600; font-size:1em; color:#222; flex:1;">${nomeVino}</div>
-        <div style="font-size:0.95em; color:#b00; white-space:nowrap;">${prezzo}</div>
+    if (!cardsHtml || cardsHtml.trim() === "") {
+      suggestion.innerHTML = `
+        <div style="background:#fff3f0; padding:15px; border-radius:12px; border:1px solid #ddd; color:#333; font-style:italic;">
+          Non ho trovato nessun abbinamento per il piatto indicato. Prova con un altro!
+        </div>`;
+      return;
+    }
+
+    aggiornaStorico(input);
+    const storico = mostraStoricoNelSommelier();
+
+    suggestion.innerHTML = `
+      <div class="sommelier-fadein" style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px;">
+        <img id="sommelierAvatar"
+             src="${ristoranteSommelierURL || 'sommelier.png'}"
+             alt="Sommelier"
+             style="width:64px; height:64px; border-radius:50%; object-fit:cover; box-shadow:0 0 6px rgba(0,0,0,0.1);">
+
+        <div style="position: relative; background: #fff8f6; border-radius:16px; padding:16px 18px; max-width:80%; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+          <div style="position: absolute; top: 20px; left: -10px; width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-right: 10px solid #fff8f6;"></div>
+          <strong style="color:#b00; font-size: 1em;">Il nostro sommelier ti consiglia:</strong>
+          <div style="margin-top: 8px;">${cardsHtml}</div>
+          ${storico}
+          <div style="text-align:right; font-size:0.85em; color:#999; margin-top:8px;">— Il tuo Sommelier Virtuale 🍷</div>
+        </div>
       </div>
-      ${uvaggio ? `<div style="font-size:0.9em; color:#666; margin-top:4px;">Uvaggio: ${uvaggio}</div>` : ""}
-      <div style="margin-top:10px; font-style:italic; font-size:0.95em;">${motivazione}</div>
-    </div>`;
-}).join('');
-
-if (!cardsHtml || cardsHtml.trim() === "") {
-  suggestion.innerHTML = `
-    <div style="background:#fff3f0; padding:15px; border-radius:12px; border:1px solid #ddd; color:#333; font-style:italic;">
-      Non ho trovato nessun abbinamento per il piatto indicato. Prova con un altro!
-    </div>`;
-  return;
-}
-suggestion.innerHTML = `
-  <div class="sommelier-fadein" style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px;">
-    <img id="sommelierAvatar"
-         src="${ristoranteSommelierURL || 'sommelier.png'}"
-         alt="Sommelier"
-         style="width:64px; height:64px; border-radius:50%; object-fit:cover; box-shadow:0 0 6px rgba(0,0,0,0.1);">
-
-    <div style="position: relative; background: #fff8f6; border-radius:16px; padding:16px 18px; max-width:80%; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-      <div style="position: absolute; top: 20px; left: -10px; width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-right: 10px solid #fff8f6;"></div>
-      <strong style="color:#b00; font-size: 1em;">Il nostro sommelier ti consiglia:</strong>
-      <div style="margin-top: 8px;">${cardsHtml}</div>
-      <div style="text-align:right; font-size:0.85em; color:#999; margin-top:8px;">— Il tuo Sommelier Virtuale 🍷</div>
-    </div>
-  </div>
-`;
+    `;
 
   } catch (err) {
     console.error(err);
     suggestion.innerHTML = "Errore nel generare il suggerimento.";
   }
-  suggestion.innerHTML += mostraStoricoNelSommelier(); // ✅ aggiungiamo lo storico visivo
 }
 
 setTimeout(() => {
