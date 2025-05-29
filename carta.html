@@ -132,7 +132,7 @@ async function suggestWine() {
       const uvaggio = lines[1] || "";
       const motivazione = lines.slice(2).join(" ");
 
-      const match = titleLine.match(/^(.*)\\s+€?(\\d+.*)$/);
+      const match = titleLine.match(/^(.*)\s+€?(\d+.*)$/);
       const nomeVino = match?.[1] || "";
       const prezzo = match?.[2] ? `€${match[2]}` : "";
 
