@@ -74,6 +74,7 @@ const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
 const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
 const urlParams = new URLSearchParams(window.location.search);
 const RESTAURANT_ID = urlParams.get("ristorante_id");
+history.replaceState({}, '', location.pathname);
 
 let wines = [];
 let ristoranteSommelierURL = null;
@@ -85,20 +86,19 @@ function toggleSommelier() {
   overlay.style.display = 'flex';
   document.getElementById('foodInput').focus();
 
-  // Se non siamo già nello stato sommelier, lo aggiungiamo alla cronologia
-  if (!history.state || !history.state.sommelier) {
+  // Aggiunge una nuova voce nella cronologia con un hash (funziona sempre)
   history.pushState({ sommelier: true }, '', '#sommelier');
-}
 }
 
 function closeSommelierPopup() {
-  document.getElementById('sommelierOverlay').style.display = 'none';
+  const overlay = document.getElementById('sommelierOverlay');
+  overlay.style.display = 'none';
   document.getElementById('foodInput').value = '';
   document.getElementById('wineSuggestion').innerHTML = '';
 
-  // Rimuovi lo stato se esiste
+  // Torna indietro solo se siamo in uno stato pushato
   if (history.state && history.state.sommelier) {
-    history.back(); // questo attiverà popstate che chiama closeSommelierPopup
+    history.back();
   }
 }
 
@@ -216,7 +216,7 @@ window.addEventListener('click', e => {
 });
 
 window.addEventListener('popstate', (event) => {
-  console.log("popstate:", event.state);
+  console.log('popstate event:', event.state); // DEBUG
   if (event.state && event.state.sommelier) {
     closeSommelierPopup();
   }
