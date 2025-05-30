@@ -11,10 +11,16 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     * { box-sizing: border-box; }
+    html, body {
+  height: 100%;
+  overflow-x: hidden;
+}
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
       background-color: #fff9f4;
+      display: flex;
+  flex-direction: column;
     }
     header {
   position: sticky;
@@ -96,7 +102,7 @@ nav.mobile button {
     }
     nav button:hover { background-color: #800000; }
     main {
-  min-height: 120vh; /* prima era 100vh */
+  min-height: calc(100vh + 200px); /* garantisce scroll anche su mobile */
   padding: 140px 20px 60px;
   max-width: 1200px;
   margin: auto;
@@ -104,6 +110,7 @@ nav.mobile button {
   flex-wrap: wrap;
   gap: 40px;
   justify-content: center;
+  flex-grow: 1;
 }
     .section {
       flex: 1;
@@ -321,8 +328,7 @@ nav.mobile button {
 ">+ Aggiungi vino da spingere</button>
 
 <button class="save-btn" onclick="saveSommelierSettings()">Salva Impostazioni Sommelier</button>
-
-</main>
+<div style="height: 200px;"></div>
   </main>
   <div id="qrPopup">
     <div id="qrPopupContent">
