@@ -36,14 +36,6 @@
     }
     .mobile-nav-toggle {
       display: none;
-      background: #b00;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 20px;
-      font-size: 0.9em;
-      margin-top: 0.5em;
-      cursor: pointer;
     }
     nav {
       display: flex;
@@ -54,10 +46,11 @@
     }
     nav.mobile {
       display: none;
-      flex-direction: column;
-      gap: 0.5em;
-      width: 100%;
     }
+    nav.mobile.show {
+  display: flex;
+  animation: slideDown 0.3s ease-out;
+}
     nav button {
       background-color: #b00;
       color: white;
@@ -504,9 +497,8 @@ document.getElementById("logoUpload").addEventListener("change", async (event) =
 let reorderMode = null;
 
 function toggleMobileNav() {
-      const nav = document.getElementById('mobileNav');
-      nav.classList.toggle('show');
-    }
+  document.getElementById('mobileNav').classList.toggle('show');
+}
 
 function toggleReorder(type) {
   const iframe = document.getElementById("previewFrame");
