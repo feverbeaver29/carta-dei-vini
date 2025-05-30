@@ -41,8 +41,9 @@
   padding: 10px 20px;
   border-radius: 20px;
   font-size: 0.9em;
-  margin-top: 10px;
+  margin: 10px auto 0 auto; /* centrato */
   cursor: pointer;
+  display: block;
 }
 
 .mobile-nav-toggle:hover {
@@ -57,12 +58,19 @@
       margin-top: 0.5em;
     }
     nav.mobile {
-      display: none;
-    }
+  display: none;
+  flex-direction: column;
+  align-items: center; /* centra i bottoni */
+  gap: 0.75em; /* spazio tra i bottoni */
+  width: 100%;
+  padding: 1em 0;
+}
+
     nav.mobile.show {
   display: flex;
-  animation: slideDown 0.3s ease-out;
+  animation: slideDownFade 0.25s ease-out;
 }
+
     nav button {
       background-color: #b00;
       color: white;
@@ -195,6 +203,10 @@
   .mockup {
     height: 90vh;
   }
+}
+@keyframes slideDownFade {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
   </style>
 </head>
