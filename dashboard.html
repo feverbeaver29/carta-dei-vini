@@ -370,91 +370,102 @@ nav.mobile button {
   <button onclick="logout()">Logout</button>
 </nav>
   <main>
-    <div id="cartaSettings">
-    <div class="section">
-      <div class="dashboard-grid">
-      <h2>Impostazioni Carta dei Vini</h2>
-      <label for="displayName">Nome da visualizzare</label>
-      <input type="text" id="displayName">
+  <!-- SEZIONE IMPOSTAZIONI CARTA -->
+  <div id="cartaSettings">
+    <div class="section" id="cartaSection">
+      <!-- Colonna sinistra: impostazioni -->
+      <div id="impostazioniCarta" class="dashboard-grid">
+        <h2>Impostazioni Carta dei Vini</h2>
 
-      <label for="logoUpload">oppure carica il logo del tuo ristorante</label>
-      <input type="file" id="logoUpload" accept="image/*">
+        <label for="displayName">Nome da visualizzare</label>
+        <input type="text" id="displayName">
 
-      <label for="fontSelector">Font del nome</label>
-      <select id="fontSelector">
-        <option value="Arial">Arial</option>
-        <option value="Montserrat">Montserrat</option>
-        <option value="Raleway">Raleway</option>
-        <option value="Dancing Script">Dancing Script</option>
-        <option value="Playfair Display">Playfair Display</option>
-      </select>
+        <label for="logoUpload">oppure carica il logo del tuo ristorante</label>
+        <input type="file" id="logoUpload" accept="image/*">
 
-      <label for="paletteSelector">Palette Colori</label>
-      <div class="palette-option">
-        <select id="paletteSelector">
-          <option value="#b00" data-palette="rosso">Rosso</option>
-          <option value="#d4af37" data-palette="oro">Oro</option>
-          <option value="#005f73" data-palette="blu-elegante">Blu Elegante</option>
-          <option value="#a3b18a" data-palette="verde-salvia">Verde Salvia</option>
-          <option value="#888" data-palette="grigio-minimal">Grigio Minimal</option>
-          <option value="#000" data-palette="black-white">Black & White</option>
+        <label for="fontSelector">Font del nome</label>
+        <select id="fontSelector">
+          <option value="Arial">Arial</option>
+          <option value="Montserrat">Montserrat</option>
+          <option value="Raleway">Raleway</option>
+          <option value="Dancing Script">Dancing Script</option>
+          <option value="Playfair Display">Playfair Display</option>
         </select>
-      </div>
 
-      <button class="save-btn">Salva Impostazioni</button>
+        <label for="paletteSelector">Palette Colori</label>
+        <div class="palette-option">
+          <select id="paletteSelector">
+            <option value="#b00" data-palette="rosso">Rosso</option>
+            <option value="#d4af37" data-palette="oro">Oro</option>
+            <option value="#005f73" data-palette="blu-elegante">Blu Elegante</option>
+            <option value="#a3b18a" data-palette="verde-salvia">Verde Salvia</option>
+            <option value="#888" data-palette="grigio-minimal">Grigio Minimal</option>
+            <option value="#000" data-palette="black-white">Black & White</option>
+          </select>
+        </div>
+
+        <button class="save-btn">Salva Impostazioni</button>
+
         <div style="margin-top: 20px; display: flex; gap: 10px;">
           <button class="save-btn" id="ordinaCategorieBtn" onclick="toggleReorder('categorie')">Ordina Categorie</button>
           <button class="save-btn" id="ordinaSottocategorieBtn" onclick="toggleReorder('sottocategorie')">Ordina Sottocategorie</button>
         </div>
       </div>
-      </div>
-    </div>
+
+      <!-- Colonna destra: anteprima -->
       <div id="mockupWrapper">
         <div class="mockup">
           <iframe id="previewFrame" style="width:100%; height:100%; border:none;"></iframe>
         </div>
       </div>
-  
+    </div>
+  </div>
 
-<div id="sommelierSettings" class="section" style="display: none;">
-  <div class="dashboard-grid">
-    <h2>Impostazioni Sommelier Virtuale</h2>
+  <!-- SEZIONE IMPOSTAZIONI SOMMELIER -->
+  <div id="sommelierSettings" class="section" style="display: none;">
+    <div class="dashboard-grid">
+      <h2>Impostazioni Sommelier Virtuale</h2>
 
-    <label for="sommelierLogoUpload">Logo del sommelier</label>
-    <input type="file" id="sommelierLogoUpload" accept="image/*">
-    <div id="sommelierLogoPreview" class="logo-preview"></div>
+      <label for="sommelierLogoUpload">Logo del sommelier</label>
+      <input type="file" id="sommelierLogoUpload" accept="image/*">
+      <div id="sommelierLogoPreview" class="logo-preview"></div>
 
-    <label for="sommelierRange">Numero di vini da consigliare</label>
-    <select id="sommelierRange">
-      <option value="1-3">Da 1 a 3</option>
-      <option value="3-5">Da 3 a 5</option>
-      <option value="5-7">Da 5 a 7</option>
-    </select>
+      <label for="sommelierRange">Numero di vini da consigliare</label>
+      <select id="sommelierRange">
+        <option value="1-3">Da 1 a 3</option>
+        <option value="3-5">Da 3 a 5</option>
+        <option value="5-7">Da 5 a 7</option>
+      </select>
 
-    <label>Vini da spingere in carta</label>
-    <div id="boostContainer"></div>
-    <button type="button" onclick="addBoostInput()" style="
-      margin-top: 10px;
-      background: transparent;
-      color: #b00;
-      border: 1px solid #b00;
-      border-radius: 20px;
-      padding: 6px 14px;
-      font-size: 0.9em;
-      cursor: pointer;">+ Aggiungi vino da spingere</button>
+      <label>Vini da spingere in carta</label>
+      <div id="boostContainer"></div>
 
-    <button class="save-btn" onclick="saveSommelierSettings()">Salva Impostazioni Sommelier</button>
+      <button type="button" onclick="addBoostInput()" style="
+        margin-top: 10px;
+        background: transparent;
+        color: #b00;
+        border: 1px solid #b00;
+        border-radius: 20px;
+        padding: 6px 14px;
+        font-size: 0.9em;
+        cursor: pointer;">+ Aggiungi vino da spingere</button>
+
+      <button class="save-btn" onclick="saveSommelierSettings()">Salva Impostazioni Sommelier</button>
+    </div>
+  </div>
+</main>
+
+<!-- Spazio per non far chiudere il contenuto troppo presto -->
+<div style="height: 200px;"></div>
+
+<!-- Popup QR -->
+<div id="qrPopup">
+  <div id="qrPopupContent">
+    <div id="qrCodeContainer"></div>
+    <button id="downloadQr">Scarica QR Code</button>
   </div>
 </div>
 
-</main>
-<div style="height: 200px;"></div>
-  <div id="qrPopup">
-    <div id="qrPopupContent">
-      <div id="qrCodeContainer"></div>
-      <button id="downloadQr">Scarica QR Code</button>
-    </div>
-  </div>
   <footer>© 2025 Wine's Fever - Tutti i diritti riservati</footer>
   <script>
 
