@@ -248,7 +248,14 @@ nav.mobile button {
       background-color: #800000;
     }
     @media (max-width: 768px) {
-      .dashboard-grid {display: flex; flex-direction: column; align-items: center; padding: 1em; gap: 1.2em;}
+      .dashboard-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* ⬅️ cambia qui per sinistra */
+  gap: 0.6em; /* meno spazio verticale */
+  width: 100%;
+  padding: 1em;
+}
       .dashboard-grid label,
       .dashboard-grid select,
       .dashboard-grid input[type="text"],
@@ -259,7 +266,7 @@ nav.mobile button {
       .mobile-nav-toggle { display: block; }
       nav.mobile.show { display: flex; animation: slideDown 0.3s ease-out; }
       .mockup { order: 2; margin-top: 20px; }
-      #mockupWrapper { width: 100%; display: flex; justify-content: center; }
+      #mockupWrapper { width: 100%; display: flex; justify-content: left; }
     }
     @media (max-width: 480px) {
   header h1 {
@@ -310,8 +317,8 @@ nav.mobile button {
   <main>
     <div id="cartaSettings">
     <div class="section">
-      <div class="dashboard-grid">
       <h2>Impostazioni Carta dei Vini</h2>
+      <div class="dashboard-grid">
       <label for="displayName">Nome da visualizzare</label>
       <input type="text" id="displayName">
 
@@ -337,8 +344,6 @@ nav.mobile button {
           <option value="#888" data-palette="grigio-minimal">Grigio Minimal</option>
           <option value="#000" data-palette="black-white">Black & White</option>
         </select>
-        <div class="color-box" style="background:#b00"></div>
-        <div class="color-box" style="background:#fff"></div>
       </div>
 
       <button class="save-btn">Salva Impostazioni</button>
