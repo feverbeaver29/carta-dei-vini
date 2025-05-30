@@ -82,7 +82,7 @@ if (!RESTAURANT_ID) {
       <p>Il link alla carta dei vini non è corretto. Ti invitiamo a richiedere un nuovo QR Code al personale.</p>
     </div>
   `;
-  throw new Error("RISTORANTE_ID mancante nell’URL.");
+  return; // non più throw
 }
 
 let wines = [];
