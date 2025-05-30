@@ -71,6 +71,14 @@
   animation: slideDownFade 0.25s ease-out;
 }
 
+nav.mobile button {
+  width: 90%;         /* quasi tutta la larghezza */
+  max-width: 400px;   /* evita che diventino enormi su tablet */
+  padding: 12px;
+  font-size: 1em;
+  border-radius: 16px;
+}
+
     nav button {
       background-color: #b00;
       color: white;
@@ -223,11 +231,11 @@
   <button onclick="logout()">Logout</button>
 </nav>
 <nav class="mobile" id="mobileNav">
-      <button onclick="showSettings('carta')">Impostazioni Carta</button>
-      <button onclick="showSettings('sommelier')">Sommelier</button>
+      <button onclick="showSettings('carta')">Impostazioni Carta dei Vini</button>
+      <button onclick="showSettings('sommelier')">Impostazioni Sommelier Virtuale</button>
       <button onclick="goTo('admin.html')">Gestione Vini</button>
       <button onclick="goTo('carta.html')">Visualizza Carta</button>
-      <button onclick="showQRCode()">QR Code</button>
+      <button onclick="showQRCode()">Scarica QR Code</button>
       <button onclick="logout()">Logout</button>
     </nav>
   </header>
