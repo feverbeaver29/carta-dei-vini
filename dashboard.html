@@ -248,15 +248,21 @@ nav.mobile button {
       background-color: #800000;
     }
     @media (max-width: 768px) {
+      main {
+  padding: 100px 1em 40px; /* meno spazio sopra e ai lati */
+}
   .dashboard-grid {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    padding: 0.5em 1.5em;
-    gap: 0.5em;
+    padding: 0.25em 1em;
+    gap: 0.4em;
   }
 
-  .dashboard-grid label,
+  .dashboard-grid label {
+  margin-top: 12px;
+  font-size: 1em;
+}
   .dashboard-grid select,
   .dashboard-grid input[type="text"],
   .dashboard-grid input[type="file"],
