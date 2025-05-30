@@ -248,51 +248,66 @@ nav.mobile button {
       background-color: #800000;
     }
     @media (max-width: 768px) {
-      .dashboard-grid {
-  display: flex;
-  flex-direction: column;
-  padding: 0.5em 1em;
-  gap: 0.5em;
-  align-items: stretch; /* ⬅️ così riempie in modo simmetrico */
-  width: 100%;
+  .dashboard-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.5em 1.5em;
+    gap: 0.5em;
+  }
+
+  .dashboard-grid label,
+  .dashboard-grid select,
+  .dashboard-grid input[type="text"],
+  .dashboard-grid input[type="file"],
+  .dashboard-grid button {
+    width: 100%;
+    max-width: 100%;
+    text-align: left;
+    font-size: 1em;
+    margin-bottom: 0.4em;
+  }
+
+  .dashboard-grid h2 {
+    font-size: 1.1em;
+    margin: 0.3em 0 0.4em 0;
+    padding: 0;
+    text-align: left;
+  }
+
+  .mockup {
+    width: 100%;
+    max-width: 100%;
+    height: 450px;
+    margin-top: 1em;
+  }
+
+  .mobile-nav-toggle {
+    margin: 4px auto 0 auto;
+  }
 }
-      .dashboard-grid label,
-      .dashboard-grid select {
-  padding: 8px;
-  font-size: 0.95em;
-}
-      .dashboard-grid input[type="text"],
-      .dashboard-grid input[type="file"] {font-size: 1em; padding: 10px;}
-      .dashboard-grid button {width: 100%; max-width: 400px; text-align: center;}
-      .mockup {width: 100%; max-width: 400px; height: 500px;}
-      nav.desktop { display: none; }
-      .mobile-nav-toggle { display: block; }
-      nav.mobile.show { display: flex; animation: slideDown 0.3s ease-out; }
-      .mockup { order: 2; margin-top: 20px; }
-      #mockupWrapper { width: 100%; display: flex; justify-content: left; }
-      .section-title,
-.dashboard-grid h2 {
-  font-size: 1.1em;
-  margin: 0.5em 0 0.3em 0;
-  padding: 0;
-}
-    }
     @media (max-width: 480px) {
   header h1 {
-    font-size: 1.2em;
-  }
-  nav button {
-    font-size: 0.8em;
-    padding: 8px 12px;
-  }
-  .save-btn {
-    padding: 10px 20px;
     font-size: 1em;
+    margin: 0;
   }
+
+  nav button {
+    font-size: 0.75em;
+    padding: 6px 10px;
+  }
+
+  .save-btn {
+    padding: 8px 16px;
+    font-size: 0.95em;
+  }
+
   .mockup {
-    height: 90vh;
+    height: 75vh;
+    margin-top: 1em;
   }
 }
+
 @keyframes slideDownFade {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
