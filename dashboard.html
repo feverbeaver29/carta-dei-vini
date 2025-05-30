@@ -85,7 +85,7 @@
   padding: 10px 20px;
   border-radius: 20px;
   font-size: 0.9em;
-  margin: 10px auto 0 auto; /* centrato */
+  margin: 2px auto 0 auto;
   cursor: pointer;
   display: block;
 }
@@ -251,13 +251,16 @@ nav.mobile button {
       .dashboard-grid {
   display: flex;
   flex-direction: column;
-  align-items: flex-start; /* ⬅️ cambia qui per sinistra */
-  gap: 0.6em; /* meno spazio verticale */
+  padding: 0.5em 1em;
+  gap: 0.5em;
+  align-items: stretch; /* ⬅️ così riempie in modo simmetrico */
   width: 100%;
-  padding: 1em;
 }
       .dashboard-grid label,
-      .dashboard-grid select,
+      .dashboard-grid select {
+  padding: 8px;
+  font-size: 0.95em;
+}
       .dashboard-grid input[type="text"],
       .dashboard-grid input[type="file"] {font-size: 1em; padding: 10px;}
       .dashboard-grid button {width: 100%; max-width: 400px; text-align: center;}
@@ -267,6 +270,12 @@ nav.mobile button {
       nav.mobile.show { display: flex; animation: slideDown 0.3s ease-out; }
       .mockup { order: 2; margin-top: 20px; }
       #mockupWrapper { width: 100%; display: flex; justify-content: left; }
+      .section-title,
+.dashboard-grid h2 {
+  font-size: 1.1em;
+  margin: 0.5em 0 0.3em 0;
+  padding: 0;
+}
     }
     @media (max-width: 480px) {
   header h1 {
