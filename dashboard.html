@@ -399,7 +399,7 @@ nav.mobile button {
   <div id="sommelierSettings" class="section" style="display:none;">
   <div class="dashboard-grid">
     <h2>Impostazioni Sommelier Virtuale</h2>
-    
+
       <label for="sommelierLogoUpload">Logo del sommelier</label>
       <input type="file" id="sommelierLogoUpload" accept="image/*">
       <div id="sommelierLogoPreview" class="logo-preview"></div>
@@ -718,8 +718,8 @@ function capitalize(str) {
       window.location.href = "/";
     }
     function showSettings(type) {
-  document.getElementById("cartaSettings").style.display = (type === "carta") ? "flex" : "none";
-  document.getElementById("sommelierSettings").style.display = (type === "sommelier") ? "flex" : "none";
+  document.getElementById("cartaSettings").style.display = (type === "carta") ? "block" : "none";
+  document.getElementById("sommelierSettings").style.display = (type === "sommelier") ? "block" : "none";
 }
 
     function showQRCode() {
