@@ -298,7 +298,25 @@ nav.mobile button {
   margin: 0.5em 0 0.3em 0;
   padding: 0;
 }
-    }
+    #cartaSection {
+    display: flex;
+    align-items: flex-start;
+    gap: 40px;
+  }
+
+  #impostazioniCarta {
+    flex: 1;
+  }
+
+  #mockupWrapper {
+    width: 360px;
+    flex-shrink: 0;
+  }
+
+  .mockup {
+    margin-top: 0; /* rimuove spazio sopra che hai su mobile */
+  }
+}
     @media (max-width: 480px) {
   header h1 {
     font-size: 1em;
@@ -389,13 +407,14 @@ nav.mobile button {
           <button class="save-btn" id="ordinaSottocategorieBtn" onclick="toggleReorder('sottocategorie')">Ordina Sottocategorie</button>
         </div>
       </div>
+      </div>
+    </div>
       <div id="mockupWrapper">
         <div class="mockup">
           <iframe id="previewFrame" style="width:100%; height:100%; border:none;"></iframe>
         </div>
       </div>
-    </div>
-    </div>
+  
 
 <div id="sommelierSettings" class="section" style="display: none;">
   <div class="dashboard-grid">
