@@ -16,11 +16,13 @@
   overflow-x: hidden;
 }
 
-.page-title {
-  background: #fff;
-  padding: 1em 0.5em;
-  text-align: center;
-  border-bottom: 1px solid #ddd;
+.page-title h1 {
+  font-size: 1.2em;
+  font-weight: 500;
+  font-family: 'Playfair Display', serif;
+  margin: 0.5em 0;
+  color: #333;
+  letter-spacing: 0.5px;
 }
 
 .sticky-header {
@@ -100,6 +102,8 @@
   gap: 0.75em; /* spazio tra i bottoni */
   width: 100%;
   padding: 1em 0;
+  max-height: 80vh;
+  overflow-y: auto;
 }
 
     nav.mobile.show {
@@ -273,6 +277,14 @@ nav.mobile button {
 
 <header class="sticky-header">
   <button class="mobile-nav-toggle" onclick="toggleMobileNav()">☰ Menu</button>
+  <nav class="mobile" id="mobileNav">
+      <button onclick="showSettings('carta')">Impostazioni Carta dei Vini</button>
+      <button onclick="showSettings('sommelier')">Impostazioni Sommelier Virtuale</button>
+      <button onclick="goTo('admin.html')">Gestione Vini</button>
+      <button onclick="goTo('carta.html')">Visualizza Carta</button>
+      <button onclick="showQRCode()">Scarica QR Code</button>
+      <button onclick="logout()">Logout</button>
+    </nav>
 </header>
 <nav class="desktop">
   <button onclick="showSettings('carta')">Impostazioni Carta dei Vini</button>
@@ -282,14 +294,6 @@ nav.mobile button {
   <button onclick="showQRCode()">Scarica QR Code</button>
   <button onclick="logout()">Logout</button>
 </nav>
-<nav class="mobile" id="mobileNav">
-      <button onclick="showSettings('carta')">Impostazioni Carta dei Vini</button>
-      <button onclick="showSettings('sommelier')">Impostazioni Sommelier Virtuale</button>
-      <button onclick="goTo('admin.html')">Gestione Vini</button>
-      <button onclick="goTo('carta.html')">Visualizza Carta</button>
-      <button onclick="showQRCode()">Scarica QR Code</button>
-      <button onclick="logout()">Logout</button>
-    </nav>
   <main>
     <div id="cartaSettings">
     <div class="section">
