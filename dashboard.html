@@ -281,11 +281,18 @@ nav.mobile button {
     height: 450px;
     margin-top: 1em;
   }
-
-  .mobile-nav-toggle {
-    margin: 4px auto 0 auto;
-  }
+      nav.desktop { display: none; }
+      .mobile-nav-toggle { display: block; margin: 4px auto 0 auto;}
+      nav.mobile.show { display: flex; animation: slideDown 0.3s ease-out; }
+      .mockup { order: 2; margin-top: 20px; }
+      #mockupWrapper { width: 100%; display: flex; justify-content: left; }
+      .section-title,
+.dashboard-grid h2 {
+  font-size: 1.1em;
+  margin: 0.5em 0 0.3em 0;
+  padding: 0;
 }
+    }
     @media (max-width: 480px) {
   header h1 {
     font-size: 1em;
