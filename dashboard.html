@@ -590,7 +590,7 @@ for (let option of paletteSelector.options) {
       preview.insertAdjacentElement("afterend", removeBtn);
     }
     updatePreview();
-      requestAnimationFrame(() => showSettings('carta'));
+      showSettings('carta'); // esegui una volta sola all’avvio
   });
 
 
