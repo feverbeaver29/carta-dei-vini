@@ -75,16 +75,6 @@ const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhY
 const urlParams = new URLSearchParams(window.location.search);
 const RESTAURANT_ID = urlParams.get("ristorante_id");
 
-if (!RESTAURANT_ID) {
-  document.body.innerHTML = `
-    <div style="padding: 2em; text-align: center; font-family: sans-serif;">
-      <h2 style="color: #b00;">Carta non disponibile</h2>
-      <p>Il link alla carta dei vini non è corretto. Ti invitiamo a richiedere un nuovo QR Code al personale.</p>
-    </div>
-  `;
-  return; // non più throw
-}
-
 let wines = [];
 let ristoranteSommelierURL = null;
 let currentCategory = '';
