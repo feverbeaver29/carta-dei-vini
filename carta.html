@@ -56,22 +56,62 @@ body.layout-lista .subcategory-list {
   display: block;
 }
 
-/* Layout griglia */
+/* SOLO SE layout = griglia */
 body.layout-griglia .subcategory-list {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1em;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
 }
 
-/* Layout schede (stile card) */
-body.layout-schede .subcategory {
-  border: 2px dashed #aaa;
-  padding: 10px;
-  border-radius: 16px;
-  background: #f9f9f9;
-  margin-bottom: 1.2em;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+/* Ogni vino viene trasformato in una "card" quadrata */
+body.layout-griglia .wine-card {
+  border: 1px solid #ddd;
+  padding: 12px;
+  border-radius: 12px;
+  background-color: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
+
+/* Layout tipo menù elegante */
+body.layout-schede {
+  font-family: 'Playfair Display', serif;
+  background-color: #fdfaf6;
+  color: #111;
+}
+
+/* Rimuove box dai vini */
+body.layout-schede .wine-card {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 4px 0;
+  font-size: 1.05em;
+  line-height: 1.6;
+  font-family: 'Playfair Display', serif;
+}
+
+/* Titoli di categoria */
+body.layout-schede .category {
+  font-size: 1.4em;
+  font-weight: bold;
+  margin-top: 2em;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Titoli di sottocategoria */
+body.layout-schede .subcategory {
+  font-size: 1.1em;
+  font-weight: 500;
+  margin-top: 1em;
+  font-style: italic;
+}
+
+/* Lista semplice, no griglia */
+body.layout-schede .subcategory-list {
+  display: block;
+}
+
 }
 </style>
 </head>
