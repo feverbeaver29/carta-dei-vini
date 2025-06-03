@@ -386,7 +386,13 @@ footer {
 
             <input type="color" id="customColorPicker" style="display: none; width: 60px; height: 40px; border: none; margin-left: 10px;" value="#b00">
           </div>
+          <!-- Colore di sfondo personalizzato -->
+          <label for="bgColorPicker">Colore di sfondo</label>
+          <input type="color" id="bgColorPicker" value="#fff9f4" style="width: 60px; height: 40px; border: none;">
 
+          <!-- Nome preset personalizzazione -->
+          <label for="presetName">Nome del preset (opzionale)</label>
+          <input type="text" id="presetName" placeholder="Es. Elegante Rosso" style="max-width: 300px;">
 
         <button class="save-btn">Salva Impostazioni</button>
 
@@ -562,6 +568,8 @@ setTimeout(() => {
     document.getElementById("sommelierRange").value = info?.sommelier_range || "1-3";
     document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
     document.getElementById("displayName").value = info?.nome || "";
+    document.getElementById("bgColorPicker").value = info?.bg_color || "#fff9f4";
+    document.getElementById("presetName").value = info?.preset_name || "";
     document.getElementById("displayName").addEventListener("input", (e) => {
   document.getElementById("ristoranteName").innerText = `${e.target.value || 'Ristorante'} - Dashboard`;
 });
@@ -601,6 +609,13 @@ for (let option of paletteSelector.options) {
     }
     updatePreview();
       showSettings('carta'); // esegui una volta sola all’avvio
+      document.getElementById("bgColorPicker").addEventListener("input", updatePreviewLive);
+      document.getElementById("customColorPicker").addEventListener("input", updatePreviewLive);
+      document.getElementById("fontSelector").addEventListener("change", updatePreviewLive);
+      document.getElementsByName("layout").forEach(radio => {
+        radio.addEventListener("change", updatePreviewLive);
+});
+
   });
 
 
@@ -755,6 +770,14 @@ function capitalize(str) {
       popup.onclick = (e) => { if (e.target === popup) popup.style.display = 'none'; }
     }
 
+    function updatePreviewLive() {
+  const iframe = document.getElementById("previewFrame");
+  if (!iframe) return;
+  const currentUrl = new URL(iframe.src);
+  currentUrl.searchParams.set("preview", Date.now()); // forza reload
+  iframe.src = currentUrl.toString();
+}
+
     async function saveSettings() {
       const selectedLayout = document.querySelector('input[name="layout"]:checked')?.value;
       const nome = document.getElementById("displayName").value;
@@ -768,14 +791,17 @@ function capitalize(str) {
         const customColor = document.getElementById("customColorPicker").value;
         palette_color = customColor;
       }
-      
-    await supabase.from("ristoranti").update({
-    nome,
-    font,
-    palette_color,
-    layout: selectedLayout  // ✅ nuovo campo da salvare
-  }).eq("id", RESTAURANT_ID);
+      const bgColor = document.getElementById("bgColorPicker").value;
+      const presetName = document.getElementById("presetName").value.trim() || null;
 
+    await supabase.from("ristoranti").update({
+          nome,
+          font,
+          layout: selectedLayout,
+          palette_color,
+          bg_color: bgColor,
+          preset_name: presetName
+        }).eq("id", RESTAURANT_ID);
 
   const btn = document.querySelector(".save-btn");
   const originalText = btn.textContent;
@@ -785,6 +811,7 @@ function capitalize(str) {
   }, 2000);
 
   updatePreview();
+  updatePreviewLive();
 }
 
 async function saveSommelierSettings() {
