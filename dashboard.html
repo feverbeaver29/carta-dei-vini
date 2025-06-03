@@ -355,26 +355,38 @@ footer {
         <label for="logoUpload">oppure carica il logo del tuo ristorante</label>
         <input type="file" id="logoUpload" accept="image/*">
 
-        <label for="fontSelector">Font del nome</label>
-        <select id="fontSelector">
-          <option value="Arial">Arial</option>
-          <option value="Montserrat">Montserrat</option>
-          <option value="Raleway">Raleway</option>
-          <option value="Dancing Script">Dancing Script</option>
-          <option value="Playfair Display">Playfair Display</option>
-        </select>
+        <label for="fontSelector">Font principale</label>
+          <select id="fontSelector" onchange="updateFontPreview()">
+            <option value="Arial" style="font-family: Arial;">Arial</option>
+            <option value="Montserrat" style="font-family: Montserrat;">Montserrat</option>
+            <option value="Raleway" style="font-family: Raleway;">Raleway</option>
+            <option value="Dancing Script" style="font-family: 'Dancing Script';">Dancing Script</option>
+            <option value="Playfair Display" style="font-family: 'Playfair Display';">Playfair Display</option>
+          </select>
+        <div id="fontPreview" style="margin-top: 10px; font-size: 1.2em;">Anteprima testo</div>
+
+        <label>Layout carta dei vini</label>
+        <div id="layoutSelector" style="display: flex; gap: 12px;">
+          <label><input type="radio" name="layout" value="lista" checked> Lista</label>
+          <label><input type="radio" name="layout" value="griglia"> Griglia</label>
+          <label><input type="radio" name="layout" value="schede"> Schede</label>
+        </div>
 
         <label for="paletteSelector">Palette Colori</label>
-        <div class="palette-option">
-          <select id="paletteSelector">
-            <option value="#b00" data-palette="rosso">Rosso</option>
-            <option value="#d4af37" data-palette="oro">Oro</option>
-            <option value="#005f73" data-palette="blu-elegante">Blu Elegante</option>
-            <option value="#a3b18a" data-palette="verde-salvia">Verde Salvia</option>
-            <option value="#888" data-palette="grigio-minimal">Grigio Minimal</option>
-            <option value="#000" data-palette="black-white">Black & White</option>
-          </select>
-        </div>
+          <div class="palette-option">
+            <select id="paletteSelector" onchange="toggleCustomColorPicker()">
+              <option value="#b00" data-palette="rosso">Rosso</option>
+              <option value="#d4af37" data-palette="oro">Oro</option>
+              <option value="#005f73" data-palette="blu-elegante">Blu Elegante</option>
+              <option value="#a3b18a" data-palette="verde-salvia">Verde Salvia</option>
+              <option value="#888" data-palette="grigio-minimal">Grigio Minimal</option>
+              <option value="#000" data-palette="black-white">Black & White</option>
+              <option value="custom" data-palette="custom">🎨 Personalizzato</option>
+            </select>
+
+            <input type="color" id="customColorPicker" style="display: none; width: 60px; height: 40px; border: none; margin-left: 10px;" value="#b00">
+          </div>
+
 
         <button class="save-btn">Salva Impostazioni</button>
 
@@ -744,12 +756,26 @@ function capitalize(str) {
     }
 
     async function saveSettings() {
-  const nome = document.getElementById("displayName").value;
-  const font = document.getElementById("fontSelector").value;
-  const paletteSelect = document.getElementById("paletteSelector");
-  const palette_color = paletteSelect.options[paletteSelect.selectedIndex].getAttribute("data-palette");
+      const selectedLayout = document.querySelector('input[name="layout"]:checked')?.value;
+      const nome = document.getElementById("displayName").value;
+      const font = document.getElementById("fontSelector").value;
+      const paletteSelect = document.getElementById("paletteSelector");
+      const selectedPalette = paletteSelect.options[paletteSelect.selectedIndex].getAttribute("data-palette");
 
-  await supabase.from("ristoranti").update({ nome, font, palette_color }).eq("id", RESTAURANT_ID);
+      let palette_color = selectedPalette;
+
+      if (selectedPalette === "custom") {
+        const customColor = document.getElementById("customColorPicker").value;
+        palette_color = customColor;
+      }
+      
+    await supabase.from("ristoranti").update({
+    nome,
+    font,
+    palette_color,
+    layout: selectedLayout  // ✅ nuovo campo da salvare
+  }).eq("id", RESTAURANT_ID);
+
 
   const btn = document.querySelector(".save-btn");
   const originalText = btn.textContent;
@@ -839,6 +865,21 @@ window.addEventListener("scroll", () => {
     sticky.classList.remove("scrolled");
   }
 });
+
+function updateFontPreview() {
+  const font = document.getElementById("fontSelector").value;
+  const preview = document.getElementById("fontPreview");
+  preview.style.fontFamily = font;
+  preview.innerText = "Anteprima con " + font;
+}
+
+function toggleCustomColorPicker() {
+  const paletteSelect = document.getElementById("paletteSelector");
+  const customPicker = document.getElementById("customColorPicker");
+  const isCustom = paletteSelect.value === "custom";
+  customPicker.style.display = isCustom ? "inline-block" : "none";
+}
+
 
   </script>
 </body>
