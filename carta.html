@@ -11,6 +11,56 @@
   --bg-default: #fff9f4;
 }
 
+/* Layout "Carta Stampata" */
+body.layout-stampata {
+  font-family: 'Playfair Display', serif;
+  background-color: #fcf9f3;
+  color: #111;
+}
+
+body.layout-stampata .category,
+body.layout-stampata .subcategory,
+body.layout-stampata .wine-card {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0.5em 0;
+}
+
+body.layout-stampata .category {
+  font-size: 1.4em;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-top: 2em;
+}
+
+body.layout-stampata .subcategory {
+  font-size: 1.2em;
+  font-style: italic;
+  font-weight: 500;
+  margin-top: 1.2em;
+  padding-bottom: 0.4em;
+  border-bottom: 1px dashed #bbb;
+}
+
+body.layout-stampata .subcategory-list {
+  display: block;
+}
+
+body.layout-stampata .wine-card {
+  font-size: 1.05em;
+  line-height: 1.6;
+  padding-left: 1em;
+  position: relative;
+}
+
+body.layout-stampata .wine-card::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--accent-color, #b00);
+}
+
 body {
   font-family: sans-serif;
   background: var(--bg-default);
@@ -443,12 +493,14 @@ async function loadRestaurantData() {
   const ristorante = data[0];
   ristoranteSommelierURL = ristorante.sommelier_url || "sommelier.png";
 
+  if (ristorante.layout === "stampata") {
+  document.body.classList.add("layout-stampata");}
+
   if (ristorante.font) {
-  document.body.style.fontFamily = ristorante.font;
-}
-if (ristorante.bg_color) {
-  document.body.style.backgroundColor = ristorante.bg_color;
-}
+  document.body.style.fontFamily = ristorante.font;}
+
+  if (ristorante.bg_color) {
+  document.body.style.backgroundColor = ristorante.bg_color;}
 
 const avatar = document.getElementById('sommelierAvatar');
 if (avatar) {
