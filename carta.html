@@ -11,34 +11,19 @@
   --bg-default: #fff9f4;
 }
 
-body.layout-stampata .subcategory-list {
-  transform-origin: left;
-  perspective: 1000px;
+body.layout-stampata .page {
+  transition: transform 0.6s ease;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
 }
 
-body.layout-stampata .subcategory-list.flip-enter {
-  transform: rotateY(90deg);
+body.layout-stampata .page.flip-in {
+  transform: rotateY(-90deg);
   opacity: 0;
 }
 
-body.layout-stampata .subcategory-list.flip-active {
-  transition: transform 0.4s ease, opacity 0.4s ease;
-  transform: rotateY(0deg);
-  opacity: 1;
-}
-
-body.layout-stampata .wine-list {
-  transform-origin: left;
-  perspective: 1000px;
-}
-
-body.layout-stampata .wine-list.flip-enter {
-  transform: rotateY(90deg);
-  opacity: 0;
-}
-
-body.layout-stampata .wine-list.flip-active {
-  transition: transform 0.4s ease, opacity 0.4s ease;
+body.layout-stampata .page.flip-out {
   transform: rotateY(0deg);
   opacity: 1;
 }
@@ -410,10 +395,9 @@ nav button {
 </nav>
 
 <div id="app">
-  <!-- Contenitore normale -->
-  <div class="category-list" id="category-list"></div>
-  <div class="subcategory-list" id="subcategory-list"></div>
-  <div class="wine-list" id="wine-list"></div>
+  <div class="category-list page" id="category-list"></div>
+  <div class="subcategory-list page" id="subcategory-list"></div>
+  <div class="wine-list page" id="wine-list"></div>
 </div>
 
 <!-- Sommelier UI -->
@@ -734,13 +718,18 @@ card.innerHTML = `<strong>${produttoreUpper} ${denominazione}${annata}</strong><
   wineList.style.display = 'block';
 
 if (document.body.classList.contains("layout-stampata")) {
-  wineList.classList.remove("flip-enter", "flip-active");
-  void wineList.offsetWidth;
-  wineList.classList.add("flip-enter");
+  const subcat = document.getElementById("subcategory-list");
+  const wine = document.getElementById("wine-list");
+
+  subcat.classList.add("flip-in");
+  wine.classList.add("flip-out");
+
   setTimeout(() => {
-    wineList.classList.remove("flip-enter");
-    wineList.classList.add("flip-active");
-  }, 10);
+    subcat.style.display = 'none';
+    wine.style.display = 'block';
+    subcat.classList.remove("flip-in");
+    wine.classList.remove("flip-out");
+  }, 600);
 }
 }
 
@@ -944,14 +933,18 @@ window.showSubcategories = function (category) {
     applyPalette(window.ristorantePalette);
   }
   if (document.body.classList.contains("layout-stampata")) {
-  const subcategoryList = document.getElementById("subcategory-list");
-  subcategoryList.classList.remove("flip-enter", "flip-active");
-  void subcategoryList.offsetWidth;
-  subcategoryList.classList.add("flip-enter");
+  const cat = document.getElementById("category-list");
+  const subcat = document.getElementById("subcategory-list");
+
+  cat.classList.add("flip-in");
+  subcat.classList.add("flip-out");
+
   setTimeout(() => {
-    subcategoryList.classList.remove("flip-enter");
-    subcategoryList.classList.add("flip-active");
-  }, 10);
+    cat.style.display = 'none';
+    subcat.style.display = 'grid';
+    cat.classList.remove("flip-in");
+    subcat.classList.remove("flip-out");
+  }, 600);
 }
 };
 
