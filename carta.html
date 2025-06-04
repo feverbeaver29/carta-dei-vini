@@ -944,6 +944,7 @@ window.showSubcategories = function (category) {
     applyPalette(window.ristorantePalette);
   }
   if (document.body.classList.contains("layout-stampata")) {
+  const subcategoryList = document.getElementById("subcategory-list");
   subcategoryList.classList.remove("flip-enter", "flip-active");
   void subcategoryList.offsetWidth;
   subcategoryList.classList.add("flip-enter");
