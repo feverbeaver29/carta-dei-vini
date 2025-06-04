@@ -11,17 +11,33 @@
   --bg-default: #fff9f4;
 }
 
-.wine-list {
+body.layout-stampata .subcategory-list {
   transform-origin: left;
   perspective: 1000px;
 }
 
-.wine-list.flip-enter {
+body.layout-stampata .subcategory-list.flip-enter {
   transform: rotateY(90deg);
   opacity: 0;
 }
 
-.wine-list.flip-active {
+body.layout-stampata .subcategory-list.flip-active {
+  transition: transform 0.4s ease, opacity 0.4s ease;
+  transform: rotateY(0deg);
+  opacity: 1;
+}
+
+body.layout-stampata .wine-list {
+  transform-origin: left;
+  perspective: 1000px;
+}
+
+body.layout-stampata .wine-list.flip-enter {
+  transform: rotateY(90deg);
+  opacity: 0;
+}
+
+body.layout-stampata .wine-list.flip-active {
   transition: transform 0.4s ease, opacity 0.4s ease;
   transform: rotateY(0deg);
   opacity: 1;
@@ -717,14 +733,15 @@ card.innerHTML = `<strong>${produttoreUpper} ${denominazione}${annata}</strong><
   document.getElementById('subcategory-list').style.display = 'none';
   wineList.style.display = 'block';
 
-// Reset animazione
-wineList.classList.remove("flip-enter", "flip-active");
-void wineList.offsetWidth; // forza reflow
-wineList.classList.add("flip-enter");
-setTimeout(() => {
-  wineList.classList.remove("flip-enter");
-  wineList.classList.add("flip-active");
-}, 10);
+if (document.body.classList.contains("layout-stampata")) {
+  wineList.classList.remove("flip-enter", "flip-active");
+  void wineList.offsetWidth;
+  wineList.classList.add("flip-enter");
+  setTimeout(() => {
+    wineList.classList.remove("flip-enter");
+    wineList.classList.add("flip-active");
+  }, 10);
+}
 }
 
 async function loadWineData() {
@@ -926,6 +943,15 @@ window.showSubcategories = function (category) {
   if (window.ristorantePalette) {
     applyPalette(window.ristorantePalette);
   }
+  if (document.body.classList.contains("layout-stampata")) {
+  subcategoryList.classList.remove("flip-enter", "flip-active");
+  void subcategoryList.offsetWidth;
+  subcategoryList.classList.add("flip-enter");
+  setTimeout(() => {
+    subcategoryList.classList.remove("flip-enter");
+    subcategoryList.classList.add("flip-active");
+  }, 10);
+}
 };
 
 (async () => {
