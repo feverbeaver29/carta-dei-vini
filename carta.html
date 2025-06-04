@@ -19,17 +19,21 @@ body.layout-stampata .page {
 }
 
 body.layout-stampata .page.flip-in {
-  transform: rotateY(-90deg);
+  transform: rotateY(-180deg);
   opacity: 0;
+  z-index: 0;
 }
 
 body.layout-stampata .page.flip-out {
   transform: rotateY(0deg);
   opacity: 1;
+  z-index: 1;
 }
 
 /* Flipbook container */
 .flipbook {
+  perspective: 2000px;
+  position: relative;
   width: 800px;
   height: 600px;
   margin: 100px auto 50px;
@@ -37,12 +41,12 @@ body.layout-stampata .page.flip-out {
 }
 
 .page {
-  width: 400px;
-  height: 600px;
-  background: white;
-  padding: 2em;
-  box-shadow: 0 0 6px rgba(0,0,0,0.15);
-  overflow-y: auto;
+  position: absolute;
+  top: 0;
+  left: 0;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  transition: transform 0.6s ease, opacity 0.6s ease;
 }
 
 /* Layout "Carta Stampata" */
@@ -394,7 +398,7 @@ nav button {
   <button onclick="goToCategories()">Categorie</button>
 </nav>
 
-<div id="app">
+<div id="app" class="flipbook">
   <div class="category-list page" id="category-list"></div>
   <div class="subcategory-list page" id="subcategory-list"></div>
   <div class="wine-list page" id="wine-list"></div>
@@ -450,6 +454,23 @@ function handleSommelierKey(e) {
     document.getElementById('foodInput').blur(); // chiude la tastiera
   }
 }
+
+function flipToPage(fromId, toId) {
+  const from = document.getElementById(fromId);
+  const to = document.getElementById(toId);
+
+  from.classList.remove("flip-out");
+  from.classList.add("flip-in");
+
+  to.classList.remove("flip-in");
+  to.classList.add("flip-out");
+
+  setTimeout(() => {
+    from.style.display = 'none';
+    to.style.display = 'block';
+  }, 600);
+}
+
 async function suggestWine() {
   const paroleBloccate = [
     "come ti chiami", "come stai", "ciao", "chi sei", "sei reale", "sei umano",
@@ -674,28 +695,20 @@ function normalize(str) {
 
 function goToCategories() {
   currentView = 'categories';
-  document.getElementById('category-list').style.display = 'block';
-  document.getElementById('subcategory-list').style.display = 'none';
-  document.getElementById('wine-list').style.display = 'none';
+  document.getElementById("category-list").style.display = "block";
+document.getElementById("subcategory-list").style.display = "none";
+document.getElementById("wine-list").style.display = "none";
+
 }
 
 function goBack() {
-  if (currentView === 'subcategory') {
-    goToCategories();
-  } else if (currentView === 'wines') {
-    const wineList = document.getElementById('wine-list');
-    wineList.classList.remove("flip-enter", "flip-active");
-    void wineList.offsetWidth;
-    wineList.classList.add("flip-enter");
-    setTimeout(() => {
-      wineList.classList.remove("flip-enter");
-      wineList.classList.add("flip-active");
-      showSubcategories(currentCategory);
-    }, 200); // mostra le sottocategorie dopo l'effetto
-  } else {
-    goToCategories();
-  }
-}
+  if (currentView === 'wines') {
+  currentView = 'subcategory';
+  flipToPage("wine-list", "subcategory-list");
+} else if (currentView === 'subcategory') {
+  currentView = 'categories';
+  flipToPage("subcategory-list", "category-list");
+}}
 
 function showWinesBySubcategory(subcat) {
   currentView = 'wines';
@@ -718,18 +731,7 @@ card.innerHTML = `<strong>${produttoreUpper} ${denominazione}${annata}</strong><
   wineList.style.display = 'block';
 
 if (document.body.classList.contains("layout-stampata")) {
-  const subcat = document.getElementById("subcategory-list");
-  const wine = document.getElementById("wine-list");
-
-  subcat.classList.add("flip-in");
-  wine.classList.add("flip-out");
-
-  setTimeout(() => {
-    subcat.style.display = 'none';
-    wine.style.display = 'block';
-    subcat.classList.remove("flip-in");
-    wine.classList.remove("flip-out");
-  }, 600);
+  flipToPage("subcategory-list", "wine-list");
 }
 }
 
@@ -932,19 +934,8 @@ window.showSubcategories = function (category) {
   if (window.ristorantePalette) {
     applyPalette(window.ristorantePalette);
   }
-  if (document.body.classList.contains("layout-stampata")) {
-  const cat = document.getElementById("category-list");
-  const subcat = document.getElementById("subcategory-list");
-
-  cat.classList.add("flip-in");
-  subcat.classList.add("flip-out");
-
-  setTimeout(() => {
-    cat.style.display = 'none';
-    subcat.style.display = window.getComputedStyle(subcat).display === 'grid' ? 'grid' : 'block';
-    cat.classList.remove("flip-in");
-    subcat.classList.remove("flip-out");
-  }, 600);
+if (document.body.classList.contains("layout-stampata")) {
+  flipToPage("category-list", "subcategory-list");
 }
 };
 
