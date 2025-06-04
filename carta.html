@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/4.1.0/turn.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Montserrat&family=Raleway&family=Dancing+Script&display=swap" rel="stylesheet">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,6 +10,22 @@
 :root {
   --accent-color: #b00;
   --bg-default: #fff9f4;
+}
+
+/* Flipbook container */
+.flipbook {
+  width: 100%;
+  height: 600px;
+  margin: 100px auto 50px;
+}
+
+.page {
+  width: 100%;
+  height: 100%;
+  background: white;
+  padding: 2em;
+  box-shadow: 0 0 6px rgba(0,0,0,0.15);
+  overflow-y: auto;
 }
 
 /* Layout "Carta Stampata" */
@@ -742,6 +759,41 @@ window.addEventListener("message", (event) => {
       parent.postMessage({ action: "saveReorder", type: "sottocategorie", sottocategorieMap }, "*");
     }
   }
+  if (ristorante.layout === "stampata") {
+  const flipbook = document.getElementById("flipbook");
+
+  wineData.forEach(cat => {
+    const page = document.createElement("div");
+    page.className = "page";
+
+    const catTitle = document.createElement("h2");
+    catTitle.className = "category";
+    catTitle.innerText = cat.nome;
+    page.appendChild(catTitle);
+
+    cat.sottocategorie.forEach(sub => {
+      const subTitle = document.createElement("h3");
+      subTitle.className = "subcategory";
+      subTitle.innerText = sub.nome;
+      page.appendChild(subTitle);
+
+      sub.vini.forEach(vino => {
+        const wine = document.createElement("div");
+        wine.className = "wine-card";
+        wine.innerText = vino.nome;
+        page.appendChild(wine);
+      });
+    });
+
+    flipbook.appendChild(page);
+  });
+
+  $('#flipbook').turn({
+    width: 800,
+    height: 600,
+    autoCenter: true
+  });
+}
 });
 
 async function fetchCategoryOrder() {
