@@ -1,12 +1,6 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<!-- jQuery 1.12.4 (compatibile con Turn.js) -->
-<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
-
-<!-- Turn.js -->
-<script src="https://unpkg.com/turn.js@4/turn.min.js"></script>
-
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Montserrat&family=Raleway&family=Dancing+Script&display=swap" rel="stylesheet">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +9,22 @@
 :root {
   --accent-color: #b00;
   --bg-default: #fff9f4;
+}
+
+.wine-list {
+  transform-origin: left;
+  perspective: 1000px;
+}
+
+.wine-list.flip-enter {
+  transform: rotateY(90deg);
+  opacity: 0;
+}
+
+.wine-list.flip-active {
+  transition: transform 0.4s ease, opacity 0.4s ease;
+  transform: rotateY(0deg);
+  opacity: 1;
 }
 
 /* Flipbook container */
@@ -388,9 +398,6 @@ nav button {
   <div class="category-list" id="category-list"></div>
   <div class="subcategory-list" id="subcategory-list"></div>
   <div class="wine-list" id="wine-list"></div>
-
-  <!-- Contenitore per layout stampata -->
-  <div id="flipbook" class="flipbook" style="display:none;"></div>
 </div>
 
 <!-- Sommelier UI -->
@@ -600,54 +607,6 @@ if (ristorante.palette_color?.startsWith('#')) {
   applyCustomColor(ristorante.palette_color);
 }
   }
-  if (ristorante.layout === "stampata") {
-  const flipbook = document.getElementById("flipbook");
-
-  const grouped = {};
-
-wines.forEach(w => {
-  const cat = w.categoria || "Senza Categoria";
-  if (!grouped[cat]) grouped[cat] = {};
-  const sub = w.sottocategoria || "Varie";
-  if (!grouped[cat][sub]) grouped[cat][sub] = [];
-  grouped[cat][sub].push(w);
-});
-
-Object.entries(grouped).forEach(([cat, sottos]) => {
-  const page = document.createElement("div");
-  page.className = "page";
-
-  const catTitle = document.createElement("h2");
-  catTitle.className = "category";
-  catTitle.innerText = cat;
-  page.appendChild(catTitle);
-
-  Object.entries(sottos).forEach(([sub, vini]) => {
-    const subTitle = document.createElement("h3");
-    subTitle.className = "subcategory";
-    subTitle.innerText = sub;
-    page.appendChild(subTitle);
-
-    vini.forEach(vino => {
-      const wine = document.createElement("div");
-      wine.className = "wine-card";
-      wine.innerText = vino.nome;
-      page.appendChild(wine);
-    });
-  });
-
-  flipbook.appendChild(page);
-});
-
-  window.addEventListener("load", function () {
-  $('#flipbook').turn({
-    width: 800,
-    height: 600,
-    autoCenter: true
-  });
-  console.log(typeof $.fn.turn); // dovrebbe stampare "function"
-});
-}
 }
 
 function applyPalette(palette) {
@@ -721,9 +680,21 @@ function goToCategories() {
 }
 
 function goBack() {
-  if (currentView === 'subcategory') goToCategories();
-  else if (currentView === 'wines') showSubcategories(currentCategory);
-  else goToCategories();
+  if (currentView === 'subcategory') {
+    goToCategories();
+  } else if (currentView === 'wines') {
+    const wineList = document.getElementById('wine-list');
+    wineList.classList.remove("flip-enter", "flip-active");
+    void wineList.offsetWidth;
+    wineList.classList.add("flip-enter");
+    setTimeout(() => {
+      wineList.classList.remove("flip-enter");
+      wineList.classList.add("flip-active");
+      showSubcategories(currentCategory);
+    }, 200); // mostra le sottocategorie dopo l'effetto
+  } else {
+    goToCategories();
+  }
 }
 
 function showWinesBySubcategory(subcat) {
@@ -745,6 +716,15 @@ card.innerHTML = `<strong>${produttoreUpper} ${denominazione}${annata}</strong><
   });
   document.getElementById('subcategory-list').style.display = 'none';
   wineList.style.display = 'block';
+
+// Reset animazione
+wineList.classList.remove("flip-enter", "flip-active");
+void wineList.offsetWidth; // forza reflow
+wineList.classList.add("flip-enter");
+setTimeout(() => {
+  wineList.classList.remove("flip-enter");
+  wineList.classList.add("flip-active");
+}, 10);
 }
 
 async function loadWineData() {
