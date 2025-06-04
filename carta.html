@@ -638,11 +638,14 @@ Object.entries(grouped).forEach(([cat, sottos]) => {
   flipbook.appendChild(page);
 });
 
+  window.addEventListener("load", function () {
   $('#flipbook').turn({
     width: 800,
     height: 600,
     autoCenter: true
   });
+  console.log(typeof $.fn.turn); // dovrebbe stampare "function"
+});
 }
 }
 
