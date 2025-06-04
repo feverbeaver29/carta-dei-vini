@@ -576,6 +576,10 @@ if (ristorante.palette_color?.startsWith('#')) {
 }
 
 function applyPalette(palette) {
+  if (document.body.classList.contains("layout-stampata")) {
+    // Non applicare colori della palette
+    return;
+  }
   let primary = "#b00";
   let background = "#fff9f4";
   let cardBackground = "#fff";
