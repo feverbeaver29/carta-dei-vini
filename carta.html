@@ -378,9 +378,13 @@ nav button {
 </nav>
 
 <div id="app">
+  <!-- Contenitore normale -->
   <div class="category-list" id="category-list"></div>
   <div class="subcategory-list" id="subcategory-list"></div>
   <div class="wine-list" id="wine-list"></div>
+
+  <!-- Contenitore per layout stampata -->
+  <div id="flipbook" class="flipbook" style="display:none;"></div>
 </div>
 
 <!-- Sommelier UI -->
@@ -590,6 +594,51 @@ if (ristorante.palette_color?.startsWith('#')) {
   applyCustomColor(ristorante.palette_color);
 }
   }
+  if (ristorante.layout === "stampata") {
+  const flipbook = document.getElementById("flipbook");
+
+  const grouped = {};
+
+wines.forEach(w => {
+  const cat = w.categoria || "Senza Categoria";
+  if (!grouped[cat]) grouped[cat] = {};
+  const sub = w.sottocategoria || "Varie";
+  if (!grouped[cat][sub]) grouped[cat][sub] = [];
+  grouped[cat][sub].push(w);
+});
+
+Object.entries(grouped).forEach(([cat, sottos]) => {
+  const page = document.createElement("div");
+  page.className = "page";
+
+  const catTitle = document.createElement("h2");
+  catTitle.className = "category";
+  catTitle.innerText = cat;
+  page.appendChild(catTitle);
+
+  Object.entries(sottos).forEach(([sub, vini]) => {
+    const subTitle = document.createElement("h3");
+    subTitle.className = "subcategory";
+    subTitle.innerText = sub;
+    page.appendChild(subTitle);
+
+    vini.forEach(vino => {
+      const wine = document.createElement("div");
+      wine.className = "wine-card";
+      wine.innerText = vino.nome;
+      page.appendChild(wine);
+    });
+  });
+
+  flipbook.appendChild(page);
+});
+
+  $('#flipbook').turn({
+    width: 800,
+    height: 600,
+    autoCenter: true
+  });
+}
 }
 
 function applyPalette(palette) {
@@ -759,41 +808,6 @@ window.addEventListener("message", (event) => {
       parent.postMessage({ action: "saveReorder", type: "sottocategorie", sottocategorieMap }, "*");
     }
   }
-  if (ristorante.layout === "stampata") {
-  const flipbook = document.getElementById("flipbook");
-
-  wineData.forEach(cat => {
-    const page = document.createElement("div");
-    page.className = "page";
-
-    const catTitle = document.createElement("h2");
-    catTitle.className = "category";
-    catTitle.innerText = cat.nome;
-    page.appendChild(catTitle);
-
-    cat.sottocategorie.forEach(sub => {
-      const subTitle = document.createElement("h3");
-      subTitle.className = "subcategory";
-      subTitle.innerText = sub.nome;
-      page.appendChild(subTitle);
-
-      sub.vini.forEach(vino => {
-        const wine = document.createElement("div");
-        wine.className = "wine-card";
-        wine.innerText = vino.nome;
-        page.appendChild(wine);
-      });
-    });
-
-    flipbook.appendChild(page);
-  });
-
-  $('#flipbook').turn({
-    width: 800,
-    height: 600,
-    autoCenter: true
-  });
-}
 });
 
 async function fetchCategoryOrder() {
