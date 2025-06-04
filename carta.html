@@ -941,7 +941,7 @@ window.showSubcategories = function (category) {
 
   setTimeout(() => {
     cat.style.display = 'none';
-    subcat.style.display = 'grid';
+    subcat.style.display = window.getComputedStyle(subcat).display === 'grid' ? 'grid' : 'block';
     cat.classList.remove("flip-in");
     subcat.classList.remove("flip-out");
   }, 600);
