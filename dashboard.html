@@ -379,13 +379,14 @@ footer {
 
             <input type="color" id="customColorPicker" style="display: none; width: 60px; height: 40px; border: none; margin-left: 10px;" value="#bb0000">
           </div>
-          <!-- Colore di sfondo personalizzato -->
-          <label for="bgColorPicker">Colore di sfondo</label>
-          <input type="color" id="bgColorPicker" value="#fff9f4" style="width: 60px; height: 40px; border: none;">
+          <div id="customOptions" style="display:none; flex-direction:column; gap:10px;">
+            <label for="bgColorPicker">Colore di sfondo</label>
+            <input type="color" id="bgColorPicker" value="#fff9f4" style="width: 60px; height: 40px; border: none;">
 
-          <!-- Nome preset personalizzazione -->
-          <label for="presetName">Nome del preset (opzionale)</label>
-          <input type="text" id="presetName" placeholder="Es. Elegante Rosso" style="max-width: 300px;">
+            <label for="presetName">Nome del preset (opzionale)</label>
+            <input type="text" id="presetName" placeholder="Es. Elegante Rosso" style="max-width: 300px;">
+          </div>
+
 
         <button class="save-btn" onclick="saveSettings()">Salva Impostazioni</button>
         <div id="saveMessage" style="margin-top: 10px; color: green; display: none;">
@@ -903,8 +904,12 @@ function updateFontPreview() {
 function toggleCustomColorPicker() {
   const paletteSelect = document.getElementById("paletteSelector");
   const customPicker = document.getElementById("customColorPicker");
+  const customOptions = document.getElementById("customOptions");
+
   const isCustom = paletteSelect.value === "custom";
+
   customPicker.style.display = isCustom ? "inline-block" : "none";
+  customOptions.style.display = isCustom ? "flex" : "none";
 }
 
 

@@ -822,21 +822,14 @@ function ripetiAbbinamento(piatto) {
 }
 
 function applyCustomColor(color) {
+  // Solo cambia i bordi delle card
   document.body.style.setProperty('--accent-color', color);
-
-  // Applica colore a elementi noti (puoi espandere)
-  document.querySelectorAll('nav button').forEach(btn => {
-    btn.style.backgroundColor = color;
-  });
-
-  const sommelierBtn = document.getElementById('sommelierBtn');
-  if (sommelierBtn) {
-    sommelierBtn.style.backgroundColor = color;
-  }
 
   document.querySelectorAll('.category, .subcategory, .wine-card').forEach(el => {
     el.style.borderColor = color;
   });
+
+  // Non tocchiamo i bottoni o i nav button qui!
 }
 </script>
 </body>
