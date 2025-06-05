@@ -561,15 +561,6 @@ document.getElementById("wine-list").style.display = "none";
 
 }
 
-function goBack() {
-  if (currentView === 'wines') {
-  currentView = 'subcategory';
-  flipToPage("wine-list", "subcategory-list");
-} else if (currentView === 'subcategory') {
-  currentView = 'categories';
-  flipToPage("subcategory-list", "category-list");
-}}
-
 function showWinesBySubcategory(subcat) {
   currentView = 'wines';
   const wineList = document.getElementById('wine-list');
