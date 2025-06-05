@@ -365,13 +365,6 @@ footer {
           </select>
         <div id="fontPreview" style="margin-top: 10px; font-size: 1.2em;">Anteprima testo</div>
 
-        <label>Layout carta dei vini</label>
-          <div id="layoutSelector" style="display: flex; gap: 12px;">
-            <label><input type="radio" name="layout" value="classico" checked> Classico</label>
-            <label><input type="radio" name="layout" value="stampata"> Carta stampata</label>
-          </div>
-
-
         <label for="paletteSelector">Palette Colori</label>
           <div class="palette-option">
             <select id="paletteSelector" onchange="toggleCustomColorPicker()">
@@ -783,7 +776,6 @@ function capitalize(str) {
 }
 
     async function saveSettings() {
-      const selectedLayout = document.querySelector('input[name="layout"]:checked')?.value;
       const nome = document.getElementById("displayName").value;
       const font = document.getElementById("fontSelector").value;
       const paletteSelect = document.getElementById("paletteSelector");
@@ -801,7 +793,6 @@ function capitalize(str) {
     await supabase.from("ristoranti").update({
           nome,
           font,
-          layout: selectedLayout,
           palette_color,
           bg_color: bgColor,
           preset_name: presetName
