@@ -495,7 +495,20 @@ if (ristorante.palette_color?.startsWith('#')) {
   }
 }
 
+function goBack() {
+  if (currentView === 'wines') {
+    currentView = 'subcategory';
+    document.getElementById("wine-list").style.display = "none";
+    document.getElementById("subcategory-list").style.display = "grid";
+  } else if (currentView === 'subcategory') {
+    currentView = 'categories';
+    document.getElementById("subcategory-list").style.display = "none";
+    document.getElementById("category-list").style.display = "block";
+  }
+}
+
 function applyPalette(palette) {
+   if (document.body.style.backgroundColor) return;
   let primary = "#b00";
   let background = "#fff9f4";
   let cardBackground = "#fff";
