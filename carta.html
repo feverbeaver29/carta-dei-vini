@@ -425,16 +425,21 @@ async function suggestWine() {
     aggiornaStorico(input);
     const storico = mostraStoricoNelSommelier();
 
+    const bg = ristorante?.card_color || cardBackground;
+    const border = ristorante?.border_color || borderColor;
+    const text = ristorante?.text_color || textColor;
+    const shadow = boxShadow;
+
     suggestion.innerHTML = `
       <div class="sommelier-fadein" style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px;">
         <img id="sommelierAvatar"
-             src="${ristoranteSommelierURL || 'sommelier.png'}"
-             alt="Sommelier"
-             style="width:64px; height:64px; border-radius:50%; object-fit:cover; box-shadow:0 0 6px rgba(0,0,0,0.1);">
+            src="${ristoranteSommelierURL || 'sommelier.png'}"
+            alt="Sommelier"
+            style="width:64px; height:64px; border-radius:50%; object-fit:cover; box-shadow:0 0 6px rgba(0,0,0,0.1);">
 
-        <div style="position: relative; background: #fff8f6; border-radius:16px; padding:16px 18px; max-width:80%; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-          <div style="position: absolute; top: 20px; left: -10px; width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-right: 10px solid #fff8f6;"></div>
-          <strong style="color:#b00; font-size: 1em;">Il nostro sommelier ti consiglia:</strong>
+        <div style="position: relative; background: ${bg}; border: 1px solid ${border}; border-radius:16px; padding:16px 18px; max-width:80%; box-shadow: ${shadow}; color: ${text};">
+          <div style="position: absolute; top: 20px; left: -10px; width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-right: 10px solid ${bg};"></div>
+          <strong style="color:${border}; font-size: 1em;">Il nostro sommelier ti consiglia:</strong>
           <div style="margin-top: 8px;">${cardsHtml}</div>
           ${storico}
           <div style="text-align:right; font-size:0.85em; color:#999; margin-top:8px;">— Il tuo Sommelier Virtuale 🍷</div>
