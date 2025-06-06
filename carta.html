@@ -321,6 +321,17 @@ window.paletteColors = {
 
 function toggleSommelier() {
   document.getElementById('sommelierOverlay').style.display = 'flex';
+  const popup = document.getElementById("sommelierPopup");
+    if (popup) {
+      popup.style.backgroundColor =
+        ristorante?.bg_color || window.paletteColors.background || "#fff9f4";
+    }
+
+    const input = document.getElementById("foodInput");
+    if (input) {
+      input.style.backgroundColor = "#ffffff";
+      input.style.color = "#000000";
+    }
   document.getElementById('foodInput').focus();
   history.pushState({ sommelier: true }, '', '#sommelier');
   sommelierAperto = true;
