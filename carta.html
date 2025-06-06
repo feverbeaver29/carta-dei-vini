@@ -596,7 +596,10 @@ function applyPalette(palette) {
   if (backBtn) backBtn.style.color = primary;
 
   const sommelierBtn = document.getElementById("sommelierBtn");
-  if (sommelierBtn) sommelierBtn.style.color = primary;
+if (sommelierBtn) {
+  sommelierBtn.style.backgroundColor = primary;
+  sommelierBtn.style.borderColor = primary;
+}
 }
 
 function applyCustomBoxStyles() {
@@ -639,8 +642,10 @@ card.innerHTML = `<strong>${produttoreUpper} ${denominazione}${annata}</strong><
 <em>${w.prezzo}</em><br>
 <small>Uvaggio: ${w.uvaggio}</small>`;
     wineList.appendChild(card);
-    applyCustomBoxStyles();
   });
+    applyCustomBoxStyles();
+    applyPalette(window.ristorantePalette);
+
   document.getElementById('subcategory-list').style.display = 'none';
   wineList.style.display = 'block';
 }
@@ -789,8 +794,9 @@ window.showCategories = function () {
     div.textContent = display.charAt(0).toUpperCase() + display.slice(1).toLowerCase();
     div.onclick = () => showSubcategories(key);
     container.appendChild(div);
-    applyCustomBoxStyles();
   }
+  applyCustomBoxStyles();
+    applyPalette(window.ristorantePalette);
 };
 
 window.showSubcategories = function (category) {
@@ -835,8 +841,9 @@ window.showSubcategories = function (category) {
     div.textContent = display.charAt(0).toUpperCase() + display.slice(1).toLowerCase();
     div.onclick = () => showWinesBySubcategory(key);
     container.appendChild(div);
-    applyCustomBoxStyles();
   }
+  applyCustomBoxStyles();
+    applyPalette(window.ristorantePalette);
 
     document.getElementById('category-list').style.display = 'none';
   container.style.display = 'grid';
@@ -847,6 +854,7 @@ window.showSubcategories = function (category) {
     applyPalette(window.ristorantePalette);
   }
 };
+
 
 (async () => {
   await fetchCategoryOrder();
