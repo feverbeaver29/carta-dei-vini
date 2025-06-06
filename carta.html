@@ -24,7 +24,7 @@ button, .save-btn {
 }
 
 .category, .subcategory, .wine-card {
-  border: 1px solid var(--accent-color);
+  border: 1px solid;
 }
 
 /* NAV HEADER */
@@ -70,7 +70,7 @@ nav button {
 }
 
 .category, .wine-card {
-  background: #fff;
+  background: inherit;
   margin-bottom: 0.6em;
   padding: 1em;
   border-radius: 12px;
@@ -85,7 +85,7 @@ nav button {
 }
 
 .subcategory {
-  background: #fff;
+  background: inherit;
   padding: 1em;
   border-radius: 12px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -520,7 +520,7 @@ function goBack() {
 
 function applyPalette(palette) {
   if (window.ristorantePalette === "custom") return;
-
+  
   let primary = "#b00";
   let background = "#fff9f4";
   let cardBackground = "#fff";
