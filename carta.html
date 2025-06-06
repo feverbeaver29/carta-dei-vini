@@ -290,7 +290,7 @@ nav button {
 <button id="sommelierBtn">🍷</button>
 <div id="tooltipSommelier">Fatti dare una mano dal nostro sommelier artificiale</div>
 <div id="sommelierOverlay">
-  <div id="sommelierPopup">
+  <div id="sommelierPopup" class="popup">
     <button class="close-btn" onclick="closeSommelierPopup()">✖</button>
     <h3>Dimmi che piatto hai scelto e io ti dirò cosa bere!</h3>
     <input type="text" id="foodInput" placeholder="Es. Peposo, Risotto ai funghi..." onkeydown="handleSommelierKey(event)">
@@ -620,6 +620,14 @@ function applyPalette(palette) {
       el.style.color = textColor;
       el.style.boxShadow = boxShadow;
     });
+    
+    const popup = document.getElementById("sommelierPopup");
+    if (popup) {
+      popup.style.backgroundColor = cardBackground;
+      popup.style.borderColor = borderColor;
+      popup.style.color = textColor;
+      popup.style.boxShadow = boxShadow;
+    }
 
     // Applica effetto vetro solo a palette selezionate
     if (["oro", "crema-nero"].includes(palette)) {
@@ -627,7 +635,7 @@ function applyPalette(palette) {
     }
     if (palette === "black-white") {
       cards.forEach(el => el.classList.add("glass-dark"));
-    }  
+    } 
 
   // Applica colore anche ai bottoni / elementi principali
   const backBtn = document.querySelector("nav button");
@@ -650,6 +658,13 @@ function applyCustomBoxStyles() {
     if (border) el.style.borderColor = border;
     if (text) el.style.color = text;
   });
+
+  const popup = document.getElementById("sommelierPopup");
+if (popup && ristorante) {
+  if (ristorante.card_color) popup.style.backgroundColor = ristorante.card_color;
+  if (ristorante.border_color) popup.style.borderColor = ristorante.border_color;
+  if (ristorante.text_color) popup.style.color = ristorante.text_color;
+}
 }
 
 function normalize(str) {
