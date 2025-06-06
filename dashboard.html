@@ -533,7 +533,7 @@ footer {
 
     const { data: info } = await supabase
   .from("ristoranti")
-  .select("nome, font, palette_color, logo_url, sommelier_url, sommelier_range, sommelier_boost_multi")
+  .select("nome, font, palette_color, bg_color, card_color, border_color, logo_url, sommelier_url, sommelier_range, sommelier_boost_multi")
   .eq("id", RESTAURANT_ID)
   .single();
   console.log("🔍 Supabase info:", info);
@@ -575,7 +575,6 @@ setTimeout(() => {
     document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
     document.getElementById("displayName").value = info?.nome || "";
     document.getElementById("bgColorPicker").value = info?.bg_color || "#fff9f4";
-    document.getElementById("presetName").value = info?.preset_name || "";
     document.getElementById("displayName").addEventListener("input", (e) => {
   document.getElementById("ristoranteName").innerText = `${e.target.value || 'Ristorante'} - Dashboard`;
 });
@@ -782,6 +781,7 @@ function capitalize(str) {
 }
 
     async function saveSettings() {
+      const bgColor = document.getElementById("bgColorPicker").value;
       const cardColor = document.getElementById("cardColorPicker").value;
       const borderColor = document.getElementById("borderColorPicker").value;
       const nome = document.getElementById("displayName").value;
@@ -790,13 +790,9 @@ function capitalize(str) {
       const selectedPalette = paletteSelect.options[paletteSelect.selectedIndex].getAttribute("data-palette");
 
       let palette_color = selectedPalette;
-
-      if (selectedPalette === "custom") {
-        const customColor = document.getElementById("customColorPicker").value;
-        palette_color = customColor;
-      }
-      const bgColor = document.getElementById("bgColorPicker").value;
-      const presetName = document.getElementById("presetName").value.trim() || null;
+        if (selectedPalette === "custom") {
+          palette_color = "custom"; // oppure usa un identificatore tipo "custom"
+        }
 
     await supabase.from("ristoranti").update({
           card_color: cardColor,
@@ -805,7 +801,6 @@ function capitalize(str) {
           font,
           palette_color,
           bg_color: bgColor,
-          preset_name: presetName
         }).eq("id", RESTAURANT_ID);
 
   const btn = document.querySelector(".save-btn");
