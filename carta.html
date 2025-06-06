@@ -291,6 +291,7 @@ const urlParams = new URLSearchParams(window.location.search);
 const RESTAURANT_ID = urlParams.get("ristorante_id");
 
 let wines = [];
+let ristorante = null;
 let ristoranteSommelierURL = null;
 let currentCategory = '';
 let currentView = 'categories';
@@ -457,7 +458,7 @@ async function loadRestaurantData() {
     headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
   });
   const data = await res.json();
-  const ristorante = data[0];
+  ristorante = data[0]; // senza const
   ristoranteSommelierURL = ristorante.sommelier_url || "sommelier.png";
 
   if (ristorante.font) {
