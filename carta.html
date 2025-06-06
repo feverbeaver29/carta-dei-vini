@@ -311,6 +311,14 @@ let ristoranteSommelierURL = null;
 let currentCategory = '';
 let currentView = 'categories';
 
+window.paletteColors = {
+  background: null,
+  cardBackground: null,
+  borderColor: null,
+  textColor: null,
+  boxShadow: null
+};
+
 function toggleSommelier() {
   document.getElementById('sommelierOverlay').style.display = 'flex';
   document.getElementById('foodInput').focus();
@@ -425,10 +433,11 @@ async function suggestWine() {
     aggiornaStorico(input);
     const storico = mostraStoricoNelSommelier();
 
-    const bg = ristorante?.card_color || cardBackground;
-    const border = ristorante?.border_color || borderColor;
-    const text = ristorante?.text_color || textColor;
-    const shadow = boxShadow;
+    const bg = ristorante?.card_color || window.paletteColors.cardBackground || "#fff";
+    const border = ristorante?.border_color || window.paletteColors.borderColor || "#ccc";
+    const text = ristorante?.text_color || window.paletteColors.textColor || "#000";
+    const shadow = window.paletteColors.boxShadow || "0 2px 6px rgba(0, 0, 0, 0.1)";
+
 
     suggestion.innerHTML = `
       <div class="sommelier-fadein" style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px;">
@@ -651,6 +660,13 @@ if (sommelierBtn) {
   sommelierBtn.style.backgroundColor = primary;
   sommelierBtn.style.borderColor = primary;
 }
+window.paletteColors = {
+  background,
+  cardBackground,
+  borderColor,
+  textColor,
+  boxShadow
+};
 }
 
 function applyCustomBoxStyles() {
