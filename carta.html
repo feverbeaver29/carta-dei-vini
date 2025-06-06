@@ -498,12 +498,13 @@ if (avatar) {
     span.textContent = ristorante.nome || 'Carta dei Vini';
     span.style.fontFamily = ristorante.font || 'sans-serif';
     nameElem.appendChild(span);}
+
     window.ristorantePalette = ristorante.palette_color;
-applyPalette(ristorante.palette_color);
-if (ristorante.palette_color?.startsWith('#')) {
-  applyCustomColor(ristorante.palette_color);
-}
-  }
+
+    if (window.ristorantePalette !== "custom") {
+      applyPalette(window.ristorantePalette);
+    }
+
 }
 
 function goBack() {
@@ -519,7 +520,7 @@ function goBack() {
 }
 
 function applyPalette(palette) {
-  if (window.ristorantePalette === "custom") return;
+  if (palette === "custom" || window.ristorantePalette === "custom") return;
   
   let primary = "#b00";
   let background = "#fff9f4";
@@ -832,16 +833,6 @@ function ripetiAbbinamento(piatto) {
   document.getElementById("foodInput").value = piatto;
   suggestWine();
 }
-
-function applyCustomColor(color) {
-  // Solo cambia i bordi delle card
-  document.body.style.setProperty('--accent-color', color);
-
-  document.querySelectorAll('.category, .subcategory, .wine-card').forEach(el => {
-    el.style.borderColor = color;
-  });
-
-  // Non tocchiamo i bottoni o i nav button qui!
 }
 </script>
 </body>
