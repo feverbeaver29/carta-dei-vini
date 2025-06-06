@@ -575,6 +575,15 @@ if (sommelierBtn) sommelierBtn.style.backgroundColor = primary;
   });
 }
 
+function applyCustomBoxStyles() {
+  const bg = ristorante.card_color;
+  const border = ristorante.border_color;
+
+  document.querySelectorAll('.category, .subcategory, .wine-card').forEach(el => {
+    if (bg) el.style.backgroundColor = bg;
+    if (border) el.style.borderColor = border;
+  });
+}
 
 function normalize(str) {
   return str ? str.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim() : '';
@@ -604,6 +613,7 @@ card.innerHTML = `<strong>${produttoreUpper} ${denominazione}${annata}</strong><
 <em>${w.prezzo}</em><br>
 <small>Uvaggio: ${w.uvaggio}</small>`;
     wineList.appendChild(card);
+    applyCustomBoxStyles();
   });
   document.getElementById('subcategory-list').style.display = 'none';
   wineList.style.display = 'block';
@@ -753,6 +763,7 @@ window.showCategories = function () {
     div.textContent = display.charAt(0).toUpperCase() + display.slice(1).toLowerCase();
     div.onclick = () => showSubcategories(key);
     container.appendChild(div);
+    applyCustomBoxStyles();
   }
 };
 
@@ -798,6 +809,7 @@ window.showSubcategories = function (category) {
     div.textContent = display.charAt(0).toUpperCase() + display.slice(1).toLowerCase();
     div.onclick = () => showWinesBySubcategory(key);
     container.appendChild(div);
+    applyCustomBoxStyles();
   }
 
     document.getElementById('category-list').style.display = 'none';
