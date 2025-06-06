@@ -466,6 +466,17 @@ async function loadRestaurantData() {
   if (ristorante.bg_color) {
   document.body.style.backgroundColor = ristorante.bg_color;
 }
+  if (ristorante.card_color) {
+    document.querySelectorAll('.category, .subcategory, .wine-card').forEach(el => {
+      el.style.backgroundColor = ristorante.card_color;
+    });
+  }
+
+  if (ristorante.border_color) {
+    document.querySelectorAll('.category, .subcategory, .wine-card').forEach(el => {
+      el.style.borderColor = ristorante.border_color;
+    });
+}
 
 const avatar = document.getElementById('sommelierAvatar');
 if (avatar) {
@@ -508,7 +519,8 @@ function goBack() {
 }
 
 function applyPalette(palette) {
-   if (document.body.style.backgroundColor) return;
+  if (window.ristorantePalette === "custom") return;
+
   let primary = "#b00";
   let background = "#fff9f4";
   let cardBackground = "#fff";

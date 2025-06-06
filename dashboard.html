@@ -368,6 +368,24 @@ footer {
         <label for="paletteSelector">Palette Colori</label>
           <div class="palette-option">
             <select id="paletteSelector" onchange="toggleCustomColorPicker()">
+              <div id="customOptions" style="display:none; margin-top: 12px; font-size: 0.9em; gap: 12px; flex-direction: column;">
+            <label style="font-weight:600;">🎨 Personalizzazione Colori</label>
+
+            <div style="display:flex; align-items:center; gap: 10px;">
+              <label for="bgColorPicker" style="min-width: 120px;">Sfondo pagina</label>
+              <input type="color" id="bgColorPicker" value="#fff9f4" style="width: 40px; height: 30px; border: none;">
+            </div>
+
+            <div style="display:flex; align-items:center; gap: 10px;">
+              <label for="cardColorPicker" style="min-width: 120px;">Colore caselle</label>
+              <input type="color" id="cardColorPicker" value="#ffffff" style="width: 40px; height: 30px; border: none;">
+            </div>
+
+            <div style="display:flex; align-items:center; gap: 10px;">
+              <label for="borderColorPicker" style="min-width: 120px;">Colore bordo (facoltativo)</label>
+              <input type="color" id="borderColorPicker" value="#bb0000" style="width: 40px; height: 30px; border: none;">
+            </div>
+          </div>
               <option value="#bb0000" data-palette="rosso">Rosso</option>
               <option value="#d4af37" data-palette="oro">Oro</option>
               <option value="#005f73" data-palette="blu-elegante">Blu Elegante</option>
@@ -376,8 +394,6 @@ footer {
               <option value="#000000" data-palette="black-white">Black & White</option>
               <option value="custom" data-palette="custom">🎨 Personalizzato</option>
             </select>
-
-            <input type="color" id="customColorPicker" style="display: none; width: 60px; height: 40px; border: none; margin-left: 10px;" value="#bb0000">
           </div>
           <div id="customOptions" style="display:none; flex-direction:column; gap:10px;">
             <label for="bgColorPicker">Colore di sfondo</label>
@@ -777,6 +793,8 @@ function capitalize(str) {
 }
 
     async function saveSettings() {
+      const cardColor = document.getElementById("cardColorPicker").value;
+      const borderColor = document.getElementById("borderColorPicker").value;
       const nome = document.getElementById("displayName").value;
       const font = document.getElementById("fontSelector").value;
       const paletteSelect = document.getElementById("paletteSelector");
@@ -792,6 +810,8 @@ function capitalize(str) {
       const presetName = document.getElementById("presetName").value.trim() || null;
 
     await supabase.from("ristoranti").update({
+          card_color: cardColor,
+          border_color: borderColor,
           nome,
           font,
           palette_color,
@@ -900,19 +920,13 @@ function updateFontPreview() {
   preview.style.fontFamily = font;
   preview.innerText = "Anteprima con " + font;
 }
-
 function toggleCustomColorPicker() {
   const paletteSelect = document.getElementById("paletteSelector");
-  const customPicker = document.getElementById("customColorPicker");
   const customOptions = document.getElementById("customOptions");
 
   const isCustom = paletteSelect.value === "custom";
-
-  customPicker.style.display = isCustom ? "inline-block" : "none";
   customOptions.style.display = isCustom ? "flex" : "none";
 }
-
-
   </script>
 </body>
 </html>
