@@ -368,7 +368,16 @@ footer {
         <label for="paletteSelector">Palette Colori</label>
           <div class="palette-option">
             <select id="paletteSelector" onchange="toggleCustomColorPicker()">
-              <div id="customOptions" style="display:none; margin-top: 12px; font-size: 0.9em; gap: 12px; flex-direction: column;">
+              <option value="#bb0000" data-palette="rosso">Rosso</option>
+              <option value="#d4af37" data-palette="oro">Oro</option>
+              <option value="#005f73" data-palette="blu-elegante">Blu Elegante</option>
+              <option value="#a3b18a" data-palette="verde-salvia">Verde Salvia</option>
+              <option value="#888888" data-palette="grigio-minimal">Grigio Minimal</option>
+              <option value="#000000" data-palette="black-white">Black & White</option>
+              <option value="custom" data-palette="custom">🎨 Personalizzato</option>
+            </select>
+          </div>
+          <div id="customOptions" style="display:none; margin-top: 12px; font-size: 0.9em; gap: 12px; flex-direction: column;">
             <label style="font-weight:600;">🎨 Personalizzazione Colori</label>
 
             <div style="display:flex; align-items:center; gap: 10px;">
@@ -386,23 +395,6 @@ footer {
               <input type="color" id="borderColorPicker" value="#bb0000" style="width: 40px; height: 30px; border: none;">
             </div>
           </div>
-              <option value="#bb0000" data-palette="rosso">Rosso</option>
-              <option value="#d4af37" data-palette="oro">Oro</option>
-              <option value="#005f73" data-palette="blu-elegante">Blu Elegante</option>
-              <option value="#a3b18a" data-palette="verde-salvia">Verde Salvia</option>
-              <option value="#888888" data-palette="grigio-minimal">Grigio Minimal</option>
-              <option value="#000000" data-palette="black-white">Black & White</option>
-              <option value="custom" data-palette="custom">🎨 Personalizzato</option>
-            </select>
-          </div>
-          <div id="customOptions" style="display:none; flex-direction:column; gap:10px;">
-            <label for="bgColorPicker">Colore di sfondo</label>
-            <input type="color" id="bgColorPicker" value="#fff9f4" style="width: 60px; height: 40px; border: none;">
-
-            <label for="presetName">Nome del preset (opzionale)</label>
-            <input type="text" id="presetName" placeholder="Es. Elegante Rosso" style="max-width: 300px;">
-          </div>
-
 
         <button class="save-btn" onclick="saveSettings()">Salva Impostazioni</button>
         <div id="saveMessage" style="margin-top: 10px; color: green; display: none;">
