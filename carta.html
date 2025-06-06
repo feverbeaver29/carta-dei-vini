@@ -523,37 +523,42 @@ function applyPalette(palette) {
   let cardBackground = "#fff";
 
   switch (palette) {
-    case "rosso":
-      primary = "#b00";
-      background = "#fff9f4";
-      cardBackground = "#fff";
-      break;
-    case "oro":
-      primary = "#c9a64d";
-      background = "#fff8dc";
-      cardBackground = "#fff";
-      break;
-    case "blu-elegante":
-      primary = "#005f73";
-      background = "#e0f7fa";
-      cardBackground = "#ffffff";
-      break;
-    case "verde-salvia":
-      primary = "#3a5a40";
-      background = "#f0f5f1";
-      cardBackground = "#ffffff";
-      break;
-    case "grigio-minimal":
-      primary = "#888";
-      background = "#f7f7f7";
-      cardBackground = "#fff";
-      break;
-    case "black-white":
-      primary = "#fff";
-      background = "#000";
-      cardBackground = "#111";
-      break;
-  }
+  case "rosso":
+    primary = "#9b1c31";
+    background = "#fff4f4";
+    cardBackground = "#fff8f8";
+    break;
+
+  case "oro":
+    primary = "#b38e2e";
+    background = "#fefaf0";
+    cardBackground = "#fffdf5";
+    break;
+
+  case "blu-elegante":
+    primary = "#144552";
+    background = "#e6f1f5";
+    cardBackground = "#f2f9fc";
+    break;
+
+  case "verde-salvia":
+    primary = "#4c6b58";
+    background = "#f3f6f4";
+    cardBackground = "#f9fbfa";
+    break;
+
+  case "grigio-minimal":
+    primary = "#555";
+    background = "#f2f2f2";
+    cardBackground = "#ffffff";
+    break;
+
+  case "black-white":
+    primary = "#ffffff";
+    background = "#0f0f0f";
+    cardBackground = "#1a1a1a";
+    break;
+}
 
   document.body.style.backgroundColor = background;
   document.body.style.color = primary;
