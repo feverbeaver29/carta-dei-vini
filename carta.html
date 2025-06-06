@@ -35,6 +35,18 @@ button, .save-btn {
   transition: transform 0.2s ease;
 }
 
+.glass {
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+.glass-dark {
+  background: rgba(20, 20, 20, 0.3);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 /* NAV HEADER */
 nav {
   position: fixed;
@@ -602,6 +614,7 @@ function applyPalette(palette) {
   document.body.style.backgroundColor = background;
 
   document.querySelectorAll('.category, .subcategory, .wine-card').forEach(el => {
+    el.classList.remove("glass", "glass-dark");
     el.style.backgroundColor = cardBackground;
     el.style.borderColor = borderColor;
     el.style.color = textColor;
@@ -617,6 +630,12 @@ function applyPalette(palette) {
 if (sommelierBtn) {
   sommelierBtn.style.backgroundColor = primary;
   sommelierBtn.style.borderColor = primary;
+}
+if (["oro", "crema-nero"].includes(palette)) {
+  cards.forEach(el => el.classList.add("glass"));
+}
+if (palette === "black-white") {
+  cards.forEach(el => el.classList.add("glass-dark"));
 }
 }
 
