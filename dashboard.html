@@ -394,6 +394,11 @@ footer {
               <label for="borderColorPicker" style="min-width: 120px;">Colore bordi</label>
               <input type="color" id="borderColorPicker" value="#bb0000" style="width: 40px; height: 30px; border: none;">
             </div>
+
+            <div style="display:flex; align-items:center; gap: 10px;">
+              <label for="textColorPicker" style="min-width: 120px;">Colore testo</label>
+              <input type="color" id="textColorPicker" value="#000000" style="width: 40px; height: 30px; border: none;">
+            </div>
           </div>
 
         <button class="save-btn" onclick="saveSettings()">Salva Impostazioni</button>
@@ -571,6 +576,7 @@ setTimeout(() => {
 }, 0); 
 
 // imposta valori iniziali
+    document.getElementById("textColorPicker").value = info?.text_color || "#000000";
     document.getElementById("sommelierRange").value = info?.sommelier_range || "1-3";
     document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
     document.getElementById("displayName").value = info?.nome || "";
@@ -782,6 +788,7 @@ function capitalize(str) {
 }
 
     async function saveSettings() {
+      const textColor = document.getElementById("textColorPicker").value;
       const bgColor = document.getElementById("bgColorPicker").value;
       const cardColor = document.getElementById("cardColorPicker").value;
       const borderColor = document.getElementById("borderColorPicker").value;
@@ -796,6 +803,7 @@ function capitalize(str) {
         }
 
     await supabase.from("ristoranti").update({
+          text_color: textColor,
           card_color: cardColor,
           border_color: borderColor,
           nome,

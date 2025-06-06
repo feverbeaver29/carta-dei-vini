@@ -258,7 +258,6 @@ nav button {
 <nav>
   <button onclick="goBack()">⬅</button>
   <span id="restaurantName"><strong>CARTA DEI VINI</strong></span>
-  <button onclick="goToCategories()">Categorie</button>
 </nav>
 
 <div id="app" class="flipbook">
@@ -575,10 +574,12 @@ if (sommelierBtn) sommelierBtn.style.backgroundColor = primary;
 function applyCustomBoxStyles() {
   const bg = ristorante.card_color;
   const border = ristorante.border_color;
+  const text = ristorante.text_color;
 
   document.querySelectorAll('.category, .subcategory, .wine-card').forEach(el => {
     if (bg) el.style.backgroundColor = bg;
     if (border) el.style.borderColor = border;
+    if (text) el.style.color = text;
   });
 }
 
