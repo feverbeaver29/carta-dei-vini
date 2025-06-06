@@ -516,71 +516,86 @@ function goBack() {
 }
 
 function applyPalette(palette) {
-  if (palette === "custom" || window.ristorantePalette === "custom") return;
-  
+  if (window.ristorantePalette === "custom") return;
+
   let primary = "#b00";
   let background = "#fff9f4";
-  let cardBackground = "#fff";
+  let cardBackground = "#ffffff";
+  let borderColor = "#b00";
+  let textColor = "#000000";
 
   switch (palette) {
-  case "rosso":
-    primary = "#9b1c31";
-    background = "#fff4f4";
-    cardBackground = "#fff8f8";
-    break;
+    case "rosso":
+      primary = "#9b1c31";
+      background = "#fff4f4";
+      cardBackground = "#fff8f8";
+      borderColor = "#9b1c31";
+      textColor = "#3b0a12";
+      break;
 
-  case "oro":
-    primary = "#b38e2e";
-    background = "#fefaf0";
-    cardBackground = "#fffdf5";
-    break;
+    case "oro":
+      primary = "#b38e2e";
+      background = "#fefaf0";
+      cardBackground = "#fffdf5";
+      borderColor = "#b38e2e";
+      textColor = "#3e2b06";
+      break;
 
-  case "blu-elegante":
-    primary = "#144552";
-    background = "#e6f1f5";
-    cardBackground = "#f2f9fc";
-    break;
+    case "blu-elegante":
+      primary = "#144552";
+      background = "#e6f1f5";
+      cardBackground = "#f2f9fc";
+      borderColor = "#144552";
+      textColor = "#0b2c37";
+      break;
 
-  case "verde-salvia":
-    primary = "#4c6b58";
-    background = "#f3f6f4";
-    cardBackground = "#f9fbfa";
-    break;
+    case "verde-salvia":
+      primary = "#4c6b58";
+      background = "#f3f6f4";
+      cardBackground = "#f9fbfa";
+      borderColor = "#4c6b58";
+      textColor = "#2f463b";
+      break;
 
-  case "grigio-minimal":
-    primary = "#555";
-    background = "#f2f2f2";
-    cardBackground = "#ffffff";
-    break;
+    case "grigio-minimal":
+      primary = "#555";
+      background = "#f2f2f2";
+      cardBackground = "#ffffff";
+      borderColor = "#999999";
+      textColor = "#222";
+      break;
+
+    case "black-white":
+      primary = "#ffffff";
+      background = "#0f0f0f";
+      cardBackground = "#1a1a1a";
+      borderColor = "#444";
+      textColor = "#ffffff";
+      break;
 
     case "crema-nero":
-  primary = "#000000"; // Nero profondo
-  background = "#fffaf0"; // Crema (Floral White)
-  cardBackground = "#ffffff"; // Bianco puro per contrasto
-  break;
+      primary = "#000000";
+      background = "#fffaf0";
+      cardBackground = "#ffffff";
+      borderColor = "#000000";
+      textColor = "#000000";
+      break;
+  }
 
-  case "black-white":
-    primary = "#ffffff";
-    background = "#0f0f0f";
-    cardBackground = "#1a1a1a";
-    break;
-}
-
+  // Applica colori dinamici
   document.body.style.backgroundColor = background;
-  document.body.style.color = primary;
 
-  const sommelierBtn = document.getElementById('sommelierBtn');
-if (sommelierBtn) sommelierBtn.style.backgroundColor = primary;
-
-  document.querySelectorAll('nav button').forEach(btn => {
-    btn.style.color = primary;
+  document.querySelectorAll('.category, .subcategory, .wine-card').forEach(el => {
+    el.style.backgroundColor = cardBackground;
+    el.style.borderColor = borderColor;
+    el.style.color = textColor;
   });
 
-  document.querySelectorAll('.category, .wine-card, .subcategory').forEach(card => {
-    card.style.backgroundColor = cardBackground;
-    card.style.color = primary;
-  });
+  // Applica colore anche ai bottoni / elementi principali
+  document.querySelector("nav button").style.color = primary;
+  document.getElementById("sommelierBtn").style.color = primary;
 }
+
 
 function applyCustomBoxStyles() {
   const bg = ristorante.card_color;
