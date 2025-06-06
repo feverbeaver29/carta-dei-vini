@@ -412,7 +412,6 @@ footer {
           </div>
         </div>
 
-
         <button class="save-btn" onclick="saveSettings()">Salva Impostazioni</button>
         <div id="saveMessage" style="margin-top: 10px; color: green; display: none;">
           ✅ Impostazioni salvate con successo
@@ -550,7 +549,7 @@ footer {
 
     const { data: info } = await supabase
   .from("ristoranti")
-  .select("nome, font, palette_color, bg_color, card_color, border_color, logo_url, sommelier_url, sommelier_range, sommelier_boost_multi")
+  .select("nome, font, palette_color, bg_color, card_color, border_color, text_color, logo_url, sommelier_url, sommelier_range, sommelier_boost_multi")
   .eq("id", RESTAURANT_ID)
   .single();
   console.log("🔍 Supabase info:", info);
