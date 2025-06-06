@@ -611,16 +611,22 @@ function applyPalette(palette) {
   }
 
   // Applica colori dinamici
-  document.body.style.backgroundColor = background;
+  const cards = document.querySelectorAll('.category, .subcategory, .wine-card');
+    cards.forEach(el => {
+      el.classList.remove("glass", "glass-dark");
+      el.style.backgroundColor = cardBackground;
+      el.style.borderColor = borderColor;
+      el.style.color = textColor;
+      el.style.boxShadow = boxShadow;
+    });
 
-  document.querySelectorAll('.category, .subcategory, .wine-card').forEach(el => {
-    el.classList.remove("glass", "glass-dark");
-    el.style.backgroundColor = cardBackground;
-    el.style.borderColor = borderColor;
-    el.style.color = textColor;
-    el.style.boxShadow = boxShadow;
-  });
-  
+    // Applica effetto vetro solo a palette selezionate
+    if (["oro", "crema-nero"].includes(palette)) {
+      cards.forEach(el => el.classList.add("glass"));
+    }
+    if (palette === "black-white") {
+      cards.forEach(el => el.classList.add("glass-dark"));
+    }  
 
   // Applica colore anche ai bottoni / elementi principali
   const backBtn = document.querySelector("nav button");
@@ -630,12 +636,6 @@ function applyPalette(palette) {
 if (sommelierBtn) {
   sommelierBtn.style.backgroundColor = primary;
   sommelierBtn.style.borderColor = primary;
-}
-if (["oro", "crema-nero"].includes(palette)) {
-  cards.forEach(el => el.classList.add("glass"));
-}
-if (palette === "black-white") {
-  cards.forEach(el => el.classList.add("glass-dark"));
 }
 }
 
