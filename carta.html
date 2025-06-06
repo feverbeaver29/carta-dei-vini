@@ -526,50 +526,50 @@ function applyPalette(palette) {
 
   switch (palette) {
     case "rosso":
-      primary = "#9b1c31";
-      background = "#fff4f4";
-      cardBackground = "#fff8f8";
-      borderColor = "#9b1c31";
-      textColor = "#3b0a12";
+      primary = "#b3001b";           // per bottoni e icone
+      background = "#fff5f5";        // sfondo pagina
+      cardBackground = "#ffe5e5";    // sfondo box
+      borderColor = "#990014";       // bordo box
+      textColor = "#330000";         // testo interno
       break;
 
     case "oro":
-      primary = "#b38e2e";
-      background = "#fefaf0";
-      cardBackground = "#fffdf5";
+      primary = "#c29d2e";
+      background = "#fffdf0";
+      cardBackground = "#fef6d8";
       borderColor = "#b38e2e";
-      textColor = "#3e2b06";
+      textColor = "#4a3b00";
       break;
 
     case "blu-elegante":
-      primary = "#144552";
-      background = "#e6f1f5";
-      cardBackground = "#f2f9fc";
-      borderColor = "#144552";
-      textColor = "#0b2c37";
+      primary = "#103d5e";
+      background = "#f2f7fc";
+      cardBackground = "#e4eff9";
+      borderColor = "#0b2e4b";
+      textColor = "#0b1c2d";
       break;
 
     case "verde-salvia":
-      primary = "#4c6b58";
-      background = "#f3f6f4";
-      cardBackground = "#f9fbfa";
-      borderColor = "#4c6b58";
-      textColor = "#2f463b";
+      primary = "#4a715a";
+      background = "#f4f9f5";
+      cardBackground = "#e5f1e8";
+      borderColor = "#3a5948";
+      textColor = "#273e32";
       break;
 
     case "grigio-minimal":
-      primary = "#555";
-      background = "#f2f2f2";
+      primary = "#444";
+      background = "#f7f7f7";
       cardBackground = "#ffffff";
-      borderColor = "#999999";
-      textColor = "#222";
+      borderColor = "#cccccc";
+      textColor = "#222222";
       break;
 
     case "black-white":
       primary = "#ffffff";
       background = "#0f0f0f";
-      cardBackground = "#1a1a1a";
-      borderColor = "#444";
+      cardBackground = "#1b1b1b";
+      borderColor = "#3a3a3a";
       textColor = "#ffffff";
       break;
 
@@ -592,10 +592,12 @@ function applyPalette(palette) {
   });
 
   // Applica colore anche ai bottoni / elementi principali
-  document.querySelector("nav button").style.color = primary;
-  document.getElementById("sommelierBtn").style.color = primary;
-}
+  const backBtn = document.querySelector("nav button");
+  if (backBtn) backBtn.style.color = primary;
 
+  const sommelierBtn = document.getElementById("sommelierBtn");
+  if (sommelierBtn) sommelierBtn.style.color = primary;
+}
 
 function applyCustomBoxStyles() {
   const bg = ristorante.card_color;
