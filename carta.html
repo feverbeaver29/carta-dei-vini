@@ -611,6 +611,7 @@ function applyPalette(palette) {
   }
 
   // Applica colori dinamici
+  document.body.style.backgroundColor = background;
   const cards = document.querySelectorAll('.category, .subcategory, .wine-card');
     cards.forEach(el => {
       el.classList.remove("glass", "glass-dark");
