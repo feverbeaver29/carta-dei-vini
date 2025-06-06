@@ -624,7 +624,8 @@ for (let option of paletteSelector.options) {
     updatePreview();
       showSettings('carta'); // esegui una volta sola all’avvio
       document.getElementById("bgColorPicker").addEventListener("input", updatePreviewLive);
-      document.getElementById("customColorPicker").addEventListener("input", updatePreviewLive);
+      document.getElementById("cardColorPicker").addEventListener("input", updatePreviewLive);
+      document.getElementById("borderColorPicker").addEventListener("input", updatePreviewLive);
       document.getElementById("fontSelector").addEventListener("change", updatePreviewLive);
   });
 
