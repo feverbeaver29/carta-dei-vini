@@ -25,6 +25,14 @@ button, .save-btn {
 
 .category, .subcategory, .wine-card {
   border: 1px solid;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.category:hover, .subcategory:hover, .wine-card:hover {
+  transform: scale(1.02);
+  transition: transform 0.2s ease;
 }
 
 /* NAV HEADER */
@@ -523,14 +531,16 @@ function applyPalette(palette) {
   let cardBackground = "#ffffff";
   let borderColor = "#b00";
   let textColor = "#000000";
+  let boxShadow = "0 2px 6px rgba(0, 0, 0, 0.15)"; // valore predefinito
 
   switch (palette) {
     case "rosso":
-      primary = "#b3001b";           // per bottoni e icone
-      background = "#fff5f5";        // sfondo pagina
-      cardBackground = "#ffe5e5";    // sfondo box
-      borderColor = "#990014";       // bordo box
-      textColor = "#330000";         // testo interno
+      primary = "#b3001b";
+      background = "#fff5f5";
+      cardBackground = "#ffe5e5";
+      borderColor = "#990014";
+      textColor = "#330000";
+      boxShadow = "0 2px 6px rgba(155, 28, 49, 0.2)";
       break;
 
     case "oro":
@@ -539,6 +549,7 @@ function applyPalette(palette) {
       cardBackground = "#fef6d8";
       borderColor = "#b38e2e";
       textColor = "#4a3b00";
+      boxShadow = "0 2px 6px rgba(179, 142, 46, 0.25)";
       break;
 
     case "blu-elegante":
@@ -547,6 +558,7 @@ function applyPalette(palette) {
       cardBackground = "#e4eff9";
       borderColor = "#0b2e4b";
       textColor = "#0b1c2d";
+      boxShadow = "0 2px 6px rgba(16, 61, 94, 0.18)";
       break;
 
     case "verde-salvia":
@@ -555,6 +567,7 @@ function applyPalette(palette) {
       cardBackground = "#e5f1e8";
       borderColor = "#3a5948";
       textColor = "#273e32";
+      boxShadow = "0 2px 6px rgba(74, 113, 90, 0.2)";
       break;
 
     case "grigio-minimal":
@@ -563,14 +576,16 @@ function applyPalette(palette) {
       cardBackground = "#ffffff";
       borderColor = "#cccccc";
       textColor = "#222222";
+      boxShadow = "0 2px 5px rgba(100, 100, 100, 0.1)";
       break;
 
     case "black-white":
-      primary = "#ffffff";
-      background = "#0f0f0f";
-      cardBackground = "#1b1b1b";
+      primary = "#e0e0e0";
+      background = "#121212";
+      cardBackground = "#1e1e1e";
       borderColor = "#3a3a3a";
       textColor = "#ffffff";
+      boxShadow = "0 2px 5px rgba(255, 255, 255, 0.05)";
       break;
 
     case "crema-nero":
@@ -579,6 +594,7 @@ function applyPalette(palette) {
       cardBackground = "#ffffff";
       borderColor = "#000000";
       textColor = "#000000";
+      boxShadow = "0 2px 6px rgba(0, 0, 0, 0.1)";
       break;
   }
 
@@ -589,7 +605,9 @@ function applyPalette(palette) {
     el.style.backgroundColor = cardBackground;
     el.style.borderColor = borderColor;
     el.style.color = textColor;
+    el.style.boxShadow = boxShadow;
   });
+  
 
   // Applica colore anche ai bottoni / elementi principali
   const backBtn = document.querySelector("nav button");
