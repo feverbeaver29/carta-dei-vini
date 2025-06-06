@@ -801,31 +801,43 @@ function capitalize(str) {
   iframe.src = currentUrl.toString();
 }
 
-    async function saveSettings() {
-      const textColor = document.getElementById("textColorPicker").value;
-      const bgColor = document.getElementById("bgColorPicker").value;
-      const cardColor = document.getElementById("cardColorPicker").value;
-      const borderColor = document.getElementById("borderColorPicker").value;
-      const nome = document.getElementById("displayName").value;
-      const font = document.getElementById("fontSelector").value;
-      const paletteSelect = document.getElementById("paletteSelector");
-      const selectedPalette = paletteSelect.options[paletteSelect.selectedIndex].getAttribute("data-palette");
+async function saveSettings() {
+  const nome = document.getElementById("displayName").value;
+  const font = document.getElementById("fontSelector").value;
+  const paletteSelect = document.getElementById("paletteSelector");
+  const selectedPalette = paletteSelect.options[paletteSelect.selectedIndex].getAttribute("data-palette");
 
-      let palette_color = selectedPalette;
-        if (selectedPalette === "custom") {
-          palette_color = "custom"; // oppure usa un identificatore tipo "custom"
-        }
+  let palette_color = selectedPalette;
+  if (selectedPalette === "custom") {
+    palette_color = "custom";
+  }
 
-    await supabase.from("ristoranti").update({
-          text_color: textColor,
-          card_color: cardColor,
-          border_color: borderColor,
-          nome,
-          font,
-          palette_color,
-          bg_color: bgColor,
-        }).eq("id", RESTAURANT_ID);
+  // Inizializza i valori a null per default
+  let bgColor = null;
+  let cardColor = null;
+  let borderColor = null;
+  let textColor = null;
 
+  // Se la palette è personalizzata, preleva i colori scelti
+  if (selectedPalette === "custom") {
+    bgColor = document.getElementById("bgColorPicker").value;
+    cardColor = document.getElementById("cardColorPicker").value;
+    borderColor = document.getElementById("borderColorPicker").value;
+    textColor = document.getElementById("textColorPicker").value;
+  }
+
+  // Salvataggio su Supabase
+  await supabase.from("ristoranti").update({
+    nome,
+    font,
+    palette_color,
+    bg_color: bgColor,
+    card_color: cardColor,
+    border_color: borderColor,
+    text_color: textColor
+  }).eq("id", RESTAURANT_ID);
+
+  // Feedback visuale
   const btn = document.querySelector(".save-btn");
   const originalText = btn.textContent;
   btn.textContent = "✅ Salvato!";
@@ -834,10 +846,11 @@ function capitalize(str) {
   }, 2000);
 
   document.getElementById("saveMessage").style.display = "block";
-setTimeout(() => {
-  document.getElementById("saveMessage").style.display = "none";
-}, 3000);
+  setTimeout(() => {
+    document.getElementById("saveMessage").style.display = "none";
+  }, 3000);
 
+  // Aggiornamento anteprime
   updatePreview();
   updatePreviewLive();
 }
