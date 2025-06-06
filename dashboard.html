@@ -377,27 +377,27 @@ footer {
               <option value="custom" data-palette="custom">🎨 Personalizzato</option>
             </select>
           </div>
-          <div id="customOptions" style="display:none; margin-top: 12px; font-size: 0.9em; gap: 12px; flex-direction: column;">
+          <div id="customOptions" style="display:none; margin-top: 12px; font-size: 0.85em; gap: 16px; flex-wrap: wrap; flex-direction: row; justify-content: start; background: #f8f8f8; padding: 12px; border-radius: 10px; border: 1px solid #ddd;">
             <label style="font-weight:600;">🎨 Personalizzazione Colori</label>
 
-            <div style="display:flex; align-items:center; gap: 10px;">
-              <label for="bgColorPicker" style="min-width: 120px;">Sfondo</label>
-              <input type="color" id="bgColorPicker" value="#fff9f4" style="width: 40px; height: 30px; border: none;">
+            <div style="display:flex; align-items:center; gap: 8px; width: 45%; min-width: 200px;">
+              <label for="cardColorPicker" style="flex: 1;">Sfondo pagina</label>
+              <input type="color" id="cardColorPicker" style="width: 36px; height: 26px; border-radius: 4px; border: 1px solid #ccc;">
             </div>
 
-            <div style="display:flex; align-items:center; gap: 10px;">
-              <label for="cardColorPicker" style="min-width: 120px;">Colore caselle</label>
-              <input type="color" id="cardColorPicker" value="#ffffff" style="width: 40px; height: 30px; border: none;">
+            <div style="display:flex; align-items:center; gap: 8px; width: 45%; min-width: 200px;">
+              <label for="borderColorPicker" style="flex: 1;">Sfondo pagina</label>
+              <input type="color" id="borderColorPicker" style="width: 36px; height: 26px; border-radius: 4px; border: 1px solid #ccc;">
             </div>
 
-            <div style="display:flex; align-items:center; gap: 10px;">
-              <label for="borderColorPicker" style="min-width: 120px;">Colore bordi</label>
-              <input type="color" id="borderColorPicker" value="#bb0000" style="width: 40px; height: 30px; border: none;">
+            <div style="display:flex; align-items:center; gap: 8px; width: 45%; min-width: 200px;">
+              <label for="textColorPicker" style="flex: 1;">Sfondo pagina</label>
+              <input type="color" id="textColorPicker" style="width: 36px; height: 26px; border-radius: 4px; border: 1px solid #ccc;">
             </div>
 
-            <div style="display:flex; align-items:center; gap: 10px;">
-              <label for="textColorPicker" style="min-width: 120px;">Colore testo</label>
-              <input type="color" id="textColorPicker" value="#000000" style="width: 40px; height: 30px; border: none;">
+            <div style="display:flex; align-items:center; gap: 8px; width: 45%; min-width: 200px;">
+              <label for="bgColorPicker" style="flex: 1;">Sfondo pagina</label>
+              <input type="color" id="bgColorPicker" style="width: 36px; height: 26px; border-radius: 4px; border: 1px solid #ccc;">
             </div>
           </div>
 
@@ -581,6 +581,9 @@ setTimeout(() => {
     document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
     document.getElementById("displayName").value = info?.nome || "";
     document.getElementById("bgColorPicker").value = info?.bg_color || "#fff9f4";
+    document.getElementById("cardColorPicker").value = info?.card_color || "#ffffff";
+    document.getElementById("borderColorPicker").value = info?.border_color || "#bb0000";
+    document.getElementById("textColorPicker").value = info?.text_color || "#000000";
     document.getElementById("displayName").addEventListener("input", (e) => {
   document.getElementById("ristoranteName").innerText = `${e.target.value || 'Ristorante'} - Dashboard`;
 });
