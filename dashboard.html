@@ -626,10 +626,6 @@ for (let option of paletteSelector.options) {
       document.getElementById("bgColorPicker").addEventListener("input", updatePreviewLive);
       document.getElementById("customColorPicker").addEventListener("input", updatePreviewLive);
       document.getElementById("fontSelector").addEventListener("change", updatePreviewLive);
-      document.getElementsByName("layout").forEach(radio => {
-        radio.addEventListener("change", updatePreviewLive);
-});
-
   });
 
 
