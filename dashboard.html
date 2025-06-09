@@ -640,6 +640,7 @@ for (let option of paletteSelector.options) {
 toggleCustomColorPicker(); // mostra le opzioni se "custom"
 
     if (info?.logo_url) {
+    toggleNameLogoOptions(true);
       const preview = document.createElement("img");
       preview.src = info.logo_url + "?t=" + new Date().getTime();
       preview.alt = "Anteprima Logo";
@@ -682,6 +683,9 @@ toggleCustomColorPicker(); // mostra le opzioni se "custom"
           if (el) el.addEventListener("input", updateLogoPreviewLive);
         });
     }
+    else {
+  toggleNameLogoOptions(false);
+}
     function updateNamePreviewLive() {
   const font = document.getElementById("nameFont").value;
   const size = document.getElementById("nameSize").value;
@@ -767,6 +771,14 @@ document.getElementById("logoUpload").addEventListener("change", async (event) =
 
   alert("Logo caricato con successo!");
   updatePreview();
+  toggleNameLogoOptions(true);
+const iframe = document.getElementById("previewFrame");
+iframe.contentWindow.postMessage({
+  action: "updateLogoLive",
+  size: document.getElementById("logoSize").value,
+  border: document.getElementById("logoBorderToggle").checked,
+  borderColor: document.getElementById("logoBorderColor").value
+}, "*");
 });
 
 let reorderMode = null;
@@ -1042,6 +1054,18 @@ function toggleCustomColorPicker() {
 
   const isCustom = paletteSelect.value === "custom";
   customOptions.style.display = isCustom ? "flex" : "none";
+}
+function toggleNameLogoOptions(showLogo) {
+  const nameOptions = document.getElementById("nameOptions");
+  const logoOptions = document.getElementById("logoOptions");
+
+  if (showLogo) {
+    nameOptions.style.display = "none";
+    logoOptions.style.display = "block";
+  } else {
+    nameOptions.style.display = "block";
+    logoOptions.style.display = "none";
+  }
 }
   </script>
 </body>
