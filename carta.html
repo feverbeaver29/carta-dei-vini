@@ -584,7 +584,7 @@ if (avatar) {
     } else {
     const span = document.createElement('span');
       span.textContent = ristorante.nome || 'Carta dei Vini';
-      span.style.fontFamily = ristorante.font || 'sans-serif';
+      span.style.fontFamily = ristorante.name_font || 'sans-serif';
       span.style.fontSize = (ristorante.name_size || 24) + "px";
       span.style.color = ristorante.name_color || "#000000";
       span.style.fontWeight = ristorante.name_bold ? "bold" : "normal";
@@ -847,6 +847,7 @@ window.addEventListener("message", (event) => {
   if (event.data?.action === "updateNameLive") {
     const nameSpan = document.querySelector("#restaurantName span");
     if (nameSpan) {
+      nameSpan.style.fontFamily = event.data.font || "sans-serif";
       nameSpan.style.fontSize = event.data.size + "px";
       nameSpan.style.color = event.data.color;
       nameSpan.style.fontWeight = event.data.bold ? "bold" : "normal";

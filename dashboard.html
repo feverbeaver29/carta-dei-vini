@@ -352,6 +352,15 @@ footer {
         <label for="displayName">Nome da visualizzare</label>
         <input type="text" id="displayName">
         <div id="nameOptions" style="margin-top: 12px;">
+          <label>Font Nome:
+            <select id="nameFont">
+              <option value="sans-serif">Sans Serif</option>
+              <option value="serif">Serif</option>
+              <option value="cursive">Cursive</option>
+              <option value="monospace">Monospace</option>
+              <option value="fantasy">Fantasy</option>
+            </select>
+          </label>
           <label>Dimensione Nome:
             <input type="range" id="nameSize" min="20" max="40" value="24"> px
           </label><br>
@@ -674,15 +683,17 @@ toggleCustomColorPicker(); // mostra le opzioni se "custom"
         });
     }
     function updateNamePreviewLive() {
-      const size = document.getElementById("nameSize").value;
-      const color = document.getElementById("nameColor").value;
-      const bold = document.getElementById("nameBold").checked;
+        const font = document.getElementById("nameFont").value;
+        const size = document.getElementById("nameSize").value;
+        const color = document.getElementById("nameColor").value;
+        const bold = document.getElementById("nameBold").checked;
 
       iframe.contentWindow.postMessage({
         action: "updateNameLive",
         size,
         color,
-        bold
+        bold,
+        font
       }, "*");
     }
 
@@ -859,6 +870,7 @@ function capitalize(str) {
 }
 
 async function saveSettings() {
+  const nameFont = document.getElementById("nameFont").value;
   const nameSize = document.getElementById("nameSize").value;
   const nameColor = document.getElementById("nameColor").value;
   const nameBold = document.getElementById("nameBold").checked;
@@ -903,7 +915,8 @@ async function saveSettings() {
     logo_border_color: logoBorderColor,
     name_size: nameSize,
     name_color: nameColor,
-    name_bold: nameBold
+    name_bold: nameBold,
+    name_font: nameFont
   }).eq("id", RESTAURANT_ID);
 
   // Feedback visuale
