@@ -706,6 +706,13 @@ toggleCustomColorPicker(); // mostra le opzioni se "custom"
     el.addEventListener(eventType, updateNamePreviewLive);
   }
 });
+
+// ✅ AGGIUNTA PER ABILITARE L'AGGIORNAMENTO LIVE DEL NOME
+const displayNameInput = document.getElementById("displayName");
+if (displayNameInput) {
+  displayNameInput.addEventListener("input", updateNamePreviewLive);
+}
+
     updatePreview();
       showSettings('carta'); // esegui una volta sola all’avvio
       document.getElementById("bgColorPicker").addEventListener("input", updatePreviewLive);
