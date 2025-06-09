@@ -351,10 +351,18 @@ footer {
 
         <label for="displayName">Nome da visualizzare</label>
         <input type="text" id="displayName">
+        <div id="nameOptions" style="margin-top: 12px;">
+          <label>Dimensione Nome:
+            <input type="range" id="nameSize" min="20" max="40" value="24"> px
+          </label><br>
+          <label>Colore Nome:
+            <input type="color" id="nameColor" value="#000000">
+          </label><br>
+          <label><input type="checkbox" id="nameBold"> Grassetto</label>
+        </div>
 
         <label for="logoUpload">oppure carica il logo del tuo ristorante</label>
         <input type="file" id="logoUpload" accept="image/*">
-      
         <div id="logoOptions" style="display: none; margin-top: 12px;">
           <label>Dimensione Logo:
             <input type="range" id="logoSize" min="30" max="120" value="40"> px
@@ -665,6 +673,23 @@ toggleCustomColorPicker(); // mostra le opzioni se "custom"
           if (el) el.addEventListener("input", updateLogoPreviewLive);
         });
     }
+    function updateNamePreviewLive() {
+      const size = document.getElementById("nameSize").value;
+      const color = document.getElementById("nameColor").value;
+      const bold = document.getElementById("nameBold").checked;
+
+      iframe.contentWindow.postMessage({
+        action: "updateNameLive",
+        size,
+        color,
+        bold
+      }, "*");
+    }
+
+    ["nameSize", "nameColor", "nameBold"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("input", updateNamePreviewLive);
+    });
     updatePreview();
       showSettings('carta'); // esegui una volta sola all’avvio
       document.getElementById("bgColorPicker").addEventListener("input", updatePreviewLive);
@@ -834,6 +859,9 @@ function capitalize(str) {
 }
 
 async function saveSettings() {
+  const nameSize = document.getElementById("nameSize").value;
+  const nameColor = document.getElementById("nameColor").value;
+  const nameBold = document.getElementById("nameBold").checked;
   const logoSize = document.getElementById("logoSize").value;
   const logoBorder = document.getElementById("logoBorderToggle").checked;
   const logoBorderColor = document.getElementById("logoBorderColor").value;
@@ -872,7 +900,10 @@ async function saveSettings() {
     text_color: textColor,
     logo_size: logoSize,
     logo_border: logoBorder,
-    logo_border_color: logoBorderColor
+    logo_border_color: logoBorderColor,
+    name_size: nameSize,
+    name_color: nameColor,
+    name_bold: nameBold
   }).eq("id", RESTAURANT_ID);
 
   // Feedback visuale
