@@ -683,28 +683,36 @@ toggleCustomColorPicker(); // mostra le opzioni se "custom"
         });
     }
     function updateNamePreviewLive() {
-        const font = document.getElementById("nameFont").value;
-        const size = document.getElementById("nameSize").value;
-        const color = document.getElementById("nameColor").value;
-        const bold = document.getElementById("nameBold").checked;
-        const name = document.getElementById("displayName").value;
+  const font = document.getElementById("nameFont").value;
+  const size = document.getElementById("nameSize").value;
+  const color = document.getElementById("nameColor").value;
+  const bold = document.getElementById("nameBold").checked;
+  const name = document.getElementById("displayName").value;
 
-      iframe.contentWindow.postMessage({
-        action: "updateNameLive",
-        size,
-        color,
-        bold,
-        font,
-        name
-      }, "*");
+  const iframe = document.getElementById("previewFrame");
+  if (!iframe || !iframe.contentWindow) return;
+
+  iframe.contentWindow.postMessage({
+    action: "updateNameLive",
+    size,
+    color,
+    bold,
+    font,
+    name
+  }, "*");
+}
+
+const iframe = document.getElementById("previewFrame");
+iframe.addEventListener("load", () => {
+  updateNamePreviewLive(); // aggiorna subito una volta
+
+  ["nameSize", "nameColor", "nameBold", "nameFont", "displayName"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      const type = el.tagName === "SELECT" || el.type === "checkbox" ? "change" : "input";
+      el.addEventListener(type, updateNamePreviewLive);
     }
-
-    ["nameSize", "nameColor", "nameBold", "nameFont"].forEach(id => {
-  const el = document.getElementById(id);
-  if (el) {
-    const eventType = el.tagName === "SELECT" || el.type === "checkbox" ? "change" : "input";
-    el.addEventListener(eventType, updateNamePreviewLive);
-  }
+  });
 });
 
 // ✅ AGGIUNTA PER ABILITARE L'AGGIORNAMENTO LIVE DEL NOME
