@@ -11,6 +11,13 @@
   --bg-default: #fff9f4;
 }
 
+#restaurantName span {
+  display: block;
+  text-align: center;
+  white-space: normal;
+  line-height: 1.2;
+}
+
 /* Fade generico */
 .fade-in {
   animation: fadeIn 0.4s ease forwards;
@@ -854,6 +861,13 @@ window.addEventListener("message", (event) => {
       nameSpan.style.fontSize = event.data.size + "px";
       nameSpan.style.color = event.data.color;
       nameSpan.style.fontWeight = event.data.bold ? "bold" : "normal";
+      const nav = document.querySelector("nav");
+setTimeout(() => {
+  if (nav && nameSpan) {
+    const height = nameSpan.offsetHeight + 16;
+    nav.style.height = height + "px";
+  }
+}, 50);
     }
   }
   const nav = document.querySelector("nav");

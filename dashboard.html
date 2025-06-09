@@ -698,9 +698,12 @@ toggleCustomColorPicker(); // mostra le opzioni se "custom"
     }
 
     ["nameSize", "nameColor", "nameBold", "nameFont"].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.addEventListener("input", updateNamePreviewLive);
-    });
+  const el = document.getElementById(id);
+  if (el) {
+    const eventType = el.tagName === "SELECT" || el.type === "checkbox" ? "change" : "input";
+    el.addEventListener(eventType, updateNamePreviewLive);
+  }
+});
     updatePreview();
       showSettings('carta'); // esegui una volta sola all’avvio
       document.getElementById("bgColorPicker").addEventListener("input", updatePreviewLive);
