@@ -681,6 +681,7 @@ window.paletteColors = {
 }
 
 function applyCustomBoxStyles() {
+if (!ristorante) return;
   const bg = ristorante.card_color;
   const border = ristorante.border_color;
   const text = ristorante.text_color;
@@ -696,6 +697,17 @@ if (popup && ristorante) {
   if (ristorante.card_color) popup.style.backgroundColor = ristorante.card_color;
   if (ristorante.border_color) popup.style.borderColor = ristorante.border_color;
   if (ristorante.text_color) popup.style.color = ristorante.text_color;
+}
+const backBtn = document.querySelector("nav button");
+if (backBtn && ristorante.border_color) {
+  backBtn.style.color = ristorante.border_color;
+}
+
+const sommelierBtn = document.getElementById("sommelierBtn");
+if (sommelierBtn) {
+  if (ristorante.card_color) sommelierBtn.style.backgroundColor = ristorante.card_color;
+  if (ristorante.border_color) sommelierBtn.style.borderColor = ristorante.border_color;
+  if (ristorante.text_color) sommelierBtn.style.color = ristorante.text_color;
 }
 }
 
