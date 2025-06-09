@@ -613,7 +613,7 @@ toggleCustomColorPicker(); // mostra le opzioni se "custom"
 
     if (info?.logo_url) {
       const preview = document.createElement("img");
-      preview.src = info.logo_url;
+      preview.src = info.logo_url + "?t=" + new Date().getTime();
       preview.alt = "Anteprima Logo";
       preview.className = "logo-preview";
       preview.id = "previewLogo";

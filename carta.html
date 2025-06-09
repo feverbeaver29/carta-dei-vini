@@ -567,7 +567,7 @@ if (avatar) {
     nameElem.innerHTML = '';
     if (ristorante.logo_url) {
       const img = document.createElement('img');
-      img.src = ristorante.logo_url;
+      img.src = ristorante.logo_url + "?t=" + new Date().getTime();
       img.alt = ristorante.nome;
       img.id = "restaurantLogo";
       img.style.height = '40px';
