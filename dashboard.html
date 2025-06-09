@@ -687,13 +687,15 @@ toggleCustomColorPicker(); // mostra le opzioni se "custom"
         const size = document.getElementById("nameSize").value;
         const color = document.getElementById("nameColor").value;
         const bold = document.getElementById("nameBold").checked;
+        const name = document.getElementById("displayName").value;
 
       iframe.contentWindow.postMessage({
         action: "updateNameLive",
         size,
         color,
         bold,
-        font
+        font,
+        name
       }, "*");
     }
 

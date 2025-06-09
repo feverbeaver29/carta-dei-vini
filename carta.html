@@ -855,12 +855,13 @@ window.addEventListener("message", (event) => {
 });
 window.addEventListener("message", (event) => {
   if (event.data?.action === "updateNameLive") {
-    const nameSpan = document.querySelector("#restaurantName span");
-    if (nameSpan) {
-      nameSpan.style.fontFamily = event.data.font || "sans-serif";
-      nameSpan.style.fontSize = event.data.size + "px";
-      nameSpan.style.color = event.data.color;
-      nameSpan.style.fontWeight = event.data.bold ? "bold" : "normal";
+  const nameSpan = document.querySelector("#restaurantName span");
+  if (nameSpan) {
+    nameSpan.style.fontFamily = event.data.font || "sans-serif";
+    nameSpan.style.fontSize = event.data.size + "px";
+    nameSpan.style.color = event.data.color;
+    nameSpan.style.fontWeight = event.data.bold ? "bold" : "normal";
+    nameSpan.textContent = event.data.name || "Carta dei Vini"; // ✅ AGGIUNTA
       const nav = document.querySelector("nav");
 setTimeout(() => {
   if (nav && nameSpan) {
