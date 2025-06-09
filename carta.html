@@ -11,6 +11,35 @@
   --bg-default: #fff9f4;
 }
 
+/* Fade generico */
+.fade-in {
+  animation: fadeIn 0.4s ease forwards;
+  opacity: 0;
+}
+
+.fade-out {
+  animation: fadeOut 0.3s ease forwards;
+  opacity: 1;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+    display: none;
+  }
+}
+
+/* Filtro per la risposta */
+.sommelier-fadein {
+  animation: fadeIn 0.5s ease both;
+}
+
 body {
   font-family: sans-serif;
   background: var(--bg-default);
@@ -320,7 +349,11 @@ window.paletteColors = {
 };
 
 function toggleSommelier() {
-  document.getElementById('sommelierOverlay').style.display = 'flex';
+  const overlay = document.getElementById('sommelierOverlay');
+    overlay.classList.remove("fade-out");
+    overlay.classList.add("fade-in");
+    overlay.style.display = 'flex';
+
   const popup = document.getElementById("sommelierPopup");
     if (popup) {
       popup.style.backgroundColor =
@@ -339,7 +372,12 @@ function toggleSommelier() {
 
 function closeSommelierPopup() {
   const overlay = document.getElementById('sommelierOverlay');
-  overlay.style.display = 'none';
+    overlay.classList.remove("fade-in");
+    overlay.classList.add("fade-out");
+    setTimeout(() => {
+      overlay.style.display = "none";
+    }, 300); // dopo l'animazione
+
   document.getElementById('foodInput').value = '';
   document.getElementById('wineSuggestion').innerHTML = '';
 
