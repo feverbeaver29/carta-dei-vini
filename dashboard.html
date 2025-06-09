@@ -355,18 +355,16 @@ footer {
         <label for="logoUpload">oppure carica il logo del tuo ristorante</label>
         <input type="file" id="logoUpload" accept="image/*">
       
-        <div id="logoOptions" style="margin-top: 12px;">
+        <div id="logoOptions" style="display: none; margin-top: 12px;">
           <label>Dimensione Logo:
             <input type="range" id="logoSize" min="30" max="120" value="40"> px
-          </label>
-          <label>
-            Cornice:
-            <input type="checkbox" id="logoBorderToggle">
-          </label>
+          </label><br>
+          <label><input type="checkbox" id="logoBorderToggle"> Mostra cornice</label><br>
           <label>Colore Cornice:
             <input type="color" id="logoBorderColor" value="#000000">
           </label>
         </div>
+
 
         <label for="fontSelector">Font principale</label>
           <select id="fontSelector" onchange="updateFontPreview()">
@@ -630,6 +628,7 @@ toggleCustomColorPicker(); // mostra le opzioni se "custom"
       preview.alt = "Anteprima Logo";
       preview.className = "logo-preview";
       preview.id = "previewLogo";
+      document.getElementById("logoOptions").style.display = "block";
       document.getElementById("logoUpload").insertAdjacentElement("afterend", preview);
       const removeBtn = document.createElement("button");
       removeBtn.textContent = "Rimuovi logo";
@@ -642,10 +641,29 @@ toggleCustomColorPicker(); // mostra le opzioni se "custom"
         await supabase.from("ristoranti").update({ logo_url: null }).eq("id", RESTAURANT_ID);
         preview.remove();
         removeBtn.remove();
+        document.getElementById("logoOptions").style.display = "none";
         alert("Logo rimosso con successo!");
         updatePreview();
       };
       preview.insertAdjacentElement("afterend", removeBtn);
+      const iframe = document.getElementById("previewFrame");
+        function updateLogoPreviewLive() {
+          const size = document.getElementById("logoSize").value;
+          const border = document.getElementById("logoBorderToggle").checked;
+          const borderColor = document.getElementById("logoBorderColor").value;
+
+          iframe.contentWindow.postMessage({
+            action: "updateLogoLive",
+            size,
+            border,
+            borderColor
+          }, "*");
+        }
+
+        ["logoSize", "logoBorderToggle", "logoBorderColor"].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.addEventListener("input", updateLogoPreviewLive);
+        });
     }
     updatePreview();
       showSettings('carta'); // esegui una volta sola all’avvio

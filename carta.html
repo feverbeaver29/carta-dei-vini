@@ -814,6 +814,28 @@ window.addEventListener("message", (event) => {
     const allowed = currentView === "subcategory" && currentCategory;
     parent.postMessage({ action: "subcatReady", allowed }, "*");
   }
+  window.addEventListener("message", (event) => {
+  if (event.data?.action === "updateLogoLive") {
+    const logo = document.getElementById("restaurantLogo");
+    const nav = document.querySelector("nav");
+
+    if (logo && event.data.size) {
+      logo.style.height = event.data.size + "px";
+      nav.style.height = event.data.size + "px";
+    }
+
+    if (logo) {
+      if (event.data.border) {
+        logo.style.border = "2px solid " + event.data.borderColor;
+        logo.style.borderRadius = "8px";
+        logo.style.padding = "4px";
+      } else {
+        logo.style.border = "none";
+        logo.style.padding = "0";
+      }
+    }
+  }
+});
 
   if (event.data?.action === "startReorder") {
     reorderMode = true;
