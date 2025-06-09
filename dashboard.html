@@ -354,6 +354,19 @@ footer {
 
         <label for="logoUpload">oppure carica il logo del tuo ristorante</label>
         <input type="file" id="logoUpload" accept="image/*">
+      
+        <div id="logoOptions" style="margin-top: 12px;">
+          <label>Dimensione Logo:
+            <input type="range" id="logoSize" min="30" max="120" value="40"> px
+          </label>
+          <label>
+            Cornice:
+            <input type="checkbox" id="logoBorderToggle">
+          </label>
+          <label>Colore Cornice:
+            <input type="color" id="logoBorderColor" value="#000000">
+          </label>
+        </div>
 
         <label for="fontSelector">Font principale</label>
           <select id="fontSelector" onchange="updateFontPreview()">
@@ -803,6 +816,9 @@ function capitalize(str) {
 }
 
 async function saveSettings() {
+  const logoSize = document.getElementById("logoSize").value;
+  const logoBorder = document.getElementById("logoBorderToggle").checked;
+  const logoBorderColor = document.getElementById("logoBorderColor").value;
   const nome = document.getElementById("displayName").value;
   const font = document.getElementById("fontSelector").value;
   const paletteSelect = document.getElementById("paletteSelector");
@@ -835,7 +851,10 @@ async function saveSettings() {
     bg_color: bgColor,
     card_color: cardColor,
     border_color: borderColor,
-    text_color: textColor
+    text_color: textColor,
+    logo_size: logoSize,
+    logo_border: logoBorder,
+    logo_border_color: logoBorderColor
   }).eq("id", RESTAURANT_ID);
 
   // Feedback visuale

@@ -570,7 +570,12 @@ if (avatar) {
       img.src = ristorante.logo_url + "?t=" + new Date().getTime();
       img.alt = ristorante.nome;
       img.id = "restaurantLogo";
-      img.style.height = '40px';
+      img.style.height = (ristorante.logo_size || 40) + "px";
+      if (ristorante.logo_border) {
+        img.style.border = "2px solid " + (ristorante.logo_border_color || "#000");
+        img.style.borderRadius = "8px";
+        img.style.padding = "4px";
+      }
       nameElem.appendChild(img);
     } else {
     const span = document.createElement('span');
