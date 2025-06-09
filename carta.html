@@ -106,6 +106,9 @@ nav button {
   align-items: center;
   gap: 10px;
   font-size: 1.2em;
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
 }
 #restaurantLogo {
   height: 32px;
@@ -853,6 +856,10 @@ window.addEventListener("message", (event) => {
       nameSpan.style.fontWeight = event.data.bold ? "bold" : "normal";
     }
   }
+  const nav = document.querySelector("nav");
+    if (nav && nameSpan.offsetHeight > 0) {
+      nav.style.height = (nameSpan.offsetHeight + 16) + "px";
+    }
 });
 
   if (event.data?.action === "startReorder") {
