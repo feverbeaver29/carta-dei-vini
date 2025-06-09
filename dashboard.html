@@ -660,6 +660,7 @@ toggleCustomColorPicker(); // mostra le opzioni se "custom"
         preview.remove();
         removeBtn.remove();
         document.getElementById("logoOptions").style.display = "none";
+        toggleNameLogoOptions(false);
         alert("Logo rimosso con successo!");
         updatePreview();
       };
@@ -674,7 +675,8 @@ toggleCustomColorPicker(); // mostra le opzioni se "custom"
             action: "updateLogoLive",
             size,
             border,
-            borderColor
+            borderColor,
+            logoUrl: publicUrl // 🔥 questa fa la magia
           }, "*");
         }
 
