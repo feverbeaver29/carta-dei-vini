@@ -571,6 +571,10 @@ if (avatar) {
       img.alt = ristorante.nome;
       img.id = "restaurantLogo";
       img.style.height = (ristorante.logo_size || 40) + "px";
+      const nav = document.querySelector("nav");
+      if (nav && ristorante.logo_size) {
+        nav.style.height = ristorante.logo_size + "px";
+      }
       if (ristorante.logo_border) {
         img.style.border = "2px solid " + (ristorante.logo_border_color || "#000");
         img.style.borderRadius = "8px";
