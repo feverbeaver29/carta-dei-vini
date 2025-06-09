@@ -831,7 +831,7 @@ window.addEventListener("message", (event) => {
     const allowed = currentView === "subcategory" && currentCategory;
     parent.postMessage({ action: "subcatReady", allowed }, "*");
   }
-  window.addEventListener("message", (event) => {
+
   if (event.data?.action === "updateLogoLive") {
     const logo = document.getElementById("restaurantLogo");
     const nav = document.querySelector("nav");
@@ -871,7 +871,6 @@ window.addEventListener("message", (event) => {
       }, 50);
     }
   }
-});
 
   if (event.data?.action === "startReorder") {
     reorderMode = true;
