@@ -666,24 +666,7 @@ toggleCustomColorPicker(); // mostra le opzioni se "custom"
       };
       preview.insertAdjacentElement("afterend", removeBtn);
       const iframe = document.getElementById("previewFrame");
-        function updateLogoPreviewLive() {
-          const size = document.getElementById("logoSize").value;
-          const border = document.getElementById("logoBorderToggle").checked;
-          const borderColor = document.getElementById("logoBorderColor").value;
-          const logoEl = document.getElementById("previewLogo");
-
-          const iframe = document.getElementById("previewFrame");
-          if (!iframe || !iframe.contentWindow || !logoEl) return;
-
-          iframe.contentWindow.postMessage({
-            action: "updateLogoLive",
-            size,
-            border,
-            borderColor,
-            logoUrl: logoEl.src
-          }, "*");
-        }
-
+      
         ["logoSize", "logoBorderToggle", "logoBorderColor"].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.addEventListener("input", updateLogoPreviewLive);
@@ -1074,6 +1057,23 @@ function toggleCustomColorPicker() {
   const isCustom = paletteSelect.value === "custom";
   customOptions.style.display = isCustom ? "flex" : "none";
 }
+function updateLogoPreviewLive() {
+          const size = document.getElementById("logoSize").value;
+          const border = document.getElementById("logoBorderToggle").checked;
+          const borderColor = document.getElementById("logoBorderColor").value;
+          const logoEl = document.getElementById("previewLogo");
+
+          const iframe = document.getElementById("previewFrame");
+          if (!iframe || !iframe.contentWindow || !logoEl) return;
+
+          iframe.contentWindow.postMessage({
+            action: "updateLogoLive",
+            size,
+            border,
+            borderColor,
+            logoUrl: logoEl.src
+          }, "*");
+        }
 function toggleNameLogoOptions(showLogo) {
   const nameOptions = document.getElementById("nameOptions");
   const logoOptions = document.getElementById("logoOptions");
