@@ -776,16 +776,28 @@ document.getElementById("logoUpload").addEventListener("change", async (event) =
     .eq("id", RESTAURANT_ID);
 
   alert("Logo caricato con successo!");
-  updatePreview();
-  toggleNameLogoOptions(true);
+updatePreview();
+toggleNameLogoOptions(true);
+
 const iframe = document.getElementById("previewFrame");
-iframe.contentWindow.postMessage({
-  action: "updateLogoLive",
-  size: document.getElementById("logoSize").value,
-  border: document.getElementById("logoBorderToggle").checked,
-  borderColor: document.getElementById("logoBorderColor").value,
-  logoUrl: publicUrl // ⬅️ QUESTA RIGA È ESSENZIALE
-}, "*");
+if (iframe && iframe.contentWindow) {
+  iframe.contentWindow.postMessage({
+    action: "updateLogoLive",
+    size: document.getElementById("logoSize").value,
+    border: document.getElementById("logoBorderToggle").checked,
+    borderColor: document.getElementById("logoBorderColor").value,
+    logoUrl: publicUrl
+  }, "*");
+}
+
+// ✅ collega gli eventi input DOPO il caricamento
+["logoSize", "logoBorderToggle", "logoBorderColor"].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    const type = el.tagName === "SELECT" || el.type === "checkbox" ? "change" : "input";
+    el.addEventListener(type, updateLogoPreviewLive);
+  }
+});
 });
 
 let reorderMode = null;
