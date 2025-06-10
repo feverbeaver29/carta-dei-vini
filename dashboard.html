@@ -553,6 +553,17 @@ function renderLogoPreview(url) {
   preview.alt = "Anteprima Logo";
   preview.className = "logo-preview";
   preview.id = "previewLogo";
+  preview.style.display = "block";
+  preview.style.margin = "10px auto";
+
+  const alreadyLabel = document.createElement("div");
+  alreadyLabel.textContent = "Logo già presente";
+  alreadyLabel.style.textAlign = "center";
+  alreadyLabel.style.fontSize = "0.9em";
+  alreadyLabel.style.color = "#555";
+  alreadyLabel.style.marginTop = "5px";
+  alreadyLabel.id = "logoStatusLabel";
+  preview.insertAdjacentElement("afterend", alreadyLabel);
 
   const uploadField = document.getElementById("logoUpload");
   uploadField.insertAdjacentElement("afterend", preview);
@@ -561,9 +572,15 @@ function renderLogoPreview(url) {
   if (oldRemoveBtn) oldRemoveBtn.remove();
 
   const removeBtn = document.createElement("button");
-  removeBtn.textContent = "Rimuovi logo";
-  removeBtn.className = "save-btn";
-  removeBtn.style.marginTop = "10px";
+  removeBtn.textContent = "✕ Rimuovi logo";
+  removeBtn.id = "removeLogoBtn";
+  removeBtn.style.background = "none";
+  removeBtn.style.border = "none";
+  removeBtn.style.color = "#b00";
+  removeBtn.style.cursor = "pointer";
+  removeBtn.style.margin = "5px auto 10px";
+  removeBtn.style.display = "block";
+  removeBtn.style.fontSize = "0.9em";
   removeBtn.id = "removeLogoBtn";
   removeBtn.onclick = async () => {
     const ext = preview.src.split('.').pop().split('?')[0];
@@ -578,7 +595,7 @@ function renderLogoPreview(url) {
     updatePreview();
   };
 
-  preview.insertAdjacentElement("afterend", removeBtn);
+alreadyLabel.insertAdjacentElement("afterend", removeBtn);
 }
 
 // 🔧 4. Collega gli eventi live del logo
@@ -698,6 +715,13 @@ setTimeout(() => {
 }, 0); 
 
 // imposta valori iniziali
+    document.getElementById("nameFont").value = info?.name_font || "Arial";
+    document.getElementById("nameSize").value = info?.name_size || "28";
+    document.getElementById("nameColor").value = info?.name_color || "#000000";
+    document.getElementById("nameBold").checked = info?.name_bold || false;
+    document.getElementById("logoSize").value = info?.logo_size || "64";
+    document.getElementById("logoBorderToggle").checked = info?.logo_border || false;
+    document.getElementById("logoBorderColor").value = info?.logo_border_color || "#000000";
     document.getElementById("textColorPicker").value = info?.text_color || "#000000";
     document.getElementById("sommelierRange").value = info?.sommelier_range || "1-3";
     document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
@@ -719,6 +743,8 @@ for (let option of paletteSelector.options) {
     break;
   }
 }
+updateNamePreviewLive();
+updateLogoPreviewLive();
 toggleCustomColorPicker(); // mostra le opzioni se "custom"
 
     if (info?.logo_url) {
