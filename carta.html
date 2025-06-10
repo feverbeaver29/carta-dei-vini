@@ -837,11 +837,13 @@ window.addEventListener("message", (event) => {
   const nav = document.querySelector("nav");
 
   if (!logo && event.data.logoUrl) {
-    logo = document.createElement("img");
-    logo.id = "restaurantLogo";
-    nav.innerHTML = "";
-    nav.appendChild(logo);
-  }
+  logo = document.createElement("img");
+  logo.id = "restaurantLogo";
+  logo.style.display = "block";
+  logo.style.margin = "0 auto";
+  nav.innerHTML = "";
+  nav.appendChild(logo);
+}
 
   if (logo) {
     if (event.data.logoUrl) logo.src = event.data.logoUrl;
