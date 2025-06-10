@@ -670,13 +670,17 @@ toggleCustomColorPicker(); // mostra le opzioni se "custom"
           const size = document.getElementById("logoSize").value;
           const border = document.getElementById("logoBorderToggle").checked;
           const borderColor = document.getElementById("logoBorderColor").value;
+          const logoEl = document.getElementById("previewLogo");
+
+          const iframe = document.getElementById("previewFrame");
+          if (!iframe || !iframe.contentWindow || !logoEl) return;
 
           iframe.contentWindow.postMessage({
             action: "updateLogoLive",
             size,
             border,
             borderColor,
-            logoUrl: publicUrl // 🔥 questa fa la magia
+            logoUrl: logoEl.src
           }, "*");
         }
 
