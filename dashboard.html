@@ -510,6 +510,88 @@ footer {
   let boostCount = 0;
   const maxBoosts = 5;
 
+  // 🔧 1. Funzione per inviare il logo in live
+function updateLogoPreviewLive() {
+  const iframe = document.getElementById("previewFrame");
+  if (!iframe || !iframe.contentWindow) return;
+
+  const size = document.getElementById("logoSize").value;
+  const border = document.getElementById("logoBorderToggle").checked;
+  const borderColor = document.getElementById("logoBorderColor").value;
+  const logoEl = document.getElementById("previewLogo");
+
+  iframe.contentWindow.postMessage({
+    action: "updateLogoLive",
+    size,
+    border,
+    borderColor,
+    logoUrl: logoEl?.src || null
+  }, "*");
+}
+
+// 🔧 2. Funzione per mostrare/nascondere le opzioni nome/logo
+function toggleNameLogoOptions(showLogo) {
+  const nameOptions = document.getElementById("nameOptions");
+  const logoOptions = document.getElementById("logoOptions");
+
+  if (showLogo) {
+    nameOptions.style.display = "none";
+    logoOptions.style.display = "block";
+  } else {
+    nameOptions.style.display = "block";
+    logoOptions.style.display = "none";
+  }
+}
+
+// 🔧 3. Funzione per mostrare l'anteprima del logo e bottone rimozione
+function renderLogoPreview(url) {
+  const oldPreview = document.getElementById("previewLogo");
+  if (oldPreview) oldPreview.remove();
+
+  const preview = document.createElement("img");
+  preview.src = url + "?t=" + new Date().getTime();
+  preview.alt = "Anteprima Logo";
+  preview.className = "logo-preview";
+  preview.id = "previewLogo";
+
+  const uploadField = document.getElementById("logoUpload");
+  uploadField.insertAdjacentElement("afterend", preview);
+
+  const oldRemoveBtn = document.getElementById("removeLogoBtn");
+  if (oldRemoveBtn) oldRemoveBtn.remove();
+
+  const removeBtn = document.createElement("button");
+  removeBtn.textContent = "Rimuovi logo";
+  removeBtn.className = "save-btn";
+  removeBtn.style.marginTop = "10px";
+  removeBtn.id = "removeLogoBtn";
+  removeBtn.onclick = async () => {
+    const ext = preview.src.split('.').pop().split('?')[0];
+    const filePath = `${RESTAURANT_ID}.${ext}`;
+    await supabase.storage.from("loghi").remove([`ristoranti/${filePath}`]);
+    await supabase.from("ristoranti").update({ logo_url: null }).eq("id", RESTAURANT_ID);
+    preview.remove();
+    removeBtn.remove();
+    document.getElementById("logoOptions").style.display = "none";
+    toggleNameLogoOptions(false);
+    alert("Logo rimosso con successo!");
+    updatePreview();
+  };
+
+  preview.insertAdjacentElement("afterend", removeBtn);
+}
+
+// 🔧 4. Collega gli eventi live del logo
+function attachLogoListeners() {
+  ["logoSize", "logoBorderToggle", "logoBorderColor"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      const type = el.tagName === "SELECT" || el.type === "checkbox" ? "change" : "input";
+      el.addEventListener(type, updateLogoPreviewLive);
+    }
+  });
+}
+
   function addBoostInput(value = "") {
   if (boostCount >= maxBoosts) return;
 
@@ -640,39 +722,11 @@ for (let option of paletteSelector.options) {
 toggleCustomColorPicker(); // mostra le opzioni se "custom"
 
     if (info?.logo_url) {
-    toggleNameLogoOptions(true);
-      const preview = document.createElement("img");
-      preview.src = info.logo_url + "?t=" + new Date().getTime();
-      preview.alt = "Anteprima Logo";
-      preview.className = "logo-preview";
-      preview.id = "previewLogo";
-      document.getElementById("logoOptions").style.display = "block";
-      document.getElementById("logoUpload").insertAdjacentElement("afterend", preview);
-      const removeBtn = document.createElement("button");
-      removeBtn.textContent = "Rimuovi logo";
-      removeBtn.className = "save-btn";
-      removeBtn.style.marginTop = "10px";
-      removeBtn.onclick = async () => {
-        const ext = preview.src.split('.').pop().split('?')[0];
-        const filePath = `${RESTAURANT_ID}.${ext}`;
-        await supabase.storage.from("loghi").remove([filePath]);
-        await supabase.from("ristoranti").update({ logo_url: null }).eq("id", RESTAURANT_ID);
-        preview.remove();
-        removeBtn.remove();
-        document.getElementById("logoOptions").style.display = "none";
-        toggleNameLogoOptions(false);
-        alert("Logo rimosso con successo!");
-        updatePreview();
-      };
-      preview.insertAdjacentElement("afterend", removeBtn);
-      const iframe = document.getElementById("previewFrame");
-      
-        ["logoSize", "logoBorderToggle", "logoBorderColor"].forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.addEventListener("input", updateLogoPreviewLive);
-        });
-    }
-    else {
+  toggleNameLogoOptions(true);
+  renderLogoPreview(info.logo_url);
+  attachLogoListeners();
+  updateLogoPreviewLive();
+} else {
   toggleNameLogoOptions(false);
 }
     function updateNamePreviewLive() {
@@ -725,7 +779,6 @@ document.getElementById("logoUpload").addEventListener("change", async (event) =
   const fileName = `${RESTAURANT_ID}.${ext}`;
   const filePath = `ristoranti/${fileName}`;
 
-  // Prova a rimuovere un file esistente prima di caricare
   const { data: existing } = await supabase
     .storage
     .from("loghi")
@@ -735,7 +788,6 @@ document.getElementById("logoUpload").addEventListener("change", async (event) =
     await supabase.storage.from("loghi").remove([filePath]);
   }
 
-  // Upload nuovo file
   const { error: uploadError } = await supabase.storage
     .from("loghi")
     .upload(filePath, file, {
@@ -747,7 +799,6 @@ document.getElementById("logoUpload").addEventListener("change", async (event) =
     return alert("Errore nel caricamento del logo.");
   }
 
-  // Ottieni URL pubblico
   const { data: { publicUrl } } = supabase
     .storage
     .from("loghi")
@@ -759,28 +810,10 @@ document.getElementById("logoUpload").addEventListener("change", async (event) =
     .eq("id", RESTAURANT_ID);
 
   alert("Logo caricato con successo!");
-updatePreview();
-toggleNameLogoOptions(true);
-
-const iframe = document.getElementById("previewFrame");
-if (iframe && iframe.contentWindow) {
-  iframe.contentWindow.postMessage({
-    action: "updateLogoLive",
-    size: document.getElementById("logoSize").value,
-    border: document.getElementById("logoBorderToggle").checked,
-    borderColor: document.getElementById("logoBorderColor").value,
-    logoUrl: publicUrl
-  }, "*");
-}
-
-// ✅ collega gli eventi input DOPO il caricamento
-["logoSize", "logoBorderToggle", "logoBorderColor"].forEach(id => {
-  const el = document.getElementById(id);
-  if (el) {
-    const type = el.tagName === "SELECT" || el.type === "checkbox" ? "change" : "input";
-    el.addEventListener(type, updateLogoPreviewLive);
-  }
-});
+  toggleNameLogoOptions(true);
+  renderLogoPreview(publicUrl);
+  attachLogoListeners();
+  updateLogoPreviewLive();
 });
 
 let reorderMode = null;
@@ -1056,35 +1089,6 @@ function toggleCustomColorPicker() {
 
   const isCustom = paletteSelect.value === "custom";
   customOptions.style.display = isCustom ? "flex" : "none";
-}
-function updateLogoPreviewLive() {
-          const size = document.getElementById("logoSize").value;
-          const border = document.getElementById("logoBorderToggle").checked;
-          const borderColor = document.getElementById("logoBorderColor").value;
-          const logoEl = document.getElementById("previewLogo");
-
-          const iframe = document.getElementById("previewFrame");
-          if (!iframe || !iframe.contentWindow || !logoEl) return;
-
-          iframe.contentWindow.postMessage({
-            action: "updateLogoLive",
-            size,
-            border,
-            borderColor,
-            logoUrl: logoEl.src
-          }, "*");
-        }
-function toggleNameLogoOptions(showLogo) {
-  const nameOptions = document.getElementById("nameOptions");
-  const logoOptions = document.getElementById("logoOptions");
-
-  if (showLogo) {
-    nameOptions.style.display = "none";
-    logoOptions.style.display = "block";
-  } else {
-    nameOptions.style.display = "block";
-    logoOptions.style.display = "none";
-  }
 }
   </script>
 </body>
