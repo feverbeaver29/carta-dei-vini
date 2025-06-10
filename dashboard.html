@@ -783,7 +783,8 @@ iframe.contentWindow.postMessage({
   action: "updateLogoLive",
   size: document.getElementById("logoSize").value,
   border: document.getElementById("logoBorderToggle").checked,
-  borderColor: document.getElementById("logoBorderColor").value
+  borderColor: document.getElementById("logoBorderColor").value,
+  logoUrl: publicUrl // ⬅️ QUESTA RIGA È ESSENZIALE
 }, "*");
 });
 
