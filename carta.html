@@ -833,25 +833,33 @@ window.addEventListener("message", (event) => {
   }
 
   if (event.data?.action === "updateLogoLive") {
-    const logo = document.getElementById("restaurantLogo");
-    const nav = document.querySelector("nav");
+  let logo = document.getElementById("restaurantLogo");
+  const nav = document.querySelector("nav");
 
-    if (logo && event.data.size) {
+  if (!logo && event.data.logoUrl) {
+    logo = document.createElement("img");
+    logo.id = "restaurantLogo";
+    nav.innerHTML = "";
+    nav.appendChild(logo);
+  }
+
+  if (logo) {
+    if (event.data.logoUrl) logo.src = event.data.logoUrl;
+    if (event.data.size) {
       logo.style.height = event.data.size + "px";
       nav.style.height = event.data.size + "px";
     }
 
-    if (logo) {
-      if (event.data.border) {
-        logo.style.border = "2px solid " + event.data.borderColor;
-        logo.style.borderRadius = "8px";
-        logo.style.padding = "4px";
-      } else {
-        logo.style.border = "none";
-        logo.style.padding = "0";
-      }
+    if (event.data.border) {
+      logo.style.border = "2px solid " + event.data.borderColor;
+      logo.style.borderRadius = "8px";
+      logo.style.padding = "4px";
+    } else {
+      logo.style.border = "none";
+      logo.style.padding = "0";
     }
   }
+}
 
   if (event.data?.action === "updateNameLive") {
     const nameSpan = document.querySelector("#restaurantName span");
