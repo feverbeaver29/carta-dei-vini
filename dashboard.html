@@ -563,10 +563,9 @@ function renderLogoPreview(url) {
   alreadyLabel.style.color = "#555";
   alreadyLabel.style.marginTop = "5px";
   alreadyLabel.id = "logoStatusLabel";
-  preview.insertAdjacentElement("afterend", alreadyLabel);
-
   const uploadField = document.getElementById("logoUpload");
   uploadField.insertAdjacentElement("afterend", preview);
+  preview.insertAdjacentElement("afterend", alreadyLabel);
 
   const oldRemoveBtn = document.getElementById("removeLogoBtn");
   if (oldRemoveBtn) oldRemoveBtn.remove();
