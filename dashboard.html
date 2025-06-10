@@ -553,6 +553,8 @@ function renderLogoPreview(url) {
   preview.alt = "Anteprima Logo";
   preview.className = "logo-preview";
   preview.id = "previewLogo";
+  preview.style.display = "block";
+  preview.style.margin = "10px auto";
 
   const uploadField = document.getElementById("logoUpload");
   uploadField.insertAdjacentElement("afterend", preview);
