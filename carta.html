@@ -802,7 +802,9 @@ card.innerHTML = `<strong>${produttoreUpper} ${denominazione}${annata}</strong><
     wineList.appendChild(card);
   });
     applyCustomBoxStyles();
-    applyPalette(window.ristorantePalette);
+    if (!window.paletteOverrideLive) {
+  applyPalette(window.ristorantePalette);
+}
 
   document.getElementById('subcategory-list').style.display = 'none';
   wineList.style.display = 'block';
@@ -867,6 +869,10 @@ if (event.data?.action === "updatePaletteLive") {
       if (borderColor) sommelierBtn.style.borderColor = borderColor;
       if (textColor) sommelierBtn.style.color = textColor;
     }
+    ristorante.bg_color = bgColor;
+    ristorante.card_color = cardColor;
+    ristorante.border_color = borderColor;
+    ristorante.text_color = textColor;
   } else {
     applyPalette(palette);
   }
@@ -1050,7 +1056,9 @@ window.showCategories = function () {
     container.appendChild(div);
   }
   applyCustomBoxStyles();
-    applyPalette(window.ristorantePalette);
+    if (!window.paletteOverrideLive) {
+  applyPalette(window.ristorantePalette);
+}
 };
 
 window.showSubcategories = function (category) {
@@ -1097,7 +1105,9 @@ window.showSubcategories = function (category) {
     container.appendChild(div);
   }
   applyCustomBoxStyles();
-    applyPalette(window.ristorantePalette);
+    if (!window.paletteOverrideLive) {
+  applyPalette(window.ristorantePalette);
+}
 
     document.getElementById('category-list').style.display = 'none';
   container.style.display = 'grid';
