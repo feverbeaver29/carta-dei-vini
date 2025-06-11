@@ -1278,7 +1278,8 @@ function showFontPopupForBody() {
       }
       select.value = font;
       updateFontPreview();
-
+      updateFontLivePreview(); // ✅ aggiunto per aggiornare l'iframe
+      
       if (!["sans-serif", "cursive", "monospace"].includes(font)) {
         const fontLinkId = "customGoogleFontBody";
         let existing = document.getElementById(fontLinkId);
