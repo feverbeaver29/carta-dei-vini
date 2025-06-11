@@ -789,7 +789,8 @@ toggleCustomColorPicker(); // mostra le opzioni se "custom"
     const link = document.createElement("link");
     link.id = fontLinkId;
     link.rel = "stylesheet";
-    link.href = `https://fonts.googleapis.com/css2?family=${font.replace(/ /g, "+")}&display=swap`;
+    const encodedFont = encodeURIComponent(font.trim());
+    link.href = `https://fonts.googleapis.com/css2?family=${encodedFont.replace(/%20/g, "+")}&display=swap`;
     document.head.appendChild(link);
   }
 }
