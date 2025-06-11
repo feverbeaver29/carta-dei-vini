@@ -6,7 +6,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - Wine's Fever</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Raleway&family=Dancing+Script&family=Montserrat&family=Roboto&display&family=Edu+NSW+ACT+Hand+Pre&display&family=Lavishly+Yours&family=Kolker+Brush=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Raleway&family=Dancing+Script&family=Montserrat&family=Roboto&family=Edu+NSW+ACT+Hand+Pre&family=Lavishly+Yours&family=Kolker+Brush&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
@@ -615,6 +615,8 @@ function attachLogoListeners() {
   const input = document.createElement("input");
   input.type = "text";
   input.className = "awesomplete";
+  input.id = `boostInput${boostCount}`; // ✅ aggiunto ID univoco
+  input.name = `boostInput${boostCount}`; // ✅ aggiunto name
   input.placeholder = "Cerca un vino dalla tua carta";
   input.style.paddingRight = "2.2em";
   input.style.width = "100%";
