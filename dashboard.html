@@ -389,6 +389,7 @@ footer {
             <option value="Raleway" style="font-family: Raleway;">Raleway</option>
             <option value="Dancing Script" style="font-family: 'Dancing Script';">Dancing Script</option>
             <option value="Playfair Display" style="font-family: 'Playfair Display';">Playfair Display</option>
+            <option value="custom">Altri font...</option>
           </select>
         <div id="fontPreview" style="margin-top: 10px; font-size: 1.2em;">Anteprima testo</div>
 
@@ -734,13 +735,28 @@ setTimeout(() => {
     document.getElementById("displayName").addEventListener("input", (e) => {
   document.getElementById("ristoranteName").innerText = `${e.target.value || 'Ristorante'} - Dashboard`;
 });
-    document.getElementById("fontSelector").value = info?.font || "Arial";
+    const fontBody = info?.font || "Arial";
+let fontOption = [...document.getElementById("fontSelector").options].find(o => o.value === fontBody);
+if (!fontOption) {
+  fontOption = new Option(fontBody, fontBody);
+  fontSelect.add(fontOption);
+}
+fontSelect.value = fontBody;
+updateFontPreview();
     document.getElementById("nameFont").addEventListener("change", () => {
   const font = document.getElementById("nameFont").value;
   if (font === "custom") {
     showFontPopup();
   } else {
     updateNamePreviewLive();
+  }
+});
+document.getElementById("fontSelector").addEventListener("change", () => {
+  const font = document.getElementById("fontSelector").value;
+  if (font === "custom") {
+    showFontPopupForBody();
+  } else {
+    updateFontPreview();
   }
 });
 
@@ -1197,6 +1213,55 @@ div.innerHTML = `<div style="font-family: '${font}'; font-size: 1.2em;">${font}<
     document.head.appendChild(link);
   }
 };
+    container.appendChild(div);
+  });
+
+  document.getElementById("fontPopup").style.display = "flex";
+}
+function showFontPopupForBody() {
+  const fonts = [
+    "Cormorant Garamond", "Great Vibes", "Bebas Neue", "Merriweather",
+    "Abril Fatface", "Lobster", "Oswald", "Amatic SC", "Bitter", "Quicksand"
+  ];
+
+  const container = document.getElementById("fontChoices");
+  container.innerHTML = "";
+  fonts.forEach(font => {
+    const div = document.createElement("div");
+    div.innerHTML = `<div style="font-family: '${font}'; font-size: 1.2em;">${font}</div>`;
+    div.style.fontFamily = `'${font}', cursive`;
+    div.style.padding = "10px";
+    div.style.textAlign = "center";
+    div.style.border = "1px solid #ccc";
+    div.style.borderRadius = "6px";
+    div.style.cursor = "pointer";
+    div.style.fontSize = "1.1em";
+
+    div.onclick = () => {
+      document.getElementById("fontPopup").style.display = "none";
+
+      const select = document.getElementById("fontSelector");
+      let option = [...select.options].find(o => o.value === font);
+      if (!option) {
+        option = new Option(font, font);
+        select.add(option);
+      }
+      select.value = font;
+      updateFontPreview();
+
+      if (!["sans-serif", "cursive", "monospace"].includes(font)) {
+        const fontLinkId = "customGoogleFontBody";
+        let existing = document.getElementById(fontLinkId);
+        if (existing) existing.remove();
+
+        const encodedFont = encodeURIComponent(font.trim()).replace(/%20/g, "+");
+        const link = document.createElement("link");
+        link.id = fontLinkId;
+        link.rel = "stylesheet";
+        link.href = `https://fonts.googleapis.com/css2?family=${encodedFont}&display=swap`;
+        document.head.appendChild(link);
+      }
+    };
     container.appendChild(div);
   });
 
