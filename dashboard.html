@@ -6,7 +6,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - Wine's Fever</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Raleway&family=Dancing+Script&family=Montserrat&family=Roboto&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Raleway&family=Dancing+Script&family=Montserrat&family=Roboto&display&family=Edu+NSW+ACT+Hand+Pre&display&family=Lavishly+Yours&family=Kolker+Brush=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
@@ -354,11 +354,12 @@ footer {
         <div id="nameOptions" style="margin-top: 12px;">
           <label>Font Nome:
             <select id="nameFont">
+              <option value="Edu NSW ACT Hand Pre">Corsivo a mano</option>
               <option value="sans-serif">Sans Serif</option>
-              <option value="serif">Serif</option>
+              <option value="Lavishly Yours">Calligrafico</option>
               <option value="cursive">Cursive</option>
               <option value="monospace">Monospace</option>
-              <option value="fantasy">Fantasy</option>
+              <option value="Kolker Brush">Pennello</option>
             </select>
           </label>
           <label>Dimensione Nome:
@@ -376,10 +377,6 @@ footer {
           <label>Dimensione Logo:
             <input type="range" id="logoSize" min="30" max="120" value="40"> px
           </label><br>
-          <label><input type="checkbox" id="logoBorderToggle"> Mostra cornice</label><br>
-          <label>Colore Cornice:
-            <input type="color" id="logoBorderColor" value="#000000">
-          </label>
         </div>
 
 
@@ -516,8 +513,6 @@ function updateLogoPreviewLive() {
   if (!iframe || !iframe.contentWindow) return;
 
   const size = document.getElementById("logoSize").value;
-  const border = document.getElementById("logoBorderToggle").checked;
-  const borderColor = document.getElementById("logoBorderColor").value;
   const logoEl = document.getElementById("previewLogo");
 
   iframe.contentWindow.postMessage({
@@ -591,7 +586,7 @@ preview.insertAdjacentElement("afterend", removeBtn);
 
 // 🔧 4. Collega gli eventi live del logo
 function attachLogoListeners() {
-  ["logoSize", "logoBorderToggle", "logoBorderColor"].forEach(id => {
+  ["logoSize"].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       const type = el.tagName === "SELECT" || el.type === "checkbox" ? "change" : "input";
@@ -711,8 +706,6 @@ setTimeout(() => {
     document.getElementById("nameColor").value = info?.name_color || "#000000";
     document.getElementById("nameBold").checked = info?.name_bold || false;
     document.getElementById("logoSize").value = info?.logo_size || "64";
-    document.getElementById("logoBorderToggle").checked = info?.logo_border || false;
-    document.getElementById("logoBorderColor").value = info?.logo_border_color || "#000000";
     document.getElementById("textColorPicker").value = info?.text_color || "#000000";
     document.getElementById("sommelierRange").value = info?.sommelier_range || "1-3";
     document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
@@ -953,8 +946,6 @@ async function saveSettings() {
   const nameColor = document.getElementById("nameColor").value;
   const nameBold = document.getElementById("nameBold").checked;
   const logoSize = document.getElementById("logoSize").value;
-  const logoBorder = document.getElementById("logoBorderToggle").checked;
-  const logoBorderColor = document.getElementById("logoBorderColor").value;
   const nome = document.getElementById("displayName").value;
   const font = document.getElementById("fontSelector").value;
   const paletteSelect = document.getElementById("paletteSelector");
@@ -989,8 +980,6 @@ async function saveSettings() {
     border_color: borderColor,
     text_color: textColor,
     logo_size: logoSize,
-    logo_border: logoBorder,
-    logo_border_color: logoBorderColor,
     name_size: nameSize,
     name_color: nameColor,
     name_bold: nameBold,
