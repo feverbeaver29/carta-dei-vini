@@ -760,10 +760,6 @@ toggleCustomColorPicker(); // mostra le opzioni se "custom"
 }
     function updateNamePreviewLive() {
   let font = document.getElementById("nameFont").value;
-  if (font === "custom") {
-    font = document.getElementById("customFontInput").value.trim();
-  }
-
   const size = document.getElementById("nameSize").value;
   const color = document.getElementById("nameColor").value;
   const bold = document.getElementById("nameBold").checked;

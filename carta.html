@@ -863,23 +863,25 @@ window.addEventListener("message", (event) => {
 }
 
   if (event.data?.action === "updateNameLive") {
-    const nameSpan = document.querySelector("#restaurantName span");
-    if (nameSpan) {
-      nameSpan.style.fontFamily = event.data.font || "sans-serif";
-      nameSpan.style.fontSize = event.data.size + "px";
-      nameSpan.style.color = event.data.color;
-      nameSpan.style.fontWeight = event.data.bold ? "bold" : "normal";
-      nameSpan.textContent = event.data.name || "Carta dei Vini";
+  const nameSpan = document.querySelector("#restaurantName span");
+  if (nameSpan) {
+    nameSpan.style.fontFamily = event.data.font || "sans-serif";
+    nameSpan.style.fontSize = event.data.size + "px";
+    nameSpan.style.color = event.data.color;
+    nameSpan.style.fontWeight = event.data.bold ? "bold" : "normal";
+    nameSpan.textContent = event.data.name || "Carta dei Vini";
 
-      const nav = document.querySelector("nav");
-      setTimeout(() => {
-        if (nav && nameSpan) {
-          const height = nameSpan.offsetHeight + 16;
-          nav.style.height = height + "px";
-        }
-      }, 50);
-    }
+    ensureFontLoaded(event.data.font); // ✅ carica dinamicamente il font
+
+    const nav = document.querySelector("nav");
+    setTimeout(() => {
+      if (nav && nameSpan) {
+        const height = nameSpan.offsetHeight + 16;
+        nav.style.height = height + "px";
+      }
+    }, 50);
   }
+}
 
   if (event.data?.action === "startReorder") {
     reorderMode = true;
@@ -1084,6 +1086,17 @@ function mostraStoricoNelSommelier() {
 function ripetiAbbinamento(piatto) {
   document.getElementById("foodInput").value = piatto;
   suggestWine();
+}
+function ensureFontLoaded(fontName) {
+  const fontId = "googleFont_" + fontName.replace(/\s+/g, "_");
+  if (!document.getElementById(fontId)) {
+    const link = document.createElement("link");
+    link.id = fontId;
+    link.rel = "stylesheet";
+    const encoded = encodeURIComponent(fontName.trim()).replace(/%20/g, "+");
+    link.href = `https://fonts.googleapis.com/css2?family=${encoded}&display=swap`;
+    document.head.appendChild(link);
+  }
 }
 </script>
 </body>
