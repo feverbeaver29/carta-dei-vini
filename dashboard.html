@@ -360,7 +360,16 @@ footer {
               <option value="cursive">Cursive</option>
               <option value="monospace">Monospace</option>
               <option value="Kolker Brush">Pennello</option>
+            <option value="custom">Altri font...</option>
             </select>
+
+            <!-- input nascosto per font personalizzato -->
+            <div id="customFontWrapper" style="display: none; margin-top: 10px;">
+              <label>Inserisci il nome del font Google:
+                <input type="text" id="customFontInput" placeholder="Es. Dancing Script" style="margin-left: 8px;">
+              </label>
+            </div>
+
           </label>
           <label>Dimensione Nome:
             <input type="range" id="nameSize" min="20" max="40" value="24"> px
@@ -507,6 +516,16 @@ footer {
   let boostCount = 0;
   const maxBoosts = 5;
 
+  document.getElementById("nameFont").addEventListener("change", () => {
+  const isCustom = document.getElementById("nameFont").value === "custom";
+  document.getElementById("customFontWrapper").style.display = isCustom ? "block" : "none";
+  updateNamePreviewLive(); // aggiorna l'anteprima
+});
+
+document.getElementById("customFontInput").addEventListener("input", () => {
+  updateNamePreviewLive(); // aggiorna live quando digiti
+});
+
   // 🔧 1. Funzione per inviare il logo in live
 function updateLogoPreviewLive() {
   const iframe = document.getElementById("previewFrame");
@@ -518,8 +537,6 @@ function updateLogoPreviewLive() {
   iframe.contentWindow.postMessage({
     action: "updateLogoLive",
     size,
-    border,
-    borderColor,
     logoUrl: logoEl?.src || null
   }, "*");
 }
@@ -740,7 +757,11 @@ toggleCustomColorPicker(); // mostra le opzioni se "custom"
   toggleNameLogoOptions(false);
 }
     function updateNamePreviewLive() {
-  const font = document.getElementById("nameFont").value;
+  let font = document.getElementById("nameFont").value;
+  if (font === "custom") {
+    font = document.getElementById("customFontInput").value.trim();
+  }
+
   const size = document.getElementById("nameSize").value;
   const color = document.getElementById("nameColor").value;
   const bold = document.getElementById("nameBold").checked;
@@ -757,6 +778,19 @@ toggleCustomColorPicker(); // mostra le opzioni se "custom"
     font,
     name
   }, "*");
+
+  // carica dinamicamente il font se non già incluso
+  if (font && font !== "Arial") {
+    const fontLinkId = "customGoogleFont";
+    let existing = document.getElementById(fontLinkId);
+    if (existing) existing.remove();
+
+    const link = document.createElement("link");
+    link.id = fontLinkId;
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?family=${font.replace(/ /g, "+")}&display=swap`;
+    document.head.appendChild(link);
+  }
 }
 
 const iframe = document.getElementById("previewFrame");
