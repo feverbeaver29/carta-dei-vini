@@ -1088,6 +1088,7 @@ function ripetiAbbinamento(piatto) {
   suggestWine();
 }
 function ensureFontLoaded(fontName) {
+  if (!fontName || fontName === "custom") return; // 🚫 blocca font vuoti o 'custom'
   const fontId = "googleFont_" + fontName.replace(/\s+/g, "_");
   if (!document.getElementById(fontId)) {
     const link = document.createElement("link");
@@ -1098,6 +1099,7 @@ function ensureFontLoaded(fontName) {
     document.head.appendChild(link);
   }
 }
+
 </script>
 </body>
 </html>
