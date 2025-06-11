@@ -363,13 +363,6 @@ footer {
             <option value="custom">Altri font...</option>
             </select>
 
-            <!-- input nascosto per font personalizzato -->
-            <div id="customFontWrapper" style="display: none; margin-top: 10px;">
-              <label>Inserisci il nome del font Google:
-                <input type="text" id="customFontInput" placeholder="Es. Dancing Script" style="margin-left: 8px;">
-              </label>
-            </div>
-
           </label>
           <label>Dimensione Nome:
             <input type="range" id="nameSize" min="20" max="40" value="24"> px
@@ -500,6 +493,14 @@ footer {
       <button class="save-btn" onclick="saveSommelierSettings()">Salva Impostazioni Sommelier</button>
     </div>
   </div>
+  <!-- POPUP SELEZIONE FONT -->
+<div id="fontPopup" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:1000; justify-content:center; align-items:center;">
+  <div style="background:white; padding:20px; border-radius:12px; max-width:90vw; max-height:80vh; overflow:auto;">
+    <h3 style="margin-top:0;">Scegli un font</h3>
+    <div id="fontChoices" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:15px;"></div>
+    <button onclick="document.getElementById('fontPopup').style.display='none'" style="margin-top:20px;">Chiudi</button>
+  </div>
+</div>
 </main>
 <!-- Popup QR -->
 <div id="qrPopup">
@@ -727,10 +728,13 @@ setTimeout(() => {
   document.getElementById("ristoranteName").innerText = `${e.target.value || 'Ristorante'} - Dashboard`;
 });
     document.getElementById("fontSelector").value = info?.font || "Arial";
-      document.getElementById("nameFont").addEventListener("change", () => {
-  const isCustom = document.getElementById("nameFont").value === "custom";
-  document.getElementById("customFontWrapper").style.display = isCustom ? "block" : "none";
-  updateNamePreviewLive(); // aggiorna l'anteprima
+    document.getElementById("nameFont").addEventListener("change", () => {
+  const font = document.getElementById("nameFont").value;
+  if (font === "custom") {
+    showFontPopup();
+  } else {
+    updateNamePreviewLive();
+  }
 });
 
 document.getElementById("customFontInput").addEventListener("input", () => {
@@ -1132,6 +1136,47 @@ function toggleCustomColorPicker() {
   const isCustom = paletteSelect.value === "custom";
   customOptions.style.display = isCustom ? "flex" : "none";
 }
+function showFontPopup() {
+  const fonts = [
+    "Dancing Script", "Edu NSW ACT Hand Pre", "Playfair Display", "Raleway", "Montserrat",
+    "Roboto", "Lavishly Yours", "Kolker Brush", "Pacifico", "Indie Flower"
+  ];
+
+  const container = document.getElementById("fontChoices");
+  container.innerHTML = "";
+  fonts.forEach(font => {
+    const div = document.createElement("div");
+    div.textContent = font;
+    div.style.fontFamily = `'${font}', cursive`;
+    div.style.padding = "10px";
+    div.style.textAlign = "center";
+    div.style.border = "1px solid #ccc";
+    div.style.borderRadius = "6px";
+    div.style.cursor = "pointer";
+    div.style.fontSize = "1.1em";
+    div.onclick = () => {
+      document.getElementById("fontPopup").style.display = "none";
+      document.getElementById("nameFont").value = font;
+      updateNamePreviewLive();
+
+      // carica dinamicamente
+      const fontLinkId = "customGoogleFont";
+      let existing = document.getElementById(fontLinkId);
+      if (existing) existing.remove();
+
+      const link = document.createElement("link");
+      link.id = fontLinkId;
+      link.rel = "stylesheet";
+      const encodedFont = encodeURIComponent(font.trim());
+      link.href = `https://fonts.googleapis.com/css2?family=${encodedFont.replace(/%20/g, "+")}&display=swap`;
+      document.head.appendChild(link);
+    };
+    container.appendChild(div);
+  });
+
+  document.getElementById("fontPopup").style.display = "flex";
+}
+
   </script>
 </body>
 </html>
