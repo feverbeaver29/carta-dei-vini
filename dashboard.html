@@ -516,16 +516,6 @@ footer {
   let boostCount = 0;
   const maxBoosts = 5;
 
-  document.getElementById("nameFont").addEventListener("change", () => {
-  const isCustom = document.getElementById("nameFont").value === "custom";
-  document.getElementById("customFontWrapper").style.display = isCustom ? "block" : "none";
-  updateNamePreviewLive(); // aggiorna l'anteprima
-});
-
-document.getElementById("customFontInput").addEventListener("input", () => {
-  updateNamePreviewLive(); // aggiorna live quando digiti
-});
-
   // 🔧 1. Funzione per inviare il logo in live
 function updateLogoPreviewLive() {
   const iframe = document.getElementById("previewFrame");
@@ -735,6 +725,15 @@ setTimeout(() => {
   document.getElementById("ristoranteName").innerText = `${e.target.value || 'Ristorante'} - Dashboard`;
 });
     document.getElementById("fontSelector").value = info?.font || "Arial";
+      document.getElementById("nameFont").addEventListener("change", () => {
+  const isCustom = document.getElementById("nameFont").value === "custom";
+  document.getElementById("customFontWrapper").style.display = isCustom ? "block" : "none";
+  updateNamePreviewLive(); // aggiorna l'anteprima
+});
+
+document.getElementById("customFontInput").addEventListener("input", () => {
+  updateNamePreviewLive(); // aggiorna live quando digiti
+});
     const paletteSelector = document.getElementById("paletteSelector");
 const savedPalette = info?.palette_color || "rosso";
 
