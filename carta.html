@@ -603,7 +603,7 @@ if (avatar) {
 
     window.ristorantePalette = ristorante.palette_color;
 
-    if (window.ristorantePalette !== "custom") {
+    if (window.ristorantePalette !== "custom" && !window.paletteOverrideLive) {
       applyPalette(window.ristorantePalette);
     }
   }
@@ -834,6 +834,7 @@ window.addEventListener("message", (event) => {
     document.body.style.fontFamily = font;
     ensureFontLoaded(font);
   }
+  window.paletteOverrideLive = true;
 }
 
 if (event.data?.action === "updatePaletteLive") {
