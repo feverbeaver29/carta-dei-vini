@@ -828,6 +828,14 @@ let categoriaOrder = [];
 let sottocategoriaOrderMap = {};
 
 window.addEventListener("message", (event) => {
+  if (event.data?.action === "updateFontLive") {
+  const font = event.data.font;
+  if (font) {
+    document.body.style.fontFamily = font;
+    ensureFontLoaded(font);
+  }
+}
+
   if (event.data?.action === "checkSubcategoryContext") {
     const allowed = currentView === "subcategory" && currentCategory;
     parent.postMessage({ action: "subcatReady", allowed }, "*");

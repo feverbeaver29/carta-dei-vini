@@ -518,6 +518,32 @@ footer {
   let boostCount = 0;
   const maxBoosts = 5;
 
+  function updateFontLivePreview() {
+  const font = document.getElementById("fontSelector").value;
+
+  const iframe = document.getElementById("previewFrame");
+  if (!iframe || !iframe.contentWindow) return;
+
+  iframe.contentWindow.postMessage({
+    action: "updateFontLive",
+    font
+  }, "*");
+
+  // carica dinamicamente il font se serve
+  if (font && font !== "Arial" && font !== "custom" && !["sans-serif", "cursive", "monospace"].includes(font)) {
+    const fontLinkId = "customGoogleFontBody";
+    let existing = document.getElementById(fontLinkId);
+    if (existing) existing.remove();
+
+    const encodedFont = encodeURIComponent(font.trim()).replace(/%20/g, "+");
+    const link = document.createElement("link");
+    link.id = fontLinkId;
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?family=${encodedFont}&display=swap`;
+    document.head.appendChild(link);
+  }
+}
+
   // 🔧 1. Funzione per inviare il logo in live
 function updateLogoPreviewLive() {
   const iframe = document.getElementById("previewFrame");
@@ -801,7 +827,10 @@ iframe.addEventListener("load", () => {
       document.getElementById("bgColorPicker").addEventListener("input", updatePreviewLive);
       document.getElementById("cardColorPicker").addEventListener("input", updatePreviewLive);
       document.getElementById("borderColorPicker").addEventListener("input", updatePreviewLive);
-      document.getElementById("fontSelector").addEventListener("change", updatePreviewLive);
+      document.getElementById("fontSelector").addEventListener("change", () => {
+        updateFontPreview();
+        updateFontLivePreview(); // anteprima live font body
+      });
   });
 
 
