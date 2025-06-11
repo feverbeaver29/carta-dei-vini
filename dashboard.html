@@ -556,16 +556,8 @@ function renderLogoPreview(url) {
   preview.style.display = "block";
   preview.style.margin = "10px auto";
 
-  const alreadyLabel = document.createElement("div");
-  alreadyLabel.textContent = "Logo già presente";
-  alreadyLabel.style.textAlign = "center";
-  alreadyLabel.style.fontSize = "0.9em";
-  alreadyLabel.style.color = "#555";
-  alreadyLabel.style.marginTop = "5px";
-  alreadyLabel.id = "logoStatusLabel";
   const uploadField = document.getElementById("logoUpload");
   uploadField.insertAdjacentElement("afterend", preview);
-  preview.insertAdjacentElement("afterend", alreadyLabel);
 
   const oldRemoveBtn = document.getElementById("removeLogoBtn");
   if (oldRemoveBtn) oldRemoveBtn.remove();
@@ -594,7 +586,7 @@ function renderLogoPreview(url) {
     updatePreview();
   };
 
-alreadyLabel.insertAdjacentElement("afterend", removeBtn);
+preview.insertAdjacentElement("afterend", removeBtn);
 }
 
 // 🔧 4. Collega gli eventi live del logo
