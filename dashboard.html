@@ -758,39 +758,6 @@ toggleCustomColorPicker(); // mostra le opzioni se "custom"
 } else {
   toggleNameLogoOptions(false);
 }
-    function updateNamePreviewLive() {
-  let font = document.getElementById("nameFont").value;
-  const size = document.getElementById("nameSize").value;
-  const color = document.getElementById("nameColor").value;
-  const bold = document.getElementById("nameBold").checked;
-  const name = document.getElementById("displayName").value;
-
-  const iframe = document.getElementById("previewFrame");
-  if (!iframe || !iframe.contentWindow) return;
-
-  iframe.contentWindow.postMessage({
-    action: "updateNameLive",
-    size,
-    color,
-    bold,
-    font,
-    name
-  }, "*");
-
-  // carica dinamicamente il font se non già incluso
-  if (font && font !== "Arial") {
-    const fontLinkId = "customGoogleFont";
-    let existing = document.getElementById(fontLinkId);
-    if (existing) existing.remove();
-
-    const link = document.createElement("link");
-    link.id = fontLinkId;
-    link.rel = "stylesheet";
-    const encodedFont = encodeURIComponent(font.trim());
-    link.href = `https://fonts.googleapis.com/css2?family=${encodedFont.replace(/%20/g, "+")}&display=swap`;
-    document.head.appendChild(link);
-  }
-}
 
 const iframe = document.getElementById("previewFrame");
 iframe.addEventListener("load", () => {
@@ -1129,6 +1096,40 @@ function toggleCustomColorPicker() {
   const isCustom = paletteSelect.value === "custom";
   customOptions.style.display = isCustom ? "flex" : "none";
 }
+  window.updateNamePreviewLive = function () {
+  let font = document.getElementById("nameFont").value;
+  const size = document.getElementById("nameSize").value;
+  const color = document.getElementById("nameColor").value;
+  const bold = document.getElementById("nameBold").checked;
+  const name = document.getElementById("displayName").value;
+
+  const iframe = document.getElementById("previewFrame");
+  if (!iframe || !iframe.contentWindow) return;
+
+  iframe.contentWindow.postMessage({
+    action: "updateNameLive",
+    size,
+    color,
+    bold,
+    font,
+    name
+  }, "*");
+
+  // carica dinamicamente il font se non già incluso
+  if (font && font !== "Arial") {
+    const fontLinkId = "customGoogleFont";
+    let existing = document.getElementById(fontLinkId);
+    if (existing) existing.remove();
+
+    const link = document.createElement("link");
+    link.id = fontLinkId;
+    link.rel = "stylesheet";
+    const encodedFont = encodeURIComponent(font.trim());
+    link.href = `https://fonts.googleapis.com/css2?family=${encodedFont.replace(/%20/g, "+")}&display=swap`;
+    document.head.appendChild(link);
+  }
+}
+
 function showFontPopup() {
   const fonts = [
     "Dancing Script", "Edu NSW ACT Hand Pre", "Playfair Display", "Raleway", "Montserrat",
