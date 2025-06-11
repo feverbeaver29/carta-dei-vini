@@ -1088,7 +1088,9 @@ function ripetiAbbinamento(piatto) {
   suggestWine();
 }
 function ensureFontLoaded(fontName) {
-  if (!fontName || fontName === "custom") return; // 🚫 blocca font vuoti o 'custom'
+  if (!fontName || fontName === "custom") return;
+  if (["sans-serif", "cursive", "monospace"].includes(fontName)) return;
+
   const fontId = "googleFont_" + fontName.replace(/\s+/g, "_");
   if (!document.getElementById(fontId)) {
     const link = document.createElement("link");

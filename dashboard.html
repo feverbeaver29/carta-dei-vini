@@ -711,7 +711,14 @@ setTimeout(() => {
 }, 0); 
 
 // imposta valori iniziali
-    document.getElementById("nameFont").value = info?.name_font || "Arial";
+        const nameFont = info?.name_font || "Arial";
+    const fontSelect = document.getElementById("nameFont");
+    let option = [...fontSelect.options].find(o => o.value === nameFont);
+    if (!option) {
+      option = new Option(nameFont, nameFont);
+      fontSelect.add(option);
+    }
+    fontSelect.value = nameFont;
     document.getElementById("nameSize").value = info?.name_size || "28";
     document.getElementById("nameColor").value = info?.name_color || "#000000";
     document.getElementById("nameBold").checked = info?.name_bold || false;
