@@ -383,14 +383,14 @@ footer {
 
 
         <label for="fontSelector">Font principale</label>
-          <select id="fontSelector" onchange="updateFontPreview()">
-            <option value="Arial" style="font-family: Arial;">Arial</option>
-            <option value="Montserrat" style="font-family: Montserrat;">Montserrat</option>
-            <option value="Raleway" style="font-family: Raleway;">Raleway</option>
-            <option value="Dancing Script" style="font-family: 'Dancing Script';">Dancing Script</option>
-            <option value="Playfair Display" style="font-family: 'Playfair Display';">Playfair Display</option>
-            <option value="custom">Altri font...</option>
-          </select>
+        <select id="fontSelector">
+          <option value="Arial" style="font-family: Arial;">Arial</option>
+          <option value="Montserrat" style="font-family: Montserrat;">Montserrat</option>
+          <option value="Raleway" style="font-family: Raleway;">Raleway</option>
+          <option value="Dancing Script" style="font-family: 'Dancing Script';">Dancing Script</option>
+          <option value="Playfair Display" style="font-family: 'Playfair Display';">Playfair Display</option>
+          <option value="custom">Altri font...</option>
+        </select>
 
         <label for="paletteSelector">Palette Colori</label>
           <div class="palette-option">
@@ -792,7 +792,6 @@ if (!fontOption) {
   bodyFontSelect.add(fontOption);
 }
 bodyFontSelect.value = fontBody;
-updateFontPreview();
     document.getElementById("nameFont").addEventListener("change", () => {
   const font = document.getElementById("nameFont").value;
   if (font === "custom") {
@@ -805,8 +804,6 @@ document.getElementById("fontSelector").addEventListener("change", () => {
   const font = document.getElementById("fontSelector").value;
   if (font === "custom") {
     showFontPopupForBody();
-  } else {
-    updateFontPreview();
   }
 });
 document.getElementById("paletteSelector").addEventListener("change", () => {
@@ -862,7 +859,6 @@ iframe.addEventListener("load", () => {
       document.getElementById("cardColorPicker").addEventListener("input", updatePreviewLive);
       document.getElementById("borderColorPicker").addEventListener("input", updatePreviewLive);
       document.getElementById("fontSelector").addEventListener("change", () => {
-        updateFontPreview();
         updateFontLivePreview(); // anteprima live font body
       });
   });
@@ -1170,12 +1166,6 @@ window.addEventListener("scroll", () => {
   }
 });
 
-function updateFontPreview() {
-  const font = document.getElementById("fontSelector").value;
-  const preview = document.getElementById("fontPreview");
-  preview.style.fontFamily = font;
-  preview.innerText = "Anteprima con " + font;
-}
 function toggleCustomColorPicker() {
   const paletteSelect = document.getElementById("paletteSelector");
   const customOptions = document.getElementById("customOptions");
@@ -1311,7 +1301,6 @@ function showFontPopupForBody() {
         select.add(option);
       }
       select.value = font;
-      updateFontPreview();
       updateFontLivePreview(); // ✅ aggiunto per aggiornare l'iframe
 
       if (!["sans-serif", "cursive", "monospace"].includes(font)) {
