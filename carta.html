@@ -869,6 +869,8 @@ if (event.data?.action === "updatePaletteLive") {
       if (borderColor) sommelierBtn.style.borderColor = borderColor;
       if (textColor) sommelierBtn.style.color = textColor;
     }
+        window.paletteOverrideLive = true;
+    if (!ristorante) ristorante = {};
     ristorante.bg_color = bgColor;
     ristorante.card_color = cardColor;
     ristorante.border_color = borderColor;
