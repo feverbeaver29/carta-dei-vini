@@ -391,7 +391,6 @@ footer {
             <option value="Playfair Display" style="font-family: 'Playfair Display';">Playfair Display</option>
             <option value="custom">Altri font...</option>
           </select>
-        <div id="fontPreview" style="margin-top: 10px; font-size: 1.2em;">Anteprima testo</div>
 
         <label for="paletteSelector">Palette Colori</label>
           <div class="palette-option">
@@ -517,6 +516,30 @@ footer {
   let supabase, RESTAURANT_ID = null;
   let boostCount = 0;
   const maxBoosts = 5;
+
+  function updatePaletteLivePreview() {
+  const palette = document.getElementById("paletteSelector").value;
+
+  let bgColor = null, cardColor = null, borderColor = null, textColor = null;
+  if (palette === "custom") {
+    bgColor = document.getElementById("bgColorPicker").value;
+    cardColor = document.getElementById("cardColorPicker").value;
+    borderColor = document.getElementById("borderColorPicker").value;
+    textColor = document.getElementById("textColorPicker").value;
+  }
+
+  const iframe = document.getElementById("previewFrame");
+  if (!iframe || !iframe.contentWindow) return;
+
+  iframe.contentWindow.postMessage({
+    action: "updatePaletteLive",
+    palette,
+    bgColor,
+    cardColor,
+    borderColor,
+    textColor
+  }, "*");
+}
 
   function updateFontLivePreview() {
   const font = document.getElementById("fontSelector").value;
@@ -784,6 +807,17 @@ document.getElementById("fontSelector").addEventListener("change", () => {
     showFontPopupForBody();
   } else {
     updateFontPreview();
+  }
+});
+document.getElementById("paletteSelector").addEventListener("change", () => {
+  toggleCustomColorPicker();
+  updatePaletteLivePreview();
+});
+
+["bgColorPicker", "cardColorPicker", "borderColorPicker", "textColorPicker"].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener("input", updatePaletteLivePreview);
   }
 });
 
@@ -1279,7 +1313,7 @@ function showFontPopupForBody() {
       select.value = font;
       updateFontPreview();
       updateFontLivePreview(); // ✅ aggiunto per aggiornare l'iframe
-      
+
       if (!["sans-serif", "cursive", "monospace"].includes(font)) {
         const fontLinkId = "customGoogleFontBody";
         let existing = document.getElementById(fontLinkId);

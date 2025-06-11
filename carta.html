@@ -836,6 +836,41 @@ window.addEventListener("message", (event) => {
   }
 }
 
+if (event.data?.action === "updatePaletteLive") {
+  const { palette, bgColor, cardColor, borderColor, textColor } = event.data;
+
+  if (palette === "custom") {
+    if (bgColor) document.body.style.backgroundColor = bgColor;
+
+    document.querySelectorAll('.category, .subcategory, .wine-card').forEach(el => {
+      if (cardColor) el.style.backgroundColor = cardColor;
+      if (borderColor) el.style.borderColor = borderColor;
+      if (textColor) el.style.color = textColor;
+    });
+
+    const popup = document.getElementById("sommelierPopup");
+    if (popup) {
+      if (cardColor) popup.style.backgroundColor = cardColor;
+      if (borderColor) popup.style.borderColor = borderColor;
+      if (textColor) popup.style.color = textColor;
+    }
+
+    const backBtn = document.querySelector("nav button");
+    if (backBtn && borderColor) {
+      backBtn.style.color = borderColor;
+    }
+
+    const sommelierBtn = document.getElementById("sommelierBtn");
+    if (sommelierBtn) {
+      if (borderColor) sommelierBtn.style.backgroundColor = borderColor;
+      if (borderColor) sommelierBtn.style.borderColor = borderColor;
+      if (textColor) sommelierBtn.style.color = textColor;
+    }
+  } else {
+    applyPalette(palette);
+  }
+}
+
   if (event.data?.action === "checkSubcategoryContext") {
     const allowed = currentView === "subcategory" && currentCategory;
     parent.postMessage({ action: "subcatReady", allowed }, "*");
