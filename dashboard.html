@@ -1116,14 +1116,18 @@ function toggleCustomColorPicker() {
   }, "*");
 
   // carica dinamicamente il font se non già incluso
-  if (font && font !== "Arial" && font !== "custom") {
+  // carica dinamicamente il font se non già incluso
+if (
+  font &&
+  font !== "Arial" &&
+  font !== "custom" &&
+  !["sans-serif", "cursive", "monospace"].includes(font)
+) {
   const fontLinkId = "customGoogleFont";
   let existing = document.getElementById(fontLinkId);
   if (existing) existing.remove();
 
   const encodedFont = encodeURIComponent(font.trim()).replace(/%20/g, "+");
-  if (!encodedFont) return; // protezione extra
-
   const link = document.createElement("link");
   link.id = fontLinkId;
   link.rel = "stylesheet";
@@ -1160,22 +1164,32 @@ div.innerHTML = `<div style="font-family: '${font}'; font-size: 1.2em;">${font}<
     div.style.cursor = "pointer";
     div.style.fontSize = "1.1em";
     div.onclick = () => {
-      document.getElementById("fontPopup").style.display = "none";
-      document.getElementById("nameFont").value = font;
-      updateNamePreviewLive();
+  document.getElementById("fontPopup").style.display = "none";
 
-      // carica dinamicamente
-      const fontLinkId = "customGoogleFont";
-      let existing = document.getElementById(fontLinkId);
-      if (existing) existing.remove();
+  const select = document.getElementById("nameFont");
+  let option = [...select.options].find(o => o.value === font);
 
-      const link = document.createElement("link");
-      link.id = fontLinkId;
-      link.rel = "stylesheet";
-      const encodedFont = encodeURIComponent(font.trim());
-      link.href = `https://fonts.googleapis.com/css2?family=${encodedFont.replace(/%20/g, "+")}&display=swap`;
-      document.head.appendChild(link);
-    };
+  if (!option) {
+    option = new Option(font, font);
+    select.add(option);
+  }
+  select.value = font;
+  updateNamePreviewLive();
+
+  // carica dinamicamente il font se non è generico
+  if (!["sans-serif", "cursive", "monospace"].includes(font)) {
+    const fontLinkId = "customGoogleFont";
+    let existing = document.getElementById(fontLinkId);
+    if (existing) existing.remove();
+
+    const encodedFont = encodeURIComponent(font.trim()).replace(/%20/g, "+");
+    const link = document.createElement("link");
+    link.id = fontLinkId;
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?family=${encodedFont}&display=swap`;
+    document.head.appendChild(link);
+  }
+};
     container.appendChild(div);
   });
 
