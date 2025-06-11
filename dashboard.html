@@ -518,7 +518,8 @@ footer {
   const maxBoosts = 5;
 
   function updatePaletteLivePreview() {
-  const palette = document.getElementById("paletteSelector").value;
+  const paletteEl = document.getElementById("paletteSelector");
+  const palette = paletteEl.options[paletteEl.selectedIndex].getAttribute("data-palette");
 
   let bgColor = null, cardColor = null, borderColor = null, textColor = null;
   if (palette === "custom") {
