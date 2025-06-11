@@ -1116,18 +1116,20 @@ function toggleCustomColorPicker() {
   }, "*");
 
   // carica dinamicamente il font se non già incluso
-  if (font && font !== "Arial") {
-    const fontLinkId = "customGoogleFont";
-    let existing = document.getElementById(fontLinkId);
-    if (existing) existing.remove();
+  if (font && font !== "Arial" && font !== "custom") {
+  const fontLinkId = "customGoogleFont";
+  let existing = document.getElementById(fontLinkId);
+  if (existing) existing.remove();
 
-    const link = document.createElement("link");
-    link.id = fontLinkId;
-    link.rel = "stylesheet";
-    const encodedFont = encodeURIComponent(font.trim());
-    link.href = `https://fonts.googleapis.com/css2?family=${encodedFont.replace(/%20/g, "+")}&display=swap`;
-    document.head.appendChild(link);
-  }
+  const encodedFont = encodeURIComponent(font.trim()).replace(/%20/g, "+");
+  if (!encodedFont) return; // protezione extra
+
+  const link = document.createElement("link");
+  link.id = fontLinkId;
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${encodedFont}&display=swap`;
+  document.head.appendChild(link);
+}
 }
 
 function showFontPopup() {
