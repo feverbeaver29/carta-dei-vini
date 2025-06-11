@@ -594,6 +594,7 @@ if (avatar) {
     const span = document.createElement('span');
       span.textContent = ristorante.nome || 'Carta dei Vini';
       span.style.fontFamily = ristorante.name_font || 'sans-serif';
+      ensureFontLoaded(ristorante.name_font);
       span.style.fontSize = (ristorante.name_size || 24) + "px";
       span.style.color = ristorante.name_color || "#000000";
       span.style.fontWeight = ristorante.name_bold ? "bold" : "normal";
