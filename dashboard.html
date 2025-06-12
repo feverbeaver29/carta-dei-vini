@@ -522,12 +522,24 @@ footer {
   const palette = paletteEl.options[paletteEl.selectedIndex].getAttribute("data-palette");
 
   let bgColor = null, cardColor = null, borderColor = null, textColor = null;
-  if (palette === "custom") {
-    bgColor = document.getElementById("bgColorPicker").value;
-    cardColor = document.getElementById("cardColorPicker").value;
-    borderColor = document.getElementById("borderColorPicker").value;
-    textColor = document.getElementById("textColorPicker").value;
-  }
+
+if (palette !== "custom") {
+  // Notifica carta di applicare la palette predefinita
+  const iframe = document.getElementById("previewFrame");
+  if (!iframe || !iframe.contentWindow) return;
+
+  iframe.contentWindow.postMessage({
+    action: "updatePaletteLive",
+    palette
+  }, "*");
+  return;
+}
+
+// se custom, prendi i valori personalizzati
+bgColor = document.getElementById("bgColorPicker").value;
+cardColor = document.getElementById("cardColorPicker").value;
+borderColor = document.getElementById("borderColorPicker").value;
+textColor = document.getElementById("textColorPicker").value;
 
   const iframe = document.getElementById("previewFrame");
   if (!iframe || !iframe.contentWindow) return;
