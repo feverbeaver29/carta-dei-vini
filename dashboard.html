@@ -846,7 +846,7 @@ document.getElementById("paletteSelector").addEventListener("change", () => {
   updatePaletteLivePreview();
 });
 
-["bgColorPicker", "cardColorPicker", "borderColorPicker", "textColorPicker"].forEach(id => {
+["bgColorPicker", "cardColorPicker", "borderColorPicker", "textColorPicker", "navbarColorPicker"].forEach(id => {
   const el = document.getElementById(id);
   if (el) {
     el.addEventListener("input", updatePaletteLivePreview);
@@ -890,6 +890,7 @@ iframe.addEventListener("load", () => {
 
     updatePreview();
       showSettings('carta'); // esegui una volta sola all’avvio
+      document.getElementById("navbarColorPicker").addEventListener("input", updatePaletteLivePreview);
       document.getElementById("bgColorPicker").addEventListener("input", updatePaletteLivePreview);
       document.getElementById("cardColorPicker").addEventListener("input", updatePaletteLivePreview);
       document.getElementById("borderColorPicker").addEventListener("input", updatePaletteLivePreview);
