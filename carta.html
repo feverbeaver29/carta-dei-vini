@@ -602,6 +602,9 @@ if (avatar) {
     nameElem.appendChild(span);}
 
     window.ristorantePalette = ristorante.palette_color;
+    if (window.ristorantePalette === "custom") {
+  window.paletteOverrideLive = true;
+}
 
     if (window.ristorantePalette !== "custom" && !window.paletteOverrideLive) {
       applyPalette(window.ristorantePalette);
