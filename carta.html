@@ -743,6 +743,7 @@ window.paletteColors = {
 
 function applyCustomBoxStyles() {
 if (!ristorante) return;
+if (ristorante.bg_color) document.body.style.backgroundColor = ristorante.bg_color;
   const bg = ristorante.card_color;
   const border = ristorante.border_color;
   const text = ristorante.text_color;
