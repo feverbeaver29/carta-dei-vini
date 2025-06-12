@@ -883,7 +883,9 @@ window.paletteOverrideLive = true;
     }
 
   } else {
-    applyPalette(palette);
+  window.paletteOverrideLive = false;
+  window.ristorantePalette = palette;
+  applyPalette(palette);
   }
 }
 
