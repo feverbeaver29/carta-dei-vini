@@ -1040,16 +1040,16 @@ async function saveSettings() {
     palette_color = "custom";
   }
 
-  let bgColor = info?.bg_color || null;
-let cardColor = info?.card_color || null;
-let borderColor = info?.border_color || null;
-let textColor = info?.text_color || null;
+  let bgColor = document.getElementById("bgColorPicker").value || null;
+let cardColor = document.getElementById("cardColorPicker").value || null;
+let borderColor = document.getElementById("borderColorPicker").value || null;
+let textColor = document.getElementById("textColorPicker").value || null;
 
-if (selectedPalette === "custom") {
-  bgColor = document.getElementById("bgColorPicker").value || bgColor;
-  cardColor = document.getElementById("cardColorPicker").value || cardColor;
-  borderColor = document.getElementById("borderColorPicker").value || borderColor;
-  textColor = document.getElementById("textColorPicker").value || textColor;
+if (selectedPalette !== "custom") {
+  bgColor = null;
+  cardColor = null;
+  borderColor = null;
+  textColor = null;
 }
 
   // Salvataggio su Supabase
