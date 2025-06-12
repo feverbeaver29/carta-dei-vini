@@ -555,6 +555,10 @@ if (ristorante.font) {
   if (ristorante.bg_color) {
   document.body.style.backgroundColor = ristorante.bg_color;
 }
+if (ristorante.navbar_color) {
+  const nav = document.querySelector("nav");
+  if (nav) nav.style.backgroundColor = ristorante.navbar_color;
+}
   if (ristorante.card_color) {
     document.querySelectorAll('.category, .subcategory, .wine-card').forEach(el => {
       el.style.backgroundColor = ristorante.card_color;
@@ -735,6 +739,9 @@ if (sommelierBtn) {
   sommelierBtn.style.backgroundColor = primary;
   sommelierBtn.style.borderColor = primary;
 }
+const nav = document.querySelector("nav");
+if (nav) nav.style.backgroundColor = background; // usa stesso colore dello sfondo
+
 window.paletteColors = {
   background,
   cardBackground,
@@ -845,7 +852,7 @@ window.addEventListener("message", (event) => {
 }
 
 if (event.data?.action === "updatePaletteLive") {
-  const { palette, bgColor, cardColor, borderColor, textColor } = event.data;
+  const { palette, bgColor, cardColor, borderColor, textColor, navbarColor } = event.data;
 window.paletteOverrideLive = true;
   if (palette === "custom") {
   if (!ristorante) ristorante = {};
@@ -854,6 +861,11 @@ window.paletteOverrideLive = true;
   ristorante.card_color = cardColor;
   ristorante.border_color = borderColor;
   ristorante.text_color = textColor;
+
+  if (navbarColor) {
+    const nav = document.querySelector("nav");
+    if (nav) nav.style.backgroundColor = navbarColor;
+  }
 
     if (bgColor) document.body.style.backgroundColor = bgColor;
 

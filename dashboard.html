@@ -436,6 +436,11 @@ footer {
                 <input type="color" id="textColorPicker" style="width: 36px; height: 28px; border-radius: 4px; border: 1px solid #ccc;">
               </div>
 
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="navbarColorPicker" style="flex: 1;">Colore navbar</label>
+                <input type="color" id="navbarColorPicker" style="width: 36px; height: 28px; border-radius: 4px; border: 1px solid #ccc;">
+              </div>
+
             </div>
           </div>
         </div>
@@ -536,6 +541,7 @@ if (palette !== "custom") {
 }
 
 // se custom, prendi i valori personalizzati
+const navBarColor = document.getElementById("navbarColorPicker").value;
 bgColor = document.getElementById("bgColorPicker").value;
 cardColor = document.getElementById("cardColorPicker").value;
 borderColor = document.getElementById("borderColorPicker").value;
@@ -550,8 +556,21 @@ textColor = document.getElementById("textColorPicker").value;
     bgColor,
     cardColor,
     borderColor,
-    textColor
+    textColor,
+    navbarColor: getNavbarColorForPalette(palette)  // ✅ AGGIUNGI QUESTO
   }, "*");
+  function getNavbarColorForPalette(palette) {
+  switch (palette) {
+    case "rosso": return "#fff5f5";
+    case "oro": return "#fffdf0";
+    case "blu-elegante": return "#e4eff9";
+    case "verde-salvia": return "#f4f9f5";
+    case "grigio-minimal": return "#f7f7f7";
+    case "crema-nero": return "#fffaf0";
+    case "black-white": return "#121212";
+    default: return "#ffffff";
+  }
+}
 }
 
   function updateFontLivePreview() {
@@ -782,6 +801,7 @@ setTimeout(() => {
       fontSelect.add(option);
     }
     fontSelect.value = nameFont;
+    document.getElementById("navbarColorPicker").value = info?.navbar_color || "#ffffff";
     document.getElementById("nameSize").value = info?.name_size || "28";
     document.getElementById("nameColor").value = info?.name_color || "#000000";
     document.getElementById("nameBold").checked = info?.name_bold || false;
@@ -1056,12 +1076,14 @@ async function saveSettings() {
 let cardColor = document.getElementById("cardColorPicker").value || null;
 let borderColor = document.getElementById("borderColorPicker").value || null;
 let textColor = document.getElementById("textColorPicker").value || null;
+let navbarColor = document.getElementById("navbarColorPicker").value || null;
 
 if (selectedPalette !== "custom") {
   bgColor = null;
   cardColor = null;
   borderColor = null;
   textColor = null;
+  navbarColor = null;
 }
 
   // Salvataggio su Supabase
@@ -1077,7 +1099,8 @@ if (selectedPalette !== "custom") {
     name_size: nameSize,
     name_color: nameColor,
     name_bold: nameBold,
-    name_font: nameFont
+    name_font: nameFont,
+    navbar_color: navbarColor,
   }).eq("id", RESTAURANT_ID);
 
   // Feedback visuale
