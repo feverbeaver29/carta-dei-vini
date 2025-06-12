@@ -557,7 +557,9 @@ textColor = document.getElementById("textColorPicker").value;
     cardColor,
     borderColor,
     textColor,
-    navbarColor: getNavbarColorForPalette(palette)  // ✅ AGGIUNGI QUESTO
+    navbarColor: palette === "custom"
+  ? document.getElementById("navbarColorPicker").value
+  : getNavbarColorForPalette(palette)
   }, "*");
   function getNavbarColorForPalette(palette) {
   switch (palette) {
