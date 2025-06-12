@@ -802,8 +802,9 @@ card.innerHTML = `<strong>${produttoreUpper} ${denominazione}${annata}</strong><
 <small>Uvaggio: ${w.uvaggio}</small>`;
     wineList.appendChild(card);
   });
-    applyCustomBoxStyles();
-    if (!window.paletteOverrideLive) {
+    if (window.paletteOverrideLive && window.ristorantePalette === "custom") {
+  applyCustomBoxStyles();
+} else {
   applyPalette(window.ristorantePalette);
 }
 
@@ -842,7 +843,7 @@ window.addEventListener("message", (event) => {
 
 if (event.data?.action === "updatePaletteLive") {
   const { palette, bgColor, cardColor, borderColor, textColor } = event.data;
-
+window.paletteOverrideLive = true;
   if (palette === "custom") {
     if (bgColor) document.body.style.backgroundColor = bgColor;
 
@@ -870,12 +871,12 @@ if (event.data?.action === "updatePaletteLive") {
       if (borderColor) sommelierBtn.style.borderColor = borderColor;
       if (textColor) sommelierBtn.style.color = textColor;
     }
-        window.paletteOverrideLive = true;
-    if (!ristorante) ristorante = {};
-    ristorante.bg_color = bgColor;
-    ristorante.card_color = cardColor;
-    ristorante.border_color = borderColor;
-    ristorante.text_color = textColor;
+
+ristorante.bg_color = bgColor || ristorante.bg_color;
+ristorante.card_color = cardColor || ristorante.card_color;
+ristorante.border_color = borderColor || ristorante.border_color;
+ristorante.text_color = textColor || ristorante.text_color;
+
   } else {
     applyPalette(palette);
   }
@@ -1058,8 +1059,9 @@ window.showCategories = function () {
     div.onclick = () => showSubcategories(key);
     container.appendChild(div);
   }
+  if (window.paletteOverrideLive && window.ristorantePalette === "custom") {
   applyCustomBoxStyles();
-    if (!window.paletteOverrideLive) {
+} else {
   applyPalette(window.ristorantePalette);
 }
 };
@@ -1107,19 +1109,15 @@ window.showSubcategories = function (category) {
     div.onclick = () => showWinesBySubcategory(key);
     container.appendChild(div);
   }
+  if (window.paletteOverrideLive && window.ristorantePalette === "custom") {
   applyCustomBoxStyles();
-    if (!window.paletteOverrideLive) {
+} else {
   applyPalette(window.ristorantePalette);
 }
 
     document.getElementById('category-list').style.display = 'none';
   container.style.display = 'grid';
   document.getElementById('wine-list').style.display = 'none';
-
-  // ✅ Riapplica la palette usando quella caricata all'inizio
-  if (window.ristorantePalette) {
-    applyPalette(window.ristorantePalette);
-  }
 };
 
 
