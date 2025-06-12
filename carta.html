@@ -791,6 +791,10 @@ if (sommelierBtn) {
   if (ristorante.border_color) sommelierBtn.style.borderColor = ristorante.border_color;
   if (ristorante.text_color) sommelierBtn.style.color = ristorante.text_color;
 }
+if (ristorante.navbar_color) {
+  const nav = document.querySelector("nav");
+  if (nav) nav.style.backgroundColor = ristorante.navbar_color;
+}
 }
 
 function normalize(str) {
@@ -863,19 +867,21 @@ window.addEventListener("message", (event) => {
 
 if (event.data?.action === "updatePaletteLive") {
   const { palette, bgColor, cardColor, borderColor, textColor, navbarColor } = event.data;
-window.paletteOverrideLive = true;
-  if (palette === "custom") {
-  if (!ristorante) ristorante = {};
-  
-  ristorante.bg_color = bgColor;
-  ristorante.card_color = cardColor;
-  ristorante.border_color = borderColor;
-  ristorante.text_color = textColor;
+  window.paletteOverrideLive = true;
 
-  if (navbarColor) {
-    const nav = document.querySelector("nav");
-    if (nav) nav.style.backgroundColor = navbarColor;
+  const nav = document.querySelector("nav");
+  if (nav && navbarColor) {
+    nav.style.backgroundColor = navbarColor;
   }
+
+  if (palette === "custom") {
+    if (!ristorante) ristorante = {};
+
+    ristorante.bg_color = bgColor;
+    ristorante.card_color = cardColor;
+    ristorante.border_color = borderColor;
+    ristorante.text_color = textColor;
+    ristorante.navbar_color = navbarColor;
 
     if (bgColor) document.body.style.backgroundColor = bgColor;
 
@@ -905,9 +911,9 @@ window.paletteOverrideLive = true;
     }
 
   } else {
-  window.paletteOverrideLive = false;
-  window.ristorantePalette = palette;
-  applyPalette(palette);
+    window.paletteOverrideLive = false;
+    window.ristorantePalette = palette;
+    applyPalette(palette);
   }
 }
 
