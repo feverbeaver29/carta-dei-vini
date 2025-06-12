@@ -1040,19 +1040,17 @@ async function saveSettings() {
     palette_color = "custom";
   }
 
-  // Inizializza i valori a null per default
-  let bgColor = null;
-  let cardColor = null;
-  let borderColor = null;
-  let textColor = null;
+  let bgColor = info?.bg_color || null;
+let cardColor = info?.card_color || null;
+let borderColor = info?.border_color || null;
+let textColor = info?.text_color || null;
 
-  // Se la palette è personalizzata, preleva i colori scelti
-  if (selectedPalette === "custom") {
-    bgColor = document.getElementById("bgColorPicker").value;
-    cardColor = document.getElementById("cardColorPicker").value;
-    borderColor = document.getElementById("borderColorPicker").value;
-    textColor = document.getElementById("textColorPicker").value;
-  }
+if (selectedPalette === "custom") {
+  bgColor = document.getElementById("bgColorPicker").value || bgColor;
+  cardColor = document.getElementById("cardColorPicker").value || cardColor;
+  borderColor = document.getElementById("borderColorPicker").value || borderColor;
+  textColor = document.getElementById("textColorPicker").value || textColor;
+}
 
   // Salvataggio su Supabase
   await supabase.from("ristoranti").update({
