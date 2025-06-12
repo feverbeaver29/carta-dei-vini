@@ -845,6 +845,13 @@ if (event.data?.action === "updatePaletteLive") {
   const { palette, bgColor, cardColor, borderColor, textColor } = event.data;
 window.paletteOverrideLive = true;
   if (palette === "custom") {
+  if (!ristorante) ristorante = {};
+  
+  ristorante.bg_color = bgColor;
+  ristorante.card_color = cardColor;
+  ristorante.border_color = borderColor;
+  ristorante.text_color = textColor;
+
     if (bgColor) document.body.style.backgroundColor = bgColor;
 
     document.querySelectorAll('.category, .subcategory, .wine-card').forEach(el => {
@@ -871,11 +878,6 @@ window.paletteOverrideLive = true;
       if (borderColor) sommelierBtn.style.borderColor = borderColor;
       if (textColor) sommelierBtn.style.color = textColor;
     }
-
-ristorante.bg_color = bgColor || ristorante.bg_color;
-ristorante.card_color = cardColor || ristorante.card_color;
-ristorante.border_color = borderColor || ristorante.border_color;
-ristorante.text_color = textColor || ristorante.text_color;
 
   } else {
     applyPalette(palette);
