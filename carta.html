@@ -740,7 +740,17 @@ if (sommelierBtn) {
   sommelierBtn.style.borderColor = primary;
 }
 const nav = document.querySelector("nav");
-if (nav) nav.style.backgroundColor = background; // usa stesso colore dello sfondo
+let navbarColor = background;
+switch (palette) {
+  case "rosso": navbarColor = "#ffcccc"; break;
+  case "oro": navbarColor = "#fdf2c0"; break;
+  case "blu-elegante": navbarColor = "#cce0f2"; break;
+  case "verde-salvia": navbarColor = "#e0f0e4"; break;
+  case "grigio-minimal": navbarColor = "#eeeeee"; break;
+  case "black-white": navbarColor = "#1a1a1a"; break;
+  case "crema-nero": navbarColor = "#fff3dd"; break;
+}
+if (nav) nav.style.backgroundColor = navbarColor;
 
 window.paletteColors = {
   background,
