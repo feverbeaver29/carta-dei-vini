@@ -856,9 +856,9 @@ iframe.addEventListener("load", () => {
 
     updatePreview();
       showSettings('carta'); // esegui una volta sola all’avvio
-      document.getElementById("bgColorPicker").addEventListener("input", updatePreviewLive);
-      document.getElementById("cardColorPicker").addEventListener("input", updatePreviewLive);
-      document.getElementById("borderColorPicker").addEventListener("input", updatePreviewLive);
+      document.getElementById("bgColorPicker").addEventListener("input", updatePaletteLivePreview);
+      document.getElementById("cardColorPicker").addEventListener("input", updatePaletteLivePreview);
+      document.getElementById("borderColorPicker").addEventListener("input", updatePaletteLivePreview);
       document.getElementById("fontSelector").addEventListener("change", () => {
         updateFontLivePreview(); // anteprima live font body
       });
