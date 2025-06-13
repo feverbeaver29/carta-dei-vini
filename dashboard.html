@@ -29,13 +29,43 @@ body {
 
 details summary {
   cursor: pointer;
-  font-size: 1.1em;
-  padding: 10px 0;
+  font-size: 0.95em;
+  padding: 8px 0;
   border-bottom: 1px solid #ccc;
 }
 
 details[open] summary {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+}
+
+label {
+  font-size: 0.95em;
+  margin-top: 12px;
+}
+input[type="text"], select {
+  padding: 6px 8px;
+  font-size: 0.95em;
+}
+input[type="color"] {
+  height: 24px;
+  width: 32px;
+}
+input[type="range"] {
+  height: 18px;
+}
+
+.mini-save-btn {
+  background-color: #b00;
+  color: white;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 16px;
+  font-size: 0.85em;
+  margin-top: 12px;
+  cursor: pointer;
+}
+.mini-save-btn:hover {
+  background-color: #800000;
 }
 
 .page-title {
@@ -296,7 +326,7 @@ footer {
     font-size: 0.95em;
   }
   .mockup {
-    height: 75vh;
+    height: 60vh;
     margin-top: 1em;
   }
 }
@@ -395,6 +425,7 @@ footer {
           </label><br>
             </div>
           </div>
+          <button class="mini-save-btn" onclick="saveSettings()">Salva</button>
         </details>
 
 
@@ -463,9 +494,9 @@ footer {
               </div>
             </div>
           </div>
+          <button class="mini-save-btn" onclick="saveSettings()">Salva</button>
         </details>
 
-        <button class="save-btn" onclick="saveSettings()">Salva Impostazioni</button>
         <div id="saveMessage" style="margin-top: 10px; color: green; display: none;">
           ✅ Impostazioni salvate con successo
         </div>
@@ -478,6 +509,7 @@ footer {
               <button class="save-btn" id="ordinaSottocategorieBtn" onclick="toggleReorder('sottocategorie')">Ordina Sottocategorie</button>
             </div>
           </div>
+          <button class="mini-save-btn" onclick="saveSettings()">Salva</button>
         </details>
 
       <!-- Colonna destra: anteprima -->
