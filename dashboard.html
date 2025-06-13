@@ -27,6 +27,17 @@ body {
   flex: 1 0 auto;
 }
 
+details summary {
+  cursor: pointer;
+  font-size: 1.1em;
+  padding: 10px 0;
+  border-bottom: 1px solid #ccc;
+}
+
+details[open] summary {
+  margin-bottom: 10px;
+}
+
 .page-title {
   background: #fff;
   text-align: center;
@@ -349,9 +360,12 @@ footer {
       <div id="impostazioniCarta" class="dashboard-grid">
         <h2>Impostazioni Carta dei Vini</h2>
 
-        <label for="displayName">Nome da visualizzare</label>
-        <input type="text" id="displayName">
-        <div id="nameOptions" style="margin-top: 12px;">
+        <details open>
+        <summary><strong>🖋️ Nome e Logo</strong></summary>
+        <div style="padding-top: 10px;">
+          <label for="displayName">Nome da visualizzare</label>
+          <input type="text" id="displayName">
+          <div id="nameOptions" style="margin-top: 12px;">
           <label>Font Nome:
             <select id="nameFont">
               <option value="Edu NSW ACT Hand Pre">Corsivo a mano</option>
@@ -379,9 +393,14 @@ footer {
           <label>Dimensione Logo:
             <input type="range" id="logoSize" min="30" max="120" value="40"> px
           </label><br>
-        </div>
+            </div>
+          </div>
+        </details>
 
 
+        <details>
+      <summary><strong>🎨 Stile della Carta</strong></summary>
+      <div style="padding-top: 10px;">
         <label for="fontSelector">Font principale</label>
         <select id="fontSelector">
           <option value="Arial" style="font-family: Arial;">Arial</option>
@@ -441,21 +460,25 @@ footer {
                 <input type="color" id="navbarColorPicker" style="width: 36px; height: 28px; border-radius: 4px; border: 1px solid #ccc;">
               </div>
 
+              </div>
             </div>
           </div>
-        </div>
+        </details>
 
         <button class="save-btn" onclick="saveSettings()">Salva Impostazioni</button>
         <div id="saveMessage" style="margin-top: 10px; color: green; display: none;">
           ✅ Impostazioni salvate con successo
         </div>
 
-
-        <div style="margin-top: 20px; display: flex; gap: 10px;">
-          <button class="save-btn" id="ordinaCategorieBtn" onclick="toggleReorder('categorie')">Ordina Categorie</button>
-          <button class="save-btn" id="ordinaSottocategorieBtn" onclick="toggleReorder('sottocategorie')">Ordina Sottocategorie</button>
-        </div>
-      </div>
+        <details>
+          <summary><strong>📦 Ordina le Voci</strong></summary>
+          <div style="padding-top: 10px;">
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+              <button class="save-btn" id="ordinaCategorieBtn" onclick="toggleReorder('categorie')">Ordina Categorie</button>
+              <button class="save-btn" id="ordinaSottocategorieBtn" onclick="toggleReorder('sottocategorie')">Ordina Sottocategorie</button>
+            </div>
+          </div>
+        </details>
 
       <!-- Colonna destra: anteprima -->
       <div id="mockupWrapper">
