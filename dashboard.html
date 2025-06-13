@@ -275,8 +275,11 @@ footer {
     gap: 0.4em;
   }
   #sommelierSettings {
-  padding: 1.5em 1em;
-}
+    padding: 2em 1em;
+    min-height: 400px;
+    background: #fff8f8;
+    border: 2px dashed #d22;
+  }
   .dashboard-grid label {
     margin-top: 12px;
     font-size: 1em;
@@ -1089,13 +1092,14 @@ function capitalize(str) {
       window.location.href = "/";
     }
     function showSettings(type) {
-      document.getElementById("cartaSettings").style.display = (type === "carta") ? "block" : "none";
-      document.getElementById("sommelierSettings").style.display = (type === "sommelier") ? "block" : "none";
+  document.getElementById("cartaSettings").style.display = (type === "carta") ? "block" : "none";
+  document.getElementById("sommelierSettings").style.display = (type === "sommelier") ? "block" : "none";
 
-      const sectionId = type === "carta" ? "cartaSettings" : "sommelierSettings";
-      const el = document.getElementById(sectionId);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+  const sectionId = type === "carta" ? "cartaSettings" : "sommelierSettings";
+
+  // Forza scroll verso l'alto manuale
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
 
     function showQRCode() {
       const popup = document.getElementById('qrPopup');
