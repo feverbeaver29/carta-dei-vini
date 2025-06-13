@@ -175,6 +175,23 @@ main {
   display: flex;
   gap: 30px;
 }
+#sommelierSettings .dashboard-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+#boostContainer {
+  min-height: 150px;
+  display: block;
+}
+
+#boostContainer input[type="text"] {
+  display: block;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
 
 label {
   display: block;
@@ -972,7 +989,16 @@ iframe.addEventListener("load", () => {
 });
 
     updatePreview();
-      showSettings('carta'); // esegui una volta sola all’avvio
+            // Mostra la sezione corretta solo DOPO che boostContainer è popolato
+      setTimeout(() => {
+        const isSommelierValido = document.getElementById("sommelierRange");
+        if (isSommelierValido) {
+          showSettings('sommelier');
+        } else {
+          showSettings('carta');
+        }
+      }, 100);
+
       document.getElementById("navbarColorPicker").addEventListener("input", updatePaletteLivePreview);
       document.getElementById("bgColorPicker").addEventListener("input", updatePaletteLivePreview);
       document.getElementById("cardColorPicker").addEventListener("input", updatePaletteLivePreview);
