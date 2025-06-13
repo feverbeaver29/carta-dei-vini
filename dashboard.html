@@ -861,6 +861,7 @@ function attachLogoListeners() {
   .single();
   console.log("🔍 Supabase info:", info);
   console.log("BOOST MULTI:", info?.sommelier_boost_multi);
+  window._sommelierBoostRaw = info?.sommelier_boost_multi;
 console.log("✅ sommelier_boost_multi:", info?.sommelier_boost_multi);
 
     const { data: vini } = await supabase
@@ -1140,9 +1141,25 @@ function capitalize(str) {
   document.getElementById("cartaSettings").style.display = (type === "carta") ? "block" : "none";
   document.getElementById("sommelierSettings").style.display = (type === "sommelier") ? "block" : "none";
 
-  const sectionId = type === "carta" ? "cartaSettings" : "sommelierSettings";
+  if (type === "sommelier" && !document.querySelector("#boostContainer input")) {
+    const raw = window._sommelierBoostRaw;
+    let savedBoosts = [];
 
-  // Forza scroll verso l'alto manuale
+    try {
+      savedBoosts = typeof raw === "string" ? JSON.parse(raw) : raw;
+    } catch (e) {
+      console.warn("❌ Errore nel parsing sommelier_boost_multi", e);
+    }
+
+    if (Array.isArray(savedBoosts)) {
+      console.log("🎯 Creo input per:", savedBoosts);
+      savedBoosts.forEach(val => addBoostInput(val));
+    } else {
+      console.log("⚠️ Nessun vino salvato, creo input vuoto");
+      addBoostInput();
+    }
+  }
+
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
