@@ -558,6 +558,12 @@ footer {
               <button class="mini-save-btn" id="ordinaSottocategorieBtn" onclick="toggleReorder('sottocategorie')">Ordina Sottocategorie</button>
             </div>
           </div>
+          <label for="wineOrder">Ordina i vini per:</label>
+            <select id="wineOrder">
+              <option value="prezzo">Prezzo</option>
+              <option value="annata">Annata</option>
+              <option value="nome">Alfabetico</option>
+            </select>
         </details>
 
       <!-- Colonna destra: anteprima -->
@@ -922,6 +928,7 @@ setTimeout(() => {
     document.getElementById("textColorPicker").value = info?.text_color || "#000000";
     document.getElementById("displayName").addEventListener("input", (e) => {
   document.getElementById("ristoranteName").innerText = `${e.target.value || 'Ristorante'} - Dashboard`;
+  document.getElementById("wineOrder").value = info?.ordine_vini || "prezzo";
 });
   const fontBody = info?.font || "Arial";
 const bodyFontSelect = document.getElementById("fontSelector");
@@ -948,6 +955,13 @@ document.getElementById("fontSelector").addEventListener("change", () => {
 document.getElementById("paletteSelector").addEventListener("change", () => {
   toggleCustomColorPicker();
   updatePaletteLivePreview();
+});
+document.getElementById("wineOrder").addEventListener("change", async (e) => {
+  const ordine = e.target.value;
+  await supabase
+    .from("ristoranti")
+    .update({ ordine_vini: ordine })
+    .eq("id", RESTAURANT_ID);
 });
 
 ["bgColorPicker", "cardColorPicker", "borderColorPicker", "textColorPicker", "navbarColorPicker"].forEach(id => {
