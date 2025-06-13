@@ -988,15 +988,8 @@ iframe.addEventListener("load", () => {
 });
 
     updatePreview();
-            // Mostra la sezione corretta solo DOPO che boostContainer è popolato
-      setTimeout(() => {
-        const isSommelierValido = document.getElementById("sommelierRange");
-        if (isSommelierValido) {
-          showSettings('sommelier');
-        } else {
-          showSettings('carta');
-        }
-      }, 100);
+// Mostra la sezione carta dei vini all’avvio
+showSettings('carta');
 
       document.getElementById("navbarColorPicker").addEventListener("input", updatePaletteLivePreview);
       document.getElementById("bgColorPicker").addEventListener("input", updatePaletteLivePreview);
