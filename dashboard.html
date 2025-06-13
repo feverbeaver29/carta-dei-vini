@@ -524,7 +524,7 @@ footer {
   </div>
 
   <!-- SEZIONE IMPOSTAZIONI SOMMELIER -->
-  <div id="sommelierSettings" class="section" style="display: none;">
+  <div id="sommelierSettings" class="section dashboard-grid" style="display: none;">
     <div class="dashboard-grid">
       <h2>Impostazioni Sommelier Virtuale</h2>
 
@@ -1085,9 +1085,13 @@ function capitalize(str) {
       window.location.href = "/";
     }
     function showSettings(type) {
-  document.getElementById("cartaSettings").style.display = (type === "carta") ? "block" : "none";
-  document.getElementById("sommelierSettings").style.display = (type === "sommelier") ? "block" : "none";
-}
+      document.getElementById("cartaSettings").style.display = (type === "carta") ? "block" : "none";
+      document.getElementById("sommelierSettings").style.display = (type === "sommelier") ? "block" : "none";
+
+      const sectionId = type === "carta" ? "cartaSettings" : "sommelierSettings";
+      const el = document.getElementById(sectionId);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
 
     function showQRCode() {
       const popup = document.getElementById('qrPopup');
