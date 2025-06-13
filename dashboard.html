@@ -266,6 +266,7 @@ footer {
 
 /* Mobile */
 @media (max-width: 768px) {
+
   main {
     padding: 25px 1em 40px;
   }
@@ -301,6 +302,16 @@ footer {
     padding: 0;
     text-align: center;
   }
+  #boostContainer {
+  display: block;
+  min-height: 100px;
+  padding-top: 10px;
+}
+#boostContainer input[type="text"] {
+  display: block;
+  margin-bottom: 12px;
+}
+
   .mockup {
     width: 100%;
     max-width: 100%;
@@ -827,6 +838,7 @@ function attachLogoListeners() {
   .eq("id", RESTAURANT_ID)
   .single();
   console.log("🔍 Supabase info:", info);
+  console.log("BOOST MULTI:", info?.sommelier_boost_multi);
 console.log("✅ sommelier_boost_multi:", info?.sommelier_boost_multi);
 
     const { data: vini } = await supabase
