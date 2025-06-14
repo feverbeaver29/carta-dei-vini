@@ -27,12 +27,14 @@ body {
   flex: 1 0 auto;
 }
 
- details {
+    details {
       border: 1px solid #ddd;
       border-radius: 8px;
       padding: 12px 16px;
       background-color: #fff;
       margin-bottom: 1em;
+      overflow: hidden;
+      transition: all 0.4s ease;
     }
 
     details summary {
@@ -42,6 +44,7 @@ body {
       position: relative;
       list-style: none;
       padding-left: 20px;
+      user-select: none;
     }
 
     details summary::before {
@@ -58,16 +61,18 @@ body {
 
     details[open] > div,
     details[open] > section {
-      animation: fadeSlideIn 0.3s ease;
+      animation: expandSection 0.4s ease forwards;
     }
 
-    @keyframes fadeSlideIn {
-      from {
+    @keyframes expandSection {
+      0% {
         opacity: 0;
-        transform: translateY(-4px);
+        max-height: 0;
+        transform: translateY(-5px);
       }
-      to {
+      100% {
         opacity: 1;
+        max-height: 1000px;
         transform: translateY(0);
       }
     }
