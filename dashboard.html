@@ -926,9 +926,9 @@ setTimeout(() => {
     document.getElementById("cardColorPicker").value = info?.card_color || "#ffffff";
     document.getElementById("borderColorPicker").value = info?.border_color || "#bb0000";
     document.getElementById("textColorPicker").value = info?.text_color || "#000000";
+    document.getElementById("wineOrder").value = info?.ordine_vini || "prezzo";
     document.getElementById("displayName").addEventListener("input", (e) => {
-  document.getElementById("ristoranteName").innerText = `${e.target.value || 'Ristorante'} - Dashboard`;
-  document.getElementById("wineOrder").value = info?.ordine_vini || "prezzo";
+    document.getElementById("ristoranteName").innerText = `${e.target.value || 'Ristorante'} - Dashboard`;
 });
   const fontBody = info?.font || "Arial";
 const bodyFontSelect = document.getElementById("fontSelector");
