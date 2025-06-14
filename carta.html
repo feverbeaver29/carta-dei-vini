@@ -950,7 +950,9 @@ if (event.data?.action === "updatePaletteLive") {
   logo.style.margin = "0 auto";
   nav.innerHTML = "";
   nav.appendChild(logo);
-  aggiornaAltezzaNavbar();
+  setTimeout(() => {
+    aggiornaAltezzaNavbar();
+  }, 50);
 }
 
   if (logo) {
@@ -972,26 +974,22 @@ if (event.data?.action === "updatePaletteLive") {
 }
 
   if (event.data?.action === "updateNameLive") {
-  const nameSpan = document.querySelector("#restaurantName span");
-  if (nameSpan) {
-    nameSpan.style.fontFamily = event.data.font || "sans-serif";
-    nameSpan.style.fontSize = event.data.size + "px";
-    nameSpan.style.color = event.data.color;
-    nameSpan.style.fontWeight = event.data.bold ? "bold" : "normal";
-    nameSpan.textContent = event.data.name || "Carta dei Vini";
+const nameSpan = document.querySelector("#restaurantName span");
+if (nameSpan) {
+  nameSpan.style.fontFamily = event.data.font || "sans-serif";
+  nameSpan.style.fontSize = event.data.size + "px";
+  nameSpan.style.color = event.data.color;
+  nameSpan.style.fontWeight = event.data.bold ? "bold" : "normal";
+  nameSpan.textContent = event.data.name || "Carta dei Vini";
 
-    ensureFontLoaded(event.data.font); // ✅ carica dinamicamente il font
+  ensureFontLoaded(event.data.font);
 
-    const nav = document.querySelector("nav");
-    setTimeout(() => {
-      if (nav && nameSpan) {
-        const height = nameSpan.offsetHeight + 16;
-        nav.style.height = height + "px";
-      }
-    }, 50);
-  }
-  aggiornaAltezzaNavbar();
-}
+  // Aspetta il prossimo repaint per avere le dimensioni corrette
+  setTimeout(() => {
+    aggiornaAltezzaNavbar();
+  }, 50);
+}}
+
 
   if (event.data?.action === "startReorder") {
     reorderMode = true;
