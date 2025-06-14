@@ -868,7 +868,7 @@ function attachLogoListeners() {
 
       const { data: info } = await supabase
         .from("ristoranti")
-        .select("nome, font, palette_color, bg_color, card_color, border_color, text_color, logo_url, sommelier_url, sommelier_range, sommelier_boost_multi, logo_size, logo_border, logo_border_color, name_size, name_color, name_bold, name_font")
+        .select("nome, font, palette_color, bg_color, card_color, border_color, text_color, logo_url, sommelier_url, sommelier_range, sommelier_boost_multi, logo_size, logo_border, logo_border_color, name_size, name_color, name_bold, name_font, ordine_vini")
         .eq("id", RESTAURANT_ID)
         .single();
 
