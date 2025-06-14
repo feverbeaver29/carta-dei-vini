@@ -962,6 +962,8 @@ document.getElementById("wineOrder").addEventListener("change", async (e) => {
     .from("ristoranti")
     .update({ ordine_vini: ordine })
     .eq("id", RESTAURANT_ID);
+    updatePreview(); // forza il refresh dell’anteprima
+updatePreviewLive(); // se già presente, può restare
 });
 
 ["bgColorPicker", "cardColorPicker", "borderColorPicker", "textColorPicker", "navbarColorPicker"].forEach(id => {
