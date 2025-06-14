@@ -9,42 +9,6 @@
   --bg-default: #fff9f4;
 }
 
-#restaurantName span {
-  display: block;
-  text-align: center;
-  white-space: normal;
-  line-height: 1.2;
-}
-
-/* Fade generico */
-.fade-in {
-  animation: fadeIn 0.4s ease forwards;
-  opacity: 0;
-}
-
-.fade-out {
-  animation: fadeOut 0.3s ease forwards;
-  opacity: 1;
-}
-
-@keyframes fadeIn {
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes fadeOut {
-  to {
-    opacity: 0;
-    display: none;
-  }
-}
-
-/* Filtro per la risposta */
-.sommelier-fadein {
-  animation: fadeIn 0.5s ease both;
-}
-
 body {
   font-family: sans-serif;
   background: var(--bg-default);
@@ -53,32 +17,27 @@ body {
   padding-top: 60px;
 }
 
-button, .save-btn {
-  background-color: var(--accent-color);
+#restaurantName {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.2em;
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
 }
-
-.category, .subcategory, .wine-card {
-  border: 1px solid;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+#restaurantName span {
+  display: block;
+  text-align: center;
+  white-space: normal;
+  line-height: 1.2;
 }
-
-.category:hover, .subcategory:hover, .wine-card:hover {
-  transform: scale(1.02);
-  transition: transform 0.2s ease;
-}
-
-.glass {
-  background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-}
-.glass-dark {
-  background: rgba(20, 20, 20, 0.3);
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+#restaurantLogo {
+  height: 32px;
+  border-radius: 6px;
 }
 
 /* NAV HEADER */
@@ -103,36 +62,29 @@ nav button {
   color: var(--accent-color);
 }
 
-#restaurantName {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 1.2em;
-  line-height: 1.2;
-  text-align: center;
-  white-space: normal;
-}
-#restaurantLogo {
-  height: 32px;
-  border-radius: 6px;
+button, .save-btn {
+  background-color: var(--accent-color);
 }
 
-/* CONTENUTO CATEGORIE / SOTTO / VINI */
+/* CONTENUTO */
 .category-list, .subcategory-list, .wine-list {
   padding: 0.5em 1em;
   margin-top: 80px;
 }
 
-.category, .wine-card {
+.category, .subcategory, .wine-card {
   background: inherit;
   margin-bottom: 0.6em;
   padding: 1em;
+  border: 1px solid;
   border-radius: 12px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
+}
+.category:hover, .subcategory:hover, .wine-card:hover {
+  transform: scale(1.02);
+  transition: transform 0.2s ease;
 }
 
 .subcategory-list {
@@ -142,11 +94,6 @@ nav button {
 }
 
 .subcategory {
-  background: inherit;
-  padding: 1em;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  cursor: pointer;
   text-align: center;
 }
 
@@ -185,12 +132,6 @@ nav button {
   display: none;
 }
 
-@keyframes tooltipSlide {
-  0% { opacity: 0; transform: translateY(10px); }
-  50% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(-10px); }
-}
-
 /* POPUP SOMMELIER */
 #sommelierOverlay {
   position: fixed;
@@ -217,7 +158,6 @@ nav button {
   overscroll-behavior: contain;
   scrollbar-width: thin;
 }
-
 #sommelierPopup h3 {
   margin-top: 0;
 }
@@ -240,9 +180,26 @@ nav button {
 }
 
 /* ANIMAZIONI */
+.fade-in {
+  animation: fadeIn 0.4s ease forwards;
+  opacity: 0;
+}
+.fade-out {
+  animation: fadeOut 0.3s ease forwards;
+  opacity: 1;
+}
+.sommelier-fadein {
+  animation: fadeIn 0.5s ease both;
+}
+.sommelier-card {
+  animation: fadeInUp 0.4s ease forwards;
+  opacity: 0;
+}
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  to { opacity: 1; }
+}
+@keyframes fadeOut {
+  to { opacity: 0; display: none; }
 }
 @keyframes fadeInUp {
   from { transform: translateY(20px); opacity: 0; }
@@ -252,16 +209,26 @@ nav button {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
-/* ANIMAZIONI CLASSI */
-.sommelier-card {
-  animation: fadeInUp 0.4s ease forwards;
-  opacity: 0;
-}
-.sommelier-fadein {
-  animation: fadeSlideIn 0.4s ease-out both;
+@keyframes tooltipSlide {
+  0% { opacity: 0; transform: translateY(10px); }
+  50% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
 }
 
+/* GLASS EFFECT */
+.glass {
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+.glass-dark {
+  background: rgba(20, 20, 20, 0.3);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* RESPONSIVE */
 @media (max-width: 768px) {
   .subcategory-list {
     grid-template-columns: 1fr 1fr;
@@ -275,8 +242,18 @@ nav button {
   }
 }
 
-/* RESPONSIVE */
 @media (max-width: 480px) {
+  .subcategory-list {
+    grid-template-columns: 1fr;
+  }
+  .wine-card {
+    font-size: 0.95em;
+    padding: 0.8em;
+  }
+  #restaurantName {
+    font-size: 1em;
+    gap: 6px;
+  }
   #sommelierPopup {
     padding: 20px 16px;
     width: 95vw;
@@ -285,30 +262,14 @@ nav button {
   .sommelier-card {
     font-size: 0.95em;
   }
-  .sommelier-card .vino-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  #restaurantName {
-    font-size: 1em;
-    gap: 6px;
-  }
-  .subcategory-list {
-    grid-template-columns: 1fr;
-  }
-  .wine-card {
-    font-size: 0.95em;
-    padding: 0.8em;
-  }
-  #sommelierPopup input {
-    font-size: 1em;
-  }
   .vino-header {
     flex-direction: column;
     align-items: flex-start;
   }
+  #sommelierPopup input {
+    font-size: 1em;
+  }
 }
-
 </style>
 </head>
 <body>
