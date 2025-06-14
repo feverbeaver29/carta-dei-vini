@@ -173,23 +173,37 @@ main {
 #sommelierSettings {
   flex-direction: column;
   display: flex;
-  gap: 30px;
+  gap: 16px;
 }
 #sommelierSettings .dashboard-grid {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
 }
+    #sommelierSettings label {
+      margin-top: 8px;
+      margin-bottom: 4px;
+      font-size: 0.95em;
+    }
+    #sommelierSettings select,
+    #sommelierSettings input[type="text"],
+    #sommelierSettings input[type="file"] {
+      padding: 6px 10px;
+      font-size: 0.95em;
+      border-radius: 6px;
+    }
 
 #boostContainer {
-  min-height: 150px;
-  display: block;
+        min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
 }
 
 #boostContainer input[type="text"] {
   display: block;
   width: 100%;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
 
@@ -303,11 +317,12 @@ footer {
   padding: 0;
   background: none;
   border: none;
+  gap: 14px;
 }
 #impostazioniSommelier {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
   .dashboard-grid label {
@@ -332,7 +347,7 @@ footer {
   #boostContainer {
   display: block;
   min-height: 100px;
-  padding-top: 10px;
+  padding-top: 6px;
 }
 #boostContainer input[type="text"] {
   display: block;
