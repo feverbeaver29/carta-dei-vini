@@ -584,7 +584,7 @@ footer {
       <!-- Colonna destra: anteprima -->
       <div id="mockupWrapper">
         <div class="mockup">
-          <iframe id="previewFrame" style="width:100%; height:100%; border:none;"></iframe>
+          <iframe id="previewFrame" style="width:100%; height:100%; border:none;" sandbox="allow-scripts allow-same-origin"></iframe>
         </div>
       </div>
     </div>
@@ -1013,6 +1013,7 @@ toggleCustomColorPicker(); // mostra le opzioni se "custom"
 const iframe = document.getElementById("previewFrame");
 iframe.addEventListener("load", () => {
   updateNamePreviewLive(); // aggiorna subito una volta
+    updateLogoPreviewLive(); // ✅ aggiungi anche questo!
 
   ["nameSize", "nameColor", "nameBold", "nameFont", "displayName"].forEach(id => {
     const el = document.getElementById(id);

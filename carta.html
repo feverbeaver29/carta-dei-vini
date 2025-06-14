@@ -270,6 +270,25 @@ button, .save-btn {
   #sommelierPopup input {
     font-size: 1em;
   }
+    nav {
+    padding: 0.3em 0.6em;
+    height: auto !important;
+  }
+
+  #restaurantLogo {
+    height: 28px !important;
+  }
+
+  #restaurantName {
+    font-size: 1em !important;
+    gap: 6px;
+    flex-direction: column;
+  }
+
+  .category, .subcategory, .wine-card {
+    font-size: 0.95em;
+    padding: 0.8em;
+  }
 }
 </style>
 </head>
@@ -317,6 +336,25 @@ window.paletteColors = {
   textColor: null,
   boxShadow: null
 };
+
+function aggiornaAltezzaNavbar() {
+  const nav = document.querySelector("nav");
+  const nameSpan = document.querySelector("#restaurantName span");
+  const logo = document.querySelector("#restaurantLogo");
+
+  let altezza = 48; // altezza minima predefinita
+
+  if (nameSpan) {
+    altezza = nameSpan.offsetHeight + 20;
+  }
+  if (logo && logo.offsetHeight > altezza) {
+    altezza = logo.offsetHeight + 20;
+  }
+
+  if (nav) {
+    nav.style.height = altezza + "px";
+  }
+}
 
 function toggleSommelier() {
   const overlay = document.getElementById('sommelierOverlay');
@@ -912,6 +950,7 @@ if (event.data?.action === "updatePaletteLive") {
   logo.style.margin = "0 auto";
   nav.innerHTML = "";
   nav.appendChild(logo);
+  aggiornaAltezzaNavbar();
 }
 
   if (logo) {
@@ -927,7 +966,7 @@ if (event.data?.action === "updatePaletteLive") {
       logo.style.padding = "4px";
     } else {
       logo.style.border = "none";
-      logo.style.padding = "0";
+            logo.style.padding = "0";
     }
   }
 }
@@ -951,6 +990,7 @@ if (event.data?.action === "updatePaletteLive") {
       }
     }, 50);
   }
+  aggiornaAltezzaNavbar();
 }
 
   if (event.data?.action === "startReorder") {
