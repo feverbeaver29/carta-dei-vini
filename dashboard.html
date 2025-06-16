@@ -1240,7 +1240,14 @@ let borderColor = document.getElementById("borderColorPicker").value || null;
 let textColor = document.getElementById("textColorPicker").value || null;
 let navbarColor = document.getElementById("navbarColorPicker").value || null;
 
-if (selectedPalette !== "custom") {
+if (selectedPalette === "custom") {
+  // assicurati che i colori siano letti correttamente, anche se il logo è stato cambiato dopo
+  bgColor = document.getElementById("bgColorPicker").value || "#ffffff";
+  cardColor = document.getElementById("cardColorPicker").value || "#ffffff";
+  borderColor = document.getElementById("borderColorPicker").value || "#000000";
+  textColor = document.getElementById("textColorPicker").value || "#000000";
+  navbarColor = document.getElementById("navbarColorPicker").value || "#ffffff";
+} else {
   bgColor = null;
   cardColor = null;
   borderColor = null;
@@ -1252,7 +1259,7 @@ if (selectedPalette !== "custom") {
   await supabase.from("ristoranti").update({
     nome,
     font,
-    palette_color,
+    palette_color: palette_color,
     bg_color: bgColor,
     card_color: cardColor,
     border_color: borderColor,
