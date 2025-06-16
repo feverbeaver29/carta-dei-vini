@@ -603,10 +603,17 @@ if (ristorante) {
 
 // ✅ Spostato fuori dal blocco if precedente
 if (ristorante.palette_color === "custom") {
-    window.paletteOverrideLive = true; // ✅ aggiunto
+  window.paletteOverrideLive = true;
   applyCustomBoxStyles();
 } else {
   applyPalette(ristorante.palette_color);
+
+  // Applica anche colori salvati (per palette predefinite)
+  if (ristorante.bg_color) document.body.style.backgroundColor = ristorante.bg_color;
+  if (ristorante.navbar_color) {
+    const nav = document.querySelector("nav");
+    if (nav) nav.style.backgroundColor = ristorante.navbar_color;
+  }
 }
 
   window.ristorantePalette = ristorante.palette_color;

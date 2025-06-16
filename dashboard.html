@@ -1241,14 +1241,12 @@ async function saveSettings() {
   let textColor = null;
   let navbarColor = null;
 
-  if (palette_color === "custom") {
     bgColor = document.getElementById("bgColorPicker")?.value || "#ffffff";
     cardColor = document.getElementById("cardColorPicker")?.value || "#ffffff";
     borderColor = document.getElementById("borderColorPicker")?.value || "#000000";
     textColor = document.getElementById("textColorPicker")?.value || "#000000";
     navbarColor = document.getElementById("navbarColorPicker")?.value || "#ffffff";
-  }
-
+  
   // Salvataggio su Supabase
   await supabase.from("ristoranti").update({
     nome,
