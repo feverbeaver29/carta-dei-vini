@@ -349,13 +349,19 @@ function aggiornaAltezzaNavbar() {
   if (!nav || !nameBlock) return;
 
   const rect = nameBlock.getBoundingClientRect();
-  nav.style.minHeight = rect.height + 20 + "px"; // +20 per margine
+  const height = rect.height + 20;
 
-  // 🔥 Applica padding dinamico sotto la navbar
-  const offset = rect.height + 20;
+  nav.style.minHeight = height + "px";
+
   document.querySelectorAll(".category-list, .subcategory-list, .wine-list").forEach(el => {
-    el.style.paddingTop = offset + "px";
+    el.style.paddingTop = height + "px";
   });
+  // Forza aggiornamento navbar anche da iframe dopo postMessage
+window.addEventListener("message", (event) => {
+  if (event.data?.action === "updateNameLive" || event.data?.action === "updateLogoLive") {
+    setTimeout(() => aggiornaAltezzaNavbar(), 30);
+  }
+});
 }
 
 function toggleSommelier() {
