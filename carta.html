@@ -578,32 +578,34 @@ if (avatar) {
 
   if (ristorante) {
     const nameElem = document.getElementById("restaurantName");
-    nameElem.innerHTML = '';
-    if (ristorante.logo_url) {
-      const img = document.createElement('img');
-      img.src = ristorante.logo_url + "?t=" + new Date().getTime();
-      img.alt = ristorante.nome;
-      img.id = "restaurantLogo";
-      img.style.height = (ristorante.logo_size || 40) + "px";
-      const nav = document.querySelector("nav");
-      if (nav && ristorante.logo_size) {
-        nav.style.height = ristorante.logo_size + "px";
-      }
-      if (ristorante.logo_border) {
-        img.style.border = "2px solid " + (ristorante.logo_border_color || "#000");
-        img.style.borderRadius = "8px";
-        img.style.padding = "4px";
-      }
-      nameElem.appendChild(img);
-    } else {
-    const span = document.createElement('span');
-      span.textContent = ristorante.nome || 'Carta dei Vini';
-      span.style.fontFamily = ristorante.name_font || 'sans-serif';
-      ensureFontLoaded(ristorante.name_font);
-      span.style.fontSize = (ristorante.name_size || 24) + "px";
-      span.style.color = ristorante.name_color || "#000000";
-      span.style.fontWeight = ristorante.name_bold ? "bold" : "normal";
-    nameElem.appendChild(span);}
+if (!nameElem) return;
+
+while (nameElem.firstChild) {
+  nameElem.removeChild(nameElem.firstChild);
+}
+
+if (ristorante.logo_url) {
+  const img = document.createElement('img');
+  img.src = ristorante.logo_url + "?t=" + new Date().getTime();
+  img.alt = ristorante.nome;
+  img.id = "restaurantLogo";
+  img.style.height = (ristorante.logo_size || 40) + "px";
+  if (ristorante.logo_border) {
+    img.style.border = "2px solid " + (ristorante.logo_border_color || "#000");
+    img.style.borderRadius = "8px";
+    img.style.padding = "4px";
+  }
+  nameElem.appendChild(img);
+} else {
+  const span = document.createElement('span');
+  span.textContent = ristorante.nome || 'Carta dei Vini';
+  span.style.fontFamily = ristorante.name_font || 'sans-serif';
+  span.style.fontSize = (ristorante.name_size || 24) + "px";
+  span.style.color = ristorante.name_color || "#000000";
+  span.style.fontWeight = ristorante.name_bold ? "bold" : "normal";
+  ensureFontLoaded(ristorante.name_font);
+  nameElem.appendChild(span);
+}
 
     window.ristorantePalette = ristorante.palette_color;
     if (window.ristorantePalette === "custom") {
