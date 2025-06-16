@@ -38,7 +38,6 @@ body {
 }
 #restaurantLogo {
   display: block;
-  height: 40px; /* valore iniziale */
   max-height: 120px;
   object-fit: contain;
   border-radius: 6px;
@@ -585,7 +584,7 @@ if (ristorante) {
     img.src = ristorante.logo_url + "?t=" + new Date().getTime();
     img.alt = ristorante.nome;
     img.id = "restaurantLogo";
-    img.style.height = (ristorante.logo_size || 40) + "px";
+    img.style.setProperty("height", (ristorante.logo_size || 40) + "px", "important");
     nameElem.appendChild(img);
   } else {
     const span = document.createElement('span');
