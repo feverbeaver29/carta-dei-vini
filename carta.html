@@ -1176,6 +1176,12 @@ window.showSubcategories = function (category) {
   await fetchCategoryOrder();
   await loadRestaurantData();
   await loadWineData();
+
+  // 💡 Forza i colori PRIMA di mostrare categorie
+  if (window.paletteOverrideLive && window.ristorantePalette === "custom") {
+    applyCustomBoxStyles();
+  }
+
   showCategories();
 })();
 
