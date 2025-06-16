@@ -516,36 +516,40 @@ async function suggestWine() {
 const useCustom = window.paletteOverrideLive || ristorante?.palette_color === "custom";
 const palette = window.ristorantePalette;
 
-const bg = useCustom
-  ? (ristorante?.card_color || "#ffffff")
+const card = useCustom
+  ? ristorante?.card_color
   : (palette && window.paletteColors?.cardBackground) || "#ffffff";
 
 const border = useCustom
-  ? (ristorante?.border_color || "#cccccc")
+  ? ristorante?.border_color
   : (palette && window.paletteColors?.borderColor) || "#cccccc";
 
 const text = useCustom
-  ? (ristorante?.text_color || "#000000")
+  ? ristorante?.text_color
   : (palette && window.paletteColors?.textColor) || "#000000";
 
-const shadow = palette && window.paletteColors?.boxShadow || "0 2px 6px rgba(0, 0, 0, 0.15)";
+const accent = useCustom
+  ? (ristorante?.bg_color || ristorante?.navbar_color || "#bb6925")
+  : (palette && window.paletteColors?.accentColor) || "#bb6925";
 
-    suggestion.innerHTML = `
-      <div class="sommelier-fadein" style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px;">
-        <img id="sommelierAvatar"
-            src="${ristoranteSommelierURL || 'sommelier.png'}"
-            alt="Sommelier"
-            style="width:64px; height:64px; border-radius:50%; object-fit:cover; box-shadow:0 0 6px rgba(0,0,0,0.1);">
+const shadow = palette && window.paletteColors?.boxShadow || "0 2px 6px rgba(0,0,0,0.15)";
 
-        <div style="position: relative; background: ${bg}; border: 1px solid ${border}; border-radius:16px; padding:16px 18px; max-width:80%; box-shadow: ${shadow}; color: ${text};">
-          <div style="position: absolute; top: 20px; left: -10px; width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-right: 10px solid ${bg};"></div>
-          <strong style="color:${border}; font-size: 1em;">Il nostro sommelier ti consiglia:</strong>
-          <div style="margin-top: 8px;">${cardsHtml}</div>
-          ${storico}
-          <div style="text-align:right; font-size:0.85em; color:#999; margin-top:8px;">— Il tuo Sommelier Virtuale 🍷</div>
-        </div>
-      </div>
-    `;
+suggestion.innerHTML = `
+  <div class="sommelier-fadein" style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px;">
+    <img id="sommelierAvatar"
+        src="${ristoranteSommelierURL || 'sommelier.png'}"
+        alt="Sommelier"
+        style="width:64px; height:64px; border-radius:50%; object-fit:cover; box-shadow:0 0 6px rgba(0,0,0,0.1);">
+
+    <div style="position: relative; background: ${card}; border: 1px solid ${border}; border-radius:16px; padding:16px 18px; max-width:80%; box-shadow: ${shadow}; color: ${text};">
+      <div style="position: absolute; top: 20px; left: -10px; width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-right: 10px solid ${card};"></div>
+      <strong style="color:${accent}; font-size: 1em;">Il nostro sommelier ti consiglia:</strong>
+      <div style="margin-top: 8px;">${cardsHtml}</div>
+      ${storico}
+      <div style="text-align:right; font-size:0.85em; color:${border}; margin-top:8px;">— Il tuo Sommelier Virtuale 🍷</div>
+    </div>
+  </div>
+`;
 
   } catch (err) {
     console.error(err);
