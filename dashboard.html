@@ -301,11 +301,12 @@ footer {
 }
 
 /* Mobile */
+/* Mobile */
 @media (max-width: 768px) {
-
   main {
     padding: 25px 1em 40px;
   }
+
   .dashboard-grid {
     display: flex;
     flex-direction: column;
@@ -313,22 +314,25 @@ footer {
     padding: 0.25em 1em;
     gap: 0.4em;
   }
-#sommelierSettings {
-  padding: 0;
-  background: none;
-  border: none;
-  gap: 14px;
-}
-#impostazioniSommelier {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
+
+  #sommelierSettings {
+    padding: 0;
+    background: none;
+    border: none;
+    gap: 14px;
+  }
+
+  #impostazioniSommelier {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
 
   .dashboard-grid label {
     margin-top: 12px;
     font-size: 1em;
   }
+
   .dashboard-grid select,
   .dashboard-grid input[type="text"],
   .dashboard-grid input[type="file"],
@@ -338,40 +342,46 @@ footer {
     font-size: 1em;
     margin-bottom: 0.4em;
   }
+
   .dashboard-grid h2 {
     font-size: 1.1em;
     margin: 0.3em 0 0.4em 0;
     padding: 0;
     text-align: center;
   }
-  #boostContainer {
-  display: block;
-  min-height: 100px;
-  padding-top: 6px;
-}
-#boostContainer input[type="text"] {
-  display: block;
-  margin-bottom: 12px;
-}
 
+  #boostContainer {
+    display: block;
+    min-height: 100px;
+    padding-top: 6px;
+  }
+
+  #boostContainer input[type="text"] {
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  /* ✅ Mockup iframe correttamente centrato */
   .mockup {
     width: 100%;
-    max-width: 100%;
+    max-width: 360px;
     height: 450px;
-    margin-top: 1em;
-    margin-bottom: 50px;
-    min-width: 360px; /* ✅ impedisce di stringersi */
+    margin: 1em auto 50px auto;
   }
+
   nav.desktop {
     display: none;
   }
+
   .mobile-nav-toggle {
     display: block;
   }
+
   #mockupWrapper {
     width: 100%;
     display: flex;
-    justify-content: left;
+    justify-content: center; /* ✅ centra il mockup */
+    overflow-x: hidden;      /* ✅ evita scroll orizzontale */
   }
 }
 
