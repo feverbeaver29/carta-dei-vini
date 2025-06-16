@@ -479,6 +479,27 @@ async function suggestWine() {
     const reply = data.suggestion || "";
     const rawBlocks = reply.split(/^- /m).map(b => b.trim()).filter(Boolean);
 
+    const useCustom = window.paletteOverrideLive || ristorante?.palette_color === "custom";
+const palette = window.ristorantePalette;
+
+const cardBg = useCustom
+  ? ristorante?.card_color
+  : (palette && window.paletteColors?.cardBackground) || "#ffffff";
+
+const cardBorder = useCustom
+  ? ristorante?.border_color
+  : (palette && window.paletteColors?.borderColor) || "#cccccc";
+
+const cardText = useCustom
+  ? ristorante?.text_color
+  : (palette && window.paletteColors?.textColor) || "#000000";
+
+const cardAccent = useCustom
+  ? (ristorante?.bg_color || ristorante?.navbar_color || "#bb6925")
+  : (palette && window.paletteColors?.accentColor) || "#bb6925";
+
+const shadow = palette && window.paletteColors?.boxShadow || "0 2px 6px rgba(0,0,0,0.15)";
+
 cardsHtml = rawBlocks.map(block => {
   const lines = block.split(/\n/).map(l => l.trim()).filter(Boolean);
   const titleLine = lines[0] || "";
@@ -512,27 +533,6 @@ cardsHtml = rawBlocks.map(block => {
 
     aggiornaStorico(input);
     const storico = mostraStoricoNelSommelier();
-
-const useCustom = window.paletteOverrideLive || ristorante?.palette_color === "custom";
-const palette = window.ristorantePalette;
-
-const cardBg = useCustom
-  ? ristorante?.card_color
-  : (palette && window.paletteColors?.cardBackground) || "#ffffff";
-
-const cardBorder = useCustom
-  ? ristorante?.border_color
-  : (palette && window.paletteColors?.borderColor) || "#cccccc";
-
-const cardText = useCustom
-  ? ristorante?.text_color
-  : (palette && window.paletteColors?.textColor) || "#000000";
-
-const cardAccent = useCustom
-  ? (ristorante?.bg_color || ristorante?.navbar_color || "#bb6925")
-  : (palette && window.paletteColors?.accentColor) || "#bb6925";
-
-const shadow = palette && window.paletteColors?.boxShadow || "0 2px 6px rgba(0,0,0,0.15)";
 
 suggestion.innerHTML = `
   <div class="sommelier-fadein" style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px;">
