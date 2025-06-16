@@ -343,17 +343,12 @@ window.paletteColors = {
 
 function aggiornaAltezzaNavbar() {
   const nav = document.querySelector("nav");
-  const nameSpan = document.querySelector("#restaurantName span");
-  const logo = document.querySelector("#restaurantLogo");
+  const nameBlock = document.getElementById("restaurantName");
 
-  let altezza = 48; // altezza minima predefinita
+  if (!nav || !nameBlock) return;
 
-  if (nameSpan) {
-    altezza = nameSpan.offsetHeight + 20;
-  }
-  if (logo && logo.offsetHeight > altezza) {
-    altezza = logo.offsetHeight + 20;
-  }
+  const rect = nameBlock.getBoundingClientRect();
+  nav.style.minHeight = rect.height + 20 + "px"; // +20 per margine
 }
 
 function toggleSommelier() {
@@ -962,7 +957,7 @@ if (event.data?.action === "updatePaletteLive") {
     if (event.data.logoUrl) logo.src = event.data.logoUrl;
     if (event.data.size) {
       logo.style.height = event.data.size + "px";
-      nav.style.height = event.data.size + "px";
+      setTimeout(() => aggiornaAltezzaNavbar(), 30);
     }
 
     if (event.data.border) {
