@@ -19,17 +19,17 @@ body {
 }
 
 #restaurantName {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  margin: 0 auto;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   font-size: 1.2em;
   line-height: 1.2;
   text-align: center;
   white-space: normal;
 }
+
 #restaurantName span {
   display: block;
   text-align: center;
@@ -297,7 +297,9 @@ button, .save-btn {
 <body>
 <nav>
   <button onclick="goBack()">⬅</button>
-  <div id="restaurantName"><span>CARTA DEI VINI</span></div>
+  <div style="flex: 1; display: flex; justify-content: center;">
+    <div id="restaurantName"><span>CARTA DEI VINI</span></div>
+  </div>
 </nav>
 
 <div id="app" class="flipbook">
@@ -351,10 +353,6 @@ function aggiornaAltezzaNavbar() {
   }
   if (logo && logo.offsetHeight > altezza) {
     altezza = logo.offsetHeight + 20;
-  }
-
-  if (nav) {
-    nav.style.height = altezza + "px";
   }
 }
 
