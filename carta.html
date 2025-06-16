@@ -541,12 +541,12 @@ suggestion.innerHTML = `
         alt="Sommelier"
         style="width:64px; height:64px; border-radius:50%; object-fit:cover; box-shadow:0 0 6px rgba(0,0,0,0.1);">
 
-    <div style="position: relative; background: ${card}; border: 1px solid ${border}; border-radius:16px; padding:16px 18px; max-width:80%; box-shadow: ${shadow}; color: ${text};">
-      <div style="position: absolute; top: 20px; left: -10px; width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-right: 10px solid ${card};"></div>
-      <strong style="color:${accent}; font-size: 1em;">Il nostro sommelier ti consiglia:</strong>
+    <div style="position: relative; background: ${cardBg}; border: 1px solid ${cardBorder}; border-radius:16px; padding:16px 18px; max-width:80%; box-shadow: ${shadow}; color: ${cardText};">
+      <div style="position: absolute; top: 20px; left: -10px; width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-right: 10px solid ${cardBg};"></div>
+      <strong style="color:${cardAccent}; font-size: 1em;">Il nostro sommelier ti consiglia:</strong>
       <div style="margin-top: 8px;">${cardsHtml}</div>
       ${storico}
-      <div style="text-align:right; font-size:0.85em; color:${border}; margin-top:8px;">— Il tuo Sommelier Virtuale 🍷</div>
+      <div style="text-align:right; font-size:0.85em; color:${cardBorder}; margin-top:8px;">— Il tuo Sommelier Virtuale 🍷</div>
     </div>
   </div>
 `;
