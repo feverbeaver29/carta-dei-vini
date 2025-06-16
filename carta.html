@@ -324,6 +324,18 @@ button, .save-btn {
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
+
+  function getContrastingTextColor(bgColor) {
+  if (!bgColor) return "#000000";
+  const hex = bgColor.replace("#", "");
+  if (hex.length !== 6) return "#000000"; // fallback per codici non validi
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  return brightness > 150 ? "#000000" : "#ffffff";
+}
+
 const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
 const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
 const urlParams = new URLSearchParams(window.location.search);
@@ -395,6 +407,11 @@ popup.style.boxShadow = palette && window.paletteColors?.boxShadow || "0 2px 6px
     if (input) {
       input.style.backgroundColor = "#ffffff";
       input.style.color = "#000000";
+      input.style.backgroundColor = useCustom
+  ? (ristorante.bg_color || "#ffffff")
+  : (palette && window.paletteColors?.background) || "#ffffff";
+
+input.style.color = textColor;
     }
   document.getElementById('foodInput').focus();
   history.pushState({ sommelier: true }, '', '#sommelier');
@@ -495,7 +512,7 @@ const vignetteColor = useCustom
   : (palette && window.paletteColors?.borderColor) || "#cccccc";
 
 const textColor = useCustom
-  ? (ristorante.text_color || "#000000")
+  ? getContrastingTextColor(responseBg)
   : (palette && window.paletteColors?.textColor) || "#000000";
 
 const shadow = palette && window.paletteColors?.boxShadow || "0 2px 6px rgba(0,0,0,0.15)";
