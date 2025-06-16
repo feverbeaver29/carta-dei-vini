@@ -1179,20 +1179,20 @@ window.showSubcategories = function (category) {
   await loadRestaurantData();
   await loadWineData();
 
-  // ⚠️ Attendi un attimo prima di mostrare le categorie
-  setTimeout(() => {
-    showCategories();
+  // 🔒 Blocco la palette una volta per tutte
+  const isCustom = ristorante.palette_color === "custom";
+  window.paletteOverrideLive = isCustom;
+  window.ristorantePalette = ristorante.palette_color;
 
-    // 💡 Riapplika i colori dopo che la UI è disegnata
-    setTimeout(() => {
-      if (window.paletteOverrideLive && window.ristorantePalette === "custom") {
-        applyCustomBoxStyles();
-      } else {
-        applyPalette(window.ristorantePalette);
-      }
-    }, 100);
-  }, 100);
+  showCategories();
+
+  if (isCustom) {
+    applyCustomBoxStyles();
+  } else {
+    applyPalette(window.ristorantePalette);
+  }
 })();
+
 
 let abbinamentiRecenti = JSON.parse(localStorage.getItem("abbinamenti_recenti") || "[]");
 function aggiornaStorico(piatto) {
