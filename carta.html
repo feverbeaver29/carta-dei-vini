@@ -606,6 +606,11 @@ if (ristorante.logo_url) {
   ensureFontLoaded(ristorante.name_font);
   nameElem.appendChild(span);
 }
+if (ristorante.palette_color === "custom") {
+  applyCustomBoxStyles();
+} else {
+  applyPalette(ristorante.palette_color);
+}
 
     window.ristorantePalette = ristorante.palette_color;
     if (window.ristorantePalette === "custom") {
