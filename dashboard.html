@@ -1227,39 +1227,33 @@ async function saveSettings() {
   const nome = document.getElementById("displayName").value;
   const font = document.getElementById("fontSelector").value;
   const paletteSelect = document.getElementById("paletteSelector");
-  const selectedPalette = paletteSelect.options[paletteSelect.selectedIndex].getAttribute("data-palette");
 
-  let palette_color = selectedPalette;
-  if (selectedPalette === "custom") {
-    palette_color = "custom";
+  let selectedPalette = null;
+  if (paletteSelect) {
+    const selectedOption = paletteSelect.options[paletteSelect.selectedIndex];
+    selectedPalette = selectedOption?.getAttribute("data-palette") || "rosso";
   }
 
-  let bgColor = document.getElementById("bgColorPicker").value || null;
-let cardColor = document.getElementById("cardColorPicker").value || null;
-let borderColor = document.getElementById("borderColorPicker").value || null;
-let textColor = document.getElementById("textColorPicker").value || null;
-let navbarColor = document.getElementById("navbarColorPicker").value || null;
+  let palette_color = selectedPalette;
+  let bgColor = null;
+  let cardColor = null;
+  let borderColor = null;
+  let textColor = null;
+  let navbarColor = null;
 
-if (selectedPalette === "custom") {
-  // assicurati che i colori siano letti correttamente, anche se il logo è stato cambiato dopo
-  bgColor = document.getElementById("bgColorPicker").value || "#ffffff";
-  cardColor = document.getElementById("cardColorPicker").value || "#ffffff";
-  borderColor = document.getElementById("borderColorPicker").value || "#000000";
-  textColor = document.getElementById("textColorPicker").value || "#000000";
-  navbarColor = document.getElementById("navbarColorPicker").value || "#ffffff";
-} else {
-  bgColor = null;
-  cardColor = null;
-  borderColor = null;
-  textColor = null;
-  navbarColor = null;
-}
+  if (palette_color === "custom") {
+    bgColor = document.getElementById("bgColorPicker")?.value || "#ffffff";
+    cardColor = document.getElementById("cardColorPicker")?.value || "#ffffff";
+    borderColor = document.getElementById("borderColorPicker")?.value || "#000000";
+    textColor = document.getElementById("textColorPicker")?.value || "#000000";
+    navbarColor = document.getElementById("navbarColorPicker")?.value || "#ffffff";
+  }
 
   // Salvataggio su Supabase
   await supabase.from("ristoranti").update({
     nome,
     font,
-    palette_color: palette_color,
+    palette_color,
     bg_color: bgColor,
     card_color: cardColor,
     border_color: borderColor,
@@ -1288,7 +1282,8 @@ if (selectedPalette === "custom") {
   // Aggiornamento anteprime
   updatePreview();
   updatePreviewLive();
-  console.log("Salvo con palette:", selectedPalette, "e colori:", bgColor, cardColor, borderColor, textColor);
+
+  console.log("Salvo con palette:", palette_color, "e colori:", bgColor, cardColor, borderColor, textColor, navbarColor);
 }
 
 async function saveSommelierSettings() {
