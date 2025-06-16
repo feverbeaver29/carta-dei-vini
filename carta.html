@@ -373,9 +373,22 @@ function toggleSommelier() {
 
   const popup = document.getElementById("sommelierPopup");
     if (popup) {
-      popup.style.backgroundColor =
-        ristorante?.bg_color || window.paletteColors.background || "#fff9f4";
-    }
+  const useCustom = ristorante?.palette_color === "custom";
+
+  popup.style.backgroundColor = useCustom
+    ? (ristorante.card_color || "#ffffff")
+    : (window.paletteColors.cardBackground || "#ffffff");
+
+  popup.style.borderColor = useCustom
+    ? (ristorante.border_color || "#cccccc")
+    : (window.paletteColors.borderColor || "#cccccc");
+
+  popup.style.color = useCustom
+    ? (ristorante.text_color || "#000000")
+    : (window.paletteColors.textColor || "#000000");
+
+  popup.style.boxShadow = window.paletteColors.boxShadow || "0 2px 6px rgba(0,0,0,0.15)";
+}
 
     const input = document.getElementById("foodInput");
     if (input) {
