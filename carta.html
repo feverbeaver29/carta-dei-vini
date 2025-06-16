@@ -601,7 +601,8 @@ if (ristorante) {
   }
 }
 
-// ✅ Spostato fuori dal blocco if precedente
+window.ristorantePalette = ristorante.palette_color;
+
 if (ristorante.palette_color === "custom") {
   window.paletteOverrideLive = true;
   applyCustomBoxStyles();
@@ -615,11 +616,6 @@ if (ristorante.palette_color === "custom") {
     if (nav) nav.style.backgroundColor = ristorante.navbar_color;
   }
 }
-
-  window.ristorantePalette = ristorante.palette_color;
-  if (window.ristorantePalette === "custom") {
-    window.paletteOverrideLive = true;
-  }
 }
 
 function goBack() {
