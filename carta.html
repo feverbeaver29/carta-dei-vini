@@ -1174,21 +1174,23 @@ window.showSubcategories = function (category) {
   document.getElementById('wine-list').style.display = 'none';
 };
 
-
 (async () => {
   await fetchCategoryOrder();
   await loadRestaurantData();
   await loadWineData();
 
-  showCategories();
-
-  // 💡 Applica la palette DOPO che le categorie sono visibili
+  // ⚠️ Attendi un attimo prima di mostrare le categorie
   setTimeout(() => {
-    if (window.paletteOverrideLive && window.ristorantePalette === "custom") {
-      applyCustomBoxStyles();
-    } else {
-      applyPalette(window.ristorantePalette);
-    }
+    showCategories();
+
+    // 💡 Riapplika i colori dopo che la UI è disegnata
+    setTimeout(() => {
+      if (window.paletteOverrideLive && window.ristorantePalette === "custom") {
+        applyCustomBoxStyles();
+      } else {
+        applyPalette(window.ristorantePalette);
+      }
+    }, 100);
   }, 100);
 })();
 
