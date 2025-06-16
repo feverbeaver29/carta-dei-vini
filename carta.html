@@ -513,7 +513,7 @@ cardsHtml = rawBlocks.map(block => {
   if (!nomeVino || !prezzo || !motivazione) return '';
 
   return `
-    <div class="sommelier-card" style="background:${cardBg}; border:1px solid ${cardBorder}; border-radius:12px; padding:15px; margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.06); color: ${cardText};">
+    <div class="sommelier-card" style="background:${responseBg}; border:1px solid ${cardBorder}; border-radius:12px; padding:15px; margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.06); color: ${cardText};">
       <div class="vino-header" style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap;">
         <div style="font-weight:600; font-size:1em; flex:1;">${nomeVino}</div>
         <div style="font-size:0.95em; color:${cardAccent}; white-space:nowrap;">${prezzo}</div>
