@@ -54,7 +54,9 @@ nav {
   padding: 0.5em 1em;
   border-bottom: 1px solid #ddd;
   z-index: 1000;
+  min-height: 60px; /* altezza minima, ma si adatta */
 }
+
 nav button {
   background: none;
   border: none;
@@ -599,6 +601,7 @@ if (ristorante) {
     ensureFontLoaded(ristorante.name_font);
     nameElem.appendChild(span);
   }
+  setTimeout(() => aggiornaAltezzaNavbar(), 20);
 }
 
 window.ristorantePalette = ristorante.palette_color;
