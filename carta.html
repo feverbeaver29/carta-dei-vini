@@ -1032,8 +1032,9 @@ if (event.data?.action === "updatePaletteLive") {
     window.ristorantePalette = palette;
     applyPalette(palette);
   }
-  if (palette !== "custom" && nav) {
-  let fallbackColor = background;
+if (palette !== "custom" && nav) {
+  let fallbackColor;
+
   switch (palette) {
     case "rosso": fallbackColor = "#ffcccc"; break;
     case "oro": fallbackColor = "#fdf2c0"; break;
@@ -1046,9 +1047,12 @@ if (event.data?.action === "updatePaletteLive") {
     case "notte-blu": fallbackColor = "#021639"; break;
     case "vino-rosso": fallbackColor = "#6e003f"; break;
     case "tortora": fallbackColor = "#d6ccc2"; break;
+    default: fallbackColor = "#ffffff"; // Fallback finale
   }
+
   nav.style.backgroundColor = fallbackColor;
 }
+
 }
 
   if (event.data?.action === "checkSubcategoryContext") {
