@@ -612,10 +612,7 @@ if (ristorante.font) {
   if (ristorante.bg_color) {
   document.body.style.backgroundColor = ristorante.bg_color;
 }
-if (ristorante.navbar_color) {
-  const nav = document.querySelector("nav");
-  if (nav) nav.style.backgroundColor = ristorante.navbar_color;
-}
+
   if (ristorante.card_color) {
     document.querySelectorAll('.category, .subcategory, .wine-card').forEach(el => {
       el.style.backgroundColor = ristorante.card_color;
@@ -848,7 +845,7 @@ if (sommelierBtn) {
 }
 const nav = document.querySelector("nav");
 if (nav) {
-  nav.style.backgroundColor = typeof navbar_color !== "undefined" ? navbar_color : background;
+  nav.style.backgroundColor = typeof navbarColor !== "undefined" ? navbarColor : background;
 }
 
 window.paletteColors = {
