@@ -404,20 +404,12 @@ popup.style.color = useCustom
 popup.style.boxShadow = palette && window.paletteColors?.boxShadow || "0 2px 6px rgba(0,0,0,0.15)";
 }
 
-    const input = document.getElementById("foodInput");
-    if (input) {
-      input.style.backgroundColor = "#ffffff";
-      input.style.color = "#000000";
- input.style.backgroundColor = useCustom
-  ? (ristorante.bg_color || "#ffffff")
-  : (palette && window.paletteColors?.background) || "#ffffff";
+const input = document.getElementById("foodInput");
+if (input) {
+  input.style.backgroundColor = "#ffffff"; // sempre bianco
+  input.style.color = "#000000"; // sempre nero
+}
 
-const textColor = useCustom
-  ? getContrastingTextColor(input.style.backgroundColor)
-  : (palette && window.paletteColors?.textColor) || "#000000";
-
-input.style.color = textColor;
-    }
   document.getElementById('foodInput').focus();
   history.pushState({ sommelier: true }, '', '#sommelier');
   sommelierAperto = true;
