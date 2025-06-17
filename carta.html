@@ -508,6 +508,12 @@ const vignetteColor = useCustom
   ? (ristorante.border_color || "#cccccc")
   : (palette && window.paletteColors?.borderColor) || "#cccccc";
 
+  const prezzoColor = getContrastingTextColor(responseBg);
+
+  const vignetteTextColor = useCustom
+  ? getContrastingTextColor(vignetteColor)
+  : (palette && window.paletteColors?.textColor) || "#000000";
+
 const textColor = useCustom
   ? getContrastingTextColor(responseBg)
   : (palette && window.paletteColors?.textColor) || "#000000";
@@ -530,7 +536,7 @@ return `
   <div class="sommelier-card" style="background:${responseBg}; border:1px solid ${vignetteColor}; border-radius:12px; padding:15px; margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.06); color: ${textColor};">
     <div class="vino-header" style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap;">
       <div style="font-weight:600; font-size:1em; flex:1;">${nomeVino}</div>
-      <div style="font-size:0.95em; color:${vignetteColor}; white-space:nowrap;">${prezzo}</div>
+      <div style="font-size:0.95em; color:${prezzoColor}; white-space:nowrap;">${prezzo}</div>
     </div>
     ${uvaggio ? `<div style="font-size:0.9em; color:#666; margin-top:4px;">Uvaggio: ${uvaggio}</div>` : ""}
     <div style="margin-top:10px; font-style:italic; font-size:0.95em;">${motivazione}</div>
@@ -557,10 +563,10 @@ suggestion.innerHTML = `
 
     <div style="position: relative; background: ${responseBg}; border: 1px solid ${vignetteColor}; border-radius:16px; padding:16px 18px; max-width:80%; box-shadow: ${shadow}; color: ${textColor};">
       <div style="position: absolute; top: 20px; left: -10px; width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-right: 10px solid ${vignetteColor};"></div>
-      <strong style="color:${vignetteColor}; font-size: 1em;">Il nostro sommelier ti consiglia:</strong>
+      <strong style="color:${vignetteTextColor}; font-size: 1em;">Il nostro sommelier ti consiglia:</strong>
       <div style="margin-top: 8px;">${cardsHtml}</div>
       ${storico}
-      <div style="text-align:right; font-size:0.85em; color:${vignetteColor}; margin-top:8px;">— Il tuo Sommelier Virtuale 🍷</div>
+      <div style="text-align:right; font-size:0.85em; color:${vignetteTextColor}; margin-top:8px;">— Il tuo Sommelier Virtuale 🍷</div>
     </div>
   </div>
 `;
