@@ -1397,27 +1397,6 @@ document.getElementById("sommelierLogoUpload").addEventListener("change", async 
   }
 });
 
-
-// RIMOZIONE LOGO SOMMELIER
-document.getElementById("removeSommelierLogoBtn").addEventListener("click", async () => {
-  const img = document.getElementById("sommelierLogoPreviewImg");
-  const fileName = img.src.split("/").pop().split("?")[0];
-
-  await supabase.storage.from("sommelier").remove([fileName]);
-  await supabase.from("ristoranti").update({ sommelier_url: null }).eq("id", RESTAURANT_ID);
-
-  img.src = "sommelier.png";
-  img.style.display = "block";
-  document.getElementById("removeSommelierLogoBtn").style.display = "none";
-
-  const iframe = document.getElementById("previewFrame");
-  if (iframe?.contentWindow) {
-    iframe.contentWindow.postMessage({ action: "updateSommelierLogo", url: "sommelier.png" }, "*");
-  }
-
-  alert("Logo del sommelier rimosso!");
-});
-
 window.addEventListener("scroll", () => {
   const sticky = document.querySelector(".sticky-header");
   if (window.scrollY > 10) {
