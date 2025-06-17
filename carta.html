@@ -408,9 +408,13 @@ popup.style.boxShadow = palette && window.paletteColors?.boxShadow || "0 2px 6px
     if (input) {
       input.style.backgroundColor = "#ffffff";
       input.style.color = "#000000";
-      input.style.backgroundColor = useCustom
+ input.style.backgroundColor = useCustom
   ? (ristorante.bg_color || "#ffffff")
   : (palette && window.paletteColors?.background) || "#ffffff";
+
+const textColor = useCustom
+  ? getContrastingTextColor(input.style.backgroundColor)
+  : (palette && window.paletteColors?.textColor) || "#000000";
 
 input.style.color = textColor;
     }
