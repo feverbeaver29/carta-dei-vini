@@ -703,6 +703,7 @@ function applyPalette(palette) {
     case "rosso":
       primary = "#b3001b";
       background = "#fff5f5";
+      navbarColor = "#ffcccc";
       cardBackground = "#ffe5e5";
       borderColor = "#990014";
       textColor = "#330000";
@@ -712,6 +713,7 @@ function applyPalette(palette) {
     case "oro":
       primary = "#c29d2e";
       background = "#fffdf0";
+      navbarColor = "#fdf2c0";
       cardBackground = "#fef6d8";
       borderColor = "#b38e2e";
       textColor = "#4a3b00";
@@ -721,6 +723,7 @@ function applyPalette(palette) {
     case "blu-elegante":
       primary = "#103d5e";
       background = "#f2f7fc";
+      navbarColor = "#cce0f2";
       cardBackground = "#e4eff9";
       borderColor = "#0b2e4b";
       textColor = "#0b1c2d";
@@ -730,6 +733,7 @@ function applyPalette(palette) {
     case "verde-salvia":
       primary = "#4a715a";
       background = "#f4f9f5";
+      navbarColor = "#e0f0e4";
       cardBackground = "#e5f1e8";
       borderColor = "#3a5948";
       textColor = "#273e32";
@@ -739,6 +743,7 @@ function applyPalette(palette) {
     case "grigio-minimal":
       primary = "#444";
       background = "#f7f7f7";
+      navbarColor = "#eeeeee";
       cardBackground = "#ffffff";
       borderColor = "#cccccc";
       textColor = "#222222";
@@ -748,6 +753,7 @@ function applyPalette(palette) {
     case "black-white":
       primary = "#e0e0e0";
       background = "#121212";
+      navbarColor = "#1a1a1a";
       cardBackground = "#1e1e1e";
       borderColor = "#3a3a3a";
       textColor = "#ffffff";
@@ -757,6 +763,7 @@ function applyPalette(palette) {
     case "crema-nero":
       primary = "#000000";
       background = "#fffaf0";
+      navbarColor = "#fff3dd";
       cardBackground = "#ffffff";
       borderColor = "#000000";
       textColor = "#000000";
@@ -796,6 +803,7 @@ function applyPalette(palette) {
       case "tortora":
       primary = "#7e7064";
       background = "#f8f5f2";
+      navbar_color = "#d6ccc2";
       cardBackground = "#eeeae6";
       borderColor = "#6e6156";
       textColor = "#2e2b28";
@@ -1024,6 +1032,23 @@ if (event.data?.action === "updatePaletteLive") {
     window.ristorantePalette = palette;
     applyPalette(palette);
   }
+  if (palette !== "custom" && nav) {
+  let fallbackColor = background;
+  switch (palette) {
+    case "rosso": fallbackColor = "#ffcccc"; break;
+    case "oro": fallbackColor = "#fdf2c0"; break;
+    case "blu-elegante": fallbackColor = "#cce0f2"; break;
+    case "verde-salvia": fallbackColor = "#e0f0e4"; break;
+    case "grigio-minimal": fallbackColor = "#eeeeee"; break;
+    case "black-white": fallbackColor = "#1a1a1a"; break;
+    case "crema-nero": fallbackColor = "#fff3dd"; break;
+    case "tramonto": fallbackColor = "#c65a1e"; break;
+    case "notte-blu": fallbackColor = "#021639"; break;
+    case "vino-rosso": fallbackColor = "#6e003f"; break;
+    case "tortora": fallbackColor = "#d6ccc2"; break;
+  }
+  nav.style.backgroundColor = fallbackColor;
+}
 }
 
   if (event.data?.action === "checkSubcategoryContext") {
