@@ -51,7 +51,7 @@ if (boost) {
 
 const prompt = `Sei un sommelier elegante e professionale. Ecco una lista di vini disponibili nel ristorante:\n${vini.map(w => `- ${w.nome} (${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || ''}, prezzo: ${w.prezzo})`).join("\n")}
 
-Abbina da ${min} a ${max} vini della lista al piatto: "${piatto}".
+Abbina da ${min} a ${max} vini della lista per accompagnare tutto questo pasto: "${piatto}". Considera che sono più portate, quindi cerca vini versatili che si sposino bene con più piatti.
 
 Per ogni vino consigliato, rispondi con questo formato preciso:
 
