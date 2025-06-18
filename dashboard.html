@@ -304,8 +304,21 @@ footer {
 }
 
 /* Mobile */
-/* Mobile */
 @media (max-width: 768px) {
+  .accordion-content {
+    transition: all 0.3s ease;
+    display: none;
+  }
+  .accordion.open .accordion-content {
+    display: block;
+  }
+  .accordion-header {
+    cursor: pointer;
+    padding: 10px 0;
+    font-weight: bold;
+    border-bottom: 1px solid #ccc;
+  }
+  
     .desktop-nav {
     display: none !important;
   }
@@ -532,7 +545,7 @@ footer {
 </nav>
 </header>
 
-  <main>
+<main>
   <!-- SEZIONE IMPOSTAZIONI CARTA -->
   <div id="cartaSettings">
     <div class="section" id="cartaSection">
@@ -540,61 +553,60 @@ footer {
       <div id="impostazioniCarta" class="dashboard-grid">
         <h2>Impostazioni Carta dei Vini</h2>
 
-        <details>
-        <summary><strong>Nome o Logo</strong></summary>
-        <div style="padding-top: 10px;">
-          <label for="displayName">Nome da visualizzare</label>
-          <input type="text" id="displayName">
-          <div id="nameOptions" style="margin-top: 12px;">
-          <label>Font Nome:
-            <select id="nameFont">
-              <option value="Edu NSW ACT Hand Pre">Corsivo a mano</option>
-              <option value="sans-serif">Sans Serif</option>
-              <option value="Lavishly Yours">Calligrafico</option>
-              <option value="cursive">Cursive</option>
-              <option value="monospace">Monospace</option>
-              <option value="Kolker Brush">Pennello</option>
-            <option value="custom">Altri font...</option>
-            </select>
-
-          </label>
-          <label>Dimensione Nome:
-            <input type="range" id="nameSize" min="20" max="40" value="24"> px
-          </label><br>
-          <label>Colore Nome:
-            <input type="color" id="nameColor" value="#000000">
-          </label><br>
-          <label><input type="checkbox" id="nameBold"> Grassetto</label>
+        <!-- BLOCCO: Nome o Logo -->
+        <div class="impostazione accordion">
+          <h3 class="accordion-header">Nome o Logo</h3>
+          <div class="accordion-content">
+            <label for="displayName">Nome da visualizzare</label>
+            <input type="text" id="displayName">
+            <div id="nameOptions">
+              <label>Font Nome:
+                <select id="nameFont">
+                  <option value="Edu NSW ACT Hand Pre">Corsivo a mano</option>
+                  <option value="sans-serif">Sans Serif</option>
+                  <option value="Lavishly Yours">Calligrafico</option>
+                  <option value="cursive">Cursive</option>
+                  <option value="monospace">Monospace</option>
+                  <option value="Kolker Brush">Pennello</option>
+                  <option value="custom">Altri font...</option>
+                </select>
+              </label>
+              <label>Dimensione Nome:
+                <input type="range" id="nameSize" min="20" max="40" value="24"> px
+              </label>
+              <label>Colore Nome:
+                <input type="color" id="nameColor" value="#000000">
+              </label>
+              <label><input type="checkbox" id="nameBold"> Grassetto</label>
+            </div>
+            <label for="logoUpload">oppure carica il logo del tuo ristorante</label>
+            <input type="file" id="logoUpload" accept="image/*">
+            <div id="logoOptions" style="display: none; margin-top: 12px;">
+              <label>Dimensione Logo:
+                <input type="range" id="logoSize" min="30" max="120" value="40"> px
+              </label>
+            </div>
+            <button class="mini-save-btn" onclick="saveSettings()">Salva</button>
+          </div>
         </div>
 
-        <label for="logoUpload">oppure carica il logo del tuo ristorante</label>
-        <input type="file" id="logoUpload" accept="image/*">
-        <div id="logoOptions" style="display: none; margin-top: 12px;">
-          <label>Dimensione Logo:
-            <input type="range" id="logoSize" min="30" max="120" value="40"> px
-          </label><br>
-            </div>
-          </div>
-          <button class="mini-save-btn" onclick="saveSettings()">Salva</button>
-        </details>
+        <!-- BLOCCO: Stile Carta -->
+        <div class="impostazione accordion">
+          <h3 class="accordion-header">Stile Carta dei Vini</h3>
+          <div class="accordion-content">
+            <label for="fontSelector">Font principale</label>
+            <select id="fontSelector">
+              <option value="Arial" style="font-family: Arial;">Arial</option>
+              <option value="Montserrat" style="font-family: Montserrat;">Montserrat</option>
+              <option value="Raleway" style="font-family: Raleway;">Raleway</option>
+              <option value="Dancing Script" style="font-family: 'Dancing Script';">Dancing Script</option>
+              <option value="Playfair Display" style="font-family: 'Playfair Display';">Playfair Display</option>
+              <option value="custom">Altri font...</option>
+            </select>
 
-
-        <details>
-      <summary><strong>Stile Carta dei Vini</strong></summary>
-      <div style="padding-top: 10px;">
-        <label for="fontSelector">Font principale</label>
-        <select id="fontSelector">
-          <option value="Arial" style="font-family: Arial;">Arial</option>
-          <option value="Montserrat" style="font-family: Montserrat;">Montserrat</option>
-          <option value="Raleway" style="font-family: Raleway;">Raleway</option>
-          <option value="Dancing Script" style="font-family: 'Dancing Script';">Dancing Script</option>
-          <option value="Playfair Display" style="font-family: 'Playfair Display';">Playfair Display</option>
-          <option value="custom">Altri font...</option>
-        </select>
-
-        <label for="paletteSelector">Palette Colori</label>
-          <div class="palette-option">
-            <select id="paletteSelector" onchange="toggleCustomColorPicker()">
+            <label for="paletteSelector">Palette Colori</label>
+            <div class="palette-option">
+              <select id="paletteSelector" onchange="toggleCustomColorPicker()">
                 <option value="rosso" data-palette="rosso">Rosso</option>
                 <option value="oro" data-palette="oro">Oro</option>
                 <option value="blu-elegante" data-palette="blu-elegante">Blu Elegante</option>
@@ -607,12 +619,12 @@ footer {
                 <option value="notte-blu" data-palette="notte-blu">notte-blu</option>
                 <option value="tramonto" data-palette="tramonto">tramonto</option>
                 <option value="custom" data-palette="custom">🎨 Personalizzato</option>
-            </select>
-          </div>
-          <div id="customOptions" style="display: none; margin-top: 12px;">
-          <div style="background: #f9f9f9; padding: 16px; border-radius: 10px; border: 1px solid #ddd;">
-            
-            <!-- TITOLO BEN SEPARATO -->
+              </select>
+            </div>
+
+            <div id="customOptions" style="display: none; margin-top: 12px;">
+              <div style="background: #f9f9f9; padding: 16px; border-radius: 10px; border: 1px solid #ddd;"></div>
+              <!-- TITOLO BEN SEPARATO -->
             <div style="font-weight: 600; font-size: 1em; margin-bottom: 16px; text-align: left;">
               🎨 Personalizzazione Colori
             </div>
@@ -644,42 +656,46 @@ footer {
                 <label for="navbarColorPicker" style="flex: 1;">Colore navbar</label>
                 <input type="color" id="navbarColorPicker" style="width: 36px; height: 28px; border-radius: 4px; border: 1px solid #ccc;">
               </div>
-
               </div>
             </div>
+            <button class="mini-save-btn" onclick="saveSettings()">Salva</button>
           </div>
-          <button class="mini-save-btn" onclick="saveSettings()">Salva</button>
-        </details>
+        </div>
 
         <div id="saveMessage" style="margin-top: 10px; color: green; display: none;">
           ✅ Impostazioni salvate con successo
         </div>
 
-        <details>
-          <summary><strong>Ordina le Voci</strong></summary>
-          <div style="padding: 8px 0;">
-            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <!-- BLOCCO: Ordina Voci -->
+        <div class="impostazione accordion">
+          <h3 class="accordion-header">Ordina le Voci</h3>
+          <div class="accordion-content">
+            <div>
               <button class="mini-save-btn" id="ordinaCategorieBtn" onclick="toggleReorder('categorie')">Ordina Categorie</button>
               <button class="mini-save-btn" id="ordinaSottocategorieBtn" onclick="toggleReorder('sottocategorie')">Ordina Sottocategorie</button>
             </div>
-          </div>
-          <label for="wineOrder">Ordina i vini per:</label>
+            <label for="wineOrder">Ordina i vini per:</label>
             <select id="wineOrder">
               <option value="prezzo">Prezzo</option>
               <option value="annata">Annata</option>
               <option value="nome">Alfabetico</option>
             </select>
-        </details>
+          </div>
+        </div>
+
+        <div id="saveMessage">✅ Impostazioni salvate con successo</div>
+      </div>
 
       <!-- Colonna destra: anteprima -->
       <div id="mockupWrapper">
         <div class="mockup">
-          <iframe id="previewFrame" style="width:100%; height:100%; border:none;" sandbox="allow-scripts allow-same-origin"></iframe>
+          <iframe id="previewFrame"></iframe>
         </div>
       </div>
     </div>
   </div>
-  </div>
+</main>
+
 
 <!-- SEZIONE IMPOSTAZIONI SOMMELIER -->
 <div id="sommelierSettings" class="section" style="display: none;">
@@ -790,6 +806,12 @@ textColor = document.getElementById("textColorPicker").value;
   }
 }
 }
+document.querySelectorAll('.accordion-header').forEach(header => {
+  header.addEventListener('click', () => {
+    const parent = header.closest('.accordion');
+    parent.classList.toggle('open');
+  });
+});
 
   function updateFontLivePreview() {
   const font = document.getElementById("fontSelector").value;
