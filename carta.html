@@ -315,6 +315,14 @@ button, .save-btn {
   <div id="sommelierPopup" class="popup">
     <button class="close-btn" onclick="closeSommelierPopup()">✖</button>
     <h3>Dimmi cosa mangerai — anche più piatti — e io ti consiglierò il vino giusto! 🍷</h3>
+    <select id="priceFilter" style="margin-bottom: 12px; width: 100%; padding: 10px; font-size: 1em; border-radius: 8px; border: 1px solid #ccc;">
+  <option value="">Indifferente (nessun limite di prezzo)</option>
+  <option value="25">Massimo €25</option>
+  <option value="35">Massimo €35</option>
+  <option value="45">Massimo €45</option>
+  <option value="60">Massimo €60</option>
+  <option value="100">Massimo €100</option>
+</select>
     <input type="text" id="foodInput" placeholder="Usa le virgole per separare i piatti!!" onkeydown="handleSommelierKey(event)">
     <div id="wineSuggestion" style="margin-top: 15px; font-size: 0.95em;"></div>
   </div>
@@ -479,12 +487,20 @@ async function suggestWine() {
 
   suggestion.innerHTML = "Sto pensando...";
 
-  try {
-    const response = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/consiglia-vino", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ vini: wines, piatto: input, ristorante_id: RESTAURANT_ID })
-    });
+try {
+  const priceLimit = document.getElementById("priceFilter").value;
+
+  const response = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/consiglia-vino", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      vini: wines,
+      piatto: input,
+      ristorante_id: RESTAURANT_ID,
+      prezzo_massimo: priceLimit ? parseInt(priceLimit) : null
+    })
+  });
+
 
     const data = await response.json();
     const reply = data.suggestion || "";
