@@ -302,14 +302,23 @@ footer {
 #qrPopupContent button:hover {
   background-color: #800000;
 }
-#impostazioniCarta h2 {
-  text-align: center !important;
-  font-size: 1.1em;
-  margin-bottom: 1em;
+#titoloCartaVini {
+  text-align: center;
+  font-size: 1.6em;
+  margin-bottom: 20px;
+  margin-top: -10px; /* riduce lo spazio sopra */
+  font-family: 'Playfair Display', serif;
+  font-weight: 600;
+  color: #333;
   width: 100%;
 }
 
 @media (max-width: 768px) {
+  #titoloCartaVini {
+    font-size: 1.2em;
+    margin-bottom: 12px;
+  }
+
   /* Accordion */
   .accordion-hidden {
     display: none !important;
@@ -601,8 +610,8 @@ footer {
 <main>
   <!-- SEZIONE IMPOSTAZIONI CARTA -->
   <div id="cartaSettings">
+    <h2>Impostazioni Carta dei Vini</h2>
     <div class="section" id="cartaSection">
-      <h2>Impostazioni Carta dei Vini</h2>
       <!-- Colonna sinistra: impostazioni -->
       <div id="impostazioniCarta" class="dashboard-grid">
         <!-- BLOCCO: Nome o Logo -->
