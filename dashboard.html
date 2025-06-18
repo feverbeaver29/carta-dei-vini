@@ -306,6 +306,9 @@ footer {
 /* Mobile */
 /* Mobile */
 @media (max-width: 768px) {
+    .desktop-nav {
+    display: none !important;
+  }
   main {
     padding: 25px 1em 40px;
   }
@@ -482,8 +485,8 @@ footer {
       <button onclick="showQRCode()">Scarica QR Code</button>
       <button onclick="logout()">Logout</button>
     </nav>
-</header>
-<nav class="desktop-nav">
+
+    <nav class="desktop-nav">
   <button onclick="showSettings('carta')">Impostazioni Carta dei Vini</button>
   <button onclick="showSettings('sommelier')">Impostazioni Sommelier Virtuale</button>
   <button onclick="goTo('admin.html')">Gestione Vini</button>
@@ -491,6 +494,7 @@ footer {
   <button onclick="showQRCode()">Scarica QR Code</button>
   <button onclick="logout()">Logout</button>
 </nav>
+</header>
 
   <main>
   <!-- SEZIONE IMPOSTAZIONI CARTA -->
