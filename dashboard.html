@@ -474,12 +474,18 @@ footer {
 }
 
 #impostazioniCarta details {
-  all: unset;
-  display: block;
+  display: block !important;
+  border: none;
+  margin: 0;
+  padding: 0;
 }
 
 #impostazioniCarta summary {
-  display: none;
+  display: none !important;
+}
+#impostazioniCarta > details > div {
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
 }
 
   #mockupWrapper {
