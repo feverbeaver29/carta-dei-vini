@@ -98,9 +98,9 @@ button, .save-btn {
   gap: 1em;
 }
 .category-list {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1em;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 1em !important;
 }
 .subcategory {
   text-align: center;
@@ -1229,6 +1229,9 @@ window.showCategories = function () {
     div.textContent = display.charAt(0).toUpperCase() + display.slice(1).toLowerCase();
     div.onclick = () => showSubcategories(key);
     container.appendChild(div);
+    container.style.display = 'grid';
+    container.style.gap = '1em';
+
   }
   if (window.paletteOverrideLive && window.ristorantePalette === "custom") {
   applyCustomBoxStyles();
