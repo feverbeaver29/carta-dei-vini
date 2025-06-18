@@ -409,6 +409,13 @@ footer {
 
 /* Desktop layout */
 @media (min-width: 769px) {
+   nav.mobile {
+    display: none !important;
+  }
+
+  .mobile-nav-toggle {
+    display: none !important;
+  }
   .desktop-nav {
     display: flex;
     justify-content: center;
@@ -433,7 +440,7 @@ footer {
     background-color: #b00;
     color: #fff;
   }
-  
+
   #cartaSection {
     display: flex;
     align-items: flex-start;
@@ -477,11 +484,11 @@ footer {
     </nav>
 </header>
 <nav class="desktop-nav">
-  <button onclick="showSettings('carta')">Carta</button>
-  <button onclick="showSettings('sommelier')">Sommelier</button>
-  <button onclick="goTo('admin.html')">Gestione</button>
-  <button onclick="goTo('carta.html')">Anteprima</button>
-  <button onclick="showQRCode()">QR Code</button>
+  <button onclick="showSettings('carta')">Impostazioni Carta dei Vini</button>
+  <button onclick="showSettings('sommelier')">Impostazioni Sommelier Virtuale</button>
+  <button onclick="goTo('admin.html')">Gestione Vini</button>
+  <button onclick="goTo('carta.html')">Visualizza Carta</button>
+  <button onclick="showQRCode()">Scarica QR Code</button>
   <button onclick="logout()">Logout</button>
 </nav>
 
