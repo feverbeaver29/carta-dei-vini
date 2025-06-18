@@ -458,14 +458,30 @@ footer {
     color: #fff;
   }
 
-  #cartaSection {
-    display: flex;
-    align-items: flex-start;
-    gap: 40px;
-  }
-  #impostazioniCarta {
-    flex: 1;
-  }
+#cartaSection {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+#impostazioniCarta {
+  flex: 1;
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+#impostazioniCarta details {
+  all: unset;
+  display: block;
+}
+
+#impostazioniCarta summary {
+  display: none;
+}
+
   #mockupWrapper {
     width: 360px;
     flex-shrink: 0;
