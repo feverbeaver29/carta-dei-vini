@@ -161,7 +161,7 @@ main {
   justify-content: flex-start;
   max-width: 1200px;
   margin: auto;
-  padding: 160px 20px 60px;
+  padding: 80px 20px 60px;
   gap: 40px;
 }
 
@@ -503,6 +503,9 @@ footer {
 
 /* Desktop layout */
 @media (min-width: 769px) {
+  .accordion-header .accordion-icon {
+  display: none;
+}
   .sticky-header {
   display: flex;
   flex-direction: column;
@@ -561,7 +564,7 @@ footer {
   max-width: 700px;
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 16px;
 }
 
 #impostazioniCarta details {
@@ -575,8 +578,11 @@ footer {
   display: none !important;
 }
 #impostazioniCarta > details > div {
-  padding: 12px 0;
+  padding: 6px 0;
   border-bottom: 1px solid #eee;
+}
+#cartaSection {
+  align-items: center;
 }
 
   #mockupWrapper {
@@ -586,6 +592,7 @@ footer {
   }
   .mockup {
     margin-top: 0;
+    margin-bottom: 0;
   }
 }
 
