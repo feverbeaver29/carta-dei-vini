@@ -173,7 +173,8 @@ main {
 #sommelierSettings {
   flex-direction: column;
   display: flex;
-  gap: 16px;
+  gap: 8px; /* ridotto */
+  margin-bottom: 0;
 }
 #sommelierSettings .dashboard-grid {
   display: flex;
@@ -209,9 +210,11 @@ main {
 
 label {
   display: block;
-  margin-top: 20px;
-  font-size: 1.1em;
+  margin-top: 12px;
+  margin-bottom: 4px;
+  font-size: 1em;
 }
+
 input[type="text"], select {
   width: 100%;
   max-width: 400px;
@@ -319,14 +322,14 @@ footer {
     padding: 0;
     background: none;
     border: none;
-    gap: 14px;
+   gap: 8px;
   }
 
-  #impostazioniSommelier {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
+#impostazioniSommelier {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 
   .dashboard-grid label {
     margin-top: 12px;
@@ -625,7 +628,7 @@ footer {
       <div id="boostContainer"></div>
 
       <button type="button" onclick="addBoostInput()" style="
-        margin-top: 10px;
+        margin-top: 6px;
         background: transparent;
         color: #b00;
         border: 1px solid #b00;
@@ -634,7 +637,7 @@ footer {
         font-size: 0.9em;
         cursor: pointer;">+ Aggiungi vino da spingere</button>
 
-      <button class="save-btn" onclick="saveSommelierSettings()">Salva Impostazioni Sommelier</button>
+      <button class="save-btn" style="margin-top: 16px;" onclick="saveSommelierSettings()">Salva Impostazioni Sommelier</button>
     </div>
   </div>
 
