@@ -302,6 +302,12 @@ footer {
 #qrPopupContent button:hover {
   background-color: #800000;
 }
+#impostazioniCarta h2 {
+  text-align: center !important;
+  font-size: 1.1em;
+  margin-bottom: 1em;
+  width: 100%;
+}
 
 @media (max-width: 768px) {
   /* Accordion */
@@ -339,23 +345,19 @@ footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
   padding: 6px 0;
   font-size: 0.95em;
   font-weight: 600;
   color: #b00;
   border-bottom: 1px solid #ccc;
-  width: 100%;
-  margin: 0 auto;
 }
 
 .accordion-header .accordion-icon {
+  display: inline-block;
   margin-left: auto;
-  font-size: 1.2em;
-}
-#impostazioniCarta h2 {
-  text-align: center;
-  font-size: 1.1em;
-  margin-bottom: 1em;
+  min-width: 1.5em;
+  text-align: right;
 }
 
   @keyframes fadeIn {
