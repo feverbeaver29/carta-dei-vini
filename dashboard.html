@@ -304,19 +304,21 @@ footer {
 }
 #titoloCartaVini {
   text-align: center;
-  font-size: 1.6em;
-  margin-bottom: 20px;
-  margin-top: -10px; /* riduce lo spazio sopra */
+  font-size: 1.4em;
+  margin: 0 auto 1em auto;
+  padding: 0;
   font-family: 'Playfair Display', serif;
   font-weight: 600;
   color: #333;
   width: 100%;
+  max-width: 100%;
+  display: block;
 }
 
 @media (max-width: 768px) {
   #titoloCartaVini {
-    font-size: 1.2em;
-    margin-bottom: 12px;
+  font-size: 1.1em;
+  margin-bottom: 12px;
   }
 
   /* Accordion */
@@ -610,7 +612,7 @@ footer {
 <main>
   <!-- SEZIONE IMPOSTAZIONI CARTA -->
   <div id="cartaSettings">
-    <h2>Impostazioni Carta dei Vini</h2>
+    <h2 id="titoloCartaVini">Impostazioni Carta dei Vini</h2>
     <div class="section" id="cartaSection">
       <!-- Colonna sinistra: impostazioni -->
       <div id="impostazioniCarta" class="dashboard-grid">
