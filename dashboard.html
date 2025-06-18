@@ -412,6 +412,16 @@ footer {
 
 /* Desktop layout */
 @media (min-width: 769px) {
+  .sticky-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.8em 0;
+  box-sizing: border-box;
+}
+
    nav.mobile {
     display: none !important;
   }
@@ -419,14 +429,18 @@ footer {
   .mobile-nav-toggle {
     display: none !important;
   }
-  .desktop-nav {
-    display: flex;
-    justify-content: center;
-    gap: 1em;
-    padding: 0.5em 1em;
-    background: #fff;
-    border-bottom: 1px solid #ccc;
-  }
+.desktop-nav {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1em;
+  padding: 0.5em 2em;
+  width: 100%;
+  max-width: none;
+  background: #fff;
+  border-bottom: 1px solid #ccc;
+  box-sizing: border-box;
+}
 
   .desktop-nav button {
     background-color: transparent;
