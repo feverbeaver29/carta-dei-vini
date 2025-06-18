@@ -1060,16 +1060,20 @@ if (palette !== "custom" && nav) {
   let logo = document.getElementById("restaurantLogo");
   const nav = document.querySelector("nav");
 
-  if (!logo && event.data.logoUrl) {
+if (!logo && event.data.logoUrl) {
   logo = document.createElement("img");
   logo.id = "restaurantLogo";
   logo.style.display = "block";
-  logo.style.margin = "0 auto";
-  nav.innerHTML = "";
-  nav.appendChild(logo);
-  setTimeout(() => {
-    aggiornaAltezzaNavbar();
-  }, 50);
+
+  // ✅ Ricrea il contenuto del nav con il bottone goBack incluso
+  nav.innerHTML = `
+    <button onclick="goBack()">⬅</button>
+    <div style="flex: 1; display: flex; justify-content: center;">
+      <div id="restaurantName"></div>
+    </div>
+  `;
+  document.getElementById("restaurantName").appendChild(logo);
+  setTimeout(() => aggiornaAltezzaNavbar(), 50);
 }
 
   if (logo) {
