@@ -305,7 +305,9 @@ footer {
 
 /* Mobile */
 @media (max-width: 768px) {
-  
+  .accordion-hidden {
+  display: none !important;
+}  
 .accordion-icon {
   font-size: 1em;
   margin-left: 8px;
@@ -842,20 +844,24 @@ document.querySelectorAll('.accordion-header').forEach(header => {
     const clicked = header.closest('.accordion');
     const isOpen = clicked.classList.contains('open');
 
-    // Chiudi tutti
+    // Chiudi tutti e rendi tutti visibili
     document.querySelectorAll('.accordion').forEach(acc => {
-      acc.classList.remove('open');
+      acc.classList.remove('open', 'accordion-hidden');
       acc.querySelector(".accordion-icon").textContent = "+";
     });
 
     // Se non era aperto prima, aprilo e nascondi gli altri
     if (!isOpen) {
       clicked.classList.add('open');
-      header.querySelector(".accordion-icon").textContent = "−";
+      clicked.querySelector(".accordion-icon").textContent = "−";
+
+      // Nascondi gli altri
+      document.querySelectorAll('.accordion').forEach(acc => {
+        if (acc !== clicked) acc.classList.add('accordion-hidden');
+      });
     }
   });
 });
-
 
   function updateFontLivePreview() {
   const font = document.getElementById("fontSelector").value;
