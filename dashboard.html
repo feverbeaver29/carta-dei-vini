@@ -305,19 +305,38 @@ footer {
 
 /* Mobile */
 @media (max-width: 768px) {
+  .accordion {
+  margin-bottom: 12px;
+  border-bottom: 1px solid #eee;
+}
   .accordion-content {
-    transition: all 0.3s ease;
+      max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  padding-left: 6px;
     display: none;
+    animation: fadeIn 0.4s ease;
   }
   .accordion.open .accordion-content {
+      max-height: 1000px; /* arbitrario ma grande abbastanza */
+  padding-top: 6px;
     display: block;
   }
   .accordion-header {
     cursor: pointer;
-    padding: 10px 0;
-    font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 1em;
+  font-weight: 600;
+  color: #b00;
     border-bottom: 1px solid #ccc;
   }
+  @keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
   
     .desktop-nav {
     display: none !important;
@@ -555,7 +574,7 @@ footer {
 
         <!-- BLOCCO: Nome o Logo -->
         <div class="impostazione accordion">
-          <h3 class="accordion-header">Nome o Logo</h3>
+          <h3 class="accordion-header">Nome o Logo <span class="accordion-icon">+</span></h3>
           <div class="accordion-content">
             <label for="displayName">Nome da visualizzare</label>
             <input type="text" id="displayName">
@@ -592,7 +611,7 @@ footer {
 
         <!-- BLOCCO: Stile Carta -->
         <div class="impostazione accordion">
-          <h3 class="accordion-header">Stile Carta dei Vini</h3>
+          <h3 class="accordion-header">Stile carta dei vini<span class="accordion-icon">+</span></h3>
           <div class="accordion-content">
             <label for="fontSelector">Font principale</label>
             <select id="fontSelector">
@@ -668,7 +687,7 @@ footer {
 
         <!-- BLOCCO: Ordina Voci -->
         <div class="impostazione accordion">
-          <h3 class="accordion-header">Ordina le Voci</h3>
+          <h3 class="accordion-header">Ordina le voci<span class="accordion-icon">+</span></h3>
           <div class="accordion-content">
             <div>
               <button class="mini-save-btn" id="ordinaCategorieBtn" onclick="toggleReorder('categorie')">Ordina Categorie</button>
@@ -810,6 +829,10 @@ document.querySelectorAll('.accordion-header').forEach(header => {
   header.addEventListener('click', () => {
     const parent = header.closest('.accordion');
     parent.classList.toggle('open');
+    
+    // Cambia icona + / −
+    const icon = header.querySelector(".accordion-icon");
+    if (icon) icon.textContent = parent.classList.contains("open") ? "−" : "+";
   });
 });
 
