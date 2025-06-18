@@ -1100,6 +1100,11 @@ showSettings('carta');
 
 document.getElementById("logoUpload").addEventListener("change", async (event) => {
   const file = event.target.files[0];
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+if (!allowedTypes.includes(file.type)) {
+  return alert("Formato non supportato. Usa JPG, PNG, WEBP o GIF.");
+}
+
   if (!file) return;
 
   const ext = file.name.split('.').pop();
@@ -1363,6 +1368,11 @@ async function saveSommelierSettings() {
 
 document.getElementById("sommelierLogoUpload").addEventListener("change", async (event) => {
   const file = event.target.files[0];
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+if (!allowedTypes.includes(file.type)) {
+  return alert("Formato non supportato. Usa JPG, PNG, WEBP o GIF.");
+}
+
   if (!file) return;
 
   const ext = file.name.split('.').pop();
