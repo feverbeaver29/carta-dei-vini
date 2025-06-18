@@ -409,6 +409,31 @@ footer {
 
 /* Desktop layout */
 @media (min-width: 769px) {
+  .desktop-nav {
+    display: flex;
+    justify-content: center;
+    gap: 1em;
+    padding: 0.5em 1em;
+    background: #fff;
+    border-bottom: 1px solid #ccc;
+  }
+
+  .desktop-nav button {
+    background-color: transparent;
+    color: #b00;
+    border: 1px solid #b00;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background 0.2s ease;
+  }
+
+  .desktop-nav button:hover {
+    background-color: #b00;
+    color: #fff;
+  }
+  
   #cartaSection {
     display: flex;
     align-items: flex-start;
@@ -451,14 +476,15 @@ footer {
       <button onclick="logout()">Logout</button>
     </nav>
 </header>
-<nav class="desktop">
-  <button onclick="showSettings('carta')">Impostazioni Carta dei Vini</button>
-  <button onclick="showSettings('sommelier')">Impostazioni Sommelier Virtuale</button>
-  <button onclick="goTo('admin.html')">Gestisci Carta</button>
-  <button onclick="goTo('carta.html')">Visualizza Carta</button>
-  <button onclick="showQRCode()">Scarica QR Code</button>
+<nav class="desktop-nav">
+  <button onclick="showSettings('carta')">Carta</button>
+  <button onclick="showSettings('sommelier')">Sommelier</button>
+  <button onclick="goTo('admin.html')">Gestione</button>
+  <button onclick="goTo('carta.html')">Anteprima</button>
+  <button onclick="showQRCode()">QR Code</button>
   <button onclick="logout()">Logout</button>
 </nav>
+
   <main>
   <!-- SEZIONE IMPOSTAZIONI CARTA -->
   <div id="cartaSettings">
