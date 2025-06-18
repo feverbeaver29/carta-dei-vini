@@ -839,14 +839,23 @@ textColor = document.getElementById("textColorPicker").value;
 }
 document.querySelectorAll('.accordion-header').forEach(header => {
   header.addEventListener('click', () => {
-    const parent = header.closest('.accordion');
-    parent.classList.toggle('open');
-    
-    // Cambia icona + / −
-    const icon = header.querySelector(".accordion-icon");
-    if (icon) icon.textContent = parent.classList.contains("open") ? "−" : "+";
+    const clicked = header.closest('.accordion');
+    const isOpen = clicked.classList.contains('open');
+
+    // Chiudi tutti
+    document.querySelectorAll('.accordion').forEach(acc => {
+      acc.classList.remove('open');
+      acc.querySelector(".accordion-icon").textContent = "+";
+    });
+
+    // Se non era aperto prima, aprilo e nascondi gli altri
+    if (!isOpen) {
+      clicked.classList.add('open');
+      header.querySelector(".accordion-icon").textContent = "−";
+    }
   });
 });
+
 
   function updateFontLivePreview() {
   const font = document.getElementById("fontSelector").value;
