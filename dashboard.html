@@ -303,87 +303,92 @@ footer {
   background-color: #800000;
 }
 
-/* Mobile */
 @media (max-width: 768px) {
+  /* Accordion */
   .accordion-hidden {
-  display: none !important;
-}  
-.accordion-icon {
-  font-size: 1em;
-  margin-left: 8px;
-}
-  .accordion {
-  margin-bottom: 3px;
-  border-bottom: 1px solid #eee;
-}
-  .accordion-content {
-      max-height: 0;
-  overflow: hidden;
-  transition: all 0.35s ease;
-  padding-left: 6px;
-    display: none;
-    animation: fadeIn 0.4s ease;
-    padding: 6px 6px 10px 6px !important;
-  }
-  .accordion.open .accordion-content {
-      max-height: 1000px; /* arbitrario ma grande abbastanza */
-  padding-top: 6px;
-    display: block;
-  }
-  .accordion-header {
-    cursor: pointer;
-  display: flex;
-  justify-content: center; /* centra il testo */
-  align-items: center;
-  padding: 6px 0;
-  font-size: 0.95em;
-  font-weight: 600;
-  color: #b00;
-    border-bottom: 1px solid #ccc;
-    gap: 8px;
-  }
-  @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-  
-    .desktop-nav {
     display: none !important;
   }
+
+  .accordion,
+  .accordion.open .accordion-content {
+    border-bottom: 1px solid #eee;
+  }
+
+  .accordion {
+    margin-bottom: 3px;
+  }
+
+  .accordion-content {
+    display: none;
+    max-height: 0;
+    overflow: hidden;
+    padding: 6px;
+    transition: all 0.35s ease;
+    animation: fadeIn 0.4s ease;
+  }
+
+  .accordion.open .accordion-content {
+    display: block;
+    max-height: 1000px;
+    padding-top: 6px;
+  }
+
+  .accordion-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    cursor: pointer;
+    font-size: 0.95em;
+    font-weight: 600;
+    color: #b00;
+    border-bottom: 1px solid #ccc;
+  }
+
+  .accordion-icon {
+    font-size: 1em;
+    margin-left: 8px;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Navigazione e struttura */
+  .desktop-nav,
+  nav.desktop {
+    display: none !important;
+  }
+
+  .mobile-nav-toggle {
+    display: block;
+  }
+
   main {
     padding: 25px 1em 40px;
   }
 
-.dashboard-grid {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  padding: 0.25em 12px;
-  gap: 0.25em;
-}
-
-  #sommelierSettings {
-    padding: 0;
-    background: none;
-    border: none;
-   gap: 8px;
+  /* Griglie e layout */
+  .dashboard-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.25em 12px;
+    gap: 0.25em;
   }
 
-#impostazioniSommelier {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.dashboard-grid label,
-.dashboard-grid select,
-.dashboard-grid input,
-.dashboard-grid button {
-  text-align: center;
-  font-size: 0.95em;
-}
   .dashboard-grid label {
     margin-top: 12px;
     font-size: 1em;
+    text-align: center;
   }
 
   .dashboard-grid select,
@@ -394,16 +399,28 @@ footer {
     max-width: 100%;
     font-size: 1em;
     margin-bottom: 0.4em;
+    text-align: center;
   }
 
-.dashboard-grid h2 {
-  width: 100%;
-  max-width: 360px; /* corrisponde alla larghezza dell'iframe/mockup */
-  margin: 0.4em auto 0.6em auto; /* centratore */
-  padding: 0;
-  font-size: 1.05em;
-  text-align: center; /* testo centrato */
-}
+  .dashboard-grid h2 {
+    max-width: 360px;
+    margin: 0.4em auto 0.6em auto;
+    font-size: 1.05em;
+    text-align: center;
+  }
+
+  #sommelierSettings {
+    padding: 0;
+    background: none;
+    border: none;
+    gap: 8px;
+  }
+
+  #impostazioniSommelier {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
 
   #boostContainer {
     display: block;
@@ -416,7 +433,7 @@ footer {
     margin-bottom: 12px;
   }
 
-  /* ✅ Mockup iframe correttamente centrato */
+  /* Mockup */
   .mockup {
     width: 100%;
     max-width: 360px;
@@ -424,19 +441,11 @@ footer {
     margin: 1em auto 30px auto;
   }
 
-  nav.desktop {
-    display: none;
-  }
-
-  .mobile-nav-toggle {
-    display: block;
-  }
-
   #mockupWrapper {
     width: 100%;
     display: flex;
-    justify-content: center; /* ✅ centra il mockup */
-    overflow-x: hidden;      /* ✅ evita scroll orizzontale */
+    justify-content: center;
+    overflow-x: hidden;
   }
 }
 
