@@ -305,17 +305,23 @@ footer {
 
 /* Mobile */
 @media (max-width: 768px) {
+  
+.accordion-icon {
+  font-size: 1em;
+  margin-left: 8px;
+}
   .accordion {
-  margin-bottom: 12px;
+  margin-bottom: 6px;
   border-bottom: 1px solid #eee;
 }
   .accordion-content {
       max-height: 0;
   overflow: hidden;
-  transition: max-height 0.3s ease;
+  transition: all 0.35s ease;
   padding-left: 6px;
     display: none;
     animation: fadeIn 0.4s ease;
+    padding: 4px 0 4px 6px;
   }
   .accordion.open .accordion-content {
       max-height: 1000px; /* arbitrario ma grande abbastanza */
@@ -325,13 +331,14 @@ footer {
   .accordion-header {
     cursor: pointer;
   display: flex;
-  justify-content: space-between;
+  justify-content: center; /* centra il testo */
   align-items: center;
-  padding: 8px 0;
-  font-size: 1em;
+  padding: 6px 0;
+  font-size: 0.95em;
   font-weight: 600;
   color: #b00;
     border-bottom: 1px solid #ccc;
+    gap: 8px;
   }
   @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-4px); }
@@ -348,7 +355,7 @@ footer {
   .dashboard-grid {
     display: flex;
     flex-direction: column;
-    align-items: stretch;
+    align-items: center; /* centra tutto orizzontalmente */
     padding: 0.25em 1em;
     gap: 0.4em;
   }
@@ -365,7 +372,12 @@ footer {
   flex-direction: column;
   gap: 10px;
 }
-
+.dashboard-grid label,
+.dashboard-grid select,
+.dashboard-grid input,
+.dashboard-grid button {
+  text-align: center;
+}
   .dashboard-grid label {
     margin-top: 12px;
     font-size: 1em;
@@ -404,7 +416,7 @@ footer {
     width: 100%;
     max-width: 360px;
     height: 450px;
-    margin: 1em auto 50px auto;
+    margin: 1em auto 30px auto;
   }
 
   nav.desktop {
