@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    const { vini, piatto, ristorante_id, prezzo_massimo } = await req.json();
+    const { vini, piatto, ristorante_id, prezzo_massimo, colori  } = await req.json();
     const supabaseUrl = "https://ldunvbftxhbtuyabgxwh.supabase.co";
 const supabaseKey = Deno.env.get("SERVICE_ROLE_KEY");
 const headers = { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` };
@@ -53,6 +53,7 @@ const prompt = `Sei un sommelier elegante e professionale. Ecco una lista di vin
 
 Abbina da ${min} a ${max} vini della lista per accompagnare tutto questo pasto: "${piatto}". Considera che sono più portate, quindi cerca vini versatili che si sposino bene con più piatti.
 ${prezzo_massimo ? `\nTutti i vini devono costare al massimo €${prezzo_massimo}.` : ""}
+${Array.isArray(colori) && colori.length < 4 ? `\nLimita la scelta a vini di tipo: ${colori.join(", ")}.` : ""}
 
 Per ogni vino consigliato, rispondi con questo formato preciso:
 
