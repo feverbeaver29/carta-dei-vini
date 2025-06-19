@@ -10,21 +10,22 @@
   --bg-default: #fff9f4;
 }
 #wineTypeDropdown {
-  position: absolute;
-  top: 90px; /* o regolabile dinamicamente */
+  position: fixed; /* ✅ rispetto alla finestra intera */
+  top: 130px;       /* distanza fissa dal top */
   left: 50%;
   transform: translateX(-50%);
   background: #fff;
   border: 1px solid #ccc;
   border-radius: 8px;
-  padding: 8px;
+  padding: 8px 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  z-index: 2000;
+  z-index: 3000; /* sopra tutto */
   display: none;
   animation: slideDown 0.2s ease-out;
   font-size: 0.95em;
   min-width: 260px;
 }
+
 body {
   font-family: sans-serif;
   background: var(--bg-default);
@@ -380,6 +381,13 @@ button, .save-btn {
   Filtra per categoria
   <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.8em;">▼</span>
 </button>
+  </div>
+</div>
+
+    <input type="text" id="foodInput" placeholder="Usa le virgole per separare i piatti!!" onkeydown="handleSommelierKey(event)">
+    <div id="wineSuggestion" style="margin-top: 15px; font-size: 0.95em;"></div>
+  </div>
+</div>
 <div id="wineTypeDropdown" style="
   display: none;
   position: absolute;
@@ -396,13 +404,6 @@ button, .save-btn {
   font-family: inherit;
   animation: slideDown 0.2s ease-out;
 ">
-</div>
-  </div>
-</div>
-
-    <input type="text" id="foodInput" placeholder="Usa le virgole per separare i piatti!!" onkeydown="handleSommelierKey(event)">
-    <div id="wineSuggestion" style="margin-top: 15px; font-size: 0.95em;"></div>
-  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
