@@ -1463,14 +1463,19 @@ function ensureFontLoaded(fontName) {
 function toggleWineTypeDropdown() {
   const dropdown = document.getElementById("wineTypeDropdown");
   dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
-  document.addEventListener("click", function (event) {
+}
+document.addEventListener("click", function (event) {
   const dropdown = document.getElementById("wineTypeDropdown");
-  const button = event.target.closest("button");
-  if (!dropdown.contains(event.target) && (!button || button.textContent !== "Filtra per categoria")) {
+  const toggleBtn = event.target.closest("button");
+
+  if (
+    dropdown.style.display === "block" &&
+    !dropdown.contains(event.target) &&
+    (!toggleBtn || !toggleBtn.textContent.includes("Filtra per categoria"))
+  ) {
     dropdown.style.display = "none";
   }
 });
-}
 </script>
 </body>
 </html>
