@@ -10,20 +10,13 @@
   --bg-default: #fff9f4;
 }
 #wineTypeDropdown {
-  position: fixed; /* ✅ rispetto alla finestra intera */
-  top: 130px;       /* distanza fissa dal top */
-  left: 50%;
-  transform: translateX(-50%);
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 8px 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  z-index: 3000; /* sopra tutto */
-  display: none;
-  animation: slideDown 0.2s ease-out;
-  font-size: 0.95em;
-  min-width: 260px;
+  position: absolute;
+  top: 105%;
+  left: 0;
+  width: 100%; /* ✅ sostituisce min-width */
+  max-width: 260px;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 body {
