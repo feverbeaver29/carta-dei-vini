@@ -329,19 +329,36 @@ button, .save-btn {
   <div id="sommelierPopup" class="popup">
     <button class="close-btn" onclick="closeSommelierPopup()">✖</button>
     <h3>Dimmi cosa mangerai — anche più piatti — e io ti consiglierò il vino giusto! 🍷</h3>
-    <div style="display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap;">
-  <select id="priceFilter" style="flex: 1 1 45%; padding: 10px; font-size: 1em; border-radius: 8px; border: 1px solid #ccc;">
-    <option value="">Indifferente (nessun limite di prezzo)</option>
-    <option value="25">Massimo €25</option>
-    <option value="35">Massimo €35</option>
-    <option value="45">Massimo €45</option>
-    <option value="60">Massimo €60</option>
-    <option value="100">Massimo €100</option>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+  <select id="priceFilter" style="flex: 1 1 48%; padding: 8px; font-size: 0.95em; border-radius: 8px; border: 1px solid #ccc;">
+    <option value="">Indifferente</option>
+    <option value="25">Max €25</option>
+    <option value="35">Max €35</option>
+    <option value="45">Max €45</option>
+    <option value="60">Max €60</option>
+    <option value="100">Max €100</option>
   </select>
 
-  <div style="position: relative; flex: 1 1 45%;">
-    <button type="button" onclick="toggleWineTypeDropdown()" style="width: 100%; padding: 10px; font-size: 1em; border-radius: 8px; border: 1px solid #ccc; background: #fff;">Filtra per colore</button>
-    <div id="wineTypeDropdown" style="display: none; position: absolute; top: 110%; left: 0; background: #fff; border: 1px solid #ccc; border-radius: 8px; padding: 6px 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); z-index: 100; max-height: 200px; overflow-y: auto; min-width: 180px; font-size: 0.9em;"></div>
+  <div style="position: relative; flex: 1 1 48%;">
+    <button type="button" onclick="toggleWineTypeDropdown()" style="width: 100%; padding: 8px; font-size: 0.95em; border-radius: 8px; border: 1px solid #ccc; background: #fff;">
+      Filtra per categoria
+    </button>
+    <div id="wineTypeDropdown" style="
+      display: none;
+      position: absolute;
+      top: 105%;
+      left: 0;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 8px 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      z-index: 100;
+      max-height: 180px;
+      overflow-y: auto;
+      min-width: 100%;
+      font-size: 0.9em;
+    "></div>
   </div>
 </div>
 
@@ -989,12 +1006,17 @@ wines.forEach(w => {
 });
 
 // Ordina alfabeticamente
-categorieUniche.sort((a, b) => a.localeCompare(b));
+if (Array.isArray(categoriaOrder) && categoriaOrder.length) {
+  sortByOrder(categorieUniche, categoriaOrder);
+}
 
 // Costruisci il filtro dinamico
 const dropdown = document.getElementById("wineTypeDropdown");
 dropdown.innerHTML = categorieUniche.map(cat => `
-  <label><input type="checkbox" value="${cat}" checked> ${cat}</label><br>
+  <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+    <input type="checkbox" value="${cat}" checked>
+    <span>${cat}</span>
+  </label>
 `).join("");
 
 switch ((ristorante.ordine_vini || 'prezzo')) {
