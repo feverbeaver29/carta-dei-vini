@@ -674,6 +674,17 @@ async function loadRestaurantData() {
   ristorante = data[0]; // senza const
   ristoranteSommelierURL = ristorante.sommelier_url || "sommelier.png";
 
+  const sommelierBtn = document.getElementById("sommelierBtn");
+const tooltipSommelier = document.getElementById("tooltipSommelier");
+
+if (ristorante?.sommelier_attivo === false) {
+  if (sommelierBtn) sommelierBtn.style.display = "none";
+  if (tooltipSommelier) tooltipSommelier.style.display = "none";
+} else {
+  if (sommelierBtn) sommelierBtn.style.display = "block";
+  if (tooltipSommelier) tooltipSommelier.style.display = "block";
+}
+
   if (ristorante?.sommelier_attivo === false) {
   const sommelierBtn = document.getElementById("sommelierBtn");
   const tooltipSommelier = document.getElementById("tooltipSommelier");
