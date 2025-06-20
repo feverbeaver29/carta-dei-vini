@@ -630,6 +630,8 @@ const res = await fetch(`${SUPABASE_URL}/rest/v1/ristoranti?select=sommelier_att
   });
   const data = await res.json();
   ristorante = data[0]; // senza const
+  console.log("Dati ricevuti da Supabase:", data);
+console.log("Campo sommelier_attivo:", ristorante?.sommelier_attivo);
   ristoranteSommelierURL = ristorante.sommelier_url || "sommelier.png";
 
 if (ristorante.font) {
@@ -688,6 +690,7 @@ window.ristorantePalette = ristorante.palette_color;
 if (!ristorante?.sommelier_attivo) {
   console.log("🔒 Sommelier disattivato: rimuovo elementi");
   document.getElementById("sommelierBtn")?.remove();
+  console.log("✔ sommelier_attivo:", ristorante?.sommelier_attivo);
   document.getElementById("tooltipSommelier")?.remove();
   document.getElementById("sommelierOverlay")?.remove();
   document.getElementById("wineTypeDropdown")?.remove();
