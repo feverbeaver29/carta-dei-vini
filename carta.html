@@ -1463,18 +1463,20 @@ function ensureFontLoaded(fontName) {
 function toggleWineTypeDropdown() {
   const dropdown = document.getElementById("wineTypeDropdown");
   const button = document.querySelector("button[onclick='toggleWineTypeDropdown()']");
+  const popup = document.getElementById("sommelierPopup");
+
+  if (!button || !dropdown || !popup) return;
 
   if (dropdown.style.display === "block") {
     dropdown.style.display = "none";
     return;
   }
 
-  const rect = button.getBoundingClientRect();
-  const scrollTop = window.scrollY || document.documentElement.scrollTop;
-  const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
+  const popupRect = popup.getBoundingClientRect();
+  const buttonRect = button.getBoundingClientRect();
 
-  dropdown.style.top = `${rect.bottom + scrollTop + 4}px`;
-  dropdown.style.left = `${rect.left + scrollLeft}px`;
+  dropdown.style.top = `${popupRect.top + buttonRect.bottom - popupRect.top + 4}px`;
+  dropdown.style.left = `${buttonRect.left}px`;
   dropdown.style.display = "block";
 }
 
