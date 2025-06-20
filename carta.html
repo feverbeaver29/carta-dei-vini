@@ -13,15 +13,15 @@
   position: absolute;
   top: 105%;
   left: 0;
-  z-index: 3000;
+  right: 0;
   background: #fff;
   border: 1px solid #ccc;
   border-radius: 8px;
   padding: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 3000;
   display: none;
   font-size: 0.95em;
-  min-width: 220px;
   animation: slideDown 0.2s ease-out;
 }
 
@@ -380,13 +380,6 @@ button, .save-btn {
   Filtra per categoria
   <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.8em;">▼</span>
 </button>
-  </div>
-</div>
-
-    <input type="text" id="foodInput" placeholder="Usa le virgole per separare i piatti!!" onkeydown="handleSommelierKey(event)">
-    <div id="wineSuggestion" style="margin-top: 15px; font-size: 0.95em;"></div>
-  </div>
-</div>
 <div id="wineTypeDropdown" style="
   display: none;
   position: absolute;
@@ -403,6 +396,13 @@ button, .save-btn {
   font-family: inherit;
   animation: slideDown 0.2s ease-out;
 ">
+</div>
+  </div>
+</div>
+
+    <input type="text" id="foodInput" placeholder="Usa le virgole per separare i piatti!!" onkeydown="handleSommelierKey(event)">
+    <div id="wineSuggestion" style="margin-top: 15px; font-size: 0.95em;"></div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
@@ -1462,22 +1462,9 @@ function ensureFontLoaded(fontName) {
 }
 function toggleWineTypeDropdown() {
   const dropdown = document.getElementById("wineTypeDropdown");
-  const button = document.querySelector("button[onclick='toggleWineTypeDropdown()']");
-  const popup = document.getElementById("sommelierPopup");
+  if (!dropdown) return;
 
-  if (!button || !dropdown || !popup) return;
-
-  if (dropdown.style.display === "block") {
-    dropdown.style.display = "none";
-    return;
-  }
-
-  const popupRect = popup.getBoundingClientRect();
-  const buttonRect = button.getBoundingClientRect();
-
-  dropdown.style.top = `${popupRect.top + buttonRect.bottom - popupRect.top + 4}px`;
-  dropdown.style.left = `${buttonRect.left}px`;
-  dropdown.style.display = "block";
+  dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
 }
 
 document.addEventListener("click", function (event) {
