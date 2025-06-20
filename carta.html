@@ -685,13 +685,6 @@ if (ristorante?.sommelier_attivo === false) {
   if (tooltipSommelier) tooltipSommelier.style.display = "block";
 }
 
-  if (ristorante?.sommelier_attivo === false) {
-  const sommelierBtn = document.getElementById("sommelierBtn");
-  const tooltipSommelier = document.getElementById("tooltipSommelier");
-  if (sommelierBtn) sommelierBtn.style.display = "none";
-  if (tooltipSommelier) tooltipSommelier.style.display = "none";
-}
-
 if (ristorante.font) {
   document.body.style.fontFamily = ristorante.font;
   ensureFontLoaded(ristorante.font);
