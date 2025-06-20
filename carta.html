@@ -688,76 +688,6 @@ if (ristorante) {
 
 window.ristorantePalette = ristorante.palette_color;
 
-const sommelierAttivo = ristorante?.sommelier_attivo === true || ristorante?.sommelier_attivo === "true";
-if (!sommelierAttivo) {
-  console.log("🔒 Sommelier disattivato");
-  document.getElementById("sommelierBtn")?.remove();
-  document.getElementById("tooltipSommelier")?.remove();
-  document.getElementById("sommelierOverlay")?.remove();
-  document.getElementById("wineTypeDropdown")?.remove();
-} else {
-  console.log("✅ Sommelier attivo: creo elementi");
-  if (!document.getElementById("sommelierBtn")) {
-    const btn = document.createElement("button");
-    btn.id = "sommelierBtn";
-    btn.innerText = "🍷";
-    document.body.appendChild(btn);
-
-    const tooltip = document.createElement("div");
-    tooltip.id = "tooltipSommelier";
-    tooltip.innerText = "Fatti dare una mano dal nostro sommelier artificiale";
-    document.body.appendChild(tooltip);
-
-    const overlay = document.createElement("div");
-    overlay.id = "sommelierOverlay";
-    overlay.innerHTML = `
-      <div id="sommelierPopup" class="popup">
-        <button class="close-btn" onclick="closeSommelierPopup()">✖</button>
-        <h3>Dimmi cosa mangerai e io ti consiglierò il vino giusto! 🍷</h3>
-        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-          <div style="flex: 1 1 48%;">
-            <label for="priceFilter" style="font-size: 0.85em; display: block; margin-bottom: 4px;">Filtra per prezzo</label>
-            <select id="priceFilter" style="width: 100%; padding: 8px; font-size: 0.95em; border-radius: 8px; border: 1px solid #ccc;">
-              <option value="">Indifferente</option>
-              <option value="25">Max €25</option>
-              <option value="35">Max €35</option>
-              <option value="45">Max €45</option>
-              <option value="60">Max €60</option>
-              <option value="100">Max €100</option>
-            </select>
-          </div>
-          <div style="flex: 1 1 48%; min-width: 0; position: relative;">
-            <label style="font-size: 0.85em; display: block; margin-bottom: 4px;">Filtra per categoria</label>
-            <button type="button" onclick="toggleWineTypeDropdown()" id="categoryFilterBtn"
-              style="width: 100%; max-width: 100%; overflow: hidden; padding: 8px; font-size: 0.95em; border-radius: 8px; border: 1px solid #ccc; background: #fff; appearance: none; text-align: left; position: relative; white-space: nowrap;">
-              <span class="labelText"
-                style="display:inline-block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: calc(100% - 24px); vertical-align: middle;">Tutti</span>
-              <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.8em;">▼</span>
-            </button>
-          </div>
-        </div>
-        <input type="text" id="foodInput" placeholder="Usa le virgole per separare i piatti!!" onkeydown="handleSommelierKey(event)">
-        <div id="wineSuggestion" style="margin-top: 15px; font-size: 0.95em;"></div>
-      </div>
-    `;
-    document.body.appendChild(overlay);
-
-    const dropdown = document.createElement("div");
-    dropdown.id = "wineTypeDropdown";
-    dropdown.style.display = "none";
-    document.body.appendChild(dropdown);
-
-    // Eventi
-    btn.addEventListener("click", () => {
-      document.getElementById("sommelierOverlay").style.display = "flex";
-    });
-
-    window.closeSommelierPopup = function () {
-      document.getElementById("sommelierOverlay").style.display = "none";
-    };
-  }
-}
-
 if (ristorante.palette_color === "custom") {
   window.paletteOverrideLive = true;
   applyCustomBoxStyles();
@@ -1104,6 +1034,68 @@ switch ((ristorante.ordine_vini || 'prezzo')) {
     break;
 }
 }
+function setupSommelierUI() {
+  console.log("✅ Sommelier attivo: creo elementi");
+
+  if (!document.getElementById("sommelierBtn")) {
+    const btn = document.createElement("button");
+    btn.id = "sommelierBtn";
+    btn.innerText = "🍷";
+    document.body.appendChild(btn);
+
+    const tooltip = document.createElement("div");
+    tooltip.id = "tooltipSommelier";
+    tooltip.innerText = "Fatti dare una mano dal nostro sommelier artificiale";
+    document.body.appendChild(tooltip);
+
+    const overlay = document.createElement("div");
+    overlay.id = "sommelierOverlay";
+    overlay.innerHTML = `
+      <div id="sommelierPopup" class="popup">
+        <button class="close-btn" onclick="closeSommelierPopup()">✖</button>
+        <h3>Dimmi cosa mangerai e io ti consiglierò il vino giusto! 🍷</h3>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+          <div style="flex: 1 1 48%;">
+            <label for="priceFilter" style="font-size: 0.85em; display: block; margin-bottom: 4px;">Filtra per prezzo</label>
+            <select id="priceFilter" style="width: 100%; padding: 8px; font-size: 0.95em; border-radius: 8px; border: 1px solid #ccc;">
+              <option value="">Indifferente</option>
+              <option value="25">Max €25</option>
+              <option value="35">Max €35</option>
+              <option value="45">Max €45</option>
+              <option value="60">Max €60</option>
+              <option value="100">Max €100</option>
+            </select>
+          </div>
+          <div style="flex: 1 1 48%; min-width: 0; position: relative;">
+            <label style="font-size: 0.85em; display: block; margin-bottom: 4px;">Filtra per categoria</label>
+            <button type="button" onclick="toggleWineTypeDropdown()" id="categoryFilterBtn"
+              style="width: 100%; max-width: 100%; overflow: hidden; padding: 8px; font-size: 0.95em; border-radius: 8px; border: 1px solid #ccc; background: #fff; appearance: none; text-align: left; position: relative; white-space: nowrap;">
+              <span class="labelText"
+                style="display:inline-block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: calc(100% - 24px); vertical-align: middle;">Tutti</span>
+              <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.8em;">▼</span>
+            </button>
+          </div>
+        </div>
+        <input type="text" id="foodInput" placeholder="Usa le virgole per separare i piatti!!" onkeydown="handleSommelierKey(event)">
+        <div id="wineSuggestion" style="margin-top: 15px; font-size: 0.95em;"></div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const dropdown = document.createElement("div");
+    dropdown.id = "wineTypeDropdown";
+    dropdown.style.display = "none";
+    document.body.appendChild(dropdown);
+
+    btn.addEventListener("click", () => {
+      document.getElementById("sommelierOverlay").style.display = "flex";
+    });
+
+    window.closeSommelierPopup = function () {
+      document.getElementById("sommelierOverlay").style.display = "none";
+    };
+  }
+}
 
 let reorderMode = null;
 let reorderType = null;
@@ -1438,11 +1430,12 @@ window.showSubcategories = function (category) {
 (async () => {
   await fetchCategoryOrder();
   await loadRestaurantData();
+  await loadWineData(); // carica sempre i vini
 
-  // carica solo se sommelier attivo
-  if (ristorante?.sommelier_attivo === true || ristorante?.sommelier_attivo === "true") {
-    await loadWineData();
-  }
+const isSommelierOn = ristorante?.sommelier_attivo === true || ristorante?.sommelier_attivo === "true";
+if (isSommelierOn) {
+  setupSommelierUI(); // crea UI del sommelier
+}
 
   // 🔒 Blocco la palette una volta per tutte
   const isCustom = ristorante.palette_color === "custom";
