@@ -625,6 +625,15 @@ window.addEventListener('popstate', (event) => {
 });
 
 async function loadRestaurantData() {
+  if (!ristorante?.sommelier_attivo || ristorante.sommelier_attivo === "false") {
+  console.log("⛔ Salto loadWineData perché sommelier disattivato");
+  return;
+}
+  const dropdown = document.getElementById("wineTypeDropdown");
+if (!dropdown) {
+  console.warn("⛔ wineTypeDropdown non presente: sommelier disattivato.");
+  return;
+}
 const res = await fetch(`${SUPABASE_URL}/rest/v1/ristoranti?select=sommelier_attivo,nome,font,palette_color,bg_color,card_color,border_color,text_color,logo_url,logo_size,sommelier_url,sommelier_range,sommelier_boost_multi,name_size,name_color,name_bold,name_font,navbar_color,ordine_vini,ordine_categorie,ordine_sottocategorie&id=eq.${RESTAURANT_ID}`, {
     headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
   });
