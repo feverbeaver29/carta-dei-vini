@@ -687,10 +687,11 @@ if (ristorante) {
 }
 
 window.ristorantePalette = ristorante.palette_color;
-if (!ristorante?.sommelier_attivo) {
-  console.log("🔒 Sommelier disattivato: rimuovo elementi");
+
+const sommelierAttivo = ristorante?.sommelier_attivo === true || ristorante?.sommelier_attivo === "true";
+if (!sommelierAttivo) {
+  console.log("🔒 Sommelier disattivato");
   document.getElementById("sommelierBtn")?.remove();
-  console.log("✔ sommelier_attivo:", ristorante?.sommelier_attivo);
   document.getElementById("tooltipSommelier")?.remove();
   document.getElementById("sommelierOverlay")?.remove();
   document.getElementById("wineTypeDropdown")?.remove();
