@@ -684,6 +684,9 @@ if (ristorante?.sommelier_attivo === false) {
   if (sommelierBtn) sommelierBtn.style.display = "block";
   if (tooltipSommelier) tooltipSommelier.style.display = "block";
 }
+if (ristorante?.sommelier_attivo !== false && sommelierBtn) {
+  sommelierBtn.onclick = toggleSommelier;
+}
 
 if (ristorante.font) {
   document.body.style.fontFamily = ristorante.font;
