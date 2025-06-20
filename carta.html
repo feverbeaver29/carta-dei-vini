@@ -10,20 +10,17 @@
   --bg-default: #fff9f4;
 }
 #wineTypeDropdown {
-  position: absolute;
-  top: 105%;
-  left: 0;
-  right: 0;
+  position: fixed;
+  z-index: 3000;
   background: #fff;
   border: 1px solid #ccc;
   border-radius: 8px;
-  padding: 8px 10px;
+  padding: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  z-index: 999;
   display: none;
-  animation: slideDown 0.2s ease-out;
   font-size: 0.95em;
-  font-family: inherit;
+  min-width: 220px;
+  animation: slideDown 0.2s ease-out;
 }
 
 body {
@@ -381,6 +378,13 @@ button, .save-btn {
   Filtra per categoria
   <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.8em;">▼</span>
 </button>
+  </div>
+</div>
+
+    <input type="text" id="foodInput" placeholder="Usa le virgole per separare i piatti!!" onkeydown="handleSommelierKey(event)">
+    <div id="wineSuggestion" style="margin-top: 15px; font-size: 0.95em;"></div>
+  </div>
+</div>
 <div id="wineTypeDropdown" style="
   display: none;
   position: absolute;
@@ -397,13 +401,6 @@ button, .save-btn {
   font-family: inherit;
   animation: slideDown 0.2s ease-out;
 ">
-</div>
-  </div>
-</div>
-
-    <input type="text" id="foodInput" placeholder="Usa le virgole per separare i piatti!!" onkeydown="handleSommelierKey(event)">
-    <div id="wineSuggestion" style="margin-top: 15px; font-size: 0.95em;"></div>
-  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
@@ -1463,8 +1460,22 @@ function ensureFontLoaded(fontName) {
 }
 function toggleWineTypeDropdown() {
   const dropdown = document.getElementById("wineTypeDropdown");
-  dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+  const button = document.querySelector("button[onclick='toggleWineTypeDropdown()']");
+
+  if (dropdown.style.display === "block") {
+    dropdown.style.display = "none";
+    return;
+  }
+
+  const rect = button.getBoundingClientRect();
+  const scrollTop = window.scrollY || document.documentElement.scrollTop;
+  const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
+
+  dropdown.style.top = `${rect.bottom + scrollTop + 4}px`;
+  dropdown.style.left = `${rect.left + scrollLeft}px`;
+  dropdown.style.display = "block";
 }
+
 document.addEventListener("click", function (event) {
   const dropdown = document.getElementById("wineTypeDropdown");
   const toggleBtn = event.target.closest("button");
