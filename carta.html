@@ -366,11 +366,14 @@ button, .save-btn {
     </select>
   </div>
 
-  <div style="flex: 1 1 48%; position: relative;">
+<div style="flex: 1 1 48%; min-width: 0; position: relative;">
     <label style="font-size: 0.85em; display: block; margin-bottom: 4px;">Filtra per categoria</label>
     <button type="button" onclick="toggleWineTypeDropdown()" id="categoryFilterBtn"
-  style="width: 100%; max-width: 100%; overflow: hidden; text-overflow: ellipsis; padding: 8px; font-size: 0.95em; border-radius: 8px; border: 1px solid #ccc; background: #fff; appearance: none; text-align: left; position: relative; white-space: nowrap;">
-  <span class="labelText" style="display:inline-block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:90%;">Tutti</span>
+  style="width: 100%; max-width: 100%; overflow: hidden; padding: 8px; font-size: 0.95em; border-radius: 8px; border: 1px solid #ccc; background: #fff; appearance: none; text-align: left; position: relative; white-space: nowrap;">
+  <span class="labelText"
+  style="display:inline-block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: calc(100% - 24px); vertical-align: middle;">
+  Tutti
+</span>
   <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.8em;">▼</span>
 </button>
   </div>
