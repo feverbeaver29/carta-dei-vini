@@ -969,12 +969,6 @@ async function loadWineData() {
     return;
   }
 
-  // 🔒 Filtro sommelier
-  if (!ristorante?.sommelier_attivo || ristorante.sommelier_attivo === "false") {
-    console.log("⛔ Sommelier disattivato: blocco loadWineData");
-    return;
-  }
-
   const res = await fetch(`${SUPABASE_URL}/rest/v1/wines?ristorante_id=eq.${RESTAURANT_ID}`, {
     headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
   });
