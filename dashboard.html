@@ -1151,7 +1151,7 @@ function attachLogoListeners() {
 
       const { data: info } = await supabase
         .from("ristoranti")
-        .select("nome, font, palette_color, bg_color, card_color, border_color, text_color, logo_url, sommelier_url, sommelier_range, sommelier_boost_multi, logo_size, name_size, name_color, name_bold, name_font, ordine_vini")
+        .select("nome, font, palette_color, bg_color, card_color, border_color, text_color, logo_url, sommelier_url, sommelier_range, sommelier_boost_multi, logo_size, name_size, name_color, name_bold, name_font, ordine_vini, sommelier_attivo")
         .eq("id", RESTAURANT_ID)
         .single();
 
@@ -1196,6 +1196,7 @@ setTimeout(() => {
       fontSelect.add(option);
     }
     fontSelect.value = nameFont;
+    document.getElementById("toggleSommelierBtn").checked = data.sommelier_attivo !== false;
     document.getElementById("navbarColorPicker").value = info?.navbar_color || "#ffffff";
     document.getElementById("nameSize").value = info?.name_size || "28";
     document.getElementById("nameColor").value = info?.name_color || "#000000";
