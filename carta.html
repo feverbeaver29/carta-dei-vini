@@ -673,13 +673,13 @@ const res = await fetch(`${SUPABASE_URL}/rest/v1/ristoranti?select=sommelier_att
   
 if (!ristorante?.sommelier_attivo) {
   const btn = document.getElementById("sommelierBtn");
-  if (btn) btn.remove(); // elimina completamente il bottone
+  if (btn) btn.remove();
   const tooltip = document.getElementById("tooltipSommelier");
-  if (tooltip) tooltip.remove(); // elimina anche il tooltip
-} else {
-  console.log("✔️ Sommelier abilitato");
+  if (tooltip) tooltip.remove();
+  return; // 🔒 interrompe qui se il sommelier è disattivato
 }
 
+// ✅ solo se sommelier è attivo:
 const sommelierBtn = document.getElementById("sommelierBtn");
 if (sommelierBtn) {
   sommelierBtn.addEventListener("click", () => {
@@ -687,6 +687,7 @@ if (sommelierBtn) {
     document.body.style.overflow = "hidden";
   });
 }
+
 if (ristorante.font) {
   document.body.style.fontFamily = ristorante.font;
   ensureFontLoaded(ristorante.font);
