@@ -368,10 +368,11 @@ button, .save-btn {
 
   <div style="flex: 1 1 48%; position: relative;">
     <label style="font-size: 0.85em; display: block; margin-bottom: 4px;">Filtra per categoria</label>
-    <button type="button" onclick="toggleWineTypeDropdown()" id="categoryFilterBtn" style="width: 100%; padding: 8px; font-size: 0.95em; border-radius: 8px; border: 1px solid #ccc; background: #fff; appearance: none; text-align: left; position: relative;">
-      Tutti
-      <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.8em;">▼</span>
-    </button>
+    <button type="button" onclick="toggleWineTypeDropdown()" id="categoryFilterBtn"
+  style="width: 100%; padding: 8px; font-size: 0.95em; border-radius: 8px; border: 1px solid #ccc; background: #fff; appearance: none; text-align: left; position: relative;">
+  <span class="labelText">Tutti</span>
+  <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.8em;">▼</span>
+</button>
   </div>
 </div>
 
@@ -1489,13 +1490,15 @@ function aggiornaEtichettaCategorie() {
   const checked = Array.from(allCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
   const button = document.getElementById("categoryFilterBtn");
 
-  if (checked.length === 0 || checked.length === allCheckboxes.length) {
-    button.innerHTML = 'Tutti <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.8em;">▼</span>';
-  } else {
-    const label = checked.slice(0, 3).join(', ') + (checked.length > 3 ? '…' : '');
-    button.innerHTML = `${label} <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.8em;">▼</span>`;
-  }
+  const baseLabel = (checked.length === 0 || checked.length === allCheckboxes.length)
+    ? 'Tutti'
+    : checked.slice(0, 3).join(', ') + (checked.length > 3 ? '…' : '');
+
+  // ✅ Non sostituire tutto l’innerHTML, modifica solo il contenuto testuale
+  const textSpan = button.querySelector(".labelText");
+  if (textSpan) textSpan.textContent = baseLabel;
 }
+
 </script>
 </body>
 </html>
