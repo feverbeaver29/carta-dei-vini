@@ -1471,16 +1471,19 @@ function toggleWineTypeDropdown() {
 
 document.addEventListener("click", function (event) {
   const dropdown = document.getElementById("wineTypeDropdown");
-  const toggleBtn = event.target.closest("button");
+  const button = document.getElementById("categoryFilterBtn");
 
+  // Non chiudere se clicco sul bottone o dentro al menu
   if (
     dropdown.style.display === "block" &&
     !dropdown.contains(event.target) &&
-    (!toggleBtn || !toggleBtn.textContent.includes("Filtra per categoria"))
+    event.target !== button &&
+    !button.contains(event.target)
   ) {
     dropdown.style.display = "none";
   }
 });
+
 function aggiornaEtichettaCategorie() {
   const allCheckboxes = document.querySelectorAll("#wineTypeDropdown input[type='checkbox']");
   const checked = Array.from(allCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
