@@ -674,18 +674,22 @@ async function loadRestaurantData() {
   ristorante = data[0]; // senza const
   ristoranteSommelierURL = ristorante.sommelier_url || "sommelier.png";
 
-  const sommelierBtn = document.getElementById("sommelierBtn");
+const sommelierBtn = document.getElementById("sommelierBtn");
 const tooltipSommelier = document.getElementById("tooltipSommelier");
 
 if (ristorante?.sommelier_attivo === false) {
-  if (sommelierBtn) sommelierBtn.style.display = "none";
-  if (tooltipSommelier) tooltipSommelier.style.display = "none";
+  if (sommelierBtn) sommelierBtn.remove();
+  if (tooltipSommelier) tooltipSommelier.remove();
 } else {
-  if (sommelierBtn) sommelierBtn.style.display = "block";
-  if (tooltipSommelier) tooltipSommelier.style.display = "block";
+  if (sommelierBtn) sommelierBtn.onclick = toggleSommelier;
+
+  setTimeout(() => {
+    if (tooltipSommelier) {
+      tooltipSommelier.style.display = 'block';
+      setTimeout(() => tooltipSommelier.style.display = 'none', 3000);
+    }
+  }, 1000);
 }
-if (ristorante?.sommelier_attivo !== false && sommelierBtn) {
-  sommelierBtn.onclick = toggleSommelier;
 }
 
 if (ristorante.font) {
@@ -754,7 +758,6 @@ if (ristorante.palette_color === "custom") {
     const nav = document.querySelector("nav");
     if (nav) nav.style.backgroundColor = ristorante.navbar_color;
   }
-}
 }
 
 function goBack() {
