@@ -1447,17 +1447,24 @@ function ensureFontLoaded(fontName) {
 }
 function toggleWineTypeDropdown() {
   const dropdown = document.getElementById("wineTypeDropdown");
-  const button = document.querySelector("button[onclick='toggleWineTypeDropdown()']");
+  const button = document.getElementById("categoryFilterBtn");
 
   if (!dropdown || !button) return;
 
+  // Toggle display
   if (dropdown.style.display === "block") {
     dropdown.style.display = "none";
     return;
   }
 
   const rect = button.getBoundingClientRect();
-  dropdown.style.top = `${rect.bottom + 4}px`;
+
+  // ✅ Scroll del documento + compensazione del popup scrollabile
+  const popupScroll = document.getElementById("sommelierPopup")?.scrollTop || 0;
+  const offsetTop = rect.bottom + window.scrollY;
+
+  dropdown.style.position = "fixed";
+  dropdown.style.top = `${offsetTop}px`;
   dropdown.style.left = `${rect.left}px`;
   dropdown.style.display = "block";
 }
