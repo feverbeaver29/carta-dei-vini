@@ -992,18 +992,16 @@ if (Array.isArray(categoriaOrder) && categoriaOrder.length) {
 
 // Costruisci il filtro dinamico
 const dropdown = document.getElementById("wineTypeDropdown");
-if (!dropdown) {
-  console.warn("⛔ wineTypeDropdown non trovato: interrompo.");
-  return;
+if (dropdown) {
+  dropdown.innerHTML = categorieUniche.map(cat => `
+    <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+      <input type="checkbox" value="${cat}" checked onchange="aggiornaEtichettaCategorie()">
+      <span>${cat}</span>
+    </label>
+  `).join("");
+  aggiornaEtichettaCategorie(); // solo se il dropdown esiste
 }
-dropdown.innerHTML = categorieUniche.map(cat => `
-  <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-    <input type="checkbox" value="${cat}" checked onchange="aggiornaEtichettaCategorie()">
-    <span>${cat}</span>
-  </label>
-`).join("");
 
-aggiornaEtichettaCategorie(); // chiamata iniziale
 console.log("Categorie disponibili per filtro:", categorieUniche);
 
 switch ((ristorante.ordine_vini || 'prezzo')) {
@@ -1082,8 +1080,11 @@ function setupSommelierUI() {
     document.body.appendChild(dropdown);
 
     btn.addEventListener("click", () => {
-      document.getElementById("sommelierOverlay").style.display = "flex";
-    });
+  const overlay = document.getElementById("sommelierOverlay");
+  if (overlay) {
+    overlay.style.display = "flex";
+  }
+});
 
     window.closeSommelierPopup = function () {
       document.getElementById("sommelierOverlay").style.display = "none";
