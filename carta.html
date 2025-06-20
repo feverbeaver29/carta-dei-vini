@@ -354,30 +354,24 @@ button, .save-btn {
     <button class="close-btn" onclick="closeSommelierPopup()">✖</button>
     <h3>Dimmi cosa mangerai — anche più piatti — e io ti consiglierò il vino giusto! 🍷</h3>
 <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-  <select id="priceFilter" style="flex: 1 1 48%; padding: 8px; font-size: 0.95em; border-radius: 8px; border: 1px solid #ccc;">
-    <option value="">Indifferente</option>
-    <option value="25">Max €25</option>
-    <option value="35">Max €35</option>
-    <option value="45">Max €45</option>
-    <option value="60">Max €60</option>
-    <option value="100">Max €100</option>
-  </select>
+  <div style="flex: 1 1 48%;">
+    <label for="priceFilter" style="font-size: 0.85em; display: block; margin-bottom: 4px;">Filtra per prezzo</label>
+    <select id="priceFilter" style="width: 100%; padding: 8px; font-size: 0.95em; border-radius: 8px; border: 1px solid #ccc;">
+      <option value="">Indifferente</option>
+      <option value="25">Max €25</option>
+      <option value="35">Max €35</option>
+      <option value="45">Max €45</option>
+      <option value="60">Max €60</option>
+      <option value="100">Max €100</option>
+    </select>
+  </div>
 
-  <div style="position: relative; flex: 1 1 48%;">
-    <button type="button" onclick="toggleWineTypeDropdown()" style="
-  width: 100%;
-  padding: 8px;
-  font-size: 0.95em;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  background: #fff;
-  appearance: none;
-  text-align: left;
-  position: relative;
-">
-  Filtra per categoria
-  <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.8em;">▼</span>
-</button>
+  <div style="flex: 1 1 48%; position: relative;">
+    <label style="font-size: 0.85em; display: block; margin-bottom: 4px;">Filtra per categoria</label>
+    <button type="button" onclick="toggleWineTypeDropdown()" id="categoryFilterBtn" style="width: 100%; padding: 8px; font-size: 0.95em; border-radius: 8px; border: 1px solid #ccc; background: #fff; appearance: none; text-align: left; position: relative;">
+      Tutti
+      <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.8em;">▼</span>
+    </button>
   </div>
 </div>
 
@@ -1034,10 +1028,12 @@ if (Array.isArray(categoriaOrder) && categoriaOrder.length) {
 const dropdown = document.getElementById("wineTypeDropdown");
 dropdown.innerHTML = categorieUniche.map(cat => `
   <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-    <input type="checkbox" value="${cat}" checked>
+    <input type="checkbox" value="${cat}" checked onchange="aggiornaEtichettaCategorie()">
     <span>${cat}</span>
   </label>
 `).join("");
+
+aggiornaEtichettaCategorie(); // chiamata iniziale
 
 switch ((ristorante.ordine_vini || 'prezzo')) {
   case 'prezzo':
@@ -1471,6 +1467,18 @@ document.addEventListener("click", function (event) {
     dropdown.style.display = "none";
   }
 });
+function aggiornaEtichettaCategorie() {
+  const allCheckboxes = document.querySelectorAll("#wineTypeDropdown input[type='checkbox']");
+  const checked = Array.from(allCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+  const button = document.getElementById("categoryFilterBtn");
+
+  if (checked.length === 0 || checked.length === allCheckboxes.length) {
+    button.innerHTML = 'Tutti <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.8em;">▼</span>';
+  } else {
+    const label = checked.slice(0, 3).join(', ') + (checked.length > 3 ? '…' : '');
+    button.innerHTML = `${label} <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.8em;">▼</span>`;
+  }
+}
 </script>
 </body>
 </html>
