@@ -672,10 +672,21 @@ const res = await fetch(`${SUPABASE_URL}/rest/v1/ristoranti?select=sommelier_att
   ristoranteSommelierURL = ristorante.sommelier_url || "sommelier.png";
   
 if (!ristorante?.sommelier_attivo) {
-  document.getElementById("sommelierBtn")?.remove();
-  document.getElementById("tooltipSommelier")?.remove();
+  const btn = document.getElementById("sommelierBtn");
+  if (btn) btn.remove(); // elimina completamente il bottone
+  const tooltip = document.getElementById("tooltipSommelier");
+  if (tooltip) tooltip.remove(); // elimina anche il tooltip
+} else {
+  console.log("✔️ Sommelier abilitato");
 }
 
+const sommelierBtn = document.getElementById("sommelierBtn");
+if (sommelierBtn) {
+  sommelierBtn.addEventListener("click", () => {
+    document.getElementById("sommelierOverlay").style.display = "flex";
+    document.body.style.overflow = "hidden";
+  });
+}
 if (ristorante.font) {
   document.body.style.fontFamily = ristorante.font;
   ensureFontLoaded(ristorante.font);
