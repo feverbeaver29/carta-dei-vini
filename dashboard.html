@@ -1346,7 +1346,21 @@ showSettings('carta');
         updateFontLivePreview(); // anteprima live font body
       });
   });
+  document.getElementById("toggleSommelierBtn").addEventListener("change", async function () {
+  const showSommelier = this.checked;
 
+  const { error } = await supabase
+    .from("ristoranti")
+    .update({ sommelier_attivo: showSommelier })
+    .eq("id", RESTAURANT_ID);
+
+  if (error) {
+    alert("Errore nel salvataggio dell'impostazione sommelier.");
+    console.error("Errore Supabase:", error);
+  } else {
+    console.log("✔️ Impostazione sommelier salvata:", showSommelier);
+  }
+});
 
 document.getElementById("logoUpload").addEventListener("change", async (event) => {
   const file = event.target.files[0];
