@@ -352,7 +352,7 @@ button, .save-btn {
 <div id="sommelierOverlay">
   <div id="sommelierPopup" class="popup">
     <button class="close-btn" onclick="closeSommelierPopup()">✖</button>
-    <h3>Dimmi cosa mangerai — anche più piatti — e io ti consiglierò il vino giusto! 🍷</h3>
+    <h3>Dimmi cosa mangerai e io ti consiglierò il vino giusto! 🍷</h3>
 <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
   <div style="flex: 1 1 48%;">
     <label for="priceFilter" style="font-size: 0.85em; display: block; margin-bottom: 4px;">Filtra per prezzo</label>
@@ -1003,6 +1003,12 @@ card.innerHTML = `<strong>${produttoreUpper} ${denominazione}${annata}</strong><
 }
 
 async function loadWineData() {
+  if (!RESTAURANT_ID) return;
+  if (!ristorante) {
+    console.error("Ristorante non caricato");
+    return;
+  }
+
   const res = await fetch(`${SUPABASE_URL}/rest/v1/wines?ristorante_id=eq.${RESTAURANT_ID}`, {
     headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
   });
@@ -1034,6 +1040,7 @@ dropdown.innerHTML = categorieUniche.map(cat => `
 `).join("");
 
 aggiornaEtichettaCategorie(); // chiamata iniziale
+console.log("Categorie disponibili per filtro:", categorieUniche);
 
 switch ((ristorante.ordine_vini || 'prezzo')) {
   case 'prezzo':
