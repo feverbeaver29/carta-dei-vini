@@ -1235,13 +1235,14 @@ setTimeout(() => {
       fontSelect.add(option);
     }
     fontSelect.value = nameFont;
-    const toggle = document.getElementById("toggleSommelierBtn");
-if (toggle && typeof info.sommelier_attivo === "boolean") {
-  toggle.checked = info.sommelier_attivo;
-  console.log("✅ Stato sommelier iniziale da Supabase:", info.sommelier_attivo);
-} else {
-  toggle.checked = false;
-  console.warn("⚠️ sommelier_attivo non definito o non booleano:", info.sommelier_attivo);
+const toggle = document.getElementById("toggleSommelierBtn");
+if (toggle) {
+  const rawValue = info.sommelier_attivo;
+
+  const checked = rawValue === true || rawValue === "true";
+  toggle.checked = checked;
+
+  console.log("✅ sommelier_attivo interpretato come:", checked, `(raw: ${rawValue})`);
 }
     document.getElementById("navbarColorPicker").value = info?.navbar_color || "#ffffff";
     document.getElementById("nameSize").value = info?.name_size || "28";
