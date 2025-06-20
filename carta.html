@@ -678,6 +678,11 @@ async function loadRestaurantData() {
   ristorante = data[0]; // senza const
   ristoranteSommelierURL = ristorante.sommelier_url || "sommelier.png";
 
+  if (ristorante?.sommelier_attivo === false) {
+  const btn = document.getElementById("sommelierBtn");
+  if (btn) btn.style.display = "none";
+}
+
 if (ristorante.font) {
   document.body.style.fontFamily = ristorante.font;
   ensureFontLoaded(ristorante.font);

@@ -790,6 +790,13 @@ footer {
   <div id="impostazioniSommelier" class="dashboard-grid">
     <h2>Impostazioni Sommelier Virtuale</h2>
 
+    <div style="margin-bottom: 12px;">
+  <label style="display: flex; align-items: center; gap: 8px; font-size: 0.95em;">
+    <input type="checkbox" id="toggleSommelierBtn" />
+    Mostra il bottone del sommelier nella carta
+  </label>
+</div>
+
 <label for="sommelierLogoUpload">Logo del sommelier</label>
 <input type="file" id="sommelierLogoUpload" accept="image/*">
 <div id="sommelierLogoPreview" class="logo-preview"></div>
@@ -1487,6 +1494,7 @@ function capitalize(str) {
 }
 
 async function saveSettings() {
+  const showSommelier = document.getElementById("toggleSommelierBtn").checked;
   const nameFont = document.getElementById("nameFont").value;
   const nameSize = document.getElementById("nameSize").value;
   const nameColor = document.getElementById("nameColor").value;
@@ -1530,6 +1538,7 @@ async function saveSettings() {
     name_bold: nameBold,
     name_font: nameFont,
     navbar_color: navbarColor,
+    sommelier_attivo: showSommelier
   }).eq("id", RESTAURANT_ID);
 
   // Feedback visuale
