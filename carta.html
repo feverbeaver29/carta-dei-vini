@@ -650,13 +650,20 @@ suggestion.innerHTML = `
   }
 }
 
-setTimeout(() => {
-  const tip = document.getElementById('tooltipSommelier');
-  tip.style.display = 'block';
-  setTimeout(() => tip.style.display = 'none', 3000);
-}, 1000);
+const sommelierBtn = document.getElementById('sommelierBtn');
+const tooltipSommelier = document.getElementById('tooltipSommelier');
 
-document.getElementById('sommelierBtn').onclick = toggleSommelier;
+if (ristorante?.sommelier_attivo !== false && sommelierBtn && tooltipSommelier) {
+  sommelierBtn.onclick = toggleSommelier;
+  setTimeout(() => {
+    tooltipSommelier.style.display = 'block';
+    setTimeout(() => tooltipSommelier.style.display = 'none', 3000);
+  }, 1000);
+} else {
+  if (sommelierBtn) sommelierBtn.style.display = 'none';
+  if (tooltipSommelier) tooltipSommelier.style.display = 'none';
+}
+
 window.addEventListener('click', e => {
   const overlay = document.getElementById('sommelierOverlay');
   if (e.target === overlay) closeSommelierPopup();
