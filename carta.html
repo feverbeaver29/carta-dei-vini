@@ -1068,27 +1068,46 @@ function setupSommelierUI() {
             </button>
           </div>
         </div>
-<div style="position: relative; margin-top: 10px;">
-  <input id="foodInput" placeholder="Usa le virgole per separare i piatti!!" onkeydown="handleSommelierKey(event)"
-    style="width: 100%; padding: 12px 90px 12px 16px; border-radius: 50px; border: 1px solid #ccc; font-size: 0.95em; height: 46px; box-sizing: border-box;" />
-
-  <button id="sendFoodBtn" onclick="suggestWine()" style="
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    right: 2px;
-    height: 42px;
-    padding: 0 20px;
-    border-radius: 42px;
-    border: none;
-    background: linear-gradient(90deg, #ff6a6a, #ff88a1);
-    color: white;
-    font-weight: 500;
-    font-size: 0.9em;
-    cursor: pointer;
-    display: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
-  ">INVIA</button>
+<div style="width: 100%; margin-top: 12px; display: flex; justify-content: center;">
+  <div style="position: relative; width: 100%; max-width: 400px;">
+    <input
+      id="foodInput"
+      placeholder="Usa le virgole per separare i piatti!!"
+      onkeydown="handleSommelierKey(event)"
+      style="
+        width: 100%;
+        padding: 12px 100px 12px 20px;
+        border: none;
+        border-radius: 999px;
+        background: #fff;
+        font-size: 1em;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+        box-sizing: border-box;
+        outline: none;
+      "
+    />
+    <button
+      id="sendFoodBtn"
+      onclick="suggestWine()"
+      style="
+        position: absolute;
+        right: 4px;
+        top: 4px;
+        bottom: 4px;
+        padding: 0 22px;
+        background: linear-gradient(to right, #ff6a6a, #ff88a1);
+        color: white;
+        font-weight: 500;
+        font-size: 0.9em;
+        border: none;
+        border-radius: 999px;
+        cursor: pointer;
+        display: none;
+      "
+    >
+      INVIA
+    </button>
+  </div>
 </div>
 
         <div id="wineSuggestion" style="margin-top: 15px; font-size: 0.95em;"></div>
