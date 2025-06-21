@@ -1068,13 +1068,12 @@ function setupSommelierUI() {
             </button>
           </div>
         </div>
-        <div style="margin-top: 12px; display: flex; justify-content: center;">
-          <div style="display: flex; background: white; border-radius: 999px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.08); width: 90%; max-width: 380px;">
-            <input type="text" id="foodInput" placeholder="Separa piatti con le virgole." onkeydown="handleSommelierKey(event)" style="flex: 1; padding: 12px 16px; border: none; outline: none; font-size: 1em; background: transparent;" />
-            <button id="sendFoodBtn" onclick="suggestWine()" style="padding: 0 20px; background: #888888; color: white; border: none; font-size: 0.9em; font-weight: 500; cursor: pointer; display: none; transition: background 0.2s ease; border-radius: 999px;">INVIA</button>
+        <div style="margin-top: 10px; display: flex; justify-content: center;">
+          <div style="display: flex; background: white; border-radius: 999px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); width: 100%;">
+            <input type="text" id="foodInput" placeholder="Separa piatti con le virgole." onkeydown="handleSommelierKey(event)" style="flex: 1; padding: 8px 14px; border: none; outline: none; font-size: 0.95em; background: transparent;" />
+            <button id="sendFoodBtn" onclick="suggestWine()" style="padding: 0 16px; background: #999; color: white; border: none; font-size: 0.9em; font-weight: 500; cursor: pointer; display: none; transition: background 0.2s ease; border-radius: 999px;">INVIA</button>
           </div>
         </div>
-
         <div id="wineSuggestion" style="margin-top: 15px; font-size: 0.95em;"></div>
       </div>
     `;
