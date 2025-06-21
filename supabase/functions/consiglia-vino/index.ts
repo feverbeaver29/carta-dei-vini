@@ -53,7 +53,7 @@ const prompt = `Sei un sommelier elegante e professionale. Ecco una lista di vin
 
 Abbina da ${min} a ${max} vini della lista per accompagnare tutto questo pasto: "${piatto}". Considera che sono più portate, quindi cerca vini versatili che si sposino bene con più piatti.
 ${prezzo_massimo ? `\nTutti i vini devono costare al massimo €${prezzo_massimo}.` : ""}
-${Array.isArray(colori) && colori.length < 4 ? `\nLimita la scelta a vini di tipo: ${colori.join(", ")}.` : ""}
+${Array.isArray(colori) && colori.length < 4 ? `\n⚠️ Considera solo i vini appartenenti a queste categorie: ${colori.join(", ")}. Non includere altri tipi.` : ""}
 
 Per ogni vino consigliato, rispondi con questo formato preciso:
 
