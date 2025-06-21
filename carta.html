@@ -1068,48 +1068,10 @@ function setupSommelierUI() {
             </button>
           </div>
         </div>
-<div style="width: 100%; margin-top: 12px; display: flex; justify-content: center;">
-  <div style="position: relative; width: 100%; max-width: 400px;">
-    <input
-      id="foodInput"
-      placeholder="Usa le virgole per separare i piatti!!"
-      onkeydown="handleSommelierKey(event)"
-      style="
-        width: 100%;
-        padding: 12px 100px 12px 20px;
-        border: none;
-        border-radius: 999px;
-        background: #fff;
-        font-size: 1em;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.06);
-        box-sizing: border-box;
-        outline: none;
-      "
-    />
-    <button
-      id="sendFoodBtn"
-      onclick="suggestWine()"
-      style="
-        position: absolute;
-        right: 4px;
-        top: 4px;
-        bottom: 4px;
-        padding: 0 22px;
-        background: linear-gradient(to right, #ff6a6a, #ff88a1);
-        color: white;
-        font-weight: 500;
-        font-size: 0.9em;
-        border: none;
-        border-radius: 999px;
-        cursor: pointer;
-        display: none;
-      "
-    >
-      INVIA
-    </button>
-  </div>
-</div>
-
+        <div style="display: flex; gap: 8px; margin-top: 10px;">
+          <input type="text" id="foodInput" placeholder="Usa le virgole per separare i piatti!!" onkeydown="handleSommelierKey(event)" style="flex: 1;">
+          <button id="sendFoodBtn" onclick="suggestWine()" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 0.95em; background: var(--accent-color); color: white; border: none;">INVIA</button>
+        </div>
         <div id="wineSuggestion" style="margin-top: 15px; font-size: 0.95em;"></div>
       </div>
     `;
