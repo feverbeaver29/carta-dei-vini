@@ -1068,10 +1068,11 @@ function setupSommelierUI() {
             </button>
           </div>
         </div>
-        <div style="display: flex; gap: 8px; margin-top: 10px;">
-          <input type="text" id="foodInput" placeholder="Usa le virgole per separare i piatti!!" onkeydown="handleSommelierKey(event)" style="flex: 1;">
-          <button id="sendFoodBtn" onclick="suggestWine()" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 0.95em; background: var(--accent-color); color: white; border: none;">INVIA</button>
-        </div>
+        <div style="position: relative; margin-top: 10px;">
+        <input id="foodInput" placeholder="Usa le virgole per separare i piatti!!" onkeydown="handleSommelierKey(event)"
+          style="width: 100%; padding: 12px 90px 12px 16px; border-radius: 50px; border: 1px solid #ccc; font-size: 0.95em;" />
+        <button id="sendFoodBtn" onclick="suggestWine()" style="position: absolute; top: 2px; right: 2px; bottom: 2px; width: 80px; border-radius: 50px; border: none; background: linear-gradient(90deg, #ff6a6a, #ff88a1); color: white; font-weight: 500; font-size: 0.9em; cursor: pointer; display: none; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">INVIA</button>
+      </div>
         <div id="wineSuggestion" style="margin-top: 15px; font-size: 0.95em;"></div>
       </div>
     `;
