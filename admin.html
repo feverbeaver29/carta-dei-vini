@@ -97,21 +97,23 @@
   <button id="saveButton">Salva</button>
 
   <h2>Lista Vini</h2>
-<div style="display: flex; flex-wrap: wrap; gap: 1em; margin-top: 1em; justify-content: center;">
-  <input type="text" id="searchInput" placeholder="Cerca vino per nome..." oninput="renderTable()" style="flex: 1 1 100%; max-width: 400px;">
+<div style="display: flex; flex-direction: column; gap: 0.8em; margin-top: 1em;">
+  <input type="text" id="searchInput" placeholder="Cerca vino per nome..." oninput="renderTable()" style="width: 100%; max-width: 100%; padding: 0.5em; border-radius: 8px; border: 1px solid #ccc;">
 
-  <div style="flex: 1 1 200px; min-width: 160px;">
-    <label for="filterCategoria" style="font-size: 0.85em; margin-bottom: 4px; display: block;">Filtra per categoria</label>
-    <select id="filterCategoria" onchange="renderTable()" style="width: 100%; padding: 0.5em; border-radius: 8px; border: 1px solid #ccc;">
-      <option value="">Tutte</option>
-    </select>
-  </div>
+  <div style="display: flex; gap: 1em; flex-wrap: nowrap; justify-content: space-between;">
+    <div style="flex: 1;">
+      <label for="filterCategoria" style="font-size: 0.85em; margin-bottom: 4px; display: block;">Filtra per categoria</label>
+      <select id="filterCategoria" onchange="renderTable()" style="width: 100%; padding: 0.5em; border-radius: 8px; border: 1px solid #ccc;">
+        <option value="">Tutte</option>
+      </select>
+    </div>
 
-  <div style="flex: 1 1 200px; min-width: 160px;">
-    <label for="filterSottocategoria" style="font-size: 0.85em; margin-bottom: 4px; display: block;">Filtra per sottocategoria</label>
-    <select id="filterSottocategoria" onchange="renderTable()" style="width: 100%; padding: 0.5em; border-radius: 8px; border: 1px solid #ccc;">
-      <option value="">Tutte</option>
-    </select>
+    <div style="flex: 1;">
+      <label for="filterSottocategoria" style="font-size: 0.85em; margin-bottom: 4px; display: block;">Filtra per sottocategoria</label>
+      <select id="filterSottocategoria" onchange="renderTable()" style="width: 100%; padding: 0.5em; border-radius: 8px; border: 1px solid #ccc;">
+        <option value="">Tutte</option>
+      </select>
+    </div>
   </div>
 </div>
 
