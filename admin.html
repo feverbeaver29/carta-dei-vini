@@ -383,6 +383,7 @@ async function loadWines() {
 
   catList.innerHTML = subList.innerHTML = catFilter.innerHTML = subFilter.innerHTML = "";
   catFilter.innerHTML = subFilter.innerHTML = '<option value="">Tutte</option>';
+  subFilter.disabled = true;
 
   categorie.forEach(c => {
     catList.innerHTML += `<option value="${c}">`;
@@ -394,6 +395,35 @@ async function loadWines() {
   });
 
   renderTable();
+  // Collegamento dinamico tra categoria e sottocategoria nei filtri
+catFilter.addEventListener("change", () => {
+  const selectedCat = catFilter.value.trim().toLowerCase();
+
+  // Sottocategoria disabilitata se nessuna categoria è selezionata
+  if (!selectedCat) {
+    subFilter.disabled = true;
+    subFilter.innerHTML = '<option value="">Tutte</option>';
+    renderTable();
+    return;
+  }
+
+  // Filtra le sottocategorie in base alla categoria selezionata
+  const filteredSubs = normalizeAndCapitalize(
+    winesData
+      .filter(w => (w.categoria || '').toLowerCase() === selectedCat)
+      .map(w => w.sottocategoria)
+  );
+
+  subFilter.disabled = false;
+  subFilter.innerHTML = '<option value="">Tutte</option>';
+  filteredSubs.forEach(s => {
+    subFilter.innerHTML += `<option value="${s}">${s}</option>`;
+  });
+
+  // Reset filtro sottocategoria e aggiorna tabella
+  subFilter.value = "";
+  renderTable();
+});
 }
 
 async function saveWine() {
