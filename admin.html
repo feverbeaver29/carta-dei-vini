@@ -225,34 +225,34 @@ function renderTable() {
   const end = start + perPage;
   const pageData = filtered.slice(start, end);
 
-  pageData.forEach(wine => {
-    const wrapper = document.createElement("div");
-    wrapper.style = "border-bottom: 1px solid #ddd; padding: 0.6em 0; font-size: 0.9em; display: flex; flex-direction: column;";
+pageData.forEach(wine => {
+  const wrapper = document.createElement("div");
+  wrapper.style = "border-bottom: 1px solid #ddd; padding: 0.4em 0; font-size: 0.85em; display: flex; flex-direction: column; gap: 4px;";
 
-    const name = document.createElement("div");
-    name.textContent = wine.nome || "(Senza nome)";
-    name.style = "font-size: 0.88em; font-weight: 500; padding-bottom: 0.3em;";
+  const name = document.createElement("div");
+  name.textContent = wine.nome || "(Senza nome)";
+  name.style = "font-size: 0.82em; font-weight: 500; padding-left: 4px; text-align: left;";
 
-    const actions = document.createElement("div");
-    actions.style = "text-align: right; display: flex; justify-content: flex-end; gap: 6px;";
+  const actions = document.createElement("div");
+  actions.style = "display: flex; justify-content: flex-end; gap: 6px;";
 
-    const modBtn = document.createElement("button");
-    modBtn.textContent = "Modifica";
-    modBtn.onclick = () => fillFormById(wine.id);
-    modBtn.style = "font-size: 0.75em; padding: 4px 8px;";
+  const modBtn = document.createElement("button");
+  modBtn.textContent = "Modifica";
+  modBtn.onclick = () => fillFormById(wine.id);
+  modBtn.style = "font-size: 0.7em; padding: 3px 6px;";
 
-    const delBtn = document.createElement("button");
-    delBtn.textContent = "Elimina";
-    delBtn.onclick = () => deleteWine(wine.id);
-    delBtn.style = "font-size: 0.75em; padding: 4px 8px; background: #e74c3c; color: white; border: none; border-radius: 6px;";
+  const delBtn = document.createElement("button");
+  delBtn.textContent = "Elimina";
+  delBtn.onclick = () => deleteWine(wine.id);
+  delBtn.style = "font-size: 0.7em; padding: 3px 6px; background: #e74c3c; color: white; border: none; border-radius: 6px;";
 
-    actions.appendChild(modBtn);
-    actions.appendChild(delBtn);
+  actions.appendChild(modBtn);
+  actions.appendChild(delBtn);
 
-    wrapper.appendChild(name);
-    wrapper.appendChild(actions);
-    container.appendChild(wrapper);
-  });
+  wrapper.appendChild(name);
+  wrapper.appendChild(actions);
+  container.appendChild(wrapper);
+});
 
   const pagination = document.getElementById("paginationControls");
   pagination.innerHTML = "";
