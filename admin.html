@@ -175,7 +175,7 @@
   </div>
 </div>
 
-  <div id="wineCardContainer" style="display: flex; flex-wrap: wrap; gap: 1em; justify-content: center; margin-top: 2em;"></div>
+<div id="wineCardContainer" style="display: flex; flex-direction: column; gap: 0.6em; margin-top: 1.5em;"></div>
   <div style="display: flex; justify-content: center; align-items: center; margin-top: 1em; flex-wrap: wrap; gap: 1em;">
     <label for="itemsPerPage">Mostra:</label>
     <select id="itemsPerPage">
@@ -280,15 +280,14 @@ function renderTable() {
   const pageData = filtered.slice(start, end);
 
 pageData.forEach(wine => {
-  const wrapper = document.createElement("div");
-  wrapper.style = `
-    border-bottom: 1px solid #ddd;
-    padding: 0.3em 0.2em;
-    font-size: 0.85em;
-    display: flex;
-    flex-direction: column;
-    gap: 0.3em;
-  `;
+const wrapper = document.createElement("div");
+wrapper.style = `
+  border-bottom: 1px solid #ddd;
+  padding: 0.3em 0.4em;
+  font-size: 0.85em;
+  width: 100%;
+  box-sizing: border-box;
+`;
 
   const name = document.createElement("div");
   name.textContent = wine.nome || "(Senza nome)";
@@ -300,13 +299,13 @@ pageData.forEach(wine => {
     word-break: break-word;
   `;
 
-  const actions = document.createElement("div");
-  actions.style = `
-    display: flex;
-    justify-content: flex-end;
-    gap: 6px;
-    padding-right: 0.4em;
-  `;
+const actions = document.createElement("div");
+actions.style = `
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 4px;
+`;
 
   const modBtn = document.createElement("button");
   modBtn.textContent = "Modifica";
