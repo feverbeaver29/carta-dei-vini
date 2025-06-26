@@ -222,68 +222,66 @@ function renderTable() {
   });
 
   const totalPages = Math.ceil(filtered.length / perPage);
-if (currentPage > totalPages) currentPage = 1;
+  if (currentPage > totalPages) currentPage = 1;
 
-const start = (currentPage - 1) * perPage;
-const end = start + perPage;
-const pageData = filtered.slice(start, end);
-  pageData.forEach((wine, index) => {
-    const div = document.createElement("div");
-    div.style = "border:1px solid #ccc; padding:0.8em; border-radius:10px; width:220px; background:#fff; box-sizing:border-box;";
-    div.innerHTML = `
-      <strong>${wine.nome}</strong><br>
-      <button onclick="fillFormById('${wine.id}')">Modifica</button>
-      <button onclick="deleteWine('${wine.id}')">Elimina</button>`;
-    container.appendChild(div);
+  const start = (currentPage - 1) * perPage;
+  const end = start + perPage;
+  const pageData = filtered.slice(start, end);
+
+  pageData.forEach(wine => {
+    const row = document.createElement("div");
+    row.style = "display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding: 0.6em 0; font-size: 0.9em;";
+
+    const name = document.createElement("span");
+    name.textContent = wine.nome || "(Senza nome)";
+    name.style = "flex: 1;";
+
+    const actions = document.createElement("div");
+    actions.style = "flex-shrink: 0; display: flex; gap: 6px;";
+
+    const modBtn = document.createElement("button");
+    modBtn.textContent = "Modifica";
+    modBtn.onclick = () => fillFormById(wine.id);
+    modBtn.style = "font-size: 0.75em; padding: 4px 6px;";
+
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "Elimina";
+    delBtn.onclick = () => deleteWine(wine.id);
+    delBtn.style = "font-size: 0.75em; padding: 4px 6px; background: #e74c3c; color: white; border: none; border-radius: 6px;";
+
+    actions.appendChild(modBtn);
+    actions.appendChild(delBtn);
+
+    row.appendChild(name);
+    row.appendChild(actions);
+    container.appendChild(row);
   });
+
   const pagination = document.getElementById("paginationControls");
-pagination.innerHTML = "";
+  pagination.innerHTML = "";
 
-if (totalPages > 1) {
-  if (currentPage > 1) {
-  const prevBtn = document.createElement("button");
-  prevBtn.textContent = "◀️ Indietro";
-  prevBtn.style.cssText = `
-    background: none;
-    border: none;
-    color: #333;
-    font-size: 0.9em;
-    cursor: pointer;
-    text-decoration: underline;
-    padding: 2px 6px;
-  `;
-  prevBtn.onclick = () => {
-    currentPage--;
-    renderTable();
-  };
-  pagination.appendChild(prevBtn);
+  if (totalPages > 1) {
+    if (currentPage > 1) {
+      const prevBtn = document.createElement("button");
+      prevBtn.textContent = "◀️ Indietro";
+      prevBtn.onclick = () => { currentPage--; renderTable(); };
+      pagination.appendChild(prevBtn);
+    }
+
+    const pageIndicator = document.createElement("span");
+    pageIndicator.textContent = `Pagina ${currentPage} di ${totalPages}`;
+    pageIndicator.style.margin = "0 10px";
+    pagination.appendChild(pageIndicator);
+
+    if (currentPage < totalPages) {
+      const nextBtn = document.createElement("button");
+      nextBtn.textContent = "Avanti ▶️";
+      nextBtn.onclick = () => { currentPage++; renderTable(); };
+      pagination.appendChild(nextBtn);
+    }
+  }
 }
 
-  const pageIndicator = document.createElement("span");
-  pageIndicator.textContent = `Pagina ${currentPage} di ${totalPages}`;
-  pageIndicator.style.margin = "0 10px";
-  pagination.appendChild(pageIndicator);
-
-  if (currentPage < totalPages) {
-  const nextBtn = document.createElement("button");
-  nextBtn.textContent = "Avanti ▶️";
-  nextBtn.style.cssText = `
-    background: none;
-    border: none;
-    color: #333;
-    font-size: 0.9em;
-    cursor: pointer;
-    text-decoration: underline;
-    padding: 2px 6px;
-  `;
-  nextBtn.onclick = () => {
-    currentPage++;
-    renderTable();
-  };
-  pagination.appendChild(nextBtn);
-}
-}
-}
 function fillFormById(id) {
   const index = winesData.findIndex(w => w.id === id);
   if (index !== -1) fillForm(index);
