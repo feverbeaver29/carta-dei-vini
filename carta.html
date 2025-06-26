@@ -981,7 +981,7 @@ async function loadWineData() {
     return;
   }
 
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/wines?ristorante_id=eq.${RESTAURANT_ID}`, {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/wines?ristorante_id=eq.${RESTAURANT_ID}&visibile=is.true`, {
     headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
   });
   const json = await res.json();

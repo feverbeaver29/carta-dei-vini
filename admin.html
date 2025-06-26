@@ -327,6 +327,35 @@ actions.style = `
     border-radius: 6px;
   `;
 
+  const toggleBtn = document.createElement("button");
+  toggleBtn.textContent = wine.visibile ? "✅ Visibile" : "🚫 Nascosto";
+  toggleBtn.style = `
+    font-size: 0.7em;
+    padding: 3px 6px;
+    background: ${wine.visibile ? "#2ecc71" : "#aaa"};
+    color: white;
+    border: none;
+    border-radius: 6px;
+  `;
+  toggleBtn.onclick = async () => {
+    const newVal = !wine.visibile;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/wines?id=eq.${wine.id}`, {
+      method: "PATCH",
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_API_KEY
+      },
+      body: JSON.stringify({ visibile: newVal })
+    });
+    if (res.ok) {
+      wine.visibile = newVal;
+      renderTable(); // ricarica la lista
+    } else {
+      showMessage("Errore aggiornamento visibilità", false);
+    }
+  };
+  
+  actions.appendChild(toggleBtn);
   actions.appendChild(modBtn);
   actions.appendChild(delBtn);
 
