@@ -716,15 +716,7 @@ if (ristorante.palette_color === "custom") {
 }
 
 function goBack() {
-  if (currentView === 'wines') {
-    currentView = 'subcategory';
-    document.getElementById("wine-list").style.display = "none";
-    document.getElementById("subcategory-list").style.display = "grid";
-  } else if (currentView === 'subcategory') {
-    currentView = 'categories';
-    document.getElementById("subcategory-list").style.display = "none";
-    document.getElementById("category-list").style.display = "block";
-  }
+  history.back();
 }
 
 function applyPalette(palette) {
@@ -972,6 +964,7 @@ card.innerHTML = `<strong>${produttoreUpper} ${denominazione}${annata}</strong><
 
   document.getElementById('subcategory-list').style.display = 'none';
   wineList.style.display = 'block';
+  history.pushState({ view: "wines", subcategory: subcat, category: currentCategory }, "");
 }
 
 async function loadWineData() {
@@ -1463,6 +1456,7 @@ window.showSubcategories = function (category) {
     document.getElementById('category-list').style.display = 'none';
   container.style.display = 'grid';
   document.getElementById('wine-list').style.display = 'none';
+  history.pushState({ view: "subcategory", category }, "");
 };
 
 (async () => {
@@ -1481,6 +1475,7 @@ if (isSommelierOn) {
   window.ristorantePalette = ristorante.palette_color;
 
   showCategories();
+  history.replaceState({ view: "categories" }, "");
 
   if (isCustom) {
     applyCustomBoxStyles();
@@ -1572,6 +1567,18 @@ function aggiornaEtichettaCategorie() {
   const textSpan = button.querySelector(".labelText");
   if (textSpan) textSpan.textContent = baseLabel;
 }
+window.addEventListener("popstate", (event) => {
+  const state = event.state;
+
+  if (!state || state.view === "categories") {
+    goToCategories();
+  } else if (state.view === "subcategory") {
+    showSubcategories(state.category);
+  } else if (state.view === "wines") {
+    currentCategory = state.category;
+    showWinesBySubcategory(state.subcategory);
+  }
+});
 
 </script>
 </body>
