@@ -665,6 +665,9 @@ footer {
   color: #333;
   margin: 0 auto 1em auto;
 }
+  main.sommelier-mode {
+    padding-top: 30px; /* Ridotto rispetto agli 80px normali */
+  }
 
   #sommelierSettings .mockup {
     display: none; /* o aggiungi una preview se desiderato */
@@ -1534,8 +1537,11 @@ function capitalize(str) {
       window.location.href = "/";
     }
     function showSettings(type) {
-  document.getElementById("cartaSettings").style.display = (type === "carta") ? "block" : "none";
-      document.getElementById("sommelierSettings").style.display = (type === "sommelier") ? "block" : "none";
+const main = document.querySelector("main");
+const showCarta = type === "carta";
+document.getElementById("cartaSettings").style.display = showCarta ? "block" : "none";
+document.getElementById("sommelierSettings").style.display = showCarta ? "none" : "flex";
+main.classList.toggle("sommelier-mode", !showCarta);
 
       if (type === "sommelier" && !document.querySelector("#boostContainer input")) {
         const container = document.getElementById("boostContainer");
