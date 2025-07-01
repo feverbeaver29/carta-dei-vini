@@ -13,6 +13,23 @@
     button { margin-top: 1em; padding: 0.7em 1em; background-color: #b00; color: white; border: none; border-radius: 8px; cursor: pointer; }
     #searchInput { margin-top: 1em; padding: 0.5em; width: 100%; border-radius: 8px; border: 1px solid #ccc; }
     #message { margin: 1em auto; text-align: center; color: green; max-width: 600px; }
+    #backToDashboard {
+  display: inline-block;
+  margin-bottom: 1em;
+  margin-left: 0.2em;
+  font-size: 0.9em;
+  text-decoration: none;
+  color: #b00;
+  background: #fff0f0;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid #b00;
+  transition: background 0.2s ease;
+}
+#backToDashboard:hover {
+  background: #b00;
+  color: white;
+}
     @media (max-width: 768px) {
   .admin-panel {
     padding: 1em;
@@ -120,7 +137,7 @@
   </style>
 </head>
 <body>
-
+<a href="dashboard.html" id="backToDashboard">← Torna alla Dashboard</a>
 <h1>Gestione Carta dei Vini</h1>
 <div id="message"></div>
 <div class="admin-panel">
