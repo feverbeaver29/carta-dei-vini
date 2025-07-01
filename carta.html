@@ -933,11 +933,13 @@ function normalize(str) {
 }
 
 function goToCategories() {
+  if (currentView !== 'categories') {
+    history.pushState({ view: "categories" }, "");
+  }
   currentView = 'categories';
   document.getElementById("category-list").style.display = "block";
-document.getElementById("subcategory-list").style.display = "none";
-document.getElementById("wine-list").style.display = "none";
-
+  document.getElementById("subcategory-list").style.display = "none";
+  document.getElementById("wine-list").style.display = "none";
 }
 
 function showWinesBySubcategory(subcat) {
