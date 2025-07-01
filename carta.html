@@ -1426,19 +1426,19 @@ window.showSubcategories = function (category) {
     ([key]) => normalize(key) === normalize(category)
   )?.[1] || [];
 
-  if (Array.isArray(order) && order.length) {
-    const seenKeys = Array.from(seen.keys());
-    const customOrder = order
-      .map(name => {
-        const normalized = normalize(name);
-        return seenKeys.find(k => normalize(k) === normalized);
-      })
-      .filter(Boolean);
+if (Array.isArray(order) && order.length) {
+  const seenKeys = Array.from(seen.keys());
+  const customOrder = order
+    .map(name => {
+      const normalized = normalize(name);
+      return seenKeys.find(k => normalize(k) === normalized);
+    })
+    .filter(Boolean);
 
-    if (customOrder.length > 0) {
-      orderedKeys = customOrder;
-    }
-  }
+  // Aggiungi eventuali sottocategorie nuove non presenti nell'ordine salvato
+  const extra = seenKeys.filter(k => !customOrder.includes(k));
+  orderedKeys = [...customOrder, ...extra];
+}
 
   const container = document.getElementById('subcategory-list');
   container.innerHTML = '';
