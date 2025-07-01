@@ -1459,7 +1459,9 @@ window.showSubcategories = function (category) {
     document.getElementById('category-list').style.display = 'none';
   container.style.display = 'grid';
   document.getElementById('wine-list').style.display = 'none';
+if (window._manualNavigation !== true) {
   history.pushState({ view: "subcategory", category }, "");
+}
 };
 
 (async () => {
@@ -1573,6 +1575,8 @@ function aggiornaEtichettaCategorie() {
 window.addEventListener("popstate", (event) => {
   const state = event.state;
 
+  window._manualNavigation = true; // ✅ evita pushState
+
   if (!state || state.view === "categories") {
     goToCategories();
   } else if (state.view === "subcategory") {
@@ -1581,6 +1585,8 @@ window.addEventListener("popstate", (event) => {
     currentCategory = state.category;
     showWinesBySubcategory(state.subcategory);
   }
+
+  setTimeout(() => window._manualNavigation = false, 100);
 });
 
 </script>
