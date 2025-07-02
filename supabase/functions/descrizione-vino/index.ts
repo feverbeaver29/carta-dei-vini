@@ -19,20 +19,20 @@ serve(async (req) => {
   }
 
   try {
-    const { nome, annata, uvaggio, } = await req.json();
-const prompt = `Agisci come un sommelier. Scrivi una descrizione breve ed elegante (max 5 righe) per presentare questo vino a un cliente in sala. 
-Non usare un tono tecnico o spocchioso: sii coinvolgente, diretto e rispettoso. 
-Concentrati sul carattere del vino, i vitigni e l'esperienza di degustazione.
+const prompt = `Agisci come un sommelier professionista in un ristorante. 
+Descrivi in massimo 4 frasi questo vino a un cliente che sta scegliendo cosa bere. 
+Usa un tono competente ma semplice, senza romanticismi o esagerazioni. 
+Evita termini troppo tecnici, e concentrati sullo stile, i profumi e la sensazione al palato.
 
 Nome: ${nome}
 ${annata ? "Annata: " + annata : ""}
 Uvaggio: ${uvaggio || "non specificato"}`;
 
-    const completion = await openai.chat.completions.create({
-  model: "gpt-3.5-turbo",         // ✅ velocità migliorata
+const completion = await openai.chat.completions.create({
+  model: "gpt-3.5-turbo",         // ✅ più veloce
   messages: [{ role: "user", content: prompt }],
-  temperature: 0.6,               // ✅ un po' più snello
-  max_tokens: 150                // ✅ molto più veloce
+  temperature: 0.5,               // ✅ meno variabilità, più professionale
+  max_tokens: 120                 // ✅ ancora più veloce
 });
 
     const descrizione = completion.choices[0].message.content.trim();
