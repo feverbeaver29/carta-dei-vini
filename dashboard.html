@@ -377,8 +377,7 @@ footer {
 
 .accordion {
   width: 100%;
-  max-width: 360px;
-  margin: 0 auto 6px auto;
+  margin-bottom: 6px;
   padding: 0;
 }
 
@@ -399,7 +398,7 @@ footer {
 
 .accordion-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; /* ✅ questa è la chiave per separare testo e + */
   align-items: center;
   font-size: 0.95em;
   font-weight: 500;
@@ -407,9 +406,10 @@ footer {
   border-bottom: 1px solid #ccc;
   padding: 6px 0;
   margin: 0;
-  width: 100%;
-  padding-left: 0;
-  padding-right: 0;
+  width: 100vw; /* Forza larghezza viewport */
+  max-width: 100%;
+  padding-left: 16px;
+  padding-right: 16px;
   box-sizing: border-box;
 }
 
