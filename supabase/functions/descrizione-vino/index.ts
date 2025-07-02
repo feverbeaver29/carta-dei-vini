@@ -6,7 +6,6 @@ const openai = new OpenAI({
 });
 
 serve(async (req) => {
-  // ✅ Risposta preflight CORS
   if (req.method === "OPTIONS") {
     return new Response("ok", {
       status: 200,
@@ -19,7 +18,10 @@ serve(async (req) => {
   }
 
   try {
-const prompt = `Agisci come un sommelier professionista in un ristorante. 
+    // ✅ QUI mancava!
+    const { nome, annata, uvaggio } = await req.json();
+
+    const prompt = `Agisci come un sommelier professionista in un ristorante. 
 Descrivi in massimo 4 frasi questo vino a un cliente che sta scegliendo cosa bere. 
 Usa un tono competente ma semplice, senza romanticismi o esagerazioni. 
 Evita termini troppo tecnici, e concentrati sullo stile, i profumi e la sensazione al palato.
@@ -28,12 +30,12 @@ Nome: ${nome}
 ${annata ? "Annata: " + annata : ""}
 Uvaggio: ${uvaggio || "non specificato"}`;
 
-const completion = await openai.createChatCompletion({
-  model: "gpt-3.5-turbo",         // ✅ più veloce
-  messages: [{ role: "user", content: prompt }],
-  temperature: 0.5,               // ✅ meno variabilità, più professionale
-  max_tokens: 120                 // ✅ ancora più veloce
-});
+    const completion = await openai.createChatCompletion({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.5,
+      max_tokens: 120
+    });
 
     const descrizione = completion.choices[0].message.content.trim();
 
@@ -48,7 +50,8 @@ const completion = await openai.createChatCompletion({
     });
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: "Errore generazione descrizione" }), {
+    console.error("Errore interno:", err);
+    return new Response(JSON.stringify({ error: "Errore generazione descrizione", detail: err.message }), {
       status: 500,
       headers: {
         "Content-Type": "application/json",
