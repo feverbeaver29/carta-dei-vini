@@ -8,15 +8,16 @@ const openai = new OpenAIApi(config);
 
 serve(async (req) => {
   // ✅ CORS preflight
-  if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type"
-      }
-    });
-  }
+if (req.method === "OPTIONS") {
+  return new Response("ok", {
+    status: 200, // ✅ questa riga è fondamentale
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type"
+    }
+  });
+}
 
   try {
     const { nome, annata, uvaggio, prezzo } = await req.json();
