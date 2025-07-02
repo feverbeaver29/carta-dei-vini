@@ -19,12 +19,14 @@ serve(async (req) => {
   }
 
   try {
-    const { nome, annata, uvaggio, prezzo } = await req.json();
-    const prompt = `Sei un sommelier. Scrivi una descrizione breve e persuasiva (max 5 righe) per un vino da consigliare a un cliente.
+    const { nome, annata, uvaggio, } = await req.json();
+const prompt = `Agisci come un sommelier. Scrivi una descrizione breve ed elegante (max 5 righe) per presentare questo vino a un cliente in sala. 
+Non usare un tono tecnico o spocchioso: sii coinvolgente, diretto e rispettoso. 
+Concentrati sul carattere del vino, i vitigni e l'esperienza di degustazione.
+
 Nome: ${nome}
 ${annata ? "Annata: " + annata : ""}
-Uvaggio: ${uvaggio || "non specificato"}
-Prezzo: ${prezzo || "non indicato"} euro`;
+Uvaggio: ${uvaggio || "non specificato"}`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4",
