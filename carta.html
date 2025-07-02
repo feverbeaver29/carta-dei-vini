@@ -9,6 +9,37 @@
   --accent-color: #b00;
   --bg-default: #fff9f4;
 }
+.popup-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+.popup-descrizione {
+  background: #fff;
+  padding: 20px;
+  border-radius: 16px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+  position: relative;
+}
+.popup-descrizione h3 {
+  margin-top: 0;
+  font-size: 1.2em;
+}
+.popup-descrizione .close-btn {
+  position: absolute;
+  top: 10px; right: 12px;
+  font-size: 1.2em;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
 #wineTypeDropdown {
   position: fixed;
   background: #fff;
@@ -958,6 +989,9 @@ card.innerHTML = `<strong>${produttoreUpper} ${denominazione}${annata}</strong><
 <em>${w.prezzo}</em><br>
 <small>Uvaggio: ${w.uvaggio}</small>`;
     wineList.appendChild(card);
+    card.onclick = () => {
+  mostraPopupDescrizione(w); // w è il vino cliccato
+};
   });
     if (window.paletteOverrideLive && window.ristorantePalette === "custom") {
   applyCustomBoxStyles();
@@ -1588,6 +1622,36 @@ window.addEventListener("popstate", (event) => {
 
   setTimeout(() => window._manualNavigation = false, 100);
 });
+function mostraPopupDescrizione(vino) {
+  const overlay = document.createElement("div");
+  overlay.className = "popup-overlay";
+  overlay.innerHTML = `
+    <div class="popup-descrizione">
+      <button class="close-btn" onclick="this.closest('.popup-overlay').remove()">✖</button>
+      <h3>${vino.nome}${vino.annata ? ` (${vino.annata})` : ""}</h3>
+      <div id="descrizioneTesto">Sto caricando una descrizione...</div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/descrizione-vino", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      nome: vino.nome,
+      annata: vino.annata,
+      uvaggio: vino.uvaggio,
+      prezzo: vino.prezzo
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    overlay.querySelector("#descrizioneTesto").innerText = data.descrizione || "Nessuna descrizione trovata.";
+  })
+  .catch(() => {
+    overlay.querySelector("#descrizioneTesto").innerText = "Errore durante il recupero della descrizione.";
+  });
+}
 
 </script>
 </body>
