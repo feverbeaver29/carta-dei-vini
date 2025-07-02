@@ -29,11 +29,11 @@ ${annata ? "Annata: " + annata : ""}
 Uvaggio: ${uvaggio || "non specificato"}`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.7,
-      max_tokens: 300
-    });
+  model: "gpt-3.5-turbo",         // ✅ velocità migliorata
+  messages: [{ role: "user", content: prompt }],
+  temperature: 0.6,               // ✅ un po' più snello
+  max_tokens: 150                // ✅ molto più veloce
+});
 
     const descrizione = completion.choices[0].message.content.trim();
 
