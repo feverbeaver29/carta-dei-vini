@@ -28,7 +28,7 @@ Nome: ${nome}
 ${annata ? "Annata: " + annata : ""}
 Uvaggio: ${uvaggio || "non specificato"}`;
 
-const completion = await openai.chat.completions.create({
+const completion = await openai.createChatCompletion({
   model: "gpt-3.5-turbo",         // ✅ più veloce
   messages: [{ role: "user", content: prompt }],
   temperature: 0.5,               // ✅ meno variabilità, più professionale
