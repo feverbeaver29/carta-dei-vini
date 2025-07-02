@@ -406,7 +406,11 @@ footer {
   border-bottom: 1px solid #ccc;
   padding: 6px 0;
   margin: 0;
-  width: 100%;
+  width: 100vw; /* Forza larghezza viewport */
+  max-width: 100%;
+  padding-left: 16px;
+  padding-right: 16px;
+  box-sizing: border-box;
 }
 
 .accordion-header .accordion-icon {
@@ -448,13 +452,16 @@ footer {
   }
 
   /* Griglie e layout */
-  .dashboard-grid {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 0.25em 12px;
-    gap: 0.25em;
-  }
+.dashboard-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch; /* invece di center */
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: 0.25em;
+  padding-bottom: 0.25em;
+  gap: 0.25em;
+}
 
   .dashboard-grid label {
     margin-top: 12px;
