@@ -496,6 +496,8 @@ async function saveWine() {
   showMessage(editIndex !== null ? "Vino aggiornato" : "Vino aggiunto");
   resetForm();
   loadWines();
+  document.getElementById("formTitle").innerHTML = 'Aggiungi Vino <button id="resetButton" style="display:none; margin-left: 10px; padding: 0.3em 0.6em; font-size: 0.8em;">Aggiungi nuovo</button>';
+document.getElementById("saveButton").textContent = "Salva";
 }
 
 async function deleteWine(id) {
