@@ -1,0 +1,8 @@
+{
+  "method": "POST",
+  "cors": {
+    "origin": ["https://www.winesfever.com"],
+    "methods": ["POST", "OPTIONS"],
+    "headers": ["Content-Type"]
+  }
+}
