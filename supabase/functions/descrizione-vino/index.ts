@@ -4,20 +4,19 @@ import OpenAI from "https://deno.land/x/openai@v4.26.0/mod.ts";
 const openai = new OpenAI({
   apiKey: Deno.env.get("OPENAI_API_KEY"),
 });
-const openai = new OpenAIApi(config);
 
 serve(async (req) => {
-  // ✅ CORS preflight
-if (req.method === "OPTIONS") {
-  return new Response("ok", {
-    status: 200, // ✅ questa riga è fondamentale
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type"
-    }
-  });
-}
+  // ✅ Risposta preflight CORS
+  if (req.method === "OPTIONS") {
+    return new Response("ok", {
+      status: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
+      }
+    });
+  }
 
   try {
     const { nome, annata, uvaggio, prezzo } = await req.json();
@@ -27,24 +26,24 @@ ${annata ? "Annata: " + annata : ""}
 Uvaggio: ${uvaggio || "non specificato"}
 Prezzo: ${prezzo || "non indicato"} euro`;
 
-    const response = await openai.createChatCompletion({
+    const completion = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
-      max_tokens: 300,
+      max_tokens: 300
     });
 
-    const descrizione = response.data.choices[0].message.content.trim();
+    const descrizione = completion.choices[0].message.content.trim();
 
-return new Response(JSON.stringify({ descrizione }), {
-  status: 200, // ✅ aggiungi questo!
-  headers: {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type"
-  }
-});
+    return new Response(JSON.stringify({ descrizione }), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
+      }
+    });
 
   } catch (err) {
     return new Response(JSON.stringify({ error: "Errore generazione descrizione" }), {
@@ -58,3 +57,4 @@ return new Response(JSON.stringify({ descrizione }), {
     });
   }
 });
+
