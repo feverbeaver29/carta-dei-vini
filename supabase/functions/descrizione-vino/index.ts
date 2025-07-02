@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std/http/server.ts";
-import { Configuration, OpenAIApi } from "npm:openai";
+import OpenAI from "https://deno.land/x/openai@v4.26.0/mod.ts";
 
-const config = new Configuration({
+const openai = new OpenAI({
   apiKey: Deno.env.get("OPENAI_API_KEY"),
 });
 const openai = new OpenAIApi(config);
