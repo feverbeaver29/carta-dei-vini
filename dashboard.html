@@ -398,20 +398,21 @@ footer {
 
 .accordion-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 4px 0;
   font-size: 0.95em;
   font-weight: 500;
   color: #000;
   border-bottom: 1px solid #ccc;
-  width: 100%;
+  padding: 4px 0;
   margin: 0;
+  width: 100%;
+  gap: 8px; /* opzionale per separazione minima */
 }
 
 .accordion-header .accordion-icon {
-  font-size: 1.1em;
-  margin-left: auto;
+  margin-left: auto; /* ✅ questa è la chiave */
+  font-size: 1.2em;
+  line-height: 1;
 }
 
 .accordion:last-child {
