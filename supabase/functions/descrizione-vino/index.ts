@@ -36,14 +36,16 @@ Prezzo: ${prezzo || "non indicato"} euro`;
 
     const descrizione = response.data.choices[0].message.content.trim();
 
-    return new Response(JSON.stringify({ descrizione }), {
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type"
-      }
-    });
+return new Response(JSON.stringify({ descrizione }), {
+  status: 200, // ✅ aggiungi questo!
+  headers: {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type"
+  }
+});
+
   } catch (err) {
     return new Response(JSON.stringify({ error: "Errore generazione descrizione" }), {
       status: 500,
