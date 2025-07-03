@@ -1638,11 +1638,12 @@ function mostraPopupDescrizione(vino) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      nome: vino.nome,
-      annata: vino.annata,
-      uvaggio: vino.uvaggio,
-      prezzo: vino.prezzo
-    })
+    nome: vino.nome,
+    annata: vino.annata,
+    uvaggio: vino.uvaggio,
+    prezzo: vino.prezzo,
+    ristorante_id: RESTAURANT_ID  // <-- questo era mancante!
+  })
   })
   .then(res => res.json())
   .then(data => {
