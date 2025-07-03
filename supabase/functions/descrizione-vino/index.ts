@@ -64,7 +64,7 @@ const completion = await openai.chat.completions.create({
 });
 
     const descrizione = completion.choices[0].message.content.trim();
-await supabase.from("descrizioni_vini").insert({
+const { error: insertError } = await supabase.from("descrizioni_vini").insert({
   nome,
   annata: annata || null,
   uvaggio: uvaggio || null,
