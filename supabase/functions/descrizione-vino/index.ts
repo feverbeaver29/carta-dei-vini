@@ -66,11 +66,15 @@ const completion = await openai.chat.completions.create({
     const descrizione = completion.choices[0].message.content.trim();
 await supabase.from("descrizioni_vini").insert({
   nome,
-  annata,
-  uvaggio,
+  annata: annata || null,
+  uvaggio: uvaggio || null,
   ristorante_id,
   descrizione
 });
+
+if (insertError) {
+  console.error("❌ Errore salvataggio descrizione:", insertError);
+}
 
     return new Response(JSON.stringify({ descrizione }), {
       status: 200,
