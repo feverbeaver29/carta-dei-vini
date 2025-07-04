@@ -494,7 +494,14 @@ function applyTranslations() {
     descrEl.textContent = t.noDescription;
   }
 
-  // aggiorna altri elementi (puoi aggiungerne altri man mano)
+  document.querySelectorAll('.wine-card').forEach(card => {
+  const text = card.innerHTML;
+  const match = text.match(/<small>.*?: (.*?)<\/small>/);
+  const grapeValue = match?.[1] || "";
+
+  const t = translations[currentLang];
+  card.innerHTML = text.replace(/<small>.*?: .*?<\/small>/, `<small>${t.grape}: ${grapeValue}</small>`);
+});
 }
 
 function aggiornaAltezzaNavbar() {
@@ -1059,9 +1066,10 @@ const annata = w.annata ? ` (${w.annata})` : '';
 
 const [produttore, denominazione] = (w.nome || "").split(" | ");
 const produttoreUpper = (produttore || "").toUpperCase();
+const t = translations[currentLang];
 card.innerHTML = `<strong>${produttoreUpper} ${denominazione}${annata}</strong><br>
 <em>${w.prezzo}</em><br>
-<small>Uvaggio: ${w.uvaggio}</small>`;
+<small>${t.grape}: ${w.uvaggio}</small>`;
     wineList.appendChild(card);
     card.onclick = () => {
   mostraPopupDescrizione(w); // w è il vino cliccato
