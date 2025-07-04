@@ -1,0 +1,11 @@
+{
+  "login_title": "Login",
+  "email_label": "Email",
+  "email_placeholder": "Inserisci la tua email",
+  "password_label": "Password",
+  "password_placeholder": "Inserisci la password",
+  "remember": "Ricordati di me",
+  "submit": "Accedi",
+  "login_google": "Accedi con Google",
+  "footer_text": "© 2025 Wine's Fever - Tutti i diritti riservati"
+}
