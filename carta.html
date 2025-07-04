@@ -563,6 +563,7 @@ window.paletteColors = {
 function changeLanguage() {
   currentLang = document.getElementById("langSelector").value;
   applyTranslations();
+  showCategories(); // <--- AGGIUNGI QUESTA
 }
 
 function applyTranslations() {
