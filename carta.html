@@ -1647,7 +1647,7 @@ window.showCategories = function () {
     const display = seen.get(key);
     const div = document.createElement('div');
     div.className = 'category';
-const catKey = display.toLowerCase().trim();
+const catKey = normalize(display);
 const tradotta = translations[currentLang]?.categories?.[catKey] || display;
 div.textContent = tradotta;
     div.onclick = () => showSubcategories(key);
