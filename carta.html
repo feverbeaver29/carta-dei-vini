@@ -381,6 +381,14 @@ button, .save-btn {
   <div style="flex: 1; display: flex; justify-content: center;">
     <div id="restaurantName"><span>CARTA DEI VINI</span></div>
   </div>
+    <select id="langSelector" onchange="changeLanguage()" style="margin-left: 10px; font-size: 0.9em;">
+    <option value="it">🇮🇹</option>
+    <option value="en">🇬🇧</option>
+    <option value="fr">🇫🇷</option>
+    <option value="de">🇩🇪</option>
+    <option value="es">🇪🇸</option>
+    <option value="zh">🇨🇳</option>
+  </select>
 </nav>
 
 <div id="app" class="flipbook">
@@ -391,6 +399,50 @@ button, .save-btn {
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
+  const translations = {
+  it: {
+    wineList: "Carta dei Vini",
+    grape: "Uvaggio",
+    price: "Prezzo",
+    sommelierTitle: "Il nostro sommelier ti consiglia:",
+    noDescription: "Nessuna descrizione trovata."
+  },
+  en: {
+    wineList: "Wine List",
+    grape: "Grape variety",
+    price: "Price",
+    sommelierTitle: "Our sommelier recommends:",
+    noDescription: "No description available."
+  },
+  fr: {
+    wineList: "Carte des Vins",
+    grape: "Cépage",
+    price: "Prix",
+    sommelierTitle: "Notre sommelier vous recommande :",
+    noDescription: "Aucune description disponible."
+  },
+  de: {
+    wineList: "Weinkarte",
+    grape: "Rebsorte",
+    price: "Preis",
+    sommelierTitle: "Unser Sommelier empfiehlt:",
+    noDescription: "Keine Beschreibung verfügbar."
+  },
+  es: {
+    wineList: "Carta de Vinos",
+    grape: "Variedad de uva",
+    price: "Precio",
+    sommelierTitle: "Nuestro sumiller recomienda:",
+    noDescription: "No hay descripción disponible."
+  },
+  zh: {
+    wineList: "酒单",
+    grape: "葡萄品种",
+    price: "价格",
+    sommelierTitle: "我们的侍酒师推荐：",
+    noDescription: "暂无描述。"
+  }
+};
 
   function getContrastingTextColor(bgColor) {
   if (!bgColor) return "#000000";
@@ -414,6 +466,7 @@ let ristoranteSommelierURL = null;
 let currentCategory = '';
 let currentView = 'categories';
 let sommelierAperto = false;
+let currentLang = "it"; // default
 
 window.paletteColors = {
   background: null,
@@ -422,6 +475,27 @@ window.paletteColors = {
   textColor: null,
   boxShadow: null
 };
+
+function changeLanguage() {
+  currentLang = document.getElementById("langSelector").value;
+  applyTranslations();
+}
+
+function applyTranslations() {
+  const t = translations[currentLang];
+
+  // cambia titolo principale
+  const titleEl = document.querySelector("#restaurantName span");
+  if (titleEl) titleEl.textContent = t.wineList;
+
+  // aggiorna descrizione popup (se presente)
+  const descrEl = document.getElementById("descrizioneTesto");
+  if (descrEl && descrEl.textContent.includes("Nessuna descrizione")) {
+    descrEl.textContent = t.noDescription;
+  }
+
+  // aggiorna altri elementi (puoi aggiungerne altri man mano)
+}
 
 function aggiornaAltezzaNavbar() {
   const nav = document.querySelector("nav");
