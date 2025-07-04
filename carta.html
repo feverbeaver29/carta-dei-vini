@@ -420,11 +420,6 @@ const translations = {
     sommelierFooter: "Il tuo Sommelier Virtuale 🍷",
     sommelierTitleBox: "Dimmi cosa mangerai e ti suggerirò il vino perfetto!",
     sommelierTooltip: "Fatti dare una mano con l’abbinamento vino-cibo",
-    categories: {
-      "rossi": "Rossi",
-      "bianchi": "Bianchi",
-      "bollicine": "Bollicine"
-    },
   },
   en: {
     wineList: "Wine List",
@@ -446,11 +441,6 @@ const translations = {
     sommelierFooter: "Your Virtual Sommelier 🍷",
     sommelierTitleBox: "Tell me what you'll eat and I'll suggest the perfect wine!",
     sommelierTooltip: "Let me help with wine & food pairing",
-    categories: {
-      "rossi": "Red wines",
-      "bianchi": "White wines",
-      "bollicine": "Sparkling wines"
-    },
   },
   fr: {
     wineList: "Carte des Vins",
@@ -472,11 +462,6 @@ const translations = {
     sommelierFooter: "Votre Sommelier Virtuel 🍷",
     sommelierTitleBox: "Dites-moi ce que vous mangez et je vous suggère le vin idéal !",
     sommelierTooltip: "Laissez-moi vous aider à associer vins et mets",
-    categories: {
-      "rossi": "Vins rouges",
-      "bianchi": "Vins blancs",
-      "bollicine": "Vins effervescents"
-    },
   },
   de: {
     wineList: "Weinkarte",
@@ -498,11 +483,6 @@ const translations = {
     sommelierFooter: "Dein virtueller Sommelier 🍷",
     sommelierTitleBox: "Sag mir, was du isst, und ich empfehle dir den perfekten Wein!",
     sommelierTooltip: "Ich helfe dir bei der Weinauswahl zum Essen",
-    categories: {
-      "rossi": "Rotweine",
-      "bianchi": "Weißweine",
-      "bollicine": "Schaumweine"
-    },
   },
   es: {
     wineList: "Carta de Vinos",
@@ -524,11 +504,6 @@ const translations = {
     sommelierFooter: "Tu Sumiller Virtual 🍷",
     sommelierTitleBox: "Dime qué comerás y te sugiero el vino perfecto",
     sommelierTooltip: "Te ayudo con el maridaje vino-comida",
-    categories: {
-      "rossi": "Tintos",
-      "bianchi": "Blancos",
-      "bollicine": "Espumosos"
-    },
   },
   zh: {
     wineList: "酒单",
@@ -550,11 +525,6 @@ const translations = {
     sommelierFooter: "您的虚拟侍酒师 🍷",
     sommelierTitleBox: "告诉我你要吃什么，我会推荐最适合的酒！",
     sommelierTooltip: "我可以帮你选择搭配的葡萄酒",
-    categories: {
-      "rossi": "红酒",
-      "bianchi": "白酒",
-      "bollicine": "起泡酒"
-    },
   }
 };
 
@@ -1616,7 +1586,7 @@ function sortByOrder(array, orderArray) {
 const originalShowCategories = window.showCategories;
 const originalShowSubcategories = window.showSubcategories;
 
-window.showCategories = function () {
+window.showCategories = async function (categories) {
   const seen = new Map();
   wines.forEach(w => {
     const key = normalize(w.categoria);
@@ -1647,9 +1617,31 @@ window.showCategories = function () {
     const display = seen.get(key);
     const div = document.createElement('div');
     div.className = 'category';
-const catKey = normalize(display);
-const tradotta = translations[currentLang]?.categories?.[catKey] || display;
-div.textContent = tradotta;
+div.textContent = display; // provvisorio
+
+try {
+  const cacheKey = `cat-${display}-${currentLang}`;
+  const cached = localStorage.getItem(cacheKey);
+  if (cached) {
+    div.textContent = cached;
+  } else {
+    const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-categoria", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: display,
+        targetLang: currentLang
+      })
+    });
+    const data = await res.json();
+    const translated = data.text?.trim() || display;
+    div.textContent = translated;
+    localStorage.setItem(cacheKey, translated); // salva per non rifare la richiesta
+  }
+} catch (err) {
+  console.error("Errore nella traduzione GPT:", err);
+}
+
     div.onclick = () => showSubcategories(key);
     container.appendChild(div);
   }
