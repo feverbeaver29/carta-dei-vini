@@ -106,38 +106,30 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-  <select id="language-picker" style="position: absolute; top: 20px; right: 20px;">
-  <option value="it">🇮🇹 Italiano</option>
-  <option value="en">🇬🇧 English</option>
-  <option value="fr">🇫🇷 Français</option>
-  <option value="de">🇩🇪 Deutsch</option>
-</select>
-
 <div class="container">
-  <h1 data-i18n="login_title">Login</h1>
-  <label><span data-i18n="email_label">Email</span> <span style="color: red">*</span></label>
-<input type="email" id="email" placeholder="Inserisci la tua email" data-i18n-placeholder="email_placeholder" required>
+  <h1>Login</h1>
+  <label>Email <span style="color: red">*</span></label>
+  <input type="email" id="email" placeholder="Inserisci la tua email" required>
 
-  <label><span data-i18n="password_label">Password</span> <span style="color: red">*</span></label>
+  <label>Password <span style="color: red">*</span></label>
   <div class="password-wrapper">
-    <input type="password" id="password" placeholder="Inserisci la password" data-i18n-placeholder="password_placeholder" required>
+    <input type="password" id="password" placeholder="Inserisci la password" required>
     <span class="toggle-password" onclick="toggleVisibility('password')">👁️</span>
   </div>
 
   <div class="remember">
     <input type="checkbox" id="remember">
-    <label for="remember"><span data-i18n="remember">Ricordati di me</span></label>
+    <label for="remember">Ricordati di me</label>
   </div>
 
-  <button onclick="login()" data-i18n="submit">Accedi</button>
+  <button onclick="login()">Accedi</button>
   <div class="google-btn" onclick="loginWithGoogle()">
-  <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Icon">
-  <span data-i18n="login_google">Accedi con Google</span>
-</div>
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Icon">
+    Accedi con Google
   </div>
-  <footer><span data-i18n="footer_text">© 2025 Wine's Fever - Tutti i diritti riservati</span></footer>
+  <footer>© 2025 Wine's Fever - Tutti i diritti riservati</footer>
+</div>
 
-<script src="lang-switcher.js"></script>
 <script>
   const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
