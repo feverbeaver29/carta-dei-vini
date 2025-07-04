@@ -598,6 +598,11 @@ function changeLanguage() {
 function applyTranslations() {
   const t = translations[currentLang];
 
+  const foodInput = document.getElementById("foodInput");
+if (foodInput && translations[currentLang].placeholder) {
+  foodInput.placeholder = translations[currentLang].placeholder;
+}
+
   // cambia titolo principale
   const titleEl = document.querySelector("#restaurantName span");
   if (titleEl) titleEl.textContent = t.wineList;
@@ -615,8 +620,8 @@ function applyTranslations() {
 
   const t = translations[currentLang];
   card.innerHTML = text.replace(/<small>.*?: .*?<\/small>/, `<small>${t.grape}: ${grapeValue}</small>`);
-
-  // Etichette translate-label
+});
+// Etichette translate-label
 document.querySelectorAll(".translate-label").forEach(el => {
   const key = el.dataset.key;
   if (translations[currentLang][key]) {
@@ -629,8 +634,11 @@ const sendBtn = document.getElementById("sendFoodBtn");
 if (sendBtn && translations[currentLang].sendButton) {
   sendBtn.textContent = translations[currentLang].sendButton;
 }
+const tooltip = document.getElementById("tooltipSommelier");
+if (tooltip && translations[currentLang].sommelierTooltip) {
+  tooltip.innerText = translations[currentLang].sommelierTooltip;
+}
 
-});
 }
 
 function aggiornaAltezzaNavbar() {
@@ -753,11 +761,11 @@ async function suggestWine() {
   }
 
   if (!input) {
-    suggestion.innerHTML = "Inserisci un piatto!";
+    suggestion.innerHTML = translations[currentLang].emptyInput;
     return;
   }
 
-  suggestion.innerHTML = "Sto pensando...";
+  suggestion.innerHTML = translations[currentLang].thinking;
 
 try {
   const priceLimit = document.getElementById("priceFilter").value;
@@ -833,9 +841,7 @@ return `
 
     if (!cardsHtml || cardsHtml.trim() === "") {
       suggestion.innerHTML = `
-        <div style="background:${responseBg}; padding:15px; border-radius:12px; border:1px solid ${vignetteColor}; color: ${textColor}; font-style:italic;">
-          Non ho trovato nessun abbinamento per il piatto indicato. Prova con un altro!
-        </div>`;
+        <div style="background:${responseBg}; padding:15px; border-radius:12px; border:1px solid ${vignetteColor}; color: ${textColor}; font-style:italic;">${translations[currentLang].noMatch}</div>`;
       return;
     }
 
@@ -854,7 +860,7 @@ suggestion.innerHTML = `
       <strong style="color:${vignetteTextColor}; font-size: 1em;">${translations[currentLang].sommelierTitle}</strong>
       <div style="margin-top: 8px;">${cardsHtml}</div>
       ${storico}
-      <div style="text-align:right; font-size:0.85em; color:${vignetteTextColor}; margin-top:8px;">— Il tuo Sommelier Virtuale 🍷</div>
+      <div style="text-align:right; font-size:0.85em; color:${vignetteTextColor}; margin-top:8px;">${translations[currentLang].sommelierFooter}</div>
     </div>
   </div>
 `;
@@ -1286,7 +1292,7 @@ function setupSommelierUI() {
     overlay.innerHTML = `
       <div id="sommelierPopup" class="popup">
         <button class="close-btn" onclick="closeSommelierPopup()">✖</button>
-        <h3>Dimmi cosa mangerai e io ti consiglierò il vino giusto! 🍷</h3>
+        <h3 class="translate-label" data-key="sommelierTitleBox">Dimmi cosa mangerai e io ti consiglierò il vino giusto! 🍷</h3>
         <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
           <div style="flex: 1 1 48%;">
             <label for="priceFilter" class="translate-label" data-key="filterPrice" style="font-size: 0.85em; display: block; margin-bottom: 4px;">Filtra per prezzo</label>
