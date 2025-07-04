@@ -1618,33 +1618,33 @@ window.showCategories = async function (categories) {
     const display = seen.get(key);
     const div = document.createElement('div');
     div.className = 'category';
-div.textContent = display; // provvisorio
+div.textContent = display;
 
 try {
-  const cacheKey = `cat-${display}-${currentLang}`;
-  const cached = localStorage.getItem(cacheKey);
-  if (cached) {
-    div.textContent = cached;
-  } else {
-    const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-categoria", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text: display,
-        targetLang: currentLang
-      })
-    });
-    const data = await res.json();
-    const translated = data.text?.trim() || display;
-    div.textContent = translated;
-    localStorage.setItem(cacheKey, translated); // salva per non rifare la richiesta
+  if (currentLang !== "it") {
+    const cacheKey = `cat-${display}-${currentLang}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      div.textContent = cached;
+    } else {
+      const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-categoria", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: display, targetLang: currentLang })
+      });
+      const data = await res.json();
+      const translated = data.text?.trim() || display;
+      div.textContent = translated;
+      localStorage.setItem(cacheKey, translated);
+    }
   }
-} catch (err) {
-  console.error("Errore nella traduzione GPT:", err);
+} catch (e) {
+  console.error("Errore GPT categorie:", e);
 }
 
-    div.onclick = () => showSubcategories(key);
-    container.appendChild(div);
+div.onclick = () => showSubcategories(key); // ✅ SEMPRE fuori
+container.appendChild(div);                 // ✅ SEMPRE fuori
+
   }
   if (window.paletteOverrideLive && window.ristorantePalette === "custom") {
   applyCustomBoxStyles();
