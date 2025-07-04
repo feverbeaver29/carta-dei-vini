@@ -1,13 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { Configuration, OpenAIApi } from "npm:openai";
-
-const config = new Configuration({
-  apiKey: Deno.env.get("OPENAI_API_KEY"),
-});
-const openai = new OpenAIApi(config);
 
 serve(async (req) => {
-  // ✅ Gestione preflight CORS
   if (req.method === "OPTIONS") {
     return new Response("ok", {
       headers: {
@@ -20,20 +13,30 @@ serve(async (req) => {
 
   try {
     const { text, targetLang } = await req.json();
-
-    if (!text || !targetLang) {
-      return new Response(JSON.stringify({ error: "Missing parameters" }), { status: 400 });
-    }
+    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
     const prompt = `Traduci il seguente testo in ${targetLang.toUpperCase()} mantenendo uno stile elegante, adatto a una carta dei vini. Non aggiungere nulla, non firmarti:\n\n"${text}"`;
 
-    const completion = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo", // puoi usare anche "gpt-3.5-turbo" se vuoi risparmiare
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.6,
+    const chatResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.6
+      })
     });
 
-    const translation = completion.data.choices[0].message?.content?.trim();
+    if (!chatResponse.ok) {
+      const err = await chatResponse.text();
+      throw new Error("Errore OpenAI: " + err);
+    }
+
+    const result = await chatResponse.json();
+    const translation = result.choices?.[0]?.message?.content?.trim();
 
     return new Response(JSON.stringify({ text: translation }), {
       status: 200,
@@ -45,7 +48,7 @@ serve(async (req) => {
       }
     });
   } catch (e) {
-    console.error("Traduzione GPT fallita:", e);
+    console.error("Errore durante la traduzione:", e);
     return new Response(JSON.stringify({ error: "Errore durante la traduzione GPT" }), {
       status: 500,
       headers: {
@@ -56,4 +59,5 @@ serve(async (req) => {
     });
   }
 });
+
 
