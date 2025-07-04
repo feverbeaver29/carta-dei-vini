@@ -1,5 +1,3 @@
-// traduci-descrizione/index.ts
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Configuration, OpenAIApi } from "npm:openai";
 
@@ -9,6 +7,17 @@ const config = new Configuration({
 const openai = new OpenAIApi(config);
 
 serve(async (req) => {
+  // ✅ Gestione preflight CORS
+  if (req.method === "OPTIONS") {
+    return new Response("ok", {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS"
+      }
+    });
+  }
+
   try {
     const { text, targetLang } = await req.json();
 
@@ -27,12 +36,24 @@ serve(async (req) => {
     const translation = completion.data.choices[0].message?.content?.trim();
 
     return new Response(JSON.stringify({ text: translation }), {
-      headers: { "Content-Type": "application/json" },
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS"
+      }
     });
   } catch (e) {
     console.error("Traduzione GPT fallita:", e);
     return new Response(JSON.stringify({ error: "Errore durante la traduzione GPT" }), {
       status: 500,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS"
+      }
     });
   }
 });
+
