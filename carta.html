@@ -399,48 +399,162 @@ button, .save-btn {
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
-  const translations = {
+const translations = {
   it: {
     wineList: "Carta dei Vini",
     grape: "Uvaggio",
     price: "Prezzo",
     sommelierTitle: "Il nostro sommelier ti consiglia:",
-    noDescription: "Nessuna descrizione trovata."
+    noDescription: "Nessuna descrizione trovata.",
+    filterPrice: "Filtra per prezzo",
+    filterCategory: "Filtra per categoria",
+    searchLabel: "Ricerca piatti per abbinamento",
+    sendButton: "INVIA",
+    allLabel: "Tutti",
+    placeholder: "Separa piatti con le virgole.",
+    loadingDescription: "Sto caricando una descrizione...",
+    emptyInput: "Inserisci un piatto!",
+    thinking: "Sto pensando...",
+    noMatch: "Non ho trovato nessun abbinamento per questi piatti...",
+    alreadyAsked: "Hai già chiesto per:",
+    sommelierFooter: "Il tuo Sommelier Virtuale 🍷",
+    sommelierTitleBox: "Dimmi cosa mangerai e ti suggerirò il vino perfetto!",
+    sommelierTooltip: "Fatti dare una mano con l’abbinamento vino-cibo",
+    categories: {
+      "rossi": "Rossi",
+      "bianchi": "Bianchi",
+      "bollicine": "Bollicine"
+    },
   },
   en: {
     wineList: "Wine List",
     grape: "Grape variety",
     price: "Price",
     sommelierTitle: "Our sommelier recommends:",
-    noDescription: "No description available."
+    noDescription: "No description available.",
+    filterPrice: "Filter by price",
+    filterCategory: "Filter by category",
+    searchLabel: "Pairing dish search",
+    sendButton: "SEND",
+    allLabel: "All",
+    placeholder: "Separate dishes with commas.",
+    loadingDescription: "Loading a description...",
+    emptyInput: "Please enter a dish!",
+    thinking: "Thinking...",
+    noMatch: "I couldn't find a match for these dishes...",
+    alreadyAsked: "You already asked for:",
+    sommelierFooter: "Your Virtual Sommelier 🍷",
+    sommelierTitleBox: "Tell me what you'll eat and I'll suggest the perfect wine!",
+    sommelierTooltip: "Let me help with wine & food pairing",
+    categories: {
+      "rossi": "Red wines",
+      "bianchi": "White wines",
+      "bollicine": "Sparkling wines"
+    },
   },
   fr: {
     wineList: "Carte des Vins",
     grape: "Cépage",
     price: "Prix",
     sommelierTitle: "Notre sommelier vous recommande :",
-    noDescription: "Aucune description disponible."
+    noDescription: "Aucune description disponible.",
+    filterPrice: "Filtrer par prix",
+    filterCategory: "Filtrer par catégorie",
+    searchLabel: "Recherche de plats à associer",
+    sendButton: "ENVOYER",
+    allLabel: "Tous",
+    placeholder: "Séparez les plats avec des virgules.",
+    loadingDescription: "Chargement de la description...",
+    emptyInput: "Veuillez saisir un plat !",
+    thinking: "Je réfléchis...",
+    noMatch: "Aucun accord trouvé pour ces plats...",
+    alreadyAsked: "Vous avez déjà demandé pour :",
+    sommelierFooter: "Votre Sommelier Virtuel 🍷",
+    sommelierTitleBox: "Dites-moi ce que vous mangez et je vous suggère le vin idéal !",
+    sommelierTooltip: "Laissez-moi vous aider à associer vins et mets",
+    categories: {
+      "rossi": "Vins rouges",
+      "bianchi": "Vins blancs",
+      "bollicine": "Vins effervescents"
+    },
   },
   de: {
     wineList: "Weinkarte",
     grape: "Rebsorte",
     price: "Preis",
     sommelierTitle: "Unser Sommelier empfiehlt:",
-    noDescription: "Keine Beschreibung verfügbar."
+    noDescription: "Keine Beschreibung verfügbar.",
+    filterPrice: "Nach Preis filtern",
+    filterCategory: "Nach Kategorie filtern",
+    searchLabel: "Gerichte zum Kombinieren suchen",
+    sendButton: "SENDEN",
+    allLabel: "Alle",
+    placeholder: "Trenne Gerichte mit Kommas.",
+    loadingDescription: "Beschreibung wird geladen...",
+    emptyInput: "Bitte ein Gericht eingeben!",
+    thinking: "Ich denke nach...",
+    noMatch: "Keine passende Empfehlung gefunden...",
+    alreadyAsked: "Du hast bereits gefragt nach:",
+    sommelierFooter: "Dein virtueller Sommelier 🍷",
+    sommelierTitleBox: "Sag mir, was du isst, und ich empfehle dir den perfekten Wein!",
+    sommelierTooltip: "Ich helfe dir bei der Weinauswahl zum Essen",
+    categories: {
+      "rossi": "Rotweine",
+      "bianchi": "Weißweine",
+      "bollicine": "Schaumweine"
+    },
   },
   es: {
     wineList: "Carta de Vinos",
     grape: "Variedad de uva",
     price: "Precio",
     sommelierTitle: "Nuestro sumiller recomienda:",
-    noDescription: "No hay descripción disponible."
+    noDescription: "No hay descripción disponible.",
+    filterPrice: "Filtrar por precio",
+    filterCategory: "Filtrar por categoría",
+    searchLabel: "Buscar platos para maridar",
+    sendButton: "ENVIAR",
+    allLabel: "Todos",
+    placeholder: "Separe los platos con comas.",
+    loadingDescription: "Cargando descripción...",
+    emptyInput: "¡Introduce un plato!",
+    thinking: "Pensando...",
+    noMatch: "No encontré una combinación para esos platos...",
+    alreadyAsked: "Ya preguntaste por:",
+    sommelierFooter: "Tu Sumiller Virtual 🍷",
+    sommelierTitleBox: "Dime qué comerás y te sugiero el vino perfecto",
+    sommelierTooltip: "Te ayudo con el maridaje vino-comida",
+    categories: {
+      "rossi": "Tintos",
+      "bianchi": "Blancos",
+      "bollicine": "Espumosos"
+    },
   },
   zh: {
     wineList: "酒单",
     grape: "葡萄品种",
     price: "价格",
     sommelierTitle: "我们的侍酒师推荐：",
-    noDescription: "暂无描述。"
+    noDescription: "暂无描述。",
+    filterPrice: "按价格筛选",
+    filterCategory: "按类别筛选",
+    searchLabel: "查找可搭配的菜品",
+    sendButton: "发送",
+    allLabel: "全部",
+    placeholder: "用逗号分隔菜品。",
+    loadingDescription: "正在加载描述...",
+    emptyInput: "请输入一道菜！",
+    thinking: "思考中...",
+    noMatch: "未找到与这些菜品匹配的酒...",
+    alreadyAsked: "你已经查询过：",
+    sommelierFooter: "您的虚拟侍酒师 🍷",
+    sommelierTitleBox: "告诉我你要吃什么，我会推荐最适合的酒！",
+    sommelierTooltip: "我可以帮你选择搭配的葡萄酒",
+    categories: {
+      "rossi": "红酒",
+      "bianchi": "白酒",
+      "bollicine": "起泡酒"
+    },
   }
 };
 
@@ -1527,7 +1641,9 @@ window.showCategories = function () {
     const display = seen.get(key);
     const div = document.createElement('div');
     div.className = 'category';
-    div.textContent = display.charAt(0).toUpperCase() + display.slice(1).toLowerCase();
+    const catKey = display.toLowerCase().trim();
+      const tradotta = categoriaTranslations?.[currentLang]?.[catKey] || display;
+      div.textContent = tradotta;
     div.onclick = () => showSubcategories(key);
     container.appendChild(div);
   }
