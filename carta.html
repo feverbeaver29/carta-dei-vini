@@ -1728,7 +1728,7 @@ function mostraPopupDescrizione(vino) {
   } else {
     // chiamata a OpenAI, DeepL o traduzione locale (esempio fittizio)
     try {
-      const res = await fetch("https://api.mymocktranslator.com/translate", {
+      const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-descrizione", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1737,7 +1737,7 @@ function mostraPopupDescrizione(vino) {
         })
       });
       const translated = await res.json();
-      overlay.querySelector("#descrizioneTesto").innerText = `[${currentLang}] ` + testoOriginale;
+      overlay.querySelector("#descrizioneTesto").innerText = `${translated.text || testoOriginale} [${currentLang}]`;
     } catch (err) {
       overlay.querySelector("#descrizioneTesto").innerText = testoOriginale + " ⚠️ (non tradotto)";
     }
