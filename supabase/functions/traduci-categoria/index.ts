@@ -15,7 +15,16 @@ serve(async (req) => {
     const { text, targetLang } = await req.json();
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
-    const prompt = `Traduci il nome di questa categoria di vino per una carta dei vini. Restituisci solo la traduzione, senza spiegazioni. Categoria: "${text}" → ${targetLang}`;
+    const promptByLang = {
+  en: `Translate this wine category name for a wine list. Return only the translation, no explanations. Category: "${text}"`,
+  fr: `Traduisez ce nom de catégorie de vin pour une carte des vins. Donnez uniquement la traduction, sans explication. Catégorie : "${text}"`,
+  de: `Übersetze diesen Weinkategoriennamen für eine Weinkarte. Gib nur die Übersetzung zurück, ohne Erklärungen. Kategorie: "${text}"`,
+  es: `Traduce este nombre de categoría de vino para una carta de vinos. Devuelve solo la traducción, sin explicaciones. Categoría: "${text}"`,
+  zh: `将此葡萄酒类别名称翻译为酒单用语。只返回翻译，不要解释。类别："${text}"`,
+  it: `Traduci il nome di questa categoria enologica per una carta dei vini. Restituisci solo la traduzione, senza spiegazioni. Categoria: "${text}"`
+};
+
+const prompt = promptByLang[targetLang] || promptByLang["en"];
 
     const chatResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -26,7 +35,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.4
+        temperature: 0.2
       })
     });
 
