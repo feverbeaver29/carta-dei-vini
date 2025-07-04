@@ -1720,9 +1720,29 @@ function mostraPopupDescrizione(vino) {
   })
   })
   .then(res => res.json())
-  .then(data => {
-    overlay.querySelector("#descrizioneTesto").innerText = data.descrizione || "Nessuna descrizione trovata.";
-  })
+.then(async data => {
+  const testoOriginale = data.descrizione || "Nessuna descrizione trovata.";
+
+  if (currentLang === "it") {
+    overlay.querySelector("#descrizioneTesto").innerText = testoOriginale;
+  } else {
+    // chiamata a OpenAI, DeepL o traduzione locale (esempio fittizio)
+    try {
+      const res = await fetch("https://api.mymocktranslator.com/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: testoOriginale,
+          targetLang: currentLang
+        })
+      });
+      const translated = await res.json();
+      overlay.querySelector("#descrizioneTesto").innerText = `[${currentLang}] ` + testoOriginale;
+    } catch (err) {
+      overlay.querySelector("#descrizioneTesto").innerText = testoOriginale + " ⚠️ (non tradotto)";
+    }
+  }
+})
   .catch(() => {
     overlay.querySelector("#descrizioneTesto").innerText = "Errore durante il recupero della descrizione.";
   });
