@@ -501,6 +501,21 @@ function applyTranslations() {
 
   const t = translations[currentLang];
   card.innerHTML = text.replace(/<small>.*?: .*?<\/small>/, `<small>${t.grape}: ${grapeValue}</small>`);
+
+  // Etichette translate-label
+document.querySelectorAll(".translate-label").forEach(el => {
+  const key = el.dataset.key;
+  if (translations[currentLang][key]) {
+    el.textContent = translations[currentLang][key];
+  }
+});
+
+// Pulsante invia
+const sendBtn = document.getElementById("sendFoodBtn");
+if (sendBtn && translations[currentLang].sendButton) {
+  sendBtn.textContent = translations[currentLang].sendButton;
+}
+
 });
 }
 
@@ -722,7 +737,7 @@ suggestion.innerHTML = `
 
     <div style="position: relative; background: ${responseBg}; border: 1px solid ${vignetteColor}; border-radius:16px; padding:16px 18px; max-width:80%; box-shadow: ${shadow}; color: ${textColor};">
       <div style="position: absolute; top: 20px; left: -10px; width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-right: 10px solid ${vignetteColor};"></div>
-      <strong style="color:${vignetteTextColor}; font-size: 1em;">Il nostro sommelier ti consiglia:</strong>
+      <strong style="color:${vignetteTextColor}; font-size: 1em;">${translations[currentLang].sommelierTitle}</strong>
       <div style="margin-top: 8px;">${cardsHtml}</div>
       ${storico}
       <div style="text-align:right; font-size:0.85em; color:${vignetteTextColor}; margin-top:8px;">— Il tuo Sommelier Virtuale 🍷</div>
@@ -1160,7 +1175,7 @@ function setupSommelierUI() {
         <h3>Dimmi cosa mangerai e io ti consiglierò il vino giusto! 🍷</h3>
         <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
           <div style="flex: 1 1 48%;">
-            <label for="priceFilter" style="font-size: 0.85em; display: block; margin-bottom: 4px;">Filtra per prezzo</label>
+            <label for="priceFilter" class="translate-label" data-key="filterPrice" style="font-size: 0.85em; display: block; margin-bottom: 4px;">Filtra per prezzo</label>
             <select id="priceFilter" style="width: 100%; padding: 8px; font-size: 0.95em; border-radius: 8px; border: 1px solid #ccc;">
               <option value="">Indifferente</option>
               <option value="25">Max €25</option>
@@ -1171,7 +1186,7 @@ function setupSommelierUI() {
             </select>
           </div>
           <div style="flex: 1 1 48%; min-width: 0; position: relative;">
-            <label style="font-size: 0.85em; display: block; margin-bottom: 4px;">Filtra per categoria</label>
+            <label style="font-size: 0.85em; display: block; margin-bottom: 4px;" class="translate-label" data-key="filterCategory">Filtra per categoria</label>
             <button type="button" onclick="toggleWineTypeDropdown()" id="categoryFilterBtn"
               style="width: 100%; max-width: 100%; overflow: hidden; padding: 8px; font-size: 0.95em; border-radius: 8px; border: 1px solid #ccc; background: #fff; appearance: none; text-align: left; position: relative; white-space: nowrap;">
               <span class="labelText"
@@ -1181,10 +1196,10 @@ function setupSommelierUI() {
           </div>
         </div>
         <div style="margin-top: 12px;">
-          <label style="font-size: 0.85em; display: block; margin-bottom: 4px;">Ricerca piatti per abbinamento</label>
+          <label style="font-size: 0.85em; display: block; margin-bottom: 4px;" class="translate-label" data-key="searchLabel">Ricerca piatti per abbinamento</label>
           <div style="display: flex; background: white; border-radius: 999px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); width: 100%;">
             <input type="text" id="foodInput" placeholder="Separa piatti con le virgole." onkeydown="handleSommelierKey(event)" style="flex: 1; padding: 10px 14px; border: none; outline: none; font-size: 0.95em; background: transparent; line-height: 1.2; height: 40px; display: flex; align-items: center;" />
-            <button id="sendFoodBtn" onclick="suggestWine()" style="padding: 0 16px; background: #999; color: white; border: none; font-size: 0.9em; font-weight: 500; cursor: pointer; display: none; transition: background 0.2s ease; border-radius: 999px;">INVIA</button>
+            <button id="sendFoodBtn" onclick="suggestWine()" style="padding: 0 16px; background: #999; color: white; border: none; font-size: 0.9em; font-weight: 500; cursor: pointer; display: none; transition: background 0.2s ease; border-radius: 999px;" class="translate-label" data-key="sendButton">INVIA</button>
           </div>
         </div>
         <div id="wineSuggestion" style="margin-top: 15px; font-size: 0.95em;"></div>
@@ -1681,7 +1696,7 @@ function aggiornaEtichettaCategorie() {
   const button = document.getElementById("categoryFilterBtn");
 
   const baseLabel = (checked.length === 0 || checked.length === allCheckboxes.length)
-    ? 'Tutti'
+    ? translations[currentLang].allLabel
     : checked.slice(0, 3).join(', ') + (checked.length > 3 ? '…' : '');
 
   // ✅ Non sostituire tutto l’innerHTML, modifica solo il contenuto testuale
