@@ -1621,23 +1621,21 @@ window.showCategories = async function (categories) {
 div.textContent = display;
 
 try {
-  if (currentLang !== "it") {
-    const cacheKey = `cat-${display}-${currentLang}`;
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) {
-      div.textContent = cached;
-    } else {
-      const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-categoria", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: display, targetLang: currentLang })
-      });
-      const data = await res.json();
-      const translated = data.text?.trim() || display;
-      div.textContent = translated;
-      localStorage.setItem(cacheKey, translated);
-    }
+if (currentLang !== "it") {
+  try {
+    const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-categoria", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: display, targetLang: currentLang })
+    });
+    const data = await res.json();
+    const translated = data.text?.trim() || display;
+    div.textContent = translated;
+  } catch (e) {
+    console.error("Errore GPT categorie:", e);
+    div.textContent = display;
   }
+}
 } catch (e) {
   console.error("Errore GPT categorie:", e);
 }
