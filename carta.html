@@ -1322,58 +1322,6 @@ async function creaUIBaseSommelier() {
     dropdown.style.display = "none";
     document.body.appendChild(dropdown);
 
-    // Popola dropdown solo se esistono vini
-if (Array.isArray(wines) && wines.length) {
-  const categorieUniche = [];
-  wines.forEach(w => {
-    const cat = w.categoria;
-    if (cat && !categorieUniche.includes(cat)) {
-      categorieUniche.push(cat);
-    }
-  });
-
-  // Ordina con logica se presente
-  if (Array.isArray(categoriaOrder) && categoriaOrder.length) {
-    sortByOrder(categorieUniche, categoriaOrder);
-  }
-
-dropdown.innerHTML = ""; // svuota
-
-for (const cat of categorieUniche) {
-  const label = document.createElement("label");
-  label.style.cssText = "display: flex; align-items: center; gap: 8px; margin-bottom: 6px;";
-
-  const checkbox = document.createElement("input");
-  checkbox.type = "checkbox";
-  checkbox.value = cat;
-  checkbox.checked = true;
-  checkbox.onchange = aggiornaEtichettaCategorie;
-
-  const span = document.createElement("span");
-  span.textContent = cat;
-
-  if (currentLang !== "it") {
-    try {
-      const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-categoria", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: cat, targetLang: currentLang })
-      });
-      const data = await res.json();
-      const translated = data.text?.trim() || cat;
-      span.textContent = translated;
-      checkbox.setAttribute("data-translated-label", translated);
-    } catch (err) {
-      console.warn("Errore nella traduzione categoria:", err);
-    }
-  } else {
-    checkbox.setAttribute("data-translated-label", cat);
-  }
-
-  label.appendChild(checkbox);
-  label.appendChild(span);
-  dropdown.appendChild(label);
-}
   aggiornaEtichettaCategorie();
 }
 
@@ -1387,7 +1335,6 @@ for (const cat of categorieUniche) {
     window.closeSommelierPopup = function () {
       document.getElementById("sommelierOverlay").style.display = "none";
     };
-  }
 
   async function aggiornaCategorieSommelier() {
   const dropdown = document.getElementById("wineTypeDropdown");
