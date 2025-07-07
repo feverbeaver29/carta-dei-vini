@@ -34,7 +34,7 @@ serve(async (req) => {
       fr: `Traduisez ce nom de catégorie de vin pour une carte des vins. Donnez uniquement la traduction, sans explication. Catégorie : "${text}"`,
       de: `Übersetze diesen Weinkategoriennamen für eine Weinkarte. Gib nur die Übersetzung zurück, ohne Erklärungen. Kategorie: "${text}"`,
       es: `Traduce este nombre de categoría de vino para una carta de vinos. Devuelve solo la traducción, sin explicaciones. Categoría: "${text}"`,
-      zh: `请将以下葡萄酒类别名称翻译为中文，用于专业酒单。只返回中文翻译，不要解释：${text}`
+      zh: `请将以下葡萄酒类别名称翻译为中文，用于专业酒单。只返回中文翻译，不要解释："${text}"`
       it: `Traduci il nome di questa categoria enologica per una carta dei vini. Restituisci solo la traduzione, senza spiegazioni. Categoria: "${text}"`
     };
 
