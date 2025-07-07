@@ -564,6 +564,7 @@ function changeLanguage() {
   currentLang = document.getElementById("langSelector").value;
   applyTranslations();
   showCategories(); // <--- AGGIUNGI QUESTA
+  setupSommelierUI();
 }
 
 function applyTranslations() {
@@ -1244,7 +1245,7 @@ switch ((ristorante.ordine_vini || 'prezzo')) {
     break;
 }
 }
-function setupSommelierUI() {
+async function setupSommelierUI() {
   console.log("✅ Sommelier attivo: creo elementi");
 
   if (!document.getElementById("sommelierBtn")) {
@@ -1331,12 +1332,43 @@ if (Array.isArray(wines) && wines.length) {
     sortByOrder(categorieUniche, categoriaOrder);
   }
 
-  dropdown.innerHTML = categorieUniche.map(cat => `
-    <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-      <input type="checkbox" value="${cat}" checked onchange="aggiornaEtichettaCategorie()">
-      <span>${cat}</span>
-    </label>
-  `).join("");
+dropdown.innerHTML = ""; // svuota
+
+for (const cat of categorieUniche) {
+  const label = document.createElement("label");
+  label.style.cssText = "display: flex; align-items: center; gap: 8px; margin-bottom: 6px;";
+
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.value = cat;
+  checkbox.checked = true;
+  checkbox.onchange = aggiornaEtichettaCategorie;
+
+  const span = document.createElement("span");
+  span.textContent = cat;
+
+  if (currentLang !== "it") {
+    try {
+      const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-categoria", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: cat, targetLang: currentLang })
+      });
+      const data = await res.json();
+      const translated = data.text?.trim() || cat;
+      span.textContent = translated;
+      checkbox.setAttribute("data-translated-label", translated);
+    } catch (err) {
+      console.warn("Errore nella traduzione categoria:", err);
+    }
+  } else {
+    checkbox.setAttribute("data-translated-label", cat);
+  }
+
+  label.appendChild(checkbox);
+  label.appendChild(span);
+  dropdown.appendChild(label);
+}
   aggiornaEtichettaCategorie();
 }
 
@@ -1805,7 +1837,7 @@ document.addEventListener("click", function (event) {
 
 function aggiornaEtichettaCategorie() {
   const allCheckboxes = document.querySelectorAll("#wineTypeDropdown input[type='checkbox']");
-  const checked = Array.from(allCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+  const checked = Array.from(allCheckboxes).filter(cb => cb.checked).map(cb => cb.getAttribute("data-translated-label") || cb.value);
   const button = document.getElementById("categoryFilterBtn");
 
   const baseLabel = (checked.length === 0 || checked.length === allCheckboxes.length)
