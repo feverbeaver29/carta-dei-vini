@@ -1322,15 +1322,15 @@ async function creaUIBaseSommelier() {
     dropdown.style.display = "none";
     document.body.appendChild(dropdown);
 
-  aggiornaEtichettaCategorie();
-}
-
-    btn.addEventListener("click", () => {
+        btn.addEventListener("click", () => {
   const overlay = document.getElementById("sommelierOverlay");
   if (overlay) {
     overlay.style.display = "flex";
   }
 });
+
+  aggiornaEtichettaCategorie();
+}
 
     window.closeSommelierPopup = function () {
       document.getElementById("sommelierOverlay").style.display = "none";
