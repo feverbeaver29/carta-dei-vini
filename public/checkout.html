@@ -23,13 +23,30 @@
   <p>Inizia ora con 7 giorni di prova gratuita.</p>
   <button id="subscribeBtn">Abbonati</button>
 
-  <script>
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabase = createClient(
+      "https://ldunvbftxhbtuyabgxwh.supabase.co", // <--- usa il tuo Supabase project URL
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo" // <--- usa la tua chiave pubblica anonima (non la secret!)
+    );
+
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      alert("Devi essere loggato per abbonarti.");
+      window.location.href = "/login.html";
+    }
+
+    const email = user.email;
+
     document.getElementById("subscribeBtn").addEventListener("click", async () => {
       const res = await fetch("/api/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          plan: "base" // oppure "pro" se offri scelta
+          plan: "base",
+          email: email
         })
       });
 
@@ -44,3 +61,4 @@
   </script>
 </body>
 </html>
+

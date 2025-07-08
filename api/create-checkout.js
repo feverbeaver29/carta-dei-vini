@@ -8,7 +8,7 @@ module.exports = async (req, res) => {
     return res.status(405).send({ error: "Method not allowed" });
   }
 
-  const { plan } = req.body;
+  const { plan, email } = req.body;
 
   const priceMap = {
     base: "price_1RiFO4RWDcfnUagZw1Z12VEj",  // sostituisci con il vero ID Stripe
