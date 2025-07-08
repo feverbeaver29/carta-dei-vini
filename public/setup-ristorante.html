@@ -33,17 +33,38 @@
       window.location.href = "/";
     }
 
-    window.salvaNomeRistorante = async function () {
-      const nome = document.getElementById("ristorante").value;
-      if (!nome) return alert("Inserisci il nome del ristorante.");
+<!-- Dentro <script> (sostituisci la funzione window.salvaNomeRistorante) -->
+window.salvaNomeRistorante = async function () {
+  const nome = document.getElementById("ristorante").value;
+  if (!nome) return alert("Inserisci il nome del ristorante.");
 
-      const { error: insertError } = await supabase
-        .from("ristoranti")
-        .insert([{ id: user.id, nome }]);
+  // ✅ Salva ristorante in Supabase
+  const { error: insertError } = await supabase
+    .from("ristoranti")
+    .insert([{ id: user.id, nome, email: user.email }]);
 
-      if (insertError) return alert("Errore nel salvataggio: " + insertError.message);
-      window.location.href = `dashboard.html?ristorante_id=${user.id}`;
-    }
+  if (insertError) {
+    return alert("Errore nel salvataggio: " + insertError.message);
+  }
+
+  // ✅ Crea sessione Stripe per prova gratuita piano base
+  const checkoutRes = await fetch("/api/create-checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      plan: "base",
+      email: user.email
+    })
+  });
+
+  const data = await checkoutRes.json();
+  if (data.url) {
+    window.location.href = data.url;
+  } else {
+    alert("Errore nella creazione del checkout Stripe");
+    console.error(data);
+  }
+}
   });
 </script>
 </body>
