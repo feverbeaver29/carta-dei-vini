@@ -1,24 +1,22 @@
-// create-checkout.js
-
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const YOUR_DOMAIN = "https://www.winesfever.com"; // Modifica con il tuo dominio
+const YOUR_DOMAIN = "https://www.winesfever.com";
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).send({ error: "Method not allowed" });
   }
 
-  const { plan, email } = req.body;
+  const { plan, email } = req.body; // ✅ qui riceviamo l'email giusta
 
   const priceMap = {
-    base: "price_1RiFO4RWDcfnUagZw1Z12VEj",  // sostituisci con il vero ID Stripe
+    base: "price_1RiFO4RWDcfnUagZw1Z12VEj",
     pro: "price_1RiFLtRWDcfnUagZp0bIKnOL"
   };
 
   const selectedPrice = priceMap[plan];
 
-  if (!selectedPrice) {
-    return res.status(400).send({ error: "Piano non valido" });
+  if (!selectedPrice || !email) {
+    return res.status(400).send({ error: "Dati mancanti" });
   }
 
   try {
@@ -30,7 +28,7 @@ module.exports = async (req, res) => {
           quantity: 1
         }
       ],
-      customer_email: utenteEmail, // ← l'email dell’utente loggato
+      customer_email: email, // ✅ ora usiamo la variabile corretta
       subscription_data: {
         trial_period_days: 7
       },
@@ -44,3 +42,4 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: "Errore nella creazione sessione Stripe" });
   }
 };
+
