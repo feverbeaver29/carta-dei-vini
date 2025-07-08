@@ -1,6 +1,8 @@
 {
+  "deno.enable": true,
   "deno.enablePaths": [
-    "supabase/functions"
+    "supabase/functions",
+    "supabase/stripe-webhook"
   ],
   "deno.lint": true,
   "deno.unstable": [
@@ -22,3 +24,4 @@
     "editor.defaultFormatter": "denoland.vscode-deno"
   }
 }
+

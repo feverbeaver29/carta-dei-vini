@@ -30,6 +30,7 @@ module.exports = async (req, res) => {
           quantity: 1
         }
       ],
+      customer_email: utenteEmail, // ← l'email dell’utente loggato
       subscription_data: {
         trial_period_days: 7
       },
