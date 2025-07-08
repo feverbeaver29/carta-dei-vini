@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Abbonati - Wine's Fever</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 2em; background: #fff9f4; }
+    button {
+      background-color: #b00;
+      color: white;
+      font-size: 1.2em;
+      padding: 1em 2em;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    button:hover { background-color: #800000; }
+  </style>
+</head>
+<body>
+  <h1>Attiva il tuo abbonamento</h1>
+  <p>Inizia ora con 7 giorni di prova gratuita.</p>
+  <button id="subscribeBtn">Abbonati</button>
+
+  <script>
+    document.getElementById("subscribeBtn").addEventListener("click", async () => {
+      const res = await fetch("/api/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: "base" // oppure "pro" se offri scelta
+        })
+      });
+
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("Errore durante la creazione del pagamento");
+        console.error(data);
+      }
+    });
+  </script>
+</body>
+</html>
