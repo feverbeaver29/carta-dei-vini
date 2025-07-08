@@ -1,8 +1,9 @@
-
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@12.14.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// ✅ inizializza tutto in cima
+const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET")!;
 const stripe = Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
   apiVersion: "2022-11-15"
 });
@@ -13,17 +14,14 @@ const supabase = createClient(
 );
 
 serve(async (req) => {
-  console.log("🧪 Secret da Supabase:", webhookSecret);
   const sig = req.headers.get("stripe-signature");
   const body = await req.text();
-  const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
   if (!sig || !webhookSecret) {
     return new Response("Missing signature or secret", { status: 400 });
   }
 
   let event;
-
   try {
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch (err) {
