@@ -174,11 +174,34 @@
 
     if (password !== confirmPassword) return alert("Le password non coincidono.");
 
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) return alert("Errore registrazione: " + error.message);
+const { data, error } = await supabase.auth.signUp({ email, password });
+if (error) return alert("Errore registrazione: " + error.message);
 
-    const userId = data.user.id;
-    const { error: insertError } = await supabase.from('ristoranti').insert([{ id: userId, nome: ristorante }]);
+const userId = data.user.id;
+
+const { error: insertError } = await supabase.from('ristoranti').insert([
+  { id: userId, nome: ristorante, email: email }
+]);
+if (insertError) {
+  alert("Registrazione ok, ma errore nel salvare il nome del ristorante.");
+  return;
+}
+
+// ✅ Dopo aver salvato tutto, creiamo la sessione Stripe
+const checkoutRes = await fetch("/api/create-checkout", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ plan: "base", email })
+});
+const checkoutData = await checkoutRes.json();
+
+if (checkoutData.url) {
+  window.location.href = checkoutData.url;
+} else {
+  alert("Errore nel creare la sessione di pagamento");
+  console.error(checkoutData);
+}
+
     if (insertError) alert("Registrazione ok, ma errore nel salvare il nome del ristorante.");
     else {
       messageBox.textContent = "Registrazione completata! Controlla la tua email per confermare l'account.";
