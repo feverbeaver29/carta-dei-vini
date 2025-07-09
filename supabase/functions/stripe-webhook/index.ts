@@ -23,7 +23,7 @@ serve(async (req) => {
 
   let event;
   try {
-    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+    event = await stripe.webhooks.constructEventAsync(body, sig, webhookSecret);
   } catch (err) {
     console.error("❌ Errore verifica firma:", err.message);
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });

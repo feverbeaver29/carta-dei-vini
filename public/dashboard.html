@@ -909,6 +909,27 @@ footer {
     </div>
   </div>
 
+  <section id="abbonamento" style="margin-top: 60px;">
+  <h2 style="text-align: center;">Il tuo piano attuale</h2>
+  <div id="pianiContainer" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 30px;">
+    <div id="pianoBase" class="piano" style="flex: 1 1 250px; border: 2px solid #ccc; border-radius: 12px; padding: 20px; text-align: center;">
+      <h3>Base</h3>
+      <p><strong>14,99€/mese</strong></p>
+      <p>Funzionalità base per la gestione della carta vini</p>
+      <button id="passaBase" style="display: none;">Passa al piano Base</button>
+    </div>
+    <div id="pianoPro" class="piano" style="flex: 1 1 250px; border: 2px solid #ccc; border-radius: 12px; padding: 20px; text-align: center;">
+      <h3>Pro</h3>
+      <p><strong>24,99€/mese</strong></p>
+      <p>Tutte le funzionalità, incluse automazioni e consigli AI</p>
+      <button id="passaPro" style="display: none;">Passa al piano PRO</button>
+    </div>
+  </div>
+  <div style="text-align: center; margin-top: 20px;">
+    <button id="annullaAbbonamento" style="background: none; border: none; color: #b00; cursor: pointer; font-size: 0.9em; text-decoration: underline;">Annulla abbonamento</button>
+  </div>
+</section>
+
   <!-- POPUP SELEZIONE FONT -->
 <div id="fontPopup" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:1000; justify-content:center; align-items:center;">
   <div style="background:white; padding:20px; border-radius:12px; max-width:90vw; max-height:80vh; overflow:auto;">
@@ -1893,6 +1914,53 @@ function showFontPopupForBody() {
 
   document.getElementById("fontPopup").style.display = "flex";
 }
+async function mostraPianoUtente() {
+  const { data, error } = await supabase
+    .from("ristoranti")
+    .select("subscription_plan")
+    .eq("id", RESTAURANT_ID)
+    .single();
+
+  if (error || !data) return;
+
+  const piano = data.subscription_plan;
+  const base = document.getElementById("pianoBase");
+  const pro = document.getElementById("pianoPro");
+
+  if (piano === "pro") {
+    pro.style.borderColor = "#b00";
+    document.getElementById("passaBase").style.display = "inline-block";
+  } else {
+    base.style.borderColor = "#b00";
+    document.getElementById("passaPro").style.display = "inline-block";
+  }
+}
+
+document.getElementById("passaPro").addEventListener("click", async () => {
+  window.location.href = "/checkout.html?plan=pro";
+});
+
+document.getElementById("passaBase").addEventListener("click", async () => {
+  window.location.href = "/checkout.html?plan=base";
+});
+
+document.getElementById("annullaAbbonamento").addEventListener("click", async () => {
+  const confirmCancel = confirm("Sei sicuro di voler annullare l'abbonamento?");
+  if (!confirmCancel) return;
+
+  const { error } = await supabase
+    .from("ristoranti")
+    .update({
+      subscription_status: "canceled"
+    })
+    .eq("id", RESTAURANT_ID);
+
+  if (error) return alert("Errore nell'annullamento.");
+  alert("Abbonamento annullato.");
+  window.location.reload();
+});
+
+mostraPianoUtente();
 
   </script>
 </body>
