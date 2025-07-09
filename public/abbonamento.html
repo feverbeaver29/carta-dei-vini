@@ -99,11 +99,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const accessToken = localStorage.getItem("sb-access-token");
   if (!accessToken) return window.location.href = "/login.html";
 
-  // 🔧 imposta la sessione manualmente
-  await supabase.auth.setSession({
-    access_token: accessToken,
-    refresh_token: "" // opzionale, puoi gestirlo meglio se vuoi
-  });
+  supabase.auth.setAuth(accessToken); // ✅ metodo corretto
 
   const { data: userData, error } = await supabase.auth.getUser();
   if (error || !userData?.user) return window.location.href = "/login.html";
