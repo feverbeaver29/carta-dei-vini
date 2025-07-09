@@ -25,7 +25,7 @@ serve(async (req) => {
 
   try {
     // ✅ QUI mancava!
-    const { nome, annata, uvaggio, ristorante_id } = await req.json();
+    const { nome, annata, uvaggio, categoria, sottocategoria, ristorante_id } = await req.json();
 const { data: existing } = await supabase
   .from("descrizioni_vini")
   .select("descrizione")
@@ -47,14 +47,22 @@ if (existing?.descrizione) {
   });
 }
 
-    const prompt = `Agisci come un sommelier professionista in un ristorante. 
-Descrivi in massimo 4 frasi questo vino a un cliente che sta scegliendo cosa bere. 
-Usa un tono competente ma semplice, senza romanticismi o esagerazioni. 
-Evita termini troppo tecnici, e concentrati sullo stile, i profumi e la sensazione al palato.
+const prompt = `Agisci come un sommelier professionista in un ristorante. Scrivi una descrizione sintetica e tecnica per questo vino, suddivisa in 3 sezioni chiare:
 
+Stile: descrivi lo stile del vino (es. elegante, fruttato, intenso...), tenendo conto della categoria e zona se disponibili.
+
+Sensazione al palato: spiega struttura, acidità, tannini e persistenza.
+
+Abbinamenti consigliati: suggerisci categorie di piatti coerenti con il vino (es. carne rossa alla griglia, antipasti vegetariani, primi di pesce...), senza riferimenti a ricette specifiche o ingredienti locali.
+
+Evita romanticismi, ripetizioni o descrizioni vaghe. Massimo 400 caratteri in totale.
+
+Dati disponibili:
 Nome: ${nome}
 ${annata ? "Annata: " + annata : ""}
-Uvaggio: ${uvaggio || "non specificato"}`;
+Uvaggio: ${uvaggio || "non specificato"}
+Categoria: ${categoria || "non specificata"}
+Sottocategoria: ${sottocategoria || "non specificata"}`;
 
 const completion = await openai.chat.completions.create({
   model: "gpt-3.5-turbo",

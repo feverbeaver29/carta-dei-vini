@@ -1686,7 +1686,7 @@ window.showCategories = async function (categories) {
 const container = document.getElementById('category-list');
 if (!container) return; // 🔒 Se non esiste, esci subito
 
-container.style.display = 'none';
+container.style.display = 'block';
 container.innerHTML = '';
 
   for (const key of orderedKeys) {
