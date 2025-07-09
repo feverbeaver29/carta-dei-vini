@@ -1236,7 +1236,14 @@ function attachLogoListeners() {
     supabase = window.supabase.createClient("https://ldunvbftxhbtuyabgxwh.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo");
     const { data: { user }, error } = await supabase.auth.getUser();
       if (!user) return (window.location.href = '/');
-      RESTAURANT_ID = user.id;
+      const urlParams = new URLSearchParams(window.location.search);
+RESTAURANT_ID = urlParams.get("ristorante_id");
+
+if (!RESTAURANT_ID && user) {
+  RESTAURANT_ID = user.id;
+  window.location.href = `dashboard.html?ristorante_id=${RESTAURANT_ID}`;
+  return; // Evita di eseguire altro codice fino al reload
+}
 
       const { data: info } = await supabase
         .from("ristoranti")
