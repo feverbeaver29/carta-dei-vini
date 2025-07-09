@@ -161,15 +161,15 @@
       window.location.href = `dashboard.html?ristorante_id=${data.user.id}`;
     }
 
-    window.loginWithGoogle = async function () {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin + '/dashboard.html'
-        }
-      });
-      if (error) alert("Errore login con Google: " + error.message);
+window.loginWithGoogle = async function () {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin + '/dashboard.html?from=google'
     }
+  });
+  if (error) alert("Errore login con Google: " + error.message);
+}
 
     const rememberedEmail = localStorage.getItem("rememberedEmail");
     if (rememberedEmail) {

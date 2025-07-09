@@ -1230,6 +1230,9 @@ function attachLogoListeners() {
 }
 
   document.addEventListener("DOMContentLoaded", async () => {
+    if (window.location.hash === "#") {
+  history.replaceState(null, "", window.location.pathname);
+}
     supabase = window.supabase.createClient("https://ldunvbftxhbtuyabgxwh.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo");
     const { data: { user }, error } = await supabase.auth.getUser();
       if (!user) return (window.location.href = '/');
@@ -1536,14 +1539,15 @@ function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-    function updatePreview() {
-      const url = `carta.html?ristorante_id=${RESTAURANT_ID}`;
-      document.getElementById('previewFrame').src = url;
-    }
+function updatePreview() {
+  const url = `carta.html`;
+  document.getElementById('previewFrame').src = url;
+}
 
-    function goTo(path) {
-      window.location.href = `${path}?ristorante_id=${RESTAURANT_ID}`;
-    }
+function goTo(path) {
+  window.location.href = path;
+}
+
 
     async function logout() {
       await supabase.auth.signOut();
