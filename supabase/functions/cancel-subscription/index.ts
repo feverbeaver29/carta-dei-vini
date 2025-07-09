@@ -18,7 +18,13 @@ serve(async (req) => {
     .maybeSingle();
 
   if (error || !risto?.stripe_customer_id) {
-    return new Response("Utente non trovato o senza stripe_customer_id", { status: 400 });
+    return new Response("Utente non trovato o senza stripe_customer_id", { status: 400,
+          headers: {
+    "Access-Control-Allow-Origin": "https://www.winesfever.com", // oppure metti il tuo dominio per sicurezza
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Content-Type": "application/json"
+  }
+     });
   }
 
   const subscriptions = await stripe.subscriptions.list({
@@ -28,7 +34,12 @@ serve(async (req) => {
   });
 
   if (!subscriptions.data.length) {
-    return new Response("Nessun abbonamento attivo", { status: 400 });
+    return new Response("Nessun abbonamento attivo", { status: 400,
+        headers: {
+            "Access-Control-Allow-Origin": "https://www.winesfever.com", // oppure metti il tuo dominio per sicurezza
+            "Content-Type": "application/json"
+        }
+     });
   }
 
   await stripe.subscriptions.del(subscriptions.data[0].id);
@@ -40,5 +51,10 @@ serve(async (req) => {
     })
     .eq("id", risto.id);
 
-  return new Response("Annullato", { status: 200 });
+  return new Response("Annullato", { 
+    status: 200,
+    headers: {
+        "Access-Control-Allow-Origin": "https://www.winesfever.com", // oppure metti il tuo dominio per sicurezza
+        "Content-Type": "application/json"
+  }});
 });
