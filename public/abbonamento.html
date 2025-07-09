@@ -125,19 +125,23 @@ async function mostraPianoUtente() {
       window.location.href = "/checkout.html?plan=base";
     });
 
-    document.getElementById("annullaAbbonamento").addEventListener("click", async () => {
-      const confirmCancel = confirm("Sei sicuro di voler annullare l'abbonamento?");
-      if (!confirmCancel) return;
+document.getElementById("annullaAbbonamento").addEventListener("click", async () => {
+  const confirmCancel = confirm("Sei sicuro di voler annullare l'abbonamento?");
+  if (!confirmCancel) return;
 
-      const { error } = await supabase
-        .from("ristoranti")
-        .update({ subscription_status: "canceled" })
-        .eq("id", RESTAURANT_ID);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return alert("Utente non trovato.");
 
-      if (error) return alert("Errore nell'annullamento.");
-      alert("Abbonamento annullato.");
-      window.location.reload();
-    });
+  const res = await fetch("https://ldunvbftxhbtuyabgxwh.supabase.co/functions/v1/cancel-subscription", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: user.email })
+  });
+
+  if (!res.ok) return alert("Errore durante l'annullamento su Stripe.");
+  alert("Abbonamento annullato correttamente.");
+  window.location.reload();
+});
   </script>
 </body>
 </html>
