@@ -578,8 +578,8 @@ function changeLanguage() {
   applyTranslations();
   showCategories(); // <--- AGGIUNGI QUESTA
   setupSommelierUI();
-  window.changeLanguage = changeLanguage;
 }
+  window.changeLanguage = changeLanguage;
 
 function applyTranslations() {
   const t = translations[currentLang];
@@ -802,7 +802,7 @@ const textColor = useCustom
 
 const shadow = palette && window.paletteColors?.boxShadow || "0 2px 6px rgba(0,0,0,0.15)";
 
-cardsHtml = rawBlocks.map(block => {
+let cardsHtml = rawBlocks.map(block => {
   const lines = block.split(/\n/).map(l => l.trim()).filter(Boolean);
   const titleLine = lines[0] || "";
   const uvaggio = lines[1] || "";
@@ -1793,8 +1793,9 @@ function mostraStoricoNelSommelier() {
 function ripetiAbbinamento(piatto) {
   document.getElementById("foodInput").value = piatto;
   suggestWine();
-  window.ripetiAbbinamento = ripetiAbbinamento;
 }
+  window.ripetiAbbinamento = ripetiAbbinamento;
+  
 function ensureFontLoaded(fontName) {
   if (!fontName || fontName === "custom") return;
   if (["sans-serif", "cursive", "monospace"].includes(fontName)) return;
@@ -1831,8 +1832,8 @@ function toggleWineTypeDropdown() {
   dropdown.style.top = `${offsetTop}px`;
   dropdown.style.left = `${rect.left}px`;
   dropdown.style.display = "block";
-  window.toggleWineTypeDropdown = toggleWineTypeDropdown;
 }
+  window.toggleWineTypeDropdown = toggleWineTypeDropdown;
 
 document.addEventListener("click", function (event) {
   const dropdown = document.getElementById("wineTypeDropdown");
