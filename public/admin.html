@@ -226,11 +226,17 @@ let RESTAURANT_ID = new URLSearchParams(window.location.search).get("ristorante_
 
 async function fetchUserIfNeeded() {
   if (!RESTAURANT_ID) {
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sb-access-token'), 'apikey': SUPABASE_API_KEY }
-    });
-    const user = await res.json();
-    RESTAURANT_ID = user.id;
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_API_KEY);
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (user) {
+      RESTAURANT_ID = user.id;
+      // opzionale: aggiorna URL
+      const currentParams = new URLSearchParams(window.location.search);
+      currentParams.set("ristorante_id", RESTAURANT_ID);
+      history.replaceState({}, '', `${location.pathname}?${currentParams}`);
+    } else {
+      window.location.href = "/login.html";
+    }
   }
 }
 
@@ -416,6 +422,11 @@ async function loadWines() {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/wines?ristorante_id=eq.${RESTAURANT_ID}`, {
     headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
   });
+  if (!res.ok) {
+  showMessage("Errore nel recupero dei vini", false);
+  winesData = [];
+  return;
+}
   winesData = await res.json();
 
   const categorie = normalizeAndCapitalize(winesData.map(w => w.categoria));
