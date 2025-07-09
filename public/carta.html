@@ -1683,8 +1683,11 @@ window.showCategories = async function (categories) {
   }
 
 const container = document.getElementById('category-list');
-if (container) container.style.display = 'none';
+if (!container) return; // 🔒 Se non esiste, esci subito
+
+container.style.display = 'none';
 container.innerHTML = '';
+
   for (const key of orderedKeys) {
     const display = seen.get(key);
     const div = document.createElement('div');
@@ -1782,9 +1785,12 @@ if (window._manualNavigation !== true) {
 };
 
 (async () => {
-  await fetchCategoryOrder();
-  await loadRestaurantData();
-  await loadWineData(); // carica sempre i vini
+await fetchCategoryOrder();
+await loadRestaurantData();
+if (ristorante && RESTAURANT_ID) {
+  await loadWineData();
+  showCategories();
+}
 
 const isSommelierOn = ristorante?.sommelier_attivo === true || ristorante?.sommelier_attivo === "true";
 if (isSommelierOn) {
