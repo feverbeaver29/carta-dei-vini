@@ -581,6 +581,9 @@ function changeLanguage() {
     setupSommelierUI();
   } else {
     const sommelierBtn = document.getElementById("sommelierBtn");
+if (sommelierBtn && window.showSommelier === true) {
+  sommelierBtn.style.display = "block";
+}
     if (sommelierBtn) sommelierBtn.remove();
     const tooltip = document.getElementById("tooltipSommelier");
     if (tooltip) tooltip.remove();
@@ -688,21 +691,25 @@ if (input) {
   input.style.color = "#000000"; // sempre nero
 }
 
-  document.getElementById('foodInput').focus();
+  const inputEl = document.getElementById('foodInput');
+if (inputEl) inputEl.focus();
   history.pushState({ sommelier: true }, '', '#sommelier');
   sommelierAperto = true;
 }
 
 function closeSommelierPopup() {
-  const overlay = document.getElementById('sommelierOverlay');
-    overlay.classList.remove("fade-in");
-    overlay.classList.add("fade-out");
-    setTimeout(() => {
-      overlay.style.display = "none";
-    }, 300); // dopo l'animazione
-
-  document.getElementById('foodInput').value = '';
-  document.getElementById('wineSuggestion').innerHTML = '';
+const overlay = document.getElementById('sommelierOverlay');
+if (overlay) {
+  overlay.classList.remove("fade-in");
+  overlay.classList.add("fade-out");
+  setTimeout(() => {
+    overlay.style.display = "none";
+  }, 300);
+}
+const foodInput = document.getElementById('foodInput');
+if (foodInput) foodInput.value = '';
+const wineSuggestion = document.getElementById('wineSuggestion');
+if (wineSuggestion) wineSuggestion.innerHTML = '';
 
   // Puliamo l’URL (togliamo #sommelier) e azzeriamo lo stato
   if (location.hash === "#sommelier") {
@@ -714,24 +721,25 @@ window.handleSommelierKey = function (e) {
   if (e.key === 'Enter') {
     e.preventDefault();
     suggestWine();
-    document.getElementById('foodInput').blur(); // chiude la tastiera
+    const input = document.getElementById('foodInput');
+if (input) input.blur();
   }
 }
 
 function flipToPage(fromId, toId) {
-  const from = document.getElementById(fromId);
-  const to = document.getElementById(toId);
+const from = document.getElementById(fromId);
+const to = document.getElementById(toId);
 
+if (from && to) {
   from.classList.remove("flip-out");
   from.classList.add("flip-in");
-
   to.classList.remove("flip-in");
   to.classList.add("flip-out");
-
   setTimeout(() => {
     from.style.display = 'none';
     to.style.display = 'block';
   }, 600);
+}
 }
 
 window.suggestWine = async function () {
@@ -1191,6 +1199,7 @@ function goToCategories() {
 function showWinesBySubcategory(subcat) {
   currentView = 'wines';
   const wineList = document.getElementById('wine-list');
+  if (wineList) wineList.style.display = 'block';
   wineList.innerHTML = '';
   const filtered = wines.filter(w => normalize(w.categoria) === normalize(currentCategory) && normalize(w.sottocategoria) === normalize(subcat));
   filtered.forEach(w => {
@@ -1215,7 +1224,8 @@ card.innerHTML = `<strong>${produttoreUpper} ${denominazione}${annata}</strong><
   applyPalette(window.ristorantePalette);
 }
 
-  document.getElementById('subcategory-list').style.display = 'none';
+  const subcatList = document.getElementById('subcategory-list');
+  if (subcatList) subcatList.style.display = 'none';
   wineList.style.display = 'block';
   history.pushState({ view: "wines", subcategory: subcat, category: currentCategory }, "");
 }
@@ -1672,7 +1682,8 @@ window.showCategories = async function (categories) {
     }
   }
 
-  const container = document.getElementById('category-list');
+  const catList = document.getElementById('category-list');
+  if (catList) catList.style.display = 'none';
   container.innerHTML = '';
   for (const key of orderedKeys) {
     const display = seen.get(key);
@@ -1760,9 +1771,11 @@ if (Array.isArray(order) && order.length) {
   applyPalette(window.ristorantePalette);
 }
 
-    document.getElementById('category-list').style.display = 'none';
+    const catList = document.getElementById('category-list');
+    if (catList) catList.style.display = 'none';
   container.style.display = 'grid';
-  document.getElementById('wine-list').style.display = 'none';
+  const wineList = document.getElementById('wine-list');
+  if (wineList) wineList.style.display = 'none';
 if (window._manualNavigation !== true) {
   history.pushState({ view: "subcategory", category }, "");
 }
