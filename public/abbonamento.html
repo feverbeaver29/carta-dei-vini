@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gestisci Abbonamento</title>
+  <title>Gestione Abbonamento</title>
   <link href="https://fonts.googleapis.com/css2?family=Quicksand&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       background-color: #fff9f4;
@@ -89,24 +89,23 @@
 
   <script>
     const supabase = window.supabase.createClient(
-      'https://ldunvbftxhbtuyabgxwh.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+      "https://ldunvbftxhbtuyabgxwh.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." // usa la chiave anonima pubblica
     );
 
     let RESTAURANT_ID;
 
-document.addEventListener("DOMContentLoaded", async () => {
-  const accessToken = localStorage.getItem("sb-access-token");
-  if (!accessToken) return window.location.href = "/login.html";
+    document.addEventListener("DOMContentLoaded", async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
 
-  supabase.auth.setAuth(accessToken); // ✅ metodo corretto
+      if (error || !user) {
+        console.warn("Non autenticato", error);
+        return (window.location.href = "/login.html");
+      }
 
-  const { data: userData, error } = await supabase.auth.getUser();
-  if (error || !userData?.user) return window.location.href = "/login.html";
-
-  RESTAURANT_ID = userData.user.id;
-  mostraPianoUtente();
-});
+      RESTAURANT_ID = user.id;
+      mostraPianoUtente();
+    });
 
     async function mostraPianoUtente() {
       const { data, error } = await supabase
@@ -148,13 +147,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       const confirmCancel = confirm("Sei sicuro di voler annullare l'abbonamento?");
       if (!confirmCancel) return;
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return alert("Utente non trovato.");
-
       const res = await fetch("https://ldunvbftxhbtuyabgxwh.supabase.co/functions/v1/cancel-subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: user.id })
+        body: JSON.stringify({ id: RESTAURANT_ID })
       });
 
       const result = await res.json();
@@ -165,4 +161,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   </script>
 </body>
 </html>
+
 
