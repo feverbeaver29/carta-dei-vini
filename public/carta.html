@@ -1363,7 +1363,8 @@ btn.addEventListener("click", () => {
 }
 
     window.closeSommelierPopup = function () {
-      document.getElementById("sommelierOverlay").style.display = "none";
+      const overlay = document.getElementById("sommelierOverlay");
+if (overlay) overlay.style.display = "none";
     };
 
   async function aggiornaCategorieSommelier() {
