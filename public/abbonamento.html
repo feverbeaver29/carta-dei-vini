@@ -95,26 +95,28 @@
 
     let RESTAURANT_ID;
 
-    document.addEventListener("DOMContentLoaded", async () => {
-const token = localStorage.getItem('sb-access-token');
-if (!token) return window.location.href = "/login.html";
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    const token = localStorage.getItem('sb-access-token');
+    if (!token) return window.location.href = "/login.html";
 
-const res = await fetch("https://ldunvbftxhbtuyabgxwh.supabase.co/auth/v1/user", {
-  headers: {
-    Authorization: `Bearer ${token}`,
-    apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo" // chiave anon pubblica
+    const res = await fetch("https://ldunvbftxhbtuyabgxwh.supabase.co/auth/v1/user", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo" // chiave pubblica
+      }
+    });
+
+    const user = await res.json();
+    if (!user || !user.id) return window.location.href = "/login.html";
+
+    RESTAURANT_ID = user.id;
+    mostraPianoUtente();
+  } catch (err) {
+    console.error("Errore nel caricamento utente:", err);
+    return window.location.href = "/login.html";
   }
 });
-
-const user = await res.json();
-if (!user || !user.id) return window.location.href = "/login.html";
-
-RESTAURANT_ID = user.id;
-mostraPianoUtente();
-
-      RESTAURANT_ID = user.id;
-      mostraPianoUtente();
-    });
 
     async function mostraPianoUtente() {
       const { data, error } = await supabase
