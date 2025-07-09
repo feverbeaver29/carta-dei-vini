@@ -34,10 +34,10 @@ serve(async (req) => {
   }
 
   // Parsing del body JSON
-  let email: string;
-  try {
-    const body = await req.json();
-    email = body.email;
+let id: string;
+try {
+  const body = await req.json();
+  id = body.id;
   } catch {
     return new Response(JSON.stringify({ error: "Body JSON non valido" }), {
       status: 400,
@@ -49,11 +49,11 @@ serve(async (req) => {
   }
 
   // Recupera ristorante associato all'email
-  const { data: risto, error } = await supabase
-    .from("ristoranti")
-    .select("id, stripe_customer_id")
-    .eq("email", email)
-    .maybeSingle();
+const { data: risto, error } = await supabase
+  .from("ristoranti")
+  .select("id, stripe_customer_id")
+  .eq("id", id)
+  .maybeSingle();
 
   if (error || !risto?.stripe_customer_id) {
     return new Response(JSON.stringify({ error: "Utente non trovato o senza stripe_customer_id" }), {

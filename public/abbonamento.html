@@ -135,7 +135,7 @@ document.getElementById("annullaAbbonamento").addEventListener("click", async ()
   const res = await fetch("https://ldunvbftxhbtuyabgxwh.supabase.co/functions/v1/cancel-subscription", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: user.email })
+    body: JSON.stringify({ id: user.id }) // invece di email
   });
 
   if (!res.ok) return alert("Errore durante l'annullamento su Stripe.");
