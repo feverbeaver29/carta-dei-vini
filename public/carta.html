@@ -576,8 +576,15 @@ window.paletteColors = {
 function changeLanguage() {
   currentLang = document.getElementById("langSelector").value;
   applyTranslations();
-  showCategories(); // <--- AGGIUNGI QUESTA
-  setupSommelierUI();
+  showCategories();
+  if (window.showSommelier === true) {
+    setupSommelierUI();
+  } else {
+    const sommelierBtn = document.getElementById("sommelierBtn");
+    if (sommelierBtn) sommelierBtn.remove();
+    const tooltip = document.getElementById("tooltipSommelier");
+    if (tooltip) tooltip.remove();
+  }
 }
   window.changeLanguage = changeLanguage;
 
@@ -1107,8 +1114,8 @@ case "black-white":
   const backBtn = document.querySelector("nav button");
   if (backBtn) backBtn.style.color = primary;
 
-  const sommelierBtn = document.getElementById("sommelierBtn");
-if (sommelierBtn) {
+const sommelierBtn = document.getElementById("sommelierBtn");
+if (sommelierBtn && window.showSommelier === true) {
   sommelierBtn.style.backgroundColor = primary;
   sommelierBtn.style.borderColor = primary;
 }
@@ -1267,6 +1274,7 @@ switch ((ristorante.ordine_vini || 'prezzo')) {
 }
 async function setupSommelierUI() {
   // crea solo gli elementi una volta
+  window.showSommelier = ristorante?.sommelier_attivo === true || ristorante?.sommelier_attivo === "true";
   if (!document.getElementById("sommelierBtn")) {
     creaUIBaseSommelier();
   }
