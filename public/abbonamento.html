@@ -95,17 +95,22 @@
 
     let RESTAURANT_ID;
 
-    document.addEventListener("DOMContentLoaded", async () => {
-const accessToken = localStorage.getItem("sb-access-token");
-if (!accessToken) return window.location.href = "/login.html";
+document.addEventListener("DOMContentLoaded", async () => {
+  const accessToken = localStorage.getItem("sb-access-token");
+  if (!accessToken) return window.location.href = "/login.html";
 
-const { data: userData, error } = await supabase.auth.getUser();
-if (error || !userData?.user) return window.location.href = "/login.html";
+  // 🔧 imposta la sessione manualmente
+  await supabase.auth.setSession({
+    access_token: accessToken,
+    refresh_token: "" // opzionale, puoi gestirlo meglio se vuoi
+  });
 
-RESTAURANT_ID = userData.user.id;
-mostraPianoUtente();
+  const { data: userData, error } = await supabase.auth.getUser();
+  if (error || !userData?.user) return window.location.href = "/login.html";
 
-    });
+  RESTAURANT_ID = userData.user.id;
+  mostraPianoUtente();
+});
 
     async function mostraPianoUtente() {
       const { data, error } = await supabase
