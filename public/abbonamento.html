@@ -4,21 +4,33 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gestisci Abbonamento</title>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
     body {
-      font-family: sans-serif;
+      background-color: #fff9f4;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      color: #333;
       margin: 0;
-      padding: 1rem;
-      background-color: #f4f4f4;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
     }
     .container {
-      max-width: 600px;
-      margin: auto;
       background: white;
-      padding: 2rem;
-      border-radius: 1rem;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
+    }
+    h1 {
+      color: #b00;
+      margin-bottom: 20px;
+      font-size: 1.5em;
     }
     .piani {
       display: flex;
@@ -26,21 +38,22 @@
       gap: 1rem;
     }
     .piano {
+      border: 1px solid #ccc;
+      border-radius: 10px;
       padding: 1rem;
-      border: 2px solid #ccc;
-      border-radius: 1rem;
+      background-color: #fdfdfd;
     }
     .piano.attivo {
-      border-color: #b00;
+      border: 2px solid #b00;
     }
     .btn {
-      display: inline-block;
-      padding: 0.5rem 1rem;
-      margin-top: 1rem;
-      border: none;
-      border-radius: 0.5rem;
+      padding: 10px 20px;
+      margin-top: 10px;
       background-color: #b00;
       color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
       cursor: pointer;
     }
     .btn.secondary {
@@ -50,7 +63,7 @@
     .btn.cancel {
       background-color: transparent;
       color: #999;
-      font-size: 0.9rem;
+      font-size: 0.9em;
       border: none;
       margin-top: 2rem;
     }
@@ -58,16 +71,16 @@
 </head>
 <body>
   <div class="container">
-    <h1>Gestisci Abbonamento</h1>
+    <h1>Gestione Abbonamento</h1>
     <div class="piani">
       <div id="pianoBase" class="piano">
         <h2>Piano Base - 14,99€/mese</h2>
-        <p>Include: accesso limitato, gestione vini base</p>
+        <p>Accesso limitato, gestione vini base.</p>
         <button id="passaBase" class="btn" style="display:none">Passa al Piano Base</button>
       </div>
       <div id="pianoPro" class="piano">
         <h2>Piano PRO - 29,99€/mese</h2>
-        <p>Include: tutte le funzionalità del piano base + funzioni avanzate</p>
+        <p>Tutte le funzionalità del piano base + funzioni avanzate.</p>
         <button id="passaPro" class="btn" style="display:none">Passa al Piano PRO</button>
       </div>
     </div>
@@ -77,7 +90,7 @@
   <script>
     const supabase = window.supabase.createClient(
       'https://ldunvbftxhbtuyabgxwh.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo' // la tua public anon key
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
     );
 
     let RESTAURANT_ID;
@@ -89,33 +102,33 @@
       mostraPianoUtente();
     });
 
-async function mostraPianoUtente() {
-  const { data, error } = await supabase
-    .from("ristoranti")
-    .select("subscription_plan, subscription_status")
-    .eq("id", RESTAURANT_ID)
-    .single();
+    async function mostraPianoUtente() {
+      const { data, error } = await supabase
+        .from("ristoranti")
+        .select("subscription_plan, subscription_status")
+        .eq("id", RESTAURANT_ID)
+        .single();
 
-  if (error || !data) return;
+      if (error || !data) return;
 
-  const { subscription_plan, subscription_status } = data;
-  const base = document.getElementById("pianoBase");
-  const pro = document.getElementById("pianoPro");
+      const { subscription_plan, subscription_status } = data;
+      const base = document.getElementById("pianoBase");
+      const pro = document.getElementById("pianoPro");
 
-  if (subscription_status === "canceled") {
-    document.getElementById("passaBase").style.display = "inline-block";
-    document.getElementById("passaPro").style.display = "inline-block";
-    return;
-  }
+      if (subscription_status === "canceled") {
+        document.getElementById("passaBase").style.display = "inline-block";
+        document.getElementById("passaPro").style.display = "inline-block";
+        return;
+      }
 
-  if (subscription_plan === "pro") {
-    pro.classList.add("attivo");
-    document.getElementById("passaBase").style.display = "inline-block";
-  } else {
-    base.classList.add("attivo");
-    document.getElementById("passaPro").style.display = "inline-block";
-  }
-}
+      if (subscription_plan === "pro") {
+        pro.classList.add("attivo");
+        document.getElementById("passaBase").style.display = "inline-block";
+      } else {
+        base.classList.add("attivo");
+        document.getElementById("passaPro").style.display = "inline-block";
+      }
+    }
 
     document.getElementById("passaPro").addEventListener("click", () => {
       window.location.href = "/checkout.html?plan=pro";
@@ -125,23 +138,25 @@ async function mostraPianoUtente() {
       window.location.href = "/checkout.html?plan=base";
     });
 
-document.getElementById("annullaAbbonamento").addEventListener("click", async () => {
-  const confirmCancel = confirm("Sei sicuro di voler annullare l'abbonamento?");
-  if (!confirmCancel) return;
+    document.getElementById("annullaAbbonamento").addEventListener("click", async () => {
+      const confirmCancel = confirm("Sei sicuro di voler annullare l'abbonamento?");
+      if (!confirmCancel) return;
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return alert("Utente non trovato.");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return alert("Utente non trovato.");
 
-  const res = await fetch("https://ldunvbftxhbtuyabgxwh.supabase.co/functions/v1/cancel-subscription", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id: user.id }) // invece di email
-  });
+      const res = await fetch("https://ldunvbftxhbtuyabgxwh.supabase.co/functions/v1/cancel-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: user.id })
+      });
 
-  if (!res.ok) return alert("Errore durante l'annullamento su Stripe.");
-  alert("Abbonamento annullato correttamente.");
-  window.location.reload();
-});
+      const result = await res.json();
+      if (!res.ok) return alert("Errore: " + (result.error || "Errore generico"));
+      alert("Abbonamento annullato correttamente.");
+      window.location.reload();
+    });
   </script>
 </body>
 </html>
+
