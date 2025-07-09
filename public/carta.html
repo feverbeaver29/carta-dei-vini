@@ -1171,9 +1171,14 @@ function goToCategories() {
     history.pushState({ view: "categories" }, "");
   }
   currentView = 'categories';
-  document.getElementById("category-list").style.display = "block";
-  document.getElementById("subcategory-list").style.display = "none";
-  document.getElementById("wine-list").style.display = "none";
+
+  const catList = document.getElementById("category-list");
+  const subcatList = document.getElementById("subcategory-list");
+  const wineList = document.getElementById("wine-list");
+
+  if (catList) catList.style.display = "block";
+  if (subcatList) subcatList.style.display = "none";
+  if (wineList) wineList.style.display = "none";
 }
 
 function showWinesBySubcategory(subcat) {
@@ -1795,7 +1800,7 @@ function ripetiAbbinamento(piatto) {
   suggestWine();
 }
   window.ripetiAbbinamento = ripetiAbbinamento;
-  
+
 function ensureFontLoaded(fontName) {
   if (!fontName || fontName === "custom") return;
   if (["sans-serif", "cursive", "monospace"].includes(fontName)) return;
