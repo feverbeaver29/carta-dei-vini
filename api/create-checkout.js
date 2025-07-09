@@ -30,7 +30,10 @@ module.exports = async (req, res) => {
       ],
       customer_email: email, // ✅ ora usiamo la variabile corretta
       subscription_data: {
-        trial_period_days: 7
+        trial_period_days: 7,
+        metadata: {
+      plan // 👈 aggiunto qui!
+    }
       },
       success_url: `${YOUR_DOMAIN}/verifica-successo.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${YOUR_DOMAIN}/checkout.html`

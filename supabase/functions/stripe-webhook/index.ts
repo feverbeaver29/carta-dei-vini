@@ -50,12 +50,14 @@ serve(async (req) => {
       return new Response("Utente non trovato", { status: 404 });
     }
 
+    const selectedPlan = session.metadata?.plan || "base";
+
     const { error: updateErr } = await supabase
       .from("ristoranti")
       .update({
         stripe_customer_id: customerId,
         subscription_status: "active",
-        subscription_plan: "base" // oppure "pro" se lo ricavi dal prezzo
+        subscription_plan: selectedPlan
       })
       .eq("id", risto.id);
 
