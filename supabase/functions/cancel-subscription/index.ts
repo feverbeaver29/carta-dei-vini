@@ -38,7 +38,9 @@ let id: string;
 try {
   const body = await req.json();
   id = body.id;
+  console.log("Ricevuto ID:", id);  // 👈 DEBUG
   } catch {
+    console.log("Errore parsing JSON");  // 👈 DEBUG
     return new Response(JSON.stringify({ error: "Body JSON non valido" }), {
       status: 400,
       headers: {
@@ -56,6 +58,7 @@ const { data: risto, error } = await supabase
   .maybeSingle();
 
   if (error || !risto?.stripe_customer_id) {
+    console.log("Errore Supabase o stripe_customer_id mancante", error, risto);  // 👈 DEBUG
     return new Response(JSON.stringify({ error: "Utente non trovato o senza stripe_customer_id" }), {
       status: 400,
       headers: {
@@ -64,7 +67,7 @@ const { data: risto, error } = await supabase
       },
     });
   }
-
+  console.log("Utente trovato:", risto);  // 👈 DEBUG
   // Recupera l'abbonamento attivo
   const subscriptions = await stripe.subscriptions.list({
     customer: risto.stripe_customer_id,
@@ -73,6 +76,7 @@ const { data: risto, error } = await supabase
   });
 
   if (!subscriptions.data.length) {
+    console.log("Nessuna sottoscrizione attiva per:", risto.stripe_customer_id);  // 👈 DEBUG
     return new Response(JSON.stringify({ error: "Nessun abbonamento attivo" }), {
       status: 400,
       headers: {
@@ -83,6 +87,7 @@ const { data: risto, error } = await supabase
   }
 
   // Cancella l'abbonamento su Stripe
+  console.log("Annullamento abbonamento:", subscriptions.data[0].id);  // 👈 DEBUG
   await stripe.subscriptions.del(subscriptions.data[0].id);
 
   // Aggiorna stato abbonamento nel database
@@ -91,6 +96,7 @@ const { data: risto, error } = await supabase
     .update({ subscription_status: "canceled" })
     .eq("id", risto.id);
 
+    console.log("Annullamento completato");  // 👈 DEBUG
   return new Response(JSON.stringify({ message: "Abbonamento annullato" }), {
     status: 200,
     headers: {
