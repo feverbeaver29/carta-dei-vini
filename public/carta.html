@@ -1682,9 +1682,9 @@ window.showCategories = async function (categories) {
     }
   }
 
-  const catList = document.getElementById('category-list');
-  if (catList) catList.style.display = 'none';
-  container.innerHTML = '';
+const container = document.getElementById('category-list');
+if (container) container.style.display = 'none';
+container.innerHTML = '';
   for (const key of orderedKeys) {
     const display = seen.get(key);
     const div = document.createElement('div');
