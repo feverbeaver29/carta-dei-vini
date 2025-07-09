@@ -398,7 +398,7 @@ button, .save-btn {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-<script>
+<script type="module">
 const translations = {
   it: {
     wineList: "Carta dei Vini",
@@ -578,6 +578,7 @@ function changeLanguage() {
   applyTranslations();
   showCategories(); // <--- AGGIUNGI QUESTA
   setupSommelierUI();
+  window.changeLanguage = changeLanguage;
 }
 
 function applyTranslations() {
@@ -702,7 +703,7 @@ function closeSommelierPopup() {
   }
 }
 
-function handleSommelierKey(e) {
+window.handleSommelierKey = function (e) {
   if (e.key === 'Enter') {
     e.preventDefault();
     suggestWine();
@@ -726,7 +727,7 @@ function flipToPage(fromId, toId) {
   }, 600);
 }
 
-async function suggestWine() {
+window.suggestWine = async function () {
   const paroleBloccate = [
     "come ti chiami", "come stai", "ciao", "chi sei", "sei reale", "sei umano",
     "parolacce", "cazzo", "merda", "stronzo", "scemo", "stupido", "ubriaco",
@@ -948,7 +949,7 @@ if (ristorante.palette_color === "custom") {
 }
 }
 
-function goBack() {
+window.goBack = function () {
   history.back();
 }
 
@@ -962,7 +963,7 @@ function applyPalette(palette) {
   let textColor = "#000000";
   let boxShadow = "0 2px 6px rgba(0, 0, 0, 0.15)"; // valore predefinito
   let navbarColor;
-
+  
   switch (palette) {
     case "rosso":
       primary = "#b3001b";
@@ -1792,6 +1793,7 @@ function mostraStoricoNelSommelier() {
 function ripetiAbbinamento(piatto) {
   document.getElementById("foodInput").value = piatto;
   suggestWine();
+  window.ripetiAbbinamento = ripetiAbbinamento;
 }
 function ensureFontLoaded(fontName) {
   if (!fontName || fontName === "custom") return;
@@ -1829,6 +1831,7 @@ function toggleWineTypeDropdown() {
   dropdown.style.top = `${offsetTop}px`;
   dropdown.style.left = `${rect.left}px`;
   dropdown.style.display = "block";
+  window.toggleWineTypeDropdown = toggleWineTypeDropdown;
 }
 
 document.addEventListener("click", function (event) {
