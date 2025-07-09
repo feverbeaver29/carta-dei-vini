@@ -1362,7 +1362,8 @@ document.getElementById("wineOrder").addEventListener("change", async (e) => {
     .update({ ordine_vini: ordine })
     .eq("id", RESTAURANT_ID);
     updatePreview(); // forza il refresh dell’anteprima
-updatePreviewLive(); // se già presente, può restare
+    updatePreviewLive(); // se già presente, può restare
+    mostraPianoUtente();
 });
 
 ["bgColorPicker", "cardColorPicker", "borderColorPicker", "textColorPicker", "navbarColorPicker"].forEach(id => {
@@ -1959,8 +1960,6 @@ document.getElementById("annullaAbbonamento").addEventListener("click", async ()
   alert("Abbonamento annullato.");
   window.location.reload();
 });
-
-mostraPianoUtente();
 
   </script>
 </body>
