@@ -1243,6 +1243,7 @@ async function loadWineData() {
   const json = await res.json();
 
 wines = Array.isArray(json) ? json : [];
+console.log("Vini caricati:", wines);
 
 // Estrai categorie uniche dai vini
 const categorieUniche = [];
