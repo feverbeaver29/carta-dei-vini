@@ -1342,9 +1342,11 @@ async function creaUIBaseSommelier() {
     dropdown.style.display = "none";
     document.body.appendChild(dropdown);
 
-        btn.addEventListener("click", () => {
+btn.addEventListener("click", () => {
   const overlay = document.getElementById("sommelierOverlay");
   if (overlay) {
+    overlay.classList.remove("fade-out");     // ✅ rimuove la vecchia animazione
+    overlay.classList.add("fade-in");         // ✅ forza animazione entrata
     overlay.style.display = "flex";
   }
 });
