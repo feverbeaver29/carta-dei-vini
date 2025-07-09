@@ -96,10 +96,15 @@
     let RESTAURANT_ID;
 
     document.addEventListener("DOMContentLoaded", async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return window.location.href = "/login.html";
-      RESTAURANT_ID = user.id;
-      mostraPianoUtente();
+const accessToken = localStorage.getItem("sb-access-token");
+if (!accessToken) return window.location.href = "/login.html";
+
+const { data: userData, error } = await supabase.auth.getUser();
+if (error || !userData?.user) return window.location.href = "/login.html";
+
+RESTAURANT_ID = userData.user.id;
+mostraPianoUtente();
+
     });
 
     async function mostraPianoUtente() {
