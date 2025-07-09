@@ -1363,7 +1363,6 @@ document.getElementById("wineOrder").addEventListener("change", async (e) => {
     .eq("id", RESTAURANT_ID);
     updatePreview(); // forza il refresh dell’anteprima
     updatePreviewLive(); // se già presente, può restare
-    mostraPianoUtente();
 });
 
 ["bgColorPicker", "cardColorPicker", "borderColorPicker", "textColorPicker", "navbarColorPicker"].forEach(id => {
@@ -1410,6 +1409,7 @@ iframe.addEventListener("load", () => {
 });
 
     updatePreview();
+    mostraPianoUtente();
 // Mostra la sezione carta dei vini all’avvio
 showSettings('carta');
 
