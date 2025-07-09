@@ -89,27 +89,33 @@
       mostraPianoUtente();
     });
 
-    async function mostraPianoUtente() {
-      const { data, error } = await supabase
-        .from("ristoranti")
-        .select("subscription_plan")
-        .eq("id", RESTAURANT_ID)
-        .single();
+async function mostraPianoUtente() {
+  const { data, error } = await supabase
+    .from("ristoranti")
+    .select("subscription_plan, subscription_status")
+    .eq("id", RESTAURANT_ID)
+    .single();
 
-      if (error || !data) return;
+  if (error || !data) return;
 
-      const piano = data.subscription_plan;
-      const base = document.getElementById("pianoBase");
-      const pro = document.getElementById("pianoPro");
+  const { subscription_plan, subscription_status } = data;
+  const base = document.getElementById("pianoBase");
+  const pro = document.getElementById("pianoPro");
 
-      if (piano === "pro") {
-        pro.classList.add("attivo");
-        document.getElementById("passaBase").style.display = "inline-block";
-      } else {
-        base.classList.add("attivo");
-        document.getElementById("passaPro").style.display = "inline-block";
-      }
-    }
+  if (subscription_status === "canceled") {
+    document.getElementById("passaBase").style.display = "inline-block";
+    document.getElementById("passaPro").style.display = "inline-block";
+    return;
+  }
+
+  if (subscription_plan === "pro") {
+    pro.classList.add("attivo");
+    document.getElementById("passaBase").style.display = "inline-block";
+  } else {
+    base.classList.add("attivo");
+    document.getElementById("passaPro").style.display = "inline-block";
+  }
+}
 
     document.getElementById("passaPro").addEventListener("click", () => {
       window.location.href = "/checkout.html?plan=pro";
