@@ -71,7 +71,7 @@ const completion = await openai.chat.completions.create({
   max_tokens: 300
 });
 
-    const descrizione = completion.choices[0].message.content.trim().slice(0, 400);
+    const descrizione = completion.choices[0].message.content.trim();
 const { error: insertError } = await supabase.from("descrizioni_vini").insert({
   nome,
   annata: annata || null,
