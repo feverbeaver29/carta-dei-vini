@@ -66,7 +66,7 @@ Sensazione al palato: massimo 2 frasi. Spiega struttura, acidità, tannini ed eq
 
 Abbinamenti consigliati: massimo 2 frasi. Suggerisci categorie di piatti (es. carne alla griglia, antipasti vegetariani, primi di pesce, formaggi stagionati), senza ricette o ingredienti specifici.
 
-Scrivi in modo professionale, sobrio e adatto a una carta dei vini. Evita ripetizioni e frasi vaghe. Non superare i 400 caratteri in totale.
+Scrivi in modo professionale, sobrio e adatto a una carta dei vini. Evita ripetizioni e frasi vaghe. evita di ripetere il nome del vino. Non superare i 400 caratteri in totale.
 
 Dati disponibili:
 Nome: ${nome}
