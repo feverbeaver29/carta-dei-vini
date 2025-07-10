@@ -47,15 +47,15 @@ if (existing?.descrizione) {
   });
 }
 
-const prompt = `Agisci come un sommelier professionista in un ristorante. Scrivi una descrizione sintetica e tecnica per questo vino, suddivisa in 3 sezioni chiare:
+const prompt = `Agisci come un sommelier professionista in un ristorante. Scrivi una descrizione sintetica e tecnica di questo vino, suddivisa in 3 sezioni:
 
-Stile: descrivi lo stile del vino (es. elegante, fruttato, intenso...), tenendo conto della categoria e zona se disponibili.
+Stile: massimo 2 frasi. Descrivi lo stile del vino (es. elegante, fruttato, intenso...), tenendo conto della categoria e della zona se presenti.
 
-Sensazione al palato: spiega struttura, acidità, tannini e persistenza.
+Sensazione al palato: massimo 2 frasi. Parla di struttura, acidità, tannini ed equilibrio complessivo.
 
-Abbinamenti consigliati: suggerisci categorie di piatti coerenti con il vino (es. carne rossa alla griglia, antipasti vegetariani, primi di pesce...), senza riferimenti a ricette specifiche o ingredienti locali.
+Abbinamenti consigliati: massimo 2 frasi. Suggerisci categorie di piatti (es. carne rossa alla griglia, antipasti vegetariani, primi di pesce...), senza ricette specifiche.
 
-Evita romanticismi, ripetizioni o descrizioni vaghe. Massimo 400 caratteri in totale.
+Evita romanticismi, ripetizioni o frasi vaghe. Scrivi in modo tecnico ma chiaro, adatto a una carta dei vini. Massimo 400 caratteri in totale.
 
 Dati disponibili:
 Nome: ${nome}
@@ -68,10 +68,10 @@ const completion = await openai.chat.completions.create({
   model: "gpt-3.5-turbo",
   messages: [{ role: "user", content: prompt }],
   temperature: 0.5,
-  max_tokens: 120
+  max_tokens: 300
 });
 
-    const descrizione = completion.choices[0].message.content.trim();
+    const descrizione = completion.choices[0].message.content.trim().slice(0, 400);
 const { error: insertError } = await supabase.from("descrizioni_vini").insert({
   nome,
   annata: annata || null,
