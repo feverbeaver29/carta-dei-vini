@@ -58,15 +58,15 @@ if (existing?.descrizione) {
   });
 }
 
-const prompt = `Agisci come un sommelier professionista in un ristorante. Scrivi una descrizione sintetica e tecnica di questo vino, suddivisa in 3 sezioni:
+const prompt = `Agisci come un sommelier professionista in un ristorante. Scrivi una descrizione sintetica e tecnica di questo vino, suddivisa in 3 sezioni distinte:
 
-Stile: massimo 2 frasi. Descrivi lo stile del vino (es. elegante, fruttato, intenso...), tenendo conto della categoria e della zona se presenti.
+Stile: massimo 2 frasi. Descrivi il carattere del vino (es. elegante, fruttato, intenso...), tenendo conto della categoria, dell’uvaggio e della zona. Evita frasi generiche come “elegante e complesso” o “tipico della zona”.
 
-Sensazione al palato: massimo 2 frasi. Parla di struttura, acidità, tannini ed equilibrio complessivo.
+Sensazione al palato: massimo 2 frasi. Spiega struttura, acidità, tannini ed equilibrio. Usa un linguaggio concreto ma sobrio, evitando formule abusate come “tannini morbidi e acidità piacevole”.
 
-Abbinamenti consigliati: massimo 2 frasi. Suggerisci categorie di piatti (es. carne rossa alla griglia, antipasti vegetariani, primi di pesce...), senza ricette specifiche.
+Abbinamenti consigliati: massimo 2 frasi. Suggerisci categorie di piatti (es. carne alla griglia, antipasti vegetariani, primi di pesce, formaggi stagionati), senza ricette o ingredienti specifici.
 
-Evita romanticismi, ripetizioni o frasi vaghe. Scrivi in modo tecnico ma chiaro, adatto a una carta dei vini. Massimo 400 caratteri in totale.
+Scrivi in modo professionale, sobrio e adatto a una carta dei vini. Evita ripetizioni e frasi vaghe. Non superare i 400 caratteri in totale.
 
 Dati disponibili:
 Nome: ${nome}
@@ -78,7 +78,7 @@ Sottocategoria: ${sottocategoria || "non specificata"}`;
 const completion = await openai.chat.completions.create({
   model: "gpt-3.5-turbo",
   messages: [{ role: "user", content: prompt }],
-  temperature: 0.5,
+  temperature: 0.7,
   max_tokens: 300
 });
 
