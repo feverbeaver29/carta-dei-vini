@@ -26,14 +26,25 @@ serve(async (req) => {
   try {
     // ✅ QUI mancava!
     const { nome, annata, uvaggio, categoria, sottocategoria, ristorante_id } = await req.json();
-const { data: existing } = await supabase
+let query = supabase
   .from("descrizioni_vini")
   .select("descrizione")
   .eq("ristorante_id", ristorante_id)
-  .eq("nome", nome)
-  .eq("annata", annata || null)
-  .eq("uvaggio", uvaggio || null)
-  .maybeSingle();
+  .eq("nome", nome);
+
+if (annata) {
+  query = query.eq("annata", annata);
+} else {
+  query = query.is("annata", null);
+}
+
+if (uvaggio) {
+  query = query.eq("uvaggio", uvaggio);
+} else {
+  query = query.is("uvaggio", null);
+}
+
+const { data: existing } = await query.maybeSingle();
 
 if (existing?.descrizione) {
   return new Response(JSON.stringify({ descrizione: existing.descrizione }), {
