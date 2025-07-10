@@ -140,13 +140,33 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     }
 
-    document.getElementById("passaPro").addEventListener("click", () => {
-      window.location.href = "/checkout.html?plan=pro";
-    });
+async function vaiACheckoutStripe(plan) {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user || !user.email) {
+    return alert("Errore nel recupero dell'email dell'utente.");
+  }
 
-    document.getElementById("passaBase").addEventListener("click", () => {
-      window.location.href = "/checkout.html?plan=base";
-    });
+  const res = await fetch("/api/create-checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      plan: plan,
+      email: user.email
+    })
+  });
+
+  const json = await res.json();
+  if (json.url) {
+    window.location.href = json.url;
+  } else {
+    alert("Errore nella creazione del checkout.");
+    console.error(json.error);
+  }
+}
+
+document.getElementById("passaPro").addEventListener("click", () => vaiACheckoutStripe("pro"));
+document.getElementById("passaBase").addEventListener("click", () => vaiACheckoutStripe("base"));
+
 
     document.getElementById("annullaAbbonamento").addEventListener("click", async () => {
       const confirmCancel = confirm("Sei sicuro di voler annullare l'abbonamento?");
