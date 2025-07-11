@@ -46,34 +46,38 @@ const [min, max] = range.split("-").map(n => parseInt(n));
 
 let boostText = "";
 if (boost) {
-  boostText = `\n\n⚠️ Nota importante: Se è coerente con il piatto, considera anche il vino "${boost}" tra quelli consigliati. Solo se ha senso davvero.`;
+  boostText = `\n\n💡 Considera con priorità (se coerente) anche il vino "${boost}", indicato dal ristorante come da valorizzare. Ma includilo solo se davvero adatto al piatto.`;
 }
 
-const prompt = `Sei un sommelier elegante e professionale. Ecco una lista di vini disponibili nel ristorante:\n${vini.map(w => `- ${w.nome} (${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || ''}, prezzo: ${w.prezzo})`).join("\n")}
+const prompt = `Sei un sommelier professionale che lavora all’interno di un ristorante. Il cliente ha ordinato il seguente pasto:
 
-Abbina da ${min} a ${max} vini della lista per accompagnare tutto questo pasto: "${piatto}". Considera che sono più portate, quindi cerca vini versatili che si sposino bene con più piatti.
-${prezzo_massimo ? `\nTutti i vini devono costare al massimo €${prezzo_massimo}.` : ""}
-${Array.isArray(colori) && colori.length < 4 ? `\n⚠️ Considera solo i vini appartenenti a queste categorie: ${colori.join(", ")}. Non includere altri tipi.` : ""}
+"${piatto}"
 
-Per ogni vino consigliato, rispondi con questo formato preciso:
+Il ristorante dispone di questi vini in carta:
+${vini.map(w => `- ${w.nome} (${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || "uvaggio non specificato"}, €${w.prezzo})`).join("\n")}
 
-- Nome del vino  Prezzo
-Uvaggio
+Il tuo compito è consigliare **da ${min} a ${max} vini**, presenti nella lista sopra, che possano accompagnare bene tutto il pasto (più portate). Preferisci vini versatili e con coerenza gastronomica.
 
-Motivazione (1 o 2 frasi)
+${prezzo_massimo ? `❗ Consiglio solo vini con prezzo massimo €${prezzo_massimo}.` : ""}
+${Array.isArray(colori) && colori.length < 4 ? `✅ Filtra per categoria: includi solo vini ${colori.join(", ")}` : ""}
+
+Per ogni vino consigliato, rispondi nel formato seguente:
+
+- Nome del vino  Prezzo  
+Uvaggio  
+Motivazione tecnica in massimo 2 frasi: evidenzia le caratteristiche (acidità, struttura, tannini, freschezza, versatilità…) che lo rendono adatto al piatto.
 
 Esempio:
-
-- Chianti Classico DOCG  €24
-Sangiovese
-
-Struttura e tannini che valorizzano i piatti a base di carne stufata.
+- Chianti Classico DOCG  €24  
+Sangiovese  
+Tannini levigati e buona acidità: ideale per piatti strutturati a base di carne.
 
 ${boostText}
 
-Se non ci sono abbinamenti perfetti, scegli comunque i vini più adatti presenti nella lista.  
-Non inventare vini e non uscire da quelli elencati.  
-Rispondi **solo** con i blocchi nel formato sopra, senza aggiungere altro prima o dopo.`;
+⛔ Non inventare vini. Consiglia solo tra quelli elencati.  
+Se non ci sono abbinamenti perfetti, suggerisci comunque quelli più adatti.  
+Non aggiungere testo fuori dal formato richiesto.`;
+
 
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
     if (!openaiKey) {
