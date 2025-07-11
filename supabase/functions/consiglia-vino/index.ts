@@ -49,40 +49,34 @@ if (boost) {
   boostText = `\n\n💡 Considera con priorità (se coerente) anche il vino "${boost}", indicato dal ristorante come da valorizzare. Ma includilo solo se davvero adatto al piatto.`;
 }
 
-const prompt = `Sei un sommelier professionale che lavora all’interno di un ristorante.
+const prompt = `Sei un sommelier professionale che lavora all’interno di un ristorante. Il cliente ha ordinato il seguente pasto:
 
-Il cliente ha ordinato il seguente pasto:
 "${piatto}"
 
-🔸 Il pasto può contenere più piatti distinti, separati da virgola (es. "Risotto ai funghi, tagliata di manzo, fiori fritti").  
-Valuta abbinamenti versatili o complementari.
-
-🔸 Il ristorante dispone di questi vini in carta:
+Il ristorante dispone di questi vini in carta:
 ${vini.map(w => `- ${w.nome} (${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || "uvaggio non specificato"}, €${w.prezzo})`).join("\n")}
 
-🔸 Il tuo compito è consigliare da **${min} a ${max} vini** dalla lista che possano accompagnare bene il pasto completo.
+Il tuo compito è consigliare **da ${min} a ${max} vini**, presenti nella lista sopra, che possano accompagnare bene tutto il pasto (più portate). Preferisci vini versatili e con coerenza gastronomica.
 
-${prezzo_massimo ? `❗ Consiglia solo vini entro €${prezzo_massimo}.` : ""}
-${Array.isArray(colori) && colori.length < 4 ? `✅ Filtra per categoria: solo vini ${colori.join(", ")}.` : ""}
+${prezzo_massimo ? `❗ Consiglio solo vini con prezzo massimo €${prezzo_massimo}.` : ""}
+${Array.isArray(colori) && colori.length < 4 ? `✅ Filtra per categoria: includi solo vini ${colori.join(", ")}` : ""}
 
-Per ogni vino consigliato, usa esattamente questo formato:
+Per ogni vino consigliato, rispondi nel formato seguente:
 
 - Nome del vino  Prezzo  
-Tipo: rosso / bianco / rosato / bollicine *(dedotto dalla categoria)*  
 Uvaggio  
-Motivazione tecnica (max 2 frasi, non generica)
+Motivazione tecnica in massimo 2 frasi: evidenzia le caratteristiche (acidità, struttura, tannini, freschezza, versatilità…) che lo rendono adatto al piatto.
 
 Esempio:
 - Chianti Classico DOCG  €24  
-Tipo: rosso  
 Sangiovese  
 Tannini levigati e buona acidità: ideale per piatti strutturati a base di carne.
 
 ${boostText}
 
-⛔ Non inventare vini. Consiglia solo dalla lista.  
-⛔ Non scrivere testo fuori dal formato richiesto.  
-✅ Se non ci sono abbinamenti perfetti, scegli comunque i migliori tra quelli disponibili.`;
+⛔ Non inventare vini. Consiglia solo tra quelli elencati.  
+Se non ci sono abbinamenti perfetti, suggerisci comunque quelli più adatti.  
+Non aggiungere testo fuori dal formato richiesto.`;
 
 
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
