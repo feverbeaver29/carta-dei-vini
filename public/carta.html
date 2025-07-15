@@ -878,7 +878,6 @@ window.addEventListener('click', e => {
 });
 
 window.addEventListener('popstate', (event) => {
-  console.log("popstate event:", event.state);
   if (event.state?.sommelier || sommelierAperto) {
     closeSommelierPopup();
     sommelierAperto = false;
@@ -891,8 +890,6 @@ const res = await fetch(`${SUPABASE_URL}/rest/v1/ristoranti?select=sommelier_att
   });
   const data = await res.json();
   ristorante = data[0]; // senza const
-  console.log("Dati ricevuti da Supabase:", data);
-console.log("Campo sommelier_attivo:", ristorante?.sommelier_attivo);
   ristoranteSommelierURL = ristorante.sommelier_url || "sommelier.png";
 
 if (ristorante.font) {
@@ -1243,7 +1240,6 @@ async function loadWineData() {
   const json = await res.json();
 
 wines = Array.isArray(json) ? json : [];
-console.log("Vini caricati:", wines);
 
 // Estrai categorie uniche dai vini
 const categorieUniche = [];
@@ -1259,7 +1255,6 @@ if (Array.isArray(categoriaOrder) && categoriaOrder.length) {
   sortByOrder(categorieUniche, categoriaOrder);
 }
 
-console.log("Categorie disponibili per filtro:", categorieUniche);
 
 switch ((ristorante.ordine_vini || 'prezzo')) {
   case 'prezzo':
@@ -1639,9 +1634,6 @@ async function fetchCategoryOrder() {
       ? value.map(normalize)
       : [];
   }
-
-  console.log("Ordine categorie:", categoriaOrder);
-  console.log("Mappa sottocategorie:", sottocategoriaOrderMap);
 }
 
 function sortByOrder(array, orderArray) {

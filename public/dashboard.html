@@ -1275,10 +1275,8 @@ setTimeout(() => {
   }
 
   if (Array.isArray(savedBoosts)) {
-    console.log("🎯 Creo input per:", savedBoosts);
     savedBoosts.forEach(val => addBoostInput(val));
   } else {
-    console.log("⚠️ Nessun vino salvato, creo input vuoto");
     addBoostInput();
   }
 }, 0); 
@@ -1298,8 +1296,6 @@ if (toggle) {
 
   const checked = rawValue === true || rawValue === "true";
   toggle.checked = checked;
-
-  console.log("✅ sommelier_attivo interpretato come:", checked, `(raw: ${rawValue})`);
 }
     document.getElementById("navbarColorPicker").value = info?.navbar_color || "#ffffff";
     document.getElementById("nameSize").value = info?.name_size || "28";
@@ -1680,8 +1676,6 @@ async function saveSettings() {
   // Aggiornamento anteprime
   updatePreview();
   updatePreviewLive();
-
-  console.log("Salvo con palette:", palette_color, "e colori:", bgColor, cardColor, borderColor, textColor, navbarColor);
 }
 
 async function saveSommelierSettings() {
