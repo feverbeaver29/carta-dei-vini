@@ -22,8 +22,11 @@ function filtraEVotiVini({ vini, boost = [], prezzo_massimo = null, colori = [],
       if (Array.isArray(colori) && colori.length > 0) {
         const cat = (v.categoria || "").toLowerCase();
         const match = colori.some(c => cat.includes(c.toLowerCase()));
-        if (!match) return null; // ❌ ESCLUDI vino
-        score += 15;
+        if (match) {
+  score += 15; // bonus se combacia
+} else {
+  score -= 20; // penalità se non combacia
+}
       }
 
       if (!isBoost) {
