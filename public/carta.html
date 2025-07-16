@@ -827,17 +827,23 @@ let cardsHtml = rawBlocks.map(block => {
   const nomeVino = match?.[1] || "";
   const prezzo = match?.[2] ? `€${match[2]}` : "";
 
+  const vinoObj = wines.find(w => w.nome === nomeVino);
+  const categoria = vinoObj?.categoria?.toUpperCase() || "";
+
   if (!nomeVino || !prezzo || !motivazione) return '';
 
-return `
-  <div class="sommelier-card" style="background:${responseBg}; border:1px solid ${vignetteColor}; border-radius:12px; padding:15px; margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.06); color: ${textColor};">
-    <div class="vino-header" style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap;">
-      <div style="font-weight:600; font-size:1em; flex:1;">${nomeVino}</div>
-      <div style="font-size:0.95em; color:${prezzoColor}; white-space:nowrap;">${prezzo}</div>
-    </div>
-    ${uvaggio ? `<div style="font-size:0.9em; color:#666; margin-top:4px;">Uvaggio: ${uvaggio}</div>` : ""}
-    <div style="margin-top:10px; font-style:italic; font-size:0.95em;">${motivazione}</div>
-  </div>`;
+  return `
+    <div class="sommelier-card" style="background:${responseBg}; border:1px solid ${vignetteColor}; border-radius:12px; padding:15px; margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.06); color: ${textColor};">
+      <div class="vino-header" style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap;">
+        <div>
+          <div style="font-size:0.75em; font-weight:bold; color:${vignetteTextColor}; margin-bottom:4px;">${categoria}</div>
+          <div style="font-weight:600; font-size:1em;">${nomeVino}</div>
+        </div>
+        <div style="font-size:0.95em; color:${prezzoColor}; white-space:nowrap;">${prezzo}</div>
+      </div>
+      ${uvaggio ? `<div style="font-size:0.9em; color:#666; margin-top:4px;">Uvaggio: ${uvaggio}</div>` : ""}
+      <div style="margin-top:10px; font-style:italic; font-size:0.95em;">${motivazione}</div>
+    </div>`;
 }).join('');
 
     if (!cardsHtml || cardsHtml.trim() === "") {

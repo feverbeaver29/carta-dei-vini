@@ -113,10 +113,13 @@ recentLog.forEach(r => {
       });
     }
 
-    const vinoList = viniFiltrati.map(w => {
-      const isBoost = boost.includes(w.nome);
-      return `- ${w.nome}${isBoost ? " ⭐" : ""} (${w.tipo || "tipo non specificato"}, ${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || "uvaggio non specificato"}, €${w.prezzo})`;
-    }).join("\n");
+const vinoList = viniFiltrati.map(w => {
+  const isBoost = boost.includes(w.nome);
+  const categoria = (w.categoria || "").toUpperCase();
+  return `- ${w.nome}${isBoost ? " ⭐" : ""}  
+Categoria: ${categoria}  
+(${w.tipo || "tipo non specificato"}, ${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || "uvaggio non specificato"}, €${w.prezzo})`;
+}).join("\n");
 
     const prompt = `Sei un sommelier professionale che lavora all’interno di un ristorante. Il cliente ha ordinato il seguente pasto:
 
