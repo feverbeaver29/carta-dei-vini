@@ -6,7 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
 };
 
-function filtraEVotiVini({ vini, boost = [], prezzo_massimo = null, colori = [], recenti = [] }) {
+function filtraEVotiVini({ vini, boost = [], prezzo_massimo = null, colori = [], recenti = {}, usageStats = {} }) {
+
   if (!Array.isArray(vini)) return [];
 
   return vini
@@ -26,7 +27,11 @@ function filtraEVotiVini({ vini, boost = [], prezzo_massimo = null, colori = [],
         if (match) score += 15;
       }
 
-      if (recenti.includes(v.nome) && !isBoost) score -= 30;
+if (!isBoost) {
+  const penalitaRecenti = recenti[v.nome] || 0;
+  const penalitaStorica = usageStats[v.nome] || 0;
+  score -= penalitaRecenti * 15 + penalitaStorica * 5; // puoi regolare i pesi
+}
 
       return { ...v, score };
     })
@@ -80,9 +85,25 @@ serve(async (req) => {
       headers
     });
     const recentLog = await recentRes.json();
-    const recenti = [...new Set(
-      recentLog.flatMap(r => r.vini || []).filter(v => !boost.includes(v))
-    )];
+// 🔁 Calcola la frequenza dei vini (non boost) negli ultimi suggerimenti
+const frequenzaRecenti = {};
+recentLog.forEach(r => {
+  (r.vini || []).forEach(nome => {
+    if (!boost.includes(nome)) {
+      frequenzaRecenti[nome] = (frequenzaRecenti[nome] || 0) + 1;
+    }
+  });
+});
+
+const statsRes = await fetch(`${supabaseUrl}/rest/v1/vino_usage_stats?ristorante_id=eq.${ristorante_id}`, { headers });
+const stats = await statsRes.json();
+
+// Mappa: { nome_vino: count }
+const usageStats = {};
+stats.forEach(row => {
+  usageStats[row.nome] = row.count;
+});
+
 
     // ✅ Filtra e valuta i vini
     const viniFiltrati = filtraEVotiVini({
@@ -90,7 +111,8 @@ serve(async (req) => {
       boost,
       prezzo_massimo: prezzo_massimo ? parseInt(prezzo_massimo) : null,
       colori,
-      recenti
+      recenti: frequenzaRecenti,
+      usageStats
     });
 
     if (viniFiltrati.length === 0) {
@@ -197,6 +219,24 @@ Non aggiungere altro testo oltre il formato richiesto.`;
         boost_inclusi: boostInclusi
       })
     });
+
+    // 🔁 Aggiorna la tabella uso vino
+for (const nome of viniSuggeriti) {
+  await fetch(`${supabaseUrl}/rest/v1/vino_usage_stats`, {
+    method: "POST",
+    headers: {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+      "Content-Type": "application/json",
+      Prefer: "resolution=merge-duplicates"
+    },
+    body: JSON.stringify({
+      ristorante_id,
+      nome,
+      count: 1 // sarà sommato se già esiste
+    })
+  });
+}
 
     return new Response(JSON.stringify({ suggestion: reply }), {
       headers: corsHeaders,

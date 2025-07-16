@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Monitor Sommelier</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      background: #fafafa;
+    }
+    h1 {
+      font-size: 2rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.5rem;
+      text-align: left;
+    }
+    th {
+      background-color: #eee;
+    }
+    .highlight {
+      background: #e0ffe0;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>📊 Monitor Sommelier</h1>
+
+  <div id="stats"></div>
+
+  <h2>🧾 Storico suggerimenti</h2>
+  <table id="log">
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Piatto</th>
+        <th>Vino suggerito</th>
+        <th>Boost</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>🏅 Top vini consigliati</h2>
+  <table id="top">
+    <thead>
+      <tr>
+        <th>Vino</th>
+        <th>Conteggio</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const log = [
+      { data: "2025-07-16 10:33", piatto: "riso patate e cozze", vino: "VENTURINI BALDINI | \"Cadelvento\" Lambrusco Sorbara", boost: true },
+      { data: "2025-07-16 10:33", piatto: "riso patate e cozze", vino: "PIAGGIA | \"Sasso\" Carmignano DOCG", boost: true },
+      { data: "2025-07-16 10:33", piatto: "riso patate e cozze", vino: "ANTOLINI | Valpolicella Classico DOC", boost: true },
+      { data: "2025-07-16 10:32", piatto: "tagliata di manzo pepe rosa e rosmarino, patate", vino: "LA BELLANOTTE | \"Ludovika\" Rosè", boost: true },
+      { data: "2025-07-16 10:32", piatto: "tagliata di manzo pepe rosa e rosmarino, patate", vino: "PODERNUOVO A PALAZZONE | \"Therra\" Toscana Rosso IGT", boost: true },
+    ];
+
+    const stats = {
+      total: 12,
+      withBoost: 5,
+      boostPercent: 41.7,
+      unique: 24,
+      once: 20,
+      repeated: 4,
+      variety: 83.3
+    };
+
+    const countByWine = {};
+    log.forEach(row => {
+      if (!countByWine[row.vino]) countByWine[row.vino] = 0;
+      countByWine[row.vino]++;
+    });
+
+    // Riempie la tabella log
+    const tbody = document.querySelector("#log tbody");
+    log.forEach(row => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${row.data}</td>
+        <td>${row.piatto}</td>
+        <td>${row.vino}</td>
+        <td>${row.boost ? '⭐' : ''}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Statistiche globali
+    document.getElementById("stats").innerHTML = `
+      <p><strong>Totale suggerimenti:</strong> ${stats.total}</p>
+      <p><strong>Con boost incluso:</strong> ${stats.withBoost} (${stats.boostPercent}%)</p>
+      <p><strong>Vini unici consigliati:</strong> ${stats.unique}</p>
+      <p><strong>Vini consigliati una sola volta:</strong> ${stats.once} (${stats.variety}%)</p>
+      <p><strong>Vini consigliati più volte:</strong> ${stats.repeated}</p>
+    `;
+
+    // Riempie la tabella top
+    const topBody = document.querySelector("#top tbody");
+    Object.entries(countByWine).sort((a,b) => b[1] - a[1]).forEach(([vino, count]) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${vino}</td>
+        <td>${count}</td>
+      `;
+      topBody.appendChild(tr);
+    });
+  </script>
+</body>
+</html>
