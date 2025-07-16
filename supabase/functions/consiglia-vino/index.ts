@@ -6,6 +6,34 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
 };
 
+function filtraEVotiVini({ vini, boost = [], prezzo_massimo = null, colori = [], recenti = [] }) {
+  if (!Array.isArray(vini)) return [];
+
+  return vini
+    .filter(v => v.visibile !== false)
+    .map(v => {
+      let score = 0;
+      const prezzoNum = parseFloat((v.prezzo || "").replace(/[^\d.,]/g, "").replace(",", ".")) || 0;
+
+      const isBoost = boost.includes(v.nome);
+      if (isBoost) score += 100;
+
+      if (prezzo_massimo && prezzoNum <= prezzo_massimo) score += 20;
+
+      if (Array.isArray(colori) && colori.length > 0) {
+        const cat = (v.categoria || "").toLowerCase();
+        const match = colori.some(c => cat.includes(c.toLowerCase()));
+        if (match) score += 15;
+      }
+
+      if (recenti.includes(v.nome) && !isBoost) score -= 30;
+
+      return { ...v, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 20);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", {
@@ -47,17 +75,36 @@ serve(async (req) => {
       });
     }
 
-    // 🟢 Costruzione della lista vini
-    const vinoList = vini.map(w => {
+    // 🧠 Recupera gli ultimi 10 vini consigliati dal log Supabase
+    const recentRes = await fetch(`${supabaseUrl}/rest/v1/consigliati_log?ristorante_id=eq.${ristorante_id}&order=creato_il.desc&limit=10`, {
+      headers
+    });
+    const recentLog = await recentRes.json();
+    const recenti = [...new Set(
+      recentLog.flatMap(r => r.vini || []).filter(v => !boost.includes(v))
+    )];
+
+    // ✅ Filtra e valuta i vini
+    const viniFiltrati = filtraEVotiVini({
+      vini,
+      boost,
+      prezzo_massimo: prezzo_massimo ? parseInt(prezzo_massimo) : null,
+      colori,
+      recenti
+    });
+
+    if (viniFiltrati.length === 0) {
+      return new Response(JSON.stringify({ error: "Nessun vino filtrato compatibile." }), {
+        status: 400,
+        headers: corsHeaders,
+      });
+    }
+
+    const vinoList = viniFiltrati.map(w => {
       const isBoost = boost.includes(w.nome);
       return `- ${w.nome}${isBoost ? " ⭐" : ""} (${w.tipo || "tipo non specificato"}, ${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || "uvaggio non specificato"}, €${w.prezzo})`;
     }).join("\n");
 
-    const boostText = boost.length > 0
-      ? `💡 Alcuni vini sono segnalati dal ristorante come **prioritari** (marcati con ⭐). Se sono coerenti con il piatto, includine almeno uno tra i suggerimenti.\n`
-      : "";
-
-    // 🟢 Prompt finale
     const prompt = `Sei un sommelier professionale che lavora all’interno di un ristorante. Il cliente ha ordinato il seguente pasto:
 
 "${piatto}"
@@ -65,27 +112,28 @@ serve(async (req) => {
 Il ristorante dispone di questi vini in carta:
 ${vinoList}
 
-Il tuo compito è consigliare **da ${min} a ${max} vini**, presenti nella lista sopra, che possano accompagnare bene tutto il pasto (più portate). Preferisci vini versatili e con coerenza gastronomica.
+Il tuo compito è consigliare **da ${min} a ${max} vini**, presenti nella lista sopra, che possano accompagnare bene tutto il pasto. Preferisci vini versatili e coerenti.
+
+❗ I vini **marcati con ⭐ sono priorità per il ristorante**: se almeno uno di essi è coerente col piatto, **devi includerlo tra i consigliati**.  
+❗ Non consigliare sempre gli stessi vini. Cerca varietà e equilibrio nelle scelte.
 
 ${prezzo_massimo ? `❗ Consiglia solo vini con prezzo massimo €${prezzo_massimo}.` : ""}
 ${Array.isArray(colori) && colori.length < 4 ? `✅ Filtra per categoria: includi solo vini ${colori.join(", ")}` : ""}
 
-${boostText}
-
-Per ogni vino consigliato, rispondi nel formato seguente:
+Per ogni vino consigliato, rispondi con questo formato:
 
 - Nome del vino  Prezzo  
 Uvaggio  
-Motivazione tecnica in massimo 2 frasi: evidenzia acidità, struttura, tannini, freschezza, versatilità…
+Motivazione tecnica in massimo 2 frasi (acidità, struttura, freschezza, tannini, versatilità…)
 
 Esempio:
 - Chianti Classico DOCG  €24  
 Sangiovese  
 Tannini levigati e buona acidità: ideale per piatti strutturati a base di carne.
 
-⛔ Non inventare vini. Consiglia solo tra quelli elencati.  
+⛔ Non inventare vini. Consiglia solo tra quelli elencati sopra.  
 Se non ci sono abbinamenti perfetti, suggerisci comunque quelli più adatti.  
-Non aggiungere testo fuori dal formato richiesto.`;
+Non aggiungere altro testo oltre il formato richiesto.`;
 
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
     if (!openaiKey) {
@@ -118,6 +166,37 @@ Non aggiungere testo fuori dal formato richiesto.`;
 
     const json = await completion.json();
     const reply = json.choices?.[0]?.message?.content;
+
+    // 🔍 Estrai i nomi dei vini consigliati dalla risposta
+    const viniSuggeriti = [];
+    const righe = reply?.split("\n") || [];
+
+    for (const riga of righe) {
+      const match = riga.match(/^- (.+?)\s+€\d+/);
+      if (match && match[1]) {
+        viniSuggeriti.push(match[1].trim());
+      }
+    }
+
+    // 🔴 Verifica se almeno un boost è stato incluso
+    const boostInclusi = viniSuggeriti.some(nome => boost.includes(nome));
+
+    // 💾 Salva log del suggerimento
+    await fetch(`${supabaseUrl}/rest/v1/consigliati_log`, {
+      method: "POST",
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal"
+      },
+      body: JSON.stringify({
+        ristorante_id,
+        piatto,
+        vini: viniSuggeriti,
+        boost_inclusi: boostInclusi
+      })
+    });
 
     return new Response(JSON.stringify({ suggestion: reply }), {
       headers: corsHeaders,
