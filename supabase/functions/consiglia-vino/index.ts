@@ -220,22 +220,33 @@ Non aggiungere altro testo oltre il formato richiesto.`;
       })
     });
 
-    // 🔁 Aggiorna la tabella uso vino
 for (const nome of viniSuggeriti) {
-  await fetch(`${supabaseUrl}/rest/v1/vino_usage_stats`, {
-    method: "POST",
-    headers: {
-      apikey: supabaseKey,
-      Authorization: `Bearer ${supabaseKey}`,
-      "Content-Type": "application/json",
-      Prefer: "resolution=merge-duplicates"
-    },
-    body: JSON.stringify({
-      ristorante_id,
-      nome,
-      count: 1 // sarà sommato se già esiste
-    })
-  });
+  // Prima controlla se esiste già
+  const checkRes = await fetch(`${supabaseUrl}/rest/v1/vino_usage_stats?ristorante_id=eq.${ristorante_id}&nome=eq.${encodeURIComponent(nome)}`, { headers });
+  const [existing] = await checkRes.json();
+
+  if (existing) {
+    // Fai PATCH con count + 1
+    await fetch(`${supabaseUrl}/rest/v1/vino_usage_stats?ristorante_id=eq.${ristorante_id}&nome=eq.${encodeURIComponent(nome)}`, {
+      method: "PATCH",
+      headers: {
+        ...headers,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ count: existing.count + 1 })
+    });
+  } else {
+    // Fai INSERT
+    await fetch(`${supabaseUrl}/rest/v1/vino_usage_stats`, {
+      method: "POST",
+      headers: {
+        ...headers,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal"
+      },
+      body: JSON.stringify({ ristorante_id, nome, count: 1 })
+    });
+  }
 }
 
     return new Response(JSON.stringify({ suggestion: reply }), {
