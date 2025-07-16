@@ -29,8 +29,7 @@ function filtraEVotiVini({ vini, boost = [], prezzo_massimo = null, colori = [],
 
 if (!isBoost) {
   const penalitaRecenti = recenti[v.nome] || 0;
-  const penalitaStorica = usageStats[v.nome] || 0;
-  score -= penalitaRecenti * 15 + penalitaStorica * 5; // puoi regolare i pesi
+  score -= penalitaRecenti * 15;
 }
 
       return { ...v, score };
@@ -81,7 +80,7 @@ serve(async (req) => {
     }
 
     // 🧠 Recupera gli ultimi 10 vini consigliati dal log Supabase
-    const recentRes = await fetch(`${supabaseUrl}/rest/v1/consigliati_log?ristorante_id=eq.${ristorante_id}&order=creato_il.desc&limit=10`, {
+      const recentRes = await fetch(`${supabaseUrl}/rest/v1/consigliati_log?ristorante_id=eq.${ristorante_id}&order=creato_il.desc&limit=100`, {
       headers
     });
     const recentLog = await recentRes.json();
@@ -95,16 +94,6 @@ recentLog.forEach(r => {
   });
 });
 
-const statsRes = await fetch(`${supabaseUrl}/rest/v1/vino_usage_stats?ristorante_id=eq.${ristorante_id}`, { headers });
-const stats = await statsRes.json();
-
-// Mappa: { nome_vino: count }
-const usageStats = {};
-stats.forEach(row => {
-  usageStats[row.nome] = row.count;
-});
-
-
     // ✅ Filtra e valuta i vini
     const viniFiltrati = filtraEVotiVini({
       vini,
@@ -112,7 +101,6 @@ stats.forEach(row => {
       prezzo_massimo: prezzo_massimo ? parseInt(prezzo_massimo) : null,
       colori,
       recenti: frequenzaRecenti,
-      usageStats
     });
 
     if (viniFiltrati.length === 0) {
@@ -219,35 +207,6 @@ Non aggiungere altro testo oltre il formato richiesto.`;
         boost_inclusi: boostInclusi
       })
     });
-
-for (const nome of viniSuggeriti) {
-  // Prima controlla se esiste già
-  const checkRes = await fetch(`${supabaseUrl}/rest/v1/vino_usage_stats?ristorante_id=eq.${ristorante_id}&nome=eq.${encodeURIComponent(nome)}`, { headers });
-  const [existing] = await checkRes.json();
-
-  if (existing) {
-    // Fai PATCH con count + 1
-    await fetch(`${supabaseUrl}/rest/v1/vino_usage_stats?ristorante_id=eq.${ristorante_id}&nome=eq.${encodeURIComponent(nome)}`, {
-      method: "PATCH",
-      headers: {
-        ...headers,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ count: existing.count + 1 })
-    });
-  } else {
-    // Fai INSERT
-    await fetch(`${supabaseUrl}/rest/v1/vino_usage_stats`, {
-      method: "POST",
-      headers: {
-        ...headers,
-        "Content-Type": "application/json",
-        Prefer: "return=minimal"
-      },
-      body: JSON.stringify({ ristorante_id, nome, count: 1 })
-    });
-  }
-}
 
     return new Response(JSON.stringify({ suggestion: reply }), {
       headers: corsHeaders,
