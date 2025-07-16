@@ -116,9 +116,8 @@ recentLog.forEach(r => {
 const vinoList = viniFiltrati.map(w => {
   const isBoost = boost.includes(w.nome);
   const categoria = (w.categoria || "").toUpperCase();
-  return `- ${w.nome}${isBoost ? " ⭐" : ""}  
-Categoria: ${categoria}  
-(${w.tipo || "tipo non specificato"}, ${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || "uvaggio non specificato"}, €${w.prezzo})`;
+return `- ${w.nome}${isBoost ? " ⭐" : ""} | Categoria: ${w.categoria || "Non specificata"} | €${w.prezzo}  
+${w.uvaggio || "uvaggio non specificato"}`;
 }).join("\n");
 
     const prompt = `Sei un sommelier professionale che lavora all’interno di un ristorante. Il cliente ha ordinato il seguente pasto:
@@ -138,7 +137,7 @@ ${Array.isArray(colori) && colori.length < 4 ? `✅ Filtra per categoria: includ
 
 Per ogni vino consigliato, rispondi con questo formato:
 
-- Nome del vino  Prezzo  
+- Nome del vino | Categoria | Prezzo   
 Uvaggio  
 Motivazione tecnica in massimo 2 frasi (acidità, struttura, freschezza, tannini, versatilità…)
 

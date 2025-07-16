@@ -823,12 +823,10 @@ let cardsHtml = rawBlocks.map(block => {
   const uvaggio = lines[1] || "";
   const motivazione = lines.slice(2).join(" ");
 
-  const match = titleLine.match(/^(.*)\s+€?(\d+.*)$/);
-  const nomeVino = match?.[1] || "";
-  const prezzo = match?.[2] ? `€${match[2]}` : "";
-
-  const vinoObj = wines.find(w => w.nome === nomeVino);
-  const categoria = vinoObj?.categoria?.toUpperCase() || "";
+const match = titleLine.match(/^(.*?)\s*\|\s*(.*?)\s*\|\s*€?(\d+.*)$/);
+const nomeVino = match?.[1]?.trim() || "";
+const categoria = match?.[2]?.trim()?.toUpperCase() || "";
+const prezzo = match?.[3] ? `€${match[3]}` : "";
 
   if (!nomeVino || !prezzo || !motivazione) return '';
 
