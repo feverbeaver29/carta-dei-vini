@@ -7,7 +7,6 @@ const corsHeaders = {
 };
 
 function filtraEVotiVini({ vini, boost = [], prezzo_massimo = null, colori = [], recenti = {}, usageStats = {} }) {
-
   if (!Array.isArray(vini)) return [];
 
   return vini
@@ -15,29 +14,29 @@ function filtraEVotiVini({ vini, boost = [], prezzo_massimo = null, colori = [],
     .map(v => {
       let score = 0;
       const prezzoNum = parseFloat((v.prezzo || "").replace(/[^\d.,]/g, "").replace(",", ".")) || 0;
-
       const isBoost = boost.includes(v.nome);
-      if (isBoost) score += 100;
 
+      if (isBoost) score += 100;
       if (prezzo_massimo && prezzoNum <= prezzo_massimo) score += 20;
 
       if (Array.isArray(colori) && colori.length > 0) {
         const cat = (v.categoria || "").toLowerCase();
         const match = colori.some(c => cat.includes(c.toLowerCase()));
-        if (match) score += 15;
+        if (!match) return null; // ❌ ESCLUDI vino
+        score += 15;
       }
 
-if (!isBoost) {
-  const penalitaRecenti = recenti[v.nome] || 0;
-  score -= penalitaRecenti * 15;
-
-  if (!recenti[v.nome]) {
-    score += 10; // bonus per “prima volta” tra gli ultimi 100
-  }
-}
+      if (!isBoost) {
+        const penalitaRecenti = recenti[v.nome] || 0;
+        score -= penalitaRecenti * 15;
+        if (!recenti[v.nome]) {
+          score += 10; // bonus
+        }
+      }
 
       return { ...v, score };
     })
+    .filter(Boolean) // ✅ qui va messo
     .sort((a, b) => b.score - a.score)
     .slice(0, 20);
 }
