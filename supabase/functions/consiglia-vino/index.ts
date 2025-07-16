@@ -187,7 +187,7 @@ Non aggiungere altro testo oltre il formato richiesto.`;
     const righe = reply?.split("\n") || [];
 
     for (const riga of righe) {
-      const match = riga.match(/^- (.+?)\s+€\d+/);
+      const match = riga.match(/^- (.+?)\s*\|\s*.*?\s*\|\s*€\d+/);
       if (match && match[1]) {
         viniSuggeriti.push(match[1].trim());
       }
