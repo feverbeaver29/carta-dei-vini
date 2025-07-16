@@ -30,6 +30,10 @@ function filtraEVotiVini({ vini, boost = [], prezzo_massimo = null, colori = [],
 if (!isBoost) {
   const penalitaRecenti = recenti[v.nome] || 0;
   score -= penalitaRecenti * 15;
+
+  if (!recenti[v.nome]) {
+    score += 10; // bonus per “prima volta” tra gli ultimi 100
+  }
 }
 
       return { ...v, score };
