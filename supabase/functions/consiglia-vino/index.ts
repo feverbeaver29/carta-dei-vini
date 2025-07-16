@@ -22,11 +22,8 @@ function filtraEVotiVini({ vini, boost = [], prezzo_massimo = null, colori = [],
       if (Array.isArray(colori) && colori.length > 0) {
         const cat = (v.categoria || "").toLowerCase();
         const match = colori.some(c => cat.includes(c.toLowerCase()));
-        if (match) {
-  score += 15; // bonus se combacia
-} else {
-  score -= 20; // penalità se non combacia
-}
+        if (!match) return null; // ❌ ESCLUDI vino
+        score += 15;
       }
 
       if (!isBoost) {
@@ -116,12 +113,10 @@ recentLog.forEach(r => {
       });
     }
 
-const vinoList = viniFiltrati.map(w => {
-  const isBoost = boost.includes(w.nome);
-  const categoria = (w.categoria || "").toUpperCase();
-return `- ${w.nome}${isBoost ? " ⭐" : ""} | Categoria: ${w.categoria || "Non specificata"} | €${w.prezzo}  
-${w.uvaggio || "uvaggio non specificato"}`;
-}).join("\n");
+    const vinoList = viniFiltrati.map(w => {
+      const isBoost = boost.includes(w.nome);
+      return `- ${w.nome}${isBoost ? " ⭐" : ""} (${w.tipo || "tipo non specificato"}, ${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || "uvaggio non specificato"}, €${w.prezzo})`;
+    }).join("\n");
 
     const prompt = `Sei un sommelier professionale che lavora all’interno di un ristorante. Il cliente ha ordinato il seguente pasto:
 
@@ -140,7 +135,7 @@ ${Array.isArray(colori) && colori.length < 4 ? `✅ Filtra per categoria: includ
 
 Per ogni vino consigliato, rispondi con questo formato:
 
-- Nome del vino | Categoria | Prezzo   
+- Nome del vino  Prezzo  
 Uvaggio  
 Motivazione tecnica in massimo 2 frasi (acidità, struttura, freschezza, tannini, versatilità…)
 
@@ -190,7 +185,7 @@ Non aggiungere altro testo oltre il formato richiesto.`;
     const righe = reply?.split("\n") || [];
 
     for (const riga of righe) {
-      const match = riga.match(/^- (.+?)\s*\|\s*.*?\s*\|\s*€\d+/);
+      const match = riga.match(/^- (.+?)\s+€\d+/);
       if (match && match[1]) {
         viniSuggeriti.push(match[1].trim());
       }
