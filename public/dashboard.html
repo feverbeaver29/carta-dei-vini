@@ -489,9 +489,14 @@ footer {
   padding-bottom: 0 !important;
   gap: 0 !important; /* importantissimo */
 }
-#sommelierSettings {
-  padding: 0 1em;
-}
+  #sommelierSettings {
+    display: none;
+    padding: 0 1em;
+  }
+
+  #sommelierSettings.active {
+    display: block;
+  }
 
 #impostazioniSommelier {
   padding: 0;
