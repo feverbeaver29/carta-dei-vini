@@ -644,17 +644,20 @@ footer {
     margin-top: 0;
     margin-bottom: 0;
   }
-    #sommelierSettings {
-    display: flex !important;
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 40px;
-    max-width: 1200px;
-    margin: auto;
-    padding: 60px 20px;
-    margin-top: -40px; /* ✅ corregge gap sopra */
-  }
+#sommelierSettings {
+  display: none;
+}
+#sommelierSettings.active {
+  display: flex !important;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 40px;
+  max-width: 1200px;
+  margin: auto;
+  padding: 60px 20px;
+  margin-top: -40px;
+}
 
 #sommelierSection {
   display: flex;
@@ -869,11 +872,8 @@ footer {
       </div>
     </div>
   </div>
-</main>
 
-
-<!-- SEZIONE IMPOSTAZIONI SOMMELIER -->
-<div id="sommelierSettings" class="section" style="display: none;">
+  <div id="sommelierSettings" class="section" style="display: none;">
   <div id="sommelierSection" class="section">
     <div id="impostazioniSommelier" class="dashboard-grid">
     <h2>Impostazioni Sommelier Virtuale</h2>
@@ -914,6 +914,7 @@ footer {
     </div>
   </div>
   </div>
+</main>
 
   <!-- POPUP SELEZIONE FONT -->
 <div id="fontPopup" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:1000; justify-content:center; align-items:center;">
@@ -1564,7 +1565,7 @@ function goTo(path) {
 const main = document.querySelector("main");
 const showCarta = type === "carta";
 document.getElementById("cartaSettings").style.display = showCarta ? "block" : "none";
-document.getElementById("sommelierSettings").style.display = showCarta ? "none" : "flex";
+document.getElementById("sommelierSettings").classList.toggle("active", !showCarta);
 main.classList.toggle("sommelier-mode", !showCarta);
 
       if (type === "sommelier" && !document.querySelector("#boostContainer input")) {
