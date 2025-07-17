@@ -1137,6 +1137,9 @@ function renderSommelierLogoPreview(url) {
   const uploadField = document.getElementById("sommelierLogoUpload");
   uploadField.insertAdjacentElement("afterend", preview);
 
+  // se è il logo di default, NON mostrare il pulsante "Rimuovi"
+  if (url.includes("sommelier.png")) return;
+
   const oldRemoveBtn = document.getElementById("removeSommelierLogoBtn");
   if (oldRemoveBtn) oldRemoveBtn.remove();
 
@@ -1164,7 +1167,6 @@ function renderSommelierLogoPreview(url) {
 
   preview.insertAdjacentElement("afterend", removeBtn);
 }
-
 
 // 🔧 4. Collega gli eventi live del logo
 function attachLogoListeners() {
