@@ -49,6 +49,14 @@ input:checked + .slider:before {
   transform: translateX(22px);
 }
 
+.row-toggle {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 400px;
+}
+
 .mockup iframe {
   width: 100%;
   height: 100%;
@@ -213,17 +221,6 @@ main {
   display: flex;
   flex-wrap: wrap;
   gap: 40px;
-}
-#sommelierSettings {
-  flex-direction: column;
-  display: flex;
-  gap: 8px; /* ridotto */
-  margin-bottom: 0;
-}
-#sommelierSettings .dashboard-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 }
     #sommelierSettings label {
       margin-top: 8px;
@@ -492,19 +489,16 @@ footer {
   padding-bottom: 0 !important;
   gap: 0 !important; /* importantissimo */
 }
-  #sommelierSettings {
-      padding: 0 1em; /* aggiunge margine a sinistra e destra */
-      background: none;
-      border: none;
-      gap: 8px;
-  }
+#sommelierSettings {
+  padding: 0 1em;
+}
 
-  #impostazioniSommelier {
-  padding: 0 0.5em;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
+#impostazioniSommelier {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
   #boostContainer {
     display: block;
@@ -662,27 +656,34 @@ footer {
     margin-top: -40px; /* ✅ corregge gap sopra */
   }
 
-  #impostazioniSommelier {
-    flex: 1;
-    max-width: 700px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-  #impostazioniSommelier h2 {
+#sommelierSection {
+  display: flex;
+  flex-direction: row;
+  gap: 40px;
+  max-width: 1200px;
+  width: 100%;
+  justify-content: space-between;
+}
+
+#impostazioniSommelier {
+  flex: 1;
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#impostazioniSommelier h2 {
   text-align: center;
-  font-size: 1.2em;
+  font-size: 1.4em;
   font-family: 'Playfair Display', serif;
   font-weight: 600;
   color: #333;
   margin: 0 auto 1em auto;
 }
+
   main.sommelier-mode {
     padding-top: 15px; /* Ridotto rispetto agli 80px normali */
-  }
-
-  #sommelierSettings .mockup {
-    display: none; /* o aggiungi una preview se desiderato */
   }
 }
 
@@ -873,10 +874,11 @@ footer {
 
 <!-- SEZIONE IMPOSTAZIONI SOMMELIER -->
 <div id="sommelierSettings" class="section" style="display: none;">
-  <div id="impostazioniSommelier" class="dashboard-grid">
+  <div id="sommelierSection" class="section">
+    <div id="impostazioniSommelier" class="dashboard-grid">
     <h2>Impostazioni Sommelier Virtuale</h2>
 
-    <div style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; max-width: 400px;">
+    <div class="row-toggle">
   <label for="toggleSommelierBtn" style="font-size: 0.95em;">Abilita sommelier virtuale</label>
   <label class="switch">
     <input type="checkbox" id="toggleSommelierBtn">
@@ -910,6 +912,7 @@ footer {
 
       <button class="save-btn" style="margin-top: 16px;" onclick="saveSommelierSettings()">Salva Impostazioni Sommelier</button>
     </div>
+  </div>
   </div>
 
   <!-- POPUP SELEZIONE FONT -->
