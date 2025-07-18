@@ -241,7 +241,7 @@
   const file = fileInput.files[0];
   const imageURL = URL.createObjectURL(file);
 
-  const result = await Tesseract.recognize(imageURL, 'ita', {
+  const result = await Tesseract.recognize(imageURL, 'eng', {
     logger: m => status.textContent = "🧠 " + m.status
   });
 
