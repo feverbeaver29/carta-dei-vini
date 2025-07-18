@@ -890,7 +890,8 @@ const res = await fetch(`${SUPABASE_URL}/rest/v1/ristoranti?select=sommelier_att
   });
   const data = await res.json();
   ristorante = data[0]; // senza const
-  ristoranteSommelierURL = ristorante.sommelier_url || "sommelier.png";
+  const gender = ristorante?.sommelier_gender || "uomo";
+ristoranteSommelierURL = ristorante.sommelier_url || (gender === "donna" ? "sommelier_femmina.png" : "sommelier.png");
 
 if (ristorante.font) {
   document.body.style.fontFamily = ristorante.font;
