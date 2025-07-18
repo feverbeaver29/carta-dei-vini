@@ -246,48 +246,59 @@
   });
 
   const lines = result.data.text.split('\n').map(l => l.trim()).filter(l => l.length > 10);
+  console.log("Testo OCR rilevato:", lines);
 
-  for (const line of lines) {
-    const parsed = parseWineLine(line);
-    if (!parsed) continue;
-
-    await Swal.fire({
-      title: 'Conferma vino rilevato',
-      html: `
-        <input id="sw_nome" class="swal2-input" placeholder="Nome" value="${parsed.nome}">
-        <input id="sw_annata" class="swal2-input" placeholder="Annata" value="${parsed.annata}">
-        <input id="sw_prezzo" class="swal2-input" placeholder="Prezzo" value="${parsed.prezzo}">
-        <input id="sw_valuta" class="swal2-input" placeholder="Valuta" value="${parsed.valuta}">
-        <input id="sw_categoria" class="swal2-input" placeholder="Categoria" value="${parsed.categoria}">
-        <input id="sw_sottocategoria" class="swal2-input" placeholder="Sottocategoria" value="${parsed.sottocategoria}">
-        <input id="sw_uvaggio" class="swal2-input" placeholder="Uvaggio" value="${parsed.uvaggio}">
-      `,
-      confirmButtonText: 'Salva',
-      showCancelButton: true,
-      preConfirm: () => ({
-        nome: document.getElementById('sw_nome').value,
-        annata: document.getElementById('sw_annata').value,
-        prezzo: document.getElementById('sw_valuta').value + document.getElementById('sw_prezzo').value,
-        categoria: document.getElementById('sw_categoria').value,
-        sottocategoria: document.getElementById('sw_sottocategoria').value,
-        uvaggio: document.getElementById('sw_uvaggio').value
-      })
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        const vino = result.value;
-        vino.ristorante_id = RESTAURANT_ID;
-
-        await fetch(`${SUPABASE_URL}/rest/v1/wines`, {
-          method: "POST",
-          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_API_KEY },
-          body: JSON.stringify(vino)
-        });
-
-        showMessage("Vino salvato da OCR!");
-        loadWines();
-      }
-    });
+for (const line of lines) {
+  let vino = parseWineLine(line);
+  if (!vino) {
+    vino = {
+      nome: line,
+      annata: "",
+      prezzo: "",
+      valuta: "€",
+      categoria: "",
+      sottocategoria: "",
+      uvaggio: ""
+    };
   }
+
+  await Swal.fire({
+    title: 'Conferma vino rilevato',
+    html: `
+      <input id="sw_nome" class="swal2-input" placeholder="Nome" value="${vino.nome}">
+      <input id="sw_annata" class="swal2-input" placeholder="Annata" value="${vino.annata}">
+      <input id="sw_prezzo" class="swal2-input" placeholder="Prezzo" value="${vino.prezzo}">
+      <input id="sw_valuta" class="swal2-input" placeholder="Valuta" value="${vino.valuta}">
+      <input id="sw_categoria" class="swal2-input" placeholder="Categoria" value="${vino.categoria}">
+      <input id="sw_sottocategoria" class="swal2-input" placeholder="Sottocategoria" value="${vino.sottocategoria}">
+      <input id="sw_uvaggio" class="swal2-input" placeholder="Uvaggio" value="${vino.uvaggio}">
+    `,
+    confirmButtonText: 'Salva',
+    showCancelButton: true,
+    preConfirm: () => ({
+      nome: document.getElementById('sw_nome').value,
+      annata: document.getElementById('sw_annata').value,
+      prezzo: document.getElementById('sw_valuta').value + document.getElementById('sw_prezzo').value,
+      categoria: document.getElementById('sw_categoria').value,
+      sottocategoria: document.getElementById('sw_sottocategoria').value,
+      uvaggio: document.getElementById('sw_uvaggio').value
+    })
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      const nuovo = result.value;
+      nuovo.ristorante_id = RESTAURANT_ID;
+
+      await fetch(`${SUPABASE_URL}/rest/v1/wines`, {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_API_KEY },
+        body: JSON.stringify(nuovo)
+      });
+
+      showMessage("Vino salvato da OCR!");
+      loadWines();
+    }
+  });
+}
 
   status.textContent = "OCR completato!";
 }
