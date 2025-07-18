@@ -1291,7 +1291,7 @@ if (!RESTAURANT_ID && user) {
 
       const { data: info } = await supabase
         .from("ristoranti")
-        .select("nome, font, palette_color, bg_color, card_color, border_color, text_color, logo_url, sommelier_url, sommelier_range, sommelier_boost_multi, logo_size, name_size, name_color, name_bold, name_font, ordine_vini, sommelier_attivo")
+        .select("nome, font, palette_color, bg_color, card_color, border_color, text_color, logo_url, sommelier_url, sommelier_range, sommelier_boost_multi, logo_size, name_size, name_color, name_bold, name_font, ordine_vini, sommelier_attivo, sommelier_gender")
         .eq("id", RESTAURANT_ID)
         .single();
 
