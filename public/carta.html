@@ -885,9 +885,9 @@ window.addEventListener('popstate', (event) => {
 });
 
 async function loadRestaurantData() {
-const res = await fetch(`${SUPABASE_URL}/rest/v1/ristoranti?select=sommelier_attivo,nome,font,palette_color,bg_color,card_color,border_color,text_color,logo_url,logo_size,sommelier_url,sommelier_range,sommelier_boost_multi,name_size,name_color,name_bold,name_font,navbar_color,ordine_vini,ordine_categorie,ordine_sottocategorie&id=eq.${RESTAURANT_ID}`, {
-    headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
-  });
+const res = await fetch(`${SUPABASE_URL}/rest/v1/ristoranti?select=sommelier_attivo,nome,font,palette_color,bg_color,card_color,border_color,text_color,logo_url,logo_size,sommelier_url,sommelier_range,sommelier_boost_multi,name_size,name_color,name_bold,name_font,navbar_color,ordine_vini,ordine_categorie,ordine_sottocategorie,sommelier_gender&id=eq.${RESTAURANT_ID}`, {
+  headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
+});
   const data = await res.json();
   ristorante = data[0]; // senza const
   const gender = ristorante?.sommelier_gender || "uomo";
