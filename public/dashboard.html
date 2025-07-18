@@ -1729,6 +1729,7 @@ async function saveSettings() {
 
 async function saveSommelierSettings() {
   const range = document.getElementById("sommelierRange").value;
+  const gender = document.getElementById("sommelierGender").value;
 
   const inputs = document.querySelectorAll("#boostContainer input");
   const boostMulti = Array.from(inputs)
