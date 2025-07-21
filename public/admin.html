@@ -227,78 +227,140 @@
     uvaggio: match[7].trim()
   };
 }
+async function estraiDatiConIA(riga1, riga2) {
+  const prompt = `
+Estratto OCR:
+1. ${riga1}
+2. ${riga2}
 
-  async function processOCRFile() {
-  const fileInput = document.getElementById("ocrUploadInput");
+Dividi in JSON questi dati relativi ad un vino.
+Chiavi: nome, annata, prezzo, valuta, categoria, sottocategoria, uvaggio.
+`;
+    const openaiKey = Deno.env.get("OPENAI_API_KEY");
+    if (!openaiKey) {
+      return new Response(JSON.stringify({ error: "Chiave OpenAI mancante" }), {
+        status: 500,
+        headers: corsHeaders,
+      });
+    }
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${openaiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.2
+    })
+  });
+
+  const data = await response.json();
+  try {
+    return JSON.parse(data.choices[0].message.content);
+  } catch {
+    return null;
+  }
+}
+
+async function processOCRFile() {
+  const file = document.getElementById("ocrUploadInput").files[0];
   const status = document.getElementById("ocrStatus");
-  if (!fileInput.files[0]) {
-    status.textContent = "Seleziona prima un file.";
+  if (!file) return;
+
+  let images = [];
+
+  // PDF multipagina
+  if (file.type === "application/pdf") {
+    const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 2 });
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+      await page.render({ canvasContext: context, viewport }).promise;
+      images.push(canvas.toDataURL());
+    }
+  } else {
+    images = [URL.createObjectURL(file)];
+  }
+
+  const lines = [];
+  for (const img of images) {
+    status.textContent = "🧠 Elaborazione OCR...";
+    const result = await Tesseract.recognize(img, 'eng');
+    lines.push(...result.data.text.split('\n').map(l => l.trim()).filter(l => l.length > 10));
+  }
+
+  const parsedVini = [];
+  for (let i = 0; i < lines.length; i += 2) {
+    const r1 = lines[i];
+    const r2 = lines[i + 1] || "";
+    const vino = await estraiDatiConIA(r1, r2);
+    if (vino) parsedVini.push(vino);
+  }
+
+  if (parsedVini.length === 0) {
+    status.textContent = "Nessun vino rilevato.";
     return;
   }
 
-  status.textContent = "Estrazione del testo in corso...";
+  status.textContent = `Sono stati rilevati ${parsedVini.length} vini`;
 
-  const file = fileInput.files[0];
-  const imageURL = URL.createObjectURL(file);
-
-  const result = await Tesseract.recognize(imageURL, 'eng', {
-    logger: m => status.textContent = "🧠 " + m.status
-  });
-
-  const lines = result.data.text.split('\n').map(l => l.trim()).filter(l => l.length > 10);
-  console.log("Testo OCR rilevato:", lines);
-
-for (const line of lines) {
-  let vino = parseWineLine(line);
-  if (!vino) {
-    vino = {
-      nome: line,
-      annata: "",
-      prezzo: "",
-      valuta: "€",
-      categoria: "",
-      sottocategoria: "",
-      uvaggio: ""
-    };
-  }
+  // Mostra riepilogo
+  const listaHTML = parsedVini.map(v =>
+    `<li><strong>${v.nome || "?"}</strong> — ${v.annata || ""} — ${v.prezzo || ""} ${v.valuta || ""}</li>`
+  ).join("");
 
   await Swal.fire({
-    title: 'Conferma vino rilevato',
-    html: `
-      <input id="sw_nome" class="swal2-input" placeholder="Nome" value="${vino.nome}">
-      <input id="sw_annata" class="swal2-input" placeholder="Annata" value="${vino.annata}">
-      <input id="sw_prezzo" class="swal2-input" placeholder="Prezzo" value="${vino.prezzo}">
-      <input id="sw_valuta" class="swal2-input" placeholder="Valuta" value="${vino.valuta}">
-      <input id="sw_categoria" class="swal2-input" placeholder="Categoria" value="${vino.categoria}">
-      <input id="sw_sottocategoria" class="swal2-input" placeholder="Sottocategoria" value="${vino.sottocategoria}">
-      <input id="sw_uvaggio" class="swal2-input" placeholder="Uvaggio" value="${vino.uvaggio}">
-    `,
-    confirmButtonText: 'Salva',
-    showCancelButton: true,
-    preConfirm: () => ({
-      nome: document.getElementById('sw_nome').value,
-      annata: document.getElementById('sw_annata').value,
-      prezzo: document.getElementById('sw_valuta').value + document.getElementById('sw_prezzo').value,
-      categoria: document.getElementById('sw_categoria').value,
-      sottocategoria: document.getElementById('sw_sottocategoria').value,
-      uvaggio: document.getElementById('sw_uvaggio').value
-    })
-  }).then(async (result) => {
-    if (result.isConfirmed) {
-      const nuovo = result.value;
-      nuovo.ristorante_id = RESTAURANT_ID;
-
-      await fetch(`${SUPABASE_URL}/rest/v1/wines`, {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_API_KEY },
-        body: JSON.stringify(nuovo)
-      });
-
-      showMessage("Vino salvato da OCR!");
-      loadWines();
-    }
+    title: "Riepilogo vini trovati",
+    html: `<ul style="text-align:left">${listaHTML}</ul>`,
+    confirmButtonText: "Procedi con conferma"
   });
-}
+
+  // Conferma uno a uno
+  for (const vino of parsedVini) {
+    await Swal.fire({
+      title: 'Conferma vino',
+      html: `
+        <input id="sw_nome" class="swal2-input" placeholder="Nome" value="${vino.nome}">
+        <input id="sw_annata" class="swal2-input" placeholder="Annata" value="${vino.annata}">
+        <input id="sw_prezzo" class="swal2-input" placeholder="Prezzo" value="${vino.prezzo}">
+        <input id="sw_valuta" class="swal2-input" placeholder="Valuta" value="${vino.valuta}">
+        <input id="sw_categoria" class="swal2-input" placeholder="Categoria" value="${vino.categoria}">
+        <input id="sw_sottocategoria" class="swal2-input" placeholder="Sottocategoria" value="${vino.sottocategoria}">
+        <input id="sw_uvaggio" class="swal2-input" placeholder="Uvaggio" value="${vino.uvaggio}">
+      `,
+      confirmButtonText: 'Salva',
+      showCancelButton: true,
+      preConfirm: () => ({
+        nome: document.getElementById('sw_nome').value,
+        annata: document.getElementById('sw_annata').value,
+        prezzo: document.getElementById('sw_valuta').value + document.getElementById('sw_prezzo').value,
+        categoria: document.getElementById('sw_categoria').value,
+        sottocategoria: document.getElementById('sw_sottocategoria').value,
+        uvaggio: document.getElementById('sw_uvaggio').value
+      })
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        const nuovo = result.value;
+        nuovo.ristorante_id = RESTAURANT_ID;
+
+        await fetch(`${SUPABASE_URL}/rest/v1/wines`, {
+          method: "POST",
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_API_KEY },
+          body: JSON.stringify(nuovo)
+        });
+
+        showMessage("Vino salvato da OCR!");
+        loadWines();
+      }
+    });
+  }
 
   status.textContent = "OCR completato!";
 }
@@ -637,5 +699,7 @@ loadWines();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.13.216/pdf.min.js"></script>
+
 </body>
 </html>
