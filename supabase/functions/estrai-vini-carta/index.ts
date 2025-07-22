@@ -1,13 +1,22 @@
-// supabase/functions/estrai-vini-carta/index.ts
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*", // oppure metti 'https://www.winesfever.com' se vuoi restringerlo
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
+};
+
 serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   try {
     const { righe } = await req.json();
     if (!Array.isArray(righe) || righe.length === 0) {
       return new Response(JSON.stringify({ error: "Nessuna riga ricevuta" }), {
         status: 400,
-        headers: { "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
 
@@ -60,19 +69,20 @@ Riga 2: ${righe[1] || ""}
     try {
       const vino = JSON.parse(text);
       return new Response(JSON.stringify({ vino }), {
-        headers: { "Content-Type": "application/json" }
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     } catch (_) {
       return new Response(JSON.stringify({ error: "Parsing JSON fallito", raw: text }), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
 
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
-      headers: { "Content-Type": "application/json" }
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   }
 });
+
