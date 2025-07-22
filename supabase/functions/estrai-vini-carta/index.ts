@@ -11,7 +11,8 @@ serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-const { testo } = await req.json();
+const { testo, categorieGiaPresenti, sottocategorieGiaPresenti } = await req.json();
+
 if (!testo || typeof testo !== "string" || testo.length < 20) {
   return new Response(JSON.stringify({ error: "Testo OCR non valido" }), {
     status: 400,
@@ -19,31 +20,21 @@ if (!testo || typeof testo !== "string" || testo.length < 20) {
   });
 }
 
+const categorieGiaPresenti = ["Rossi", "Bianchi", "Spumanti"]; // Esempio, popola dinamicamente
+const sottocategorieGiaPresenti = ["Toscana", "Piemonte", "Veneto"]; // Esempio, popola dinamicamente
+
 const prompt = `
-Hai ricevuto un testo OCR che rappresenta una sezione di una carta dei vini.  
-Analizza e riconosci ogni vino contenuto nel testo. Per ogni vino estrai:
+Hai ricevuto un testo OCR che rappresenta una carta dei vini. Analizza e riconosci ogni vino contenuto nel testo. Per ogni vino estrai:
 
 - nome_completo (es: "PIAGGIA 'Sasso' Carmignano DOCG")
 - annata (se presente)
 - prezzo (se presente)
 - valuta (€, $, £, CHF, ecc.)
-- categoria (se assente, suggeriscine una tu)
-- sottocategoria (se assente, suggeriscine una tu)
-- uvaggio (se assente, prova a dedurlo in base al nome)
+- categoria (se possibile scegli la categoria più simile tra queste già presenti: ${categorieGiaPresenti.join(", ")})
+- sottocategoria (se possibile scegli la sottocategoria più simile tra queste già presenti: ${sottocategorieGiaPresenti.join(", ")})
+- uvaggio (se assente, deducilo dal nome)
 
-❗Rispondi solo con un array JSON valido di oggetti vino, esempio:
-[
-  {
-    "nome_completo": "...",
-    "annata": "...",
-    "prezzo": "...",
-    "valuta": "...",
-    "categoria": "...",
-    "sottocategoria": "...",
-    "uvaggio": "..."
-  },
-  ...
-]
+❗Rispondi solo con un array JSON valido.
 
 Testo OCR:
 ${testo}

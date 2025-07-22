@@ -309,10 +309,17 @@ async function processOCRFile() {
     lines.push(...result.data.text.split('\n').map(l => l.trim()).filter(l => l.length > 10));
   }
 
+const categoriePresenti = Array.from(new Set(winesData.map(w => w.categoria))).filter(Boolean);
+const sottocategoriePresenti = Array.from(new Set(winesData.map(w => w.sottocategoria))).filter(Boolean);
+
 const response = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/estrai-vini-carta", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ testo: lines.join('\n') })
+  body: JSON.stringify({
+    testo: lines.join('\n'),
+    categorieGiaPresenti: categoriePresenti,
+    sottocategorieGiaPresenti: sottocategoriePresenti
+  })
 });
 
 const json = await response.json();
