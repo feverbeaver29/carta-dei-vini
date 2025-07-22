@@ -1,0 +1,78 @@
+// supabase/functions/estrai-vini-carta/index.ts
+import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
+
+serve(async (req) => {
+  try {
+    const { righe } = await req.json();
+    if (!Array.isArray(righe) || righe.length === 0) {
+      return new Response(JSON.stringify({ error: "Nessuna riga ricevuta" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const prompt = `
+Hai ricevuto due righe OCR da una carta dei vini.
+Estrai in JSON i seguenti campi:
+- produttore
+- denominazione
+- annata (se presente)
+- prezzo (se presente)
+- valuta (€, $, £, CHF, ecc.)
+- categoria (se assente, suggeriscine una tu)
+- sottocategoria (se assente, suggeriscine una tu)
+- uvaggio (se assente, prova a dedurlo in base a nome e produttore)
+
+Formato risposta:
+{
+  "produttore": "...",
+  "denominazione": "...",
+  "annata": "...",
+  "prezzo": "...",
+  "valuta": "...",
+  "categoria": "...",
+  "sottocategoria": "...",
+  "uvaggio": "..."
+}
+
+Riga 1: ${righe[0] || ""}
+Riga 2: ${righe[1] || ""}
+`.trim();
+
+    const OPENAI_KEY = Deno.env.get("OPENAI_API_KEY");
+
+    const completion = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${OPENAI_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.2
+      })
+    });
+
+    const data = await completion.json();
+    const text = data.choices?.[0]?.message?.content?.trim();
+
+    try {
+      const vino = JSON.parse(text);
+      return new Response(JSON.stringify({ vino }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    } catch (_) {
+      return new Response(JSON.stringify({ error: "Parsing JSON fallito", raw: text }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+});

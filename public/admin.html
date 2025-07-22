@@ -228,41 +228,17 @@
   };
 }
 async function estraiDatiConIA(riga1, riga2) {
-  const prompt = `
-Estratto OCR:
-1. ${riga1}
-2. ${riga2}
-
-Dividi in JSON questi dati relativi ad un vino.
-Chiavi: nome, annata, prezzo, valuta, categoria, sottocategoria, uvaggio.
-`;
-    const openaiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!openaiKey) {
-      return new Response(JSON.stringify({ error: "Chiave OpenAI mancante" }), {
-        status: 500,
-        headers: corsHeaders,
-      });
-    }
-
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/estrai-vini-carta", {
     method: "POST",
-    headers: {
-      "Authorization": `Bearer ${openaiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.2
-    })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ righe: [riga1, riga2] })
   });
 
-  const data = await response.json();
-  try {
-    return JSON.parse(data.choices[0].message.content);
-  } catch {
-    return null;
-  }
+  const json = await response.json();
+  if (response.ok && json?.vino) return json.vino;
+
+  console.warn("Errore IA:", json);
+  return null;
 }
 
 async function processOCRFile() {
