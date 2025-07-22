@@ -33,6 +33,43 @@
   border-radius: 18px !important;
   max-width: 400px;
 }
+.custom-popup {
+  border-radius: 16px;
+  border: 2px solid #000;
+  padding: 20px;
+  background-color: #fff;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.custom-popup input {
+  border-radius: 20px;
+  padding: 8px 16px;
+  border: 1px solid #000;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.custom-popup input::placeholder {
+  font-style: italic;
+  color: #999;
+}
+
+.custom-popup button {
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  border: none;
+}
+
+.custom-popup .btn-save {
+  background-color: #a00;
+  color: #fff;
+}
+
+.custom-popup .btn-cancel {
+  background-color: #aaa;
+  color: #333;
+}
     @media (max-width: 768px) {
   .admin-panel {
     padding: 1em;
@@ -325,22 +362,42 @@ if (!vino.uvaggio || vino.uvaggio.trim() === "") {
 const result = await Swal.fire({
     title: 'Conferma vino',
     html: `
-      <div style="display:flex; flex-direction:column; gap: 10px; padding: 4px;">
-        <input id="sw_nome" class="swal2-input" placeholder="Nome del vino" value="${vino.nome_completo}">
-        <input id="sw_annata" class="swal2-input" placeholder="Annata" value="${vino.annata || ""}">
+      <div class="custom-popup">
+        <label>Nome</label>
+        <input id="sw_nome" placeholder="nome del vino" value="${vino.nome_completo}">
+        
+        <label>Annata</label>
+        <input id="sw_annata" placeholder="annata del vino" value="${vino.annata || ""}">
+        
         <div style="display:flex; gap:8px;">
-          <input id="sw_valuta" class="swal2-input" placeholder="Valuta" value="${vino.valuta || '€'}" style="flex:0.5;">
-          <input id="sw_prezzo" class="swal2-input" placeholder="Prezzo" value="${vino.prezzo || ""}" style="flex:1;">
+          <div style="flex:0.4;">
+            <label>Valuta</label>
+            <input id="sw_valuta" placeholder="es. €" value="${vino.valuta || '€'}">
+          </div>
+          <div style="flex:0.6;">
+            <label>Prezzo</label>
+            <input id="sw_prezzo" placeholder="prezzo del vino" value="${vino.prezzo || ""}">
+          </div>
         </div>
-        <input id="sw_categoria" class="swal2-input" placeholder="Categoria" value="${vino.categoria || ""}">
-        <input id="sw_sottocategoria" class="swal2-input" placeholder="Sottocategoria" value="${vino.sottocategoria || ""}">
-        <input id="sw_uvaggio" class="swal2-input" placeholder="Uvaggio" value="${vino.uvaggio || ""}" style="${vino.uvaggio === 'Uvaggio non trovato online' ? 'color: red; font-weight: bold;' : ''}">
+        
+        <label>Categoria</label>
+        <input id="sw_categoria" placeholder="categoria del vino" value="${vino.categoria || ""}">
+        
+        <label>Sottocategoria</label>
+        <input id="sw_sottocategoria" placeholder="sottocategoria del vino" value="${vino.sottocategoria || ""}">
+        
+        <label>Uvaggio</label>
+        <input id="sw_uvaggio" placeholder="uvaggio del vino" value="${vino.uvaggio || ""}">
       </div>
     `,
     confirmButtonText: 'Salva',
     cancelButtonText: 'Cancella',
     showCancelButton: true,
-    customClass: { popup: 'swal2-rounded-popup' },
+    customClass: {
+      popup: 'custom-popup',
+      confirmButton: 'btn-save',
+      cancelButton: 'btn-cancel'
+    },
     preConfirm: () => {
       const nomeBase = document.getElementById('sw_nome').value?.trim() || "";
       const annataRaw = document.getElementById('sw_annata').value?.trim();
