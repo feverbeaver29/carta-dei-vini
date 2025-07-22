@@ -29,6 +29,10 @@
   color: #800000;
   border-left: 2px solid #b00;
 }
+.swal2-popup.swal2-rounded-popup {
+  border-radius: 18px !important;
+  max-width: 400px;
+}
     @media (max-width: 768px) {
   .admin-panel {
     padding: 1em;
@@ -318,53 +322,57 @@ if (!vino.uvaggio || vino.uvaggio.trim() === "") {
     vino.uvaggio = "Uvaggio non trovato online";
   }
 }
-    await Swal.fire({
-      title: 'Conferma vino',
-      html: `
-        <input id="sw_nome" class="swal2-input" placeholder="Nome" value="${vino.nome_completo}">
-        <input id="sw_annata" class="swal2-input" placeholder="Annata" value="${vino.annata}">
-        <input id="sw_prezzo" class="swal2-input" placeholder="Prezzo" value="${vino.prezzo}">
-        <input id="sw_valuta" class="swal2-input" placeholder="Valuta" value="${vino.valuta}">
-        <input id="sw_categoria" class="swal2-input" placeholder="Categoria" value="${vino.categoria}">
-        <input id="sw_sottocategoria" class="swal2-input" placeholder="Sottocategoria" value="${vino.sottocategoria}">
-        <input id="sw_uvaggio" class="swal2-input" placeholder="Uvaggio" value="${vino.uvaggio}" style="${vino.uvaggio === 'Uvaggio non trovato online' ? 'color: red; font-weight: bold;' : ''}">
-      `,
-      confirmButtonText: 'Salva',
-      showCancelButton: true,
+await Swal.fire({
+  title: 'Conferma vino',
+  html: `
+    <div style="display:flex; flex-direction:column; gap: 10px; padding: 4px;">
+      <input id="sw_nome" class="swal2-input" placeholder="Nome del vino" value="${vino.nome_completo}">
+      <input id="sw_annata" class="swal2-input" placeholder="Annata" value="${vino.annata || ""}">
+      <div style="display:flex; gap:8px;">
+        <input id="sw_valuta" class="swal2-input" placeholder="Valuta" value="${vino.valuta || '€'}" style="flex:0.5;">
+        <input id="sw_prezzo" class="swal2-input" placeholder="Prezzo" value="${vino.prezzo || ""}" style="flex:1;">
+      </div>
+      <input id="sw_categoria" class="swal2-input" placeholder="Categoria" value="${vino.categoria || ""}">
+      <input id="sw_sottocategoria" class="swal2-input" placeholder="Sottocategoria" value="${vino.sottocategoria || ""}">
+      <input id="sw_uvaggio" class="swal2-input" placeholder="Uvaggio" value="${vino.uvaggio || ""}" style="${vino.uvaggio === 'Uvaggio non trovato online' ? 'color: red; font-weight: bold;' : ''}">
+    </div>
+  `,
+  confirmButtonText: 'Salva',
+  cancelButtonText: 'Cancella',
+  showCancelButton: true,
+  customClass: {
+    popup: 'swal2-rounded-popup'
+  },
+  preConfirm: () => {
+    const nomeBase = document.getElementById('sw_nome').value?.trim() || "";
+    const annataRaw = document.getElementById('sw_annata').value?.trim();
+    const annataValida = annataRaw && annataRaw !== "null" && annataRaw !== "undefined" ? annataRaw : "";
 
-      preConfirm: () => {
-  const nomeBase = document.getElementById('sw_nome').value?.trim() || "";
-  const annataRaw = document.getElementById('sw_annata').value?.trim();
-  const annataValida = annataRaw && annataRaw !== "null" && annataRaw !== "undefined" ? annataRaw : "";
-
-  return {
-    nome: nomeBase,
-    annata: annataValida || null,
-    prezzo: document.getElementById('sw_valuta').value + document.getElementById('sw_prezzo').value,
-    categoria: document.getElementById('sw_categoria').value,
-    sottocategoria: document.getElementById('sw_sottocategoria').value,
-    uvaggio: document.getElementById('sw_uvaggio').value
-  };
+    return {
+      nome: nomeBase,
+      annata: annataValida || null,
+      prezzo: document.getElementById('sw_valuta').value + document.getElementById('sw_prezzo').value,
+      categoria: document.getElementById('sw_categoria').value,
+      sottocategoria: document.getElementById('sw_sottocategoria').value,
+      uvaggio: document.getElementById('sw_uvaggio').value
+    };
+  }
+});
 }
 
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        const nuovo = result.value;
-        nuovo.ristorante_id = RESTAURANT_ID;
+if (result.isConfirmed) {
+  const nuovo = result.value;
+  nuovo.ristorante_id = RESTAURANT_ID;
 
-        await fetch(`${SUPABASE_URL}/rest/v1/wines`, {
-          method: "POST",
-          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_API_KEY },
-          body: JSON.stringify(nuovo)
-        });
+  await fetch(`${SUPABASE_URL}/rest/v1/wines`, {
+    method: "POST",
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_API_KEY },
+    body: JSON.stringify(nuovo)
+  });
 
-        showMessage("Vino salvato da OCR!");
-        loadWines();
-      }
-    });
-  }
-
-  status.textContent = "OCR completato!";
+  showMessage("Vino salvato da OCR!");
+  loadWines();
+}
 }
 
 function normalizeAndCapitalize(arr) {
