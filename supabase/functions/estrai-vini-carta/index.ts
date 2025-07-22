@@ -32,17 +32,9 @@ Estrai in JSON i seguenti campi:
 - sottocategoria (se assente, suggeriscine una tu)
 - uvaggio (se assente, prova a dedurlo in base a nome e produttore)
 
-Formato risposta:
-{
-  "produttore": "...",
-  "denominazione": "...",
-  "annata": "...",
-  "prezzo": "...",
-  "valuta": "...",
-  "categoria": "...",
-  "sottocategoria": "...",
-  "uvaggio": "..."
-}
+❗Rispondi solo ed esclusivamente con un oggetto JSON valido, senza nessun commento o spiegazione.  
+Esempio (usa questo formato preciso, nessun altro):
+{"produttore":"...","denominazione":"...","annata":"...","prezzo":"...","valuta":"...","categoria":"...","sottocategoria":"...","uvaggio":"..."}
 
 Riga 1: ${righe[0] || ""}
 Riga 2: ${righe[1] || ""}
@@ -57,7 +49,7 @@ Riga 2: ${righe[1] || ""}
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4",
+        model: "gpt-3.5-turbo",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.2
       })
@@ -66,17 +58,25 @@ Riga 2: ${righe[1] || ""}
     const data = await completion.json();
     const text = data.choices?.[0]?.message?.content?.trim();
 
-    try {
-      const vino = JSON.parse(text);
-      return new Response(JSON.stringify({ vino }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    } catch (_) {
-      return new Response(JSON.stringify({ error: "Parsing JSON fallito", raw: text }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
+try {
+  const match = text.match(/\{[\s\S]*?\}/); // estrae il primo blocco JSON valido
+  if (!match) throw new Error("Nessun blocco JSON trovato");
+
+  const vino = JSON.parse(match[0]);
+
+  return new Response(JSON.stringify({ vino }), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" }
+  });
+} catch (err) {
+  return new Response(JSON.stringify({
+    error: "Parsing JSON fallito",
+    raw: text,
+    detail: err.message
+  }), {
+    status: 500,
+    headers: { ...corsHeaders, "Content-Type": "application/json" }
+  });
+}
 
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {
