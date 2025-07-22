@@ -310,6 +310,7 @@ if (!vino.uvaggio || vino.uvaggio.trim() === "") {
     // controlla se la risposta è generica o inutile
     const isInutile = testo.toLowerCase().includes("non posso") ||
                       testo.toLowerCase().includes("non ho accesso") ||
+                      testo.toLowerCase().includes("non ho") ||
                       testo.length < 5;
 
     vino.uvaggio = isInutile ? "Uvaggio non trovato online" : testo;
