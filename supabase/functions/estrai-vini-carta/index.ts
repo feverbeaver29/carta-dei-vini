@@ -20,9 +20,6 @@ if (!testo || typeof testo !== "string" || testo.length < 20) {
   });
 }
 
-const categorieGiaPresenti = ["Rossi", "Bianchi", "Spumanti"]; // Esempio, popola dinamicamente
-const sottocategorieGiaPresenti = ["Toscana", "Piemonte", "Veneto"]; // Esempio, popola dinamicamente
-
 const prompt = `
 Hai ricevuto un testo OCR che rappresenta una carta dei vini. Analizza e riconosci ogni vino contenuto nel testo. Per ogni vino estrai:
 
