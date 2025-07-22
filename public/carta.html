@@ -1205,10 +1205,9 @@ function showWinesBySubcategory(subcat) {
 card.className = 'wine-card';
 const annata = w.annata ? ` (${w.annata})` : '';
 
-const [produttore, denominazione] = (w.nome || "").split(" | ");
-const produttoreUpper = (produttore || "").toUpperCase();
+const nomePulito = (w.nome || "").trim();
 const t = translations[currentLang];
-card.innerHTML = `<strong>${produttoreUpper} ${denominazione}${annata}</strong><br>
+card.innerHTML = `<strong>${nomePulito}${annata}</strong><br>
 <em>${w.prezzo}</em><br>
 <small>${t.grape}: ${w.uvaggio}</small>`;
     wineList.appendChild(card);
