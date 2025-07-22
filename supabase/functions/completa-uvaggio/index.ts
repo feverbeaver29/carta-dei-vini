@@ -36,7 +36,7 @@ serve(async (req) => {
       },
       {
         role: "user",
-        content: `Qual è l'uvaggio del vino "${nome_completo}"? Rispondi solo con il nome dell'uvaggio, senza aggiungere commenti o spiegazioni.`
+        content: `Qual è la composizione completa dell'uvaggio del vino "${nome_completo}"? Cerca online se necessario. Rispondi solo con l'elenco delle uve, in formato: Sangiovese 75%, Canaiolo 10%, Cabernet 10%, altri 5%.`
       }
     ];
 
