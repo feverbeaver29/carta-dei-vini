@@ -301,6 +301,17 @@ const parsedVini = json.vini || [];
 
   // Conferma uno a uno
   for (const vino of parsedVini) {
+    if (!vino.uvaggio || vino.uvaggio.trim() === "") {
+  const uvaggioRes = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/completa-uvaggio", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nome_completo: vino.nome_completo })
+  });
+  const uvaggioData = await uvaggioRes.json();
+  if (uvaggioRes.ok && uvaggioData?.uvaggio) {
+    vino.uvaggio = uvaggioData.uvaggio;
+  }
+}
     await Swal.fire({
       title: 'Conferma vino',
       html: `
