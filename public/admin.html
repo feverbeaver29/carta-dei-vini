@@ -148,12 +148,8 @@
 <div id="message"></div>
 <div class="admin-panel">
   <h2 id="formTitle">Aggiungi Vino <button id="resetButton" style="display:none; margin-left: 10px; padding: 0.3em 0.6em; font-size: 0.8em;">Aggiungi nuovo</button></h2>
-  <label>Produttore e Nome / Denominazione:</label>
-<div id="ocrResult" style="margin-top: 1em; font-size: 0.9em;"></div>
-<div style="display: flex; gap: 10px; margin-top: 0.3em;">
-  <input type="text" id="produttore" placeholder="Produttore" style="flex: 1; min-width: 0;">
-  <input type="text" id="denominazione" placeholder="Nome e/o Denominazione" style="flex: 2; min-width: 0;">
-</div>
+<label>Nome del vino:</label>
+<input type="text" id="nome_completo" placeholder="Nome completo del vino">
   <label>Annata:</label>
   <input type="text" id="annata" placeholder="non obbligatorio">
   <label>Prezzo:</label>
@@ -416,7 +412,7 @@ function showMessage(msg, ok = true) {
 }
 
 function resetForm() {
-  ["annata", "prezzo", "categoria", "sottocategoria", "uvaggio", "produttore", "denominazione"].forEach(id => {
+  ["annata", "prezzo", "categoria", "sottocategoria", "uvaggio", "nome_completo"].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.value = "";
 });
@@ -428,9 +424,7 @@ function fillForm(index) {
   ["annata", "categoria", "sottocategoria", "uvaggio"].forEach(id => document.getElementById(id).value = wine[id] || "");
 
 // Dividi nome in due parti (grezzo: fino al primo spazio = produttore)
-const [produttore, denominazione] = (wine.nome || "").split(" | ");
-document.getElementById("produttore").value = (produttore || "").trim();
-document.getElementById("denominazione").value = (denominazione || "").trim();
+document.getElementById("nome_completo").value = wine.nome || "";
   const match = wine.prezzo?.match(/^(€|$|£|¥|CHF)?(.*)$/);
   document.getElementById("valuta").value = match?.[1] || "€";
   document.getElementById("prezzo").value = match?.[2]?.trim() || "";
@@ -651,7 +645,7 @@ async function saveWine() {
   await fetchUserIfNeeded();
   const wine = {
     ristorante_id: RESTAURANT_ID,
-    nome: (document.getElementById("produttore").value.trim() + " | " + document.getElementById("denominazione").value.trim()),
+    nome: document.getElementById("nome_completo").value.trim(),
     annata: document.getElementById("annata").value,
     prezzo: document.getElementById("valuta").value + document.getElementById("prezzo").value,
     categoria: formatText(document.getElementById("categoria").value),
