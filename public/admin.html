@@ -315,8 +315,8 @@ const parsedVini = json.vini || [];
       confirmButtonText: 'Salva',
       showCancelButton: true,
       preConfirm: () => ({
-        nome: document.getElementById('sw_nome').value,
-        annata: document.getElementById('sw_annata').value,
+nome: document.getElementById('sw_nome').value + 
+      (document.getElementById('sw_annata').value ? " " + document.getElementById('sw_annata').value : ""),
         prezzo: document.getElementById('sw_valuta').value + document.getElementById('sw_prezzo').value,
         categoria: document.getElementById('sw_categoria').value,
         sottocategoria: document.getElementById('sw_sottocategoria').value,
