@@ -272,13 +272,14 @@ async function processOCRFile() {
     lines.push(...result.data.text.split('\n').map(l => l.trim()).filter(l => l.length > 10));
   }
 
-  const parsedVini = [];
-  for (let i = 0; i < lines.length; i += 2) {
-    const r1 = lines[i];
-    const r2 = lines[i + 1] || "";
-    const vino = await estraiDatiConIA(r1, r2);
-    if (vino) parsedVini.push(vino);
-  }
+const response = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/estrai-vini-carta", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ testo: lines.join('\n') })
+});
+
+const json = await response.json();
+const parsedVini = json.vini || [];
 
   if (parsedVini.length === 0) {
     status.textContent = "Nessun vino rilevato.";
@@ -289,7 +290,7 @@ async function processOCRFile() {
 
   // Mostra riepilogo
   const listaHTML = parsedVini.map(v =>
-    `<li><strong>${v.nome || "?"}</strong> — ${v.annata || ""} — ${v.prezzo || ""} ${v.valuta || ""}</li>`
+    `<li><strong>${v.nome_completo || "?"}</strong> — ${v.annata || ""} — ${v.prezzo || ""} ${v.valuta || ""}</li>`
   ).join("");
 
   await Swal.fire({
@@ -303,7 +304,7 @@ async function processOCRFile() {
     await Swal.fire({
       title: 'Conferma vino',
       html: `
-        <input id="sw_nome" class="swal2-input" placeholder="Nome" value="${vino.nome}">
+        <input id="sw_nome" class="swal2-input" placeholder="Nome" value="${vino.nome_completo}">
         <input id="sw_annata" class="swal2-input" placeholder="Annata" value="${vino.annata}">
         <input id="sw_prezzo" class="swal2-input" placeholder="Prezzo" value="${vino.prezzo}">
         <input id="sw_valuta" class="swal2-input" placeholder="Valuta" value="${vino.valuta}">

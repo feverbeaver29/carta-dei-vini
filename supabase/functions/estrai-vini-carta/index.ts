@@ -11,33 +11,42 @@ serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  try {
-    const { righe } = await req.json();
-    if (!Array.isArray(righe) || righe.length === 0) {
-      return new Response(JSON.stringify({ error: "Nessuna riga ricevuta" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
+const { testo } = await req.json();
+if (!testo || typeof testo !== "string" || testo.length < 20) {
+  return new Response(JSON.stringify({ error: "Testo OCR non valido" }), {
+    status: 400,
+    headers: { ...corsHeaders, "Content-Type": "application/json" }
+  });
+}
 
-    const prompt = `
-Hai ricevuto due righe OCR da una carta dei vini.
-Estrai in JSON i seguenti campi:
-- produttore
-- denominazione
+const prompt = `
+Hai ricevuto un testo OCR che rappresenta una sezione di una carta dei vini.  
+Analizza e riconosci ogni vino contenuto nel testo. Per ogni vino estrai:
+
+- nome_completo (es: "PIAGGIA 'Sasso' Carmignano DOCG")
 - annata (se presente)
 - prezzo (se presente)
 - valuta (€, $, £, CHF, ecc.)
 - categoria (se assente, suggeriscine una tu)
 - sottocategoria (se assente, suggeriscine una tu)
-- uvaggio (se assente, prova a dedurlo in base a nome e produttore)
+- uvaggio (se assente, prova a dedurlo in base al nome)
 
-❗Rispondi solo ed esclusivamente con un oggetto JSON valido, senza nessun commento o spiegazione.  
-Esempio (usa questo formato preciso, nessun altro):
-{"produttore":"...","denominazione":"...","annata":"...","prezzo":"...","valuta":"...","categoria":"...","sottocategoria":"...","uvaggio":"..."}
+❗Rispondi solo con un array JSON valido di oggetti vino, esempio:
+[
+  {
+    "nome_completo": "...",
+    "annata": "...",
+    "prezzo": "...",
+    "valuta": "...",
+    "categoria": "...",
+    "sottocategoria": "...",
+    "uvaggio": "..."
+  },
+  ...
+]
 
-Riga 1: ${righe[0] || ""}
-Riga 2: ${righe[1] || ""}
+Testo OCR:
+${testo}
 `.trim();
 
     const OPENAI_KEY = Deno.env.get("OPENAI_API_KEY");
@@ -59,12 +68,12 @@ Riga 2: ${righe[1] || ""}
     const text = data.choices?.[0]?.message?.content?.trim();
 
 try {
-  const match = text.match(/\{[\s\S]*?\}/); // estrae il primo blocco JSON valido
-  if (!match) throw new Error("Nessun blocco JSON trovato");
+  const match = text.match(/\[[\s\S]*?\]/); // estrae l'array JSON
+  if (!match) throw new Error("Nessun array JSON trovato");
 
-  const vino = JSON.parse(match[0]);
+  const vini = JSON.parse(match[0]);
 
-  return new Response(JSON.stringify({ vino }), {
+  return new Response(JSON.stringify({ vini }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" }
   });
 } catch (err) {
@@ -77,12 +86,5 @@ try {
     headers: { ...corsHeaders, "Content-Type": "application/json" }
   });
 }
-
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
-  }
 });
 
