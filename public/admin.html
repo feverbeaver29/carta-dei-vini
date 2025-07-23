@@ -266,11 +266,23 @@
 </div>
 
 <script>
-  function aggiornaBarraProgresso(percentuale) {
+  let progressInterval = null;
+
+function aggiornaBarraProgressoFinoAl(target) {
   const bar = document.getElementById("progressBar");
-  percentuale = Math.max(0, Math.min(100, percentuale));
-  bar.style.width = `${percentuale}%`;
-  bar.textContent = `${percentuale}%`;
+  let attuale = parseInt(bar.textContent.replace('%', '')) || 0;
+
+  clearInterval(progressInterval);
+
+  progressInterval = setInterval(() => {
+    if (attuale < target) {
+      attuale++;
+      bar.style.width = `${attuale}%`;
+      bar.textContent = `${attuale}%`;
+    } else {
+      clearInterval(progressInterval);
+    }
+  }, 25); // regola la velocità qui (più basso = più veloce)
 }
 
   function parseWineLine(line) {
@@ -342,7 +354,7 @@ for (let i = 0; i < images.length; i++) {
 
   // Progresso basato sull'indice delle immagini
 const progress = Math.round(((i + 1) / images.length) * 30);
-aggiornaBarraProgresso(progress);
+aggiornaBarraProgressoFinoAl(progress);
 }
 
   const categoriePresenti = Array.from(new Set(winesData.map(w => w.categoria))).filter(Boolean);
@@ -370,17 +382,21 @@ aggiornaBarraProgresso(progress);
 
     // Aggiorna progress-bar
 const progress = 30 + Math.min(70, Math.round(((i + BATCH_SIZE) / lines.length) * 70));
-aggiornaBarraProgresso(progress);
+aggiornaBarraProgressoFinoAl(progress);
 }
 
   if (parsedVini.length === 0) {
     status.textContent = "Nessun vino rilevato.";
-    progressContainer.style.display = "none";
+    aggiornaBarraProgressoFinoAl(100);
+await new Promise(resolve => setTimeout(resolve, 1000)); // attesa finale per l'effetto
+progressContainer.style.display = "none";
     return;
   }
 
   status.textContent = `Sono stati rilevati ${parsedVini.length} vini`;
-  progressContainer.style.display = "none";
+  aggiornaBarraProgressoFinoAl(100);
+await new Promise(resolve => setTimeout(resolve, 1000)); // attesa finale per l'effetto
+progressContainer.style.display = "none";
 
   const listaHTML = parsedVini.map(v =>
     `<li><strong>${v.nome_completo || "?"}</strong> — ${v.annata || ""} — ${v.prezzo || ""} ${v.valuta || ""}</li>`
