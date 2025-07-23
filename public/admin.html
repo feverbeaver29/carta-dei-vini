@@ -192,15 +192,15 @@
 <h1>Gestione Carta dei Vini</h1>
 
 <hr style="margin: 2em 0;">
-<h3>📷 Carica la tua vecchia carta dei vini (PDF o foto)</h3>
-<p style="font-size: 0.85em; color: #555; margin-top:-0.5em;">⚠️ Consigliamo di caricare al massimo 15 vini per volta per un'estrazione rapida. Caricare più vini sarà più lento.</p>
+<div style="text-align: center; margin-top: 1em;">
+  <button id="uploadTrigger" style="background-color:#a00;padding: 0.6em 1.2em; border-radius: 12px; color:white; font-weight: 500; font-size: 0.95em;">📷 Carica carta dei vini</button>
+</div>
+
 <div id="progressContainer" style="width:100%;background:#ddd;border-radius:10px;margin-top:1em;display:none;">
   <div id="progressBar" style="width:0%;height:20px;background:#b00;border-radius:10px;text-align:center;color:#fff;font-size:0.8em;line-height:20px;">
     0%
   </div>
 </div>
-<input type="file" id="ocrUploadInput" accept="image/*,.pdf" style="margin-bottom: 1em;">
-<button onclick="processOCRFile()">Estrai vini</button>
 <div id="ocrStatus" style="margin-top: 1em; font-size: 0.9em;"></div>
 
 <div id="message"></div>
@@ -838,6 +838,36 @@ document.body.addEventListener("click", e => {
 });
 
 loadWines();
+document.getElementById("uploadTrigger").addEventListener("click", async () => {
+  const { value: file } = await Swal.fire({
+    title: 'Caricamento Carta dei Vini',
+    html: `
+      <p style="text-align:left;margin-bottom:10px;font-size:0.9em;">
+        ⚠️ Consigliamo di caricare al massimo 15 vini per volta per un'estrazione rapida.
+        Caricare più vini sarà più lento.
+      </p>
+      <input type="file" id="popupFileInput" accept="image/*,.pdf" style="margin-top:10px;">
+    `,
+    showCancelButton: true,
+    confirmButtonText: "Estrai vini",
+    cancelButtonText: "Annulla",
+    preConfirm: () => {
+      const fileInput = document.getElementById("popupFileInput");
+      const file = fileInput?.files?.[0];
+      if (!file) {
+        Swal.showValidationMessage("Seleziona un file prima di procedere");
+        return false;
+      }
+      document.getElementById("ocrUploadInput").files = fileInput.files;
+      return true;
+    }
+  });
+
+  if (file) {
+    processOCRFile(); // chiama la funzione già presente
+  }
+});
+
 </script>
 <!-- PDF.js Library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.13.216/pdf.min.js"></script>
