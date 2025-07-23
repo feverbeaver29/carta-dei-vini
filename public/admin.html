@@ -323,8 +323,8 @@ for (let i = 0; i < lines.length; i += BATCH_SIZE) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       testo: batch.join('\n'),
-      categorieGiaPresenti,
-      sottocategorieGiaPresenti
+    categorieGiaPresenti: categoriePresenti,
+    sottocategorieGiaPresenti: sottocategoriePresenti
     })
   });
 
