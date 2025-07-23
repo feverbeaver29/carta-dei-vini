@@ -182,6 +182,12 @@
 
 <hr style="margin: 2em 0;">
 <h3>📷 Carica la tua vecchia carta dei vini (PDF o foto)</h3>
+<p style="font-size: 0.85em; color: #555; margin-top:-0.5em;">⚠️ Consigliamo di caricare al massimo 15 vini per volta per un'estrazione rapida. Caricare più vini sarà più lento.</p>
+<div id="progressContainer" style="width:100%;background:#ddd;border-radius:10px;margin-top:1em;display:none;">
+  <div id="progressBar" style="width:0%;height:20px;background:#b00;border-radius:10px;text-align:center;color:#fff;font-size:0.8em;line-height:20px;">
+    0%
+  </div>
+</div>
 <input type="file" id="ocrUploadInput" accept="image/*,.pdf" style="margin-bottom: 1em;">
 <button onclick="processOCRFile()">Estrai vini</button>
 <div id="ocrStatus" style="margin-top: 1em; font-size: 0.9em;"></div>
@@ -281,7 +287,14 @@ async function estraiDatiConIA(riga1, riga2) {
 async function processOCRFile() {
   const file = document.getElementById("ocrUploadInput").files[0];
   const status = document.getElementById("ocrStatus");
+  const progressContainer = document.getElementById("progressContainer");
+  const progressBar = document.getElementById("progressBar");
+  
   if (!file) return;
+
+  progressContainer.style.display = "block";
+  progressBar.style.width = "0%";
+  progressBar.textContent = "0%";
 
   let images = [];
 
@@ -309,37 +322,44 @@ async function processOCRFile() {
     lines.push(...result.data.text.split('\n').map(l => l.trim()).filter(l => l.length > 10));
   }
 
-const categoriePresenti = Array.from(new Set(winesData.map(w => w.categoria))).filter(Boolean);
-const sottocategoriePresenti = Array.from(new Set(winesData.map(w => w.sottocategoria))).filter(Boolean);
+  const categoriePresenti = Array.from(new Set(winesData.map(w => w.categoria))).filter(Boolean);
+  const sottocategoriePresenti = Array.from(new Set(winesData.map(w => w.sottocategoria))).filter(Boolean);
 
-const BATCH_SIZE = 30; // 30 righe per volta
-let parsedVini = [];
+  const BATCH_SIZE = 30; 
+  let parsedVini = [];
+  const totalBatches = Math.ceil(lines.length / BATCH_SIZE);
 
-for (let i = 0; i < lines.length; i += BATCH_SIZE) {
-  const batch = lines.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < lines.length; i += BATCH_SIZE) {
+    const batch = lines.slice(i, i + BATCH_SIZE);
 
-  const response = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/estrai-vini-carta", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      testo: batch.join('\n'),
-    categorieGiaPresenti: categoriePresenti,
-    sottocategorieGiaPresenti: sottocategoriePresenti
-    })
-  });
+    const response = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/estrai-vini-carta", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        testo: batch.join('\n'),
+        categorieGiaPresenti,
+        sottocategorieGiaPresenti
+      })
+    });
 
-  const json = await response.json();
-  parsedVini = parsedVini.concat(json.vini || []);
-}
+    const json = await response.json();
+    parsedVini = parsedVini.concat(json.vini || []);
+
+    // Aggiorna progress-bar
+    const progress = Math.min(100, Math.round((i + BATCH_SIZE) / lines.length * 100));
+    progressBar.style.width = `${progress}%`;
+    progressBar.textContent = `${progress}%`;
+  }
 
   if (parsedVini.length === 0) {
     status.textContent = "Nessun vino rilevato.";
+    progressContainer.style.display = "none";
     return;
   }
 
   status.textContent = `Sono stati rilevati ${parsedVini.length} vini`;
+  progressContainer.style.display = "none";
 
-  // Mostra riepilogo
   const listaHTML = parsedVini.map(v =>
     `<li><strong>${v.nome_completo || "?"}</strong> — ${v.annata || ""} — ${v.prezzo || ""} ${v.valuta || ""}</li>`
   ).join("");
@@ -350,106 +370,75 @@ for (let i = 0; i < lines.length; i += BATCH_SIZE) {
     confirmButtonText: "Procedi con conferma"
   });
 
-  // Conferma uno a uno
   for (const vino of parsedVini) {
-if (!vino.uvaggio || vino.uvaggio.trim() === "") {
-  const uvaggioRes = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/completa-uvaggio", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ nome_completo: vino.nome_completo })
-  });
-  const uvaggioData = await uvaggioRes.json();
-  if (uvaggioRes.ok && uvaggioData?.uvaggio) {
-    const testo = uvaggioData.uvaggio.trim();
+    if (!vino.uvaggio || vino.uvaggio.trim() === "") {
+      const uvaggioRes = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/completa-uvaggio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome_completo: vino.nome_completo })
+      });
+      const uvaggioData = await uvaggioRes.json();
+      vino.uvaggio = uvaggioData?.uvaggio || "Uvaggio non trovato online";
+    }
 
-    // controlla se la risposta è generica o inutile
-    const isInutile = testo.toLowerCase().includes("non posso") ||
-                      testo.toLowerCase().includes("non ho accesso") ||
-                      testo.toLowerCase().includes("non ho") ||
-                      testo.toLowerCase().includes("Sfortunatamente") ||
-                      testo.toLowerCase().includes("non sono") ||
-                      testo.toLowerCase().includes("online") ||
-                      testo.length < 5;
-
-    vino.uvaggio = isInutile ? "Uvaggio non trovato online" : testo;
-  } else {
-    vino.uvaggio = "Uvaggio non trovato online";
-  }
-}
-const categoriePresenti = Array.from(new Set(winesData.map(w => w.categoria))).filter(Boolean);
-const sottocategoriePresenti = Array.from(new Set(winesData.map(w => w.sottocategoria))).filter(Boolean);
-
-const result = await Swal.fire({
-  title: 'Conferma vino',
-  html: `
-    <div class="custom-popup">
-      <label>Nome</label>
-      <input id="sw_nome" placeholder="nome del vino" value="${vino.nome_completo}">
-
-      <label>Annata</label>
-      <input id="sw_annata" placeholder="annata del vino" value="${vino.annata || ""}">
-
-      <div style="display:flex; gap:8px;">
-        <div style="flex:0.4;">
-          <label>Valuta</label>
-          <input id="sw_valuta" placeholder="es. €" value="${vino.valuta || '€'}">
+    const result = await Swal.fire({
+      title: 'Conferma vino',
+      html: `
+        <div class="custom-popup">
+          <label>Nome</label>
+          <input id="sw_nome" value="${vino.nome_completo}">
+          <label>Annata</label>
+          <input id="sw_annata" value="${vino.annata || ""}">
+          <div style="display:flex; gap:8px;">
+            <div style="flex:0.4;">
+              <label>Valuta</label>
+              <input id="sw_valuta" value="${vino.valuta || '€'}">
+            </div>
+            <div style="flex:0.6;">
+              <label>Prezzo</label>
+              <input id="sw_prezzo" value="${vino.prezzo || ""}">
+            </div>
+          </div>
+          <label>Categoria</label>
+          <input id="sw_categoria" list="lista_categorie" value="${vino.categoria || ""}">
+          <label>Sottocategoria</label>
+          <input id="sw_sottocategoria" list="lista_sottocategorie" value="${vino.sottocategoria || ""}">
+          <label>Uvaggio</label>
+          <input id="sw_uvaggio" value="${vino.uvaggio || ""}">
         </div>
-        <div style="flex:0.6;">
-          <label>Prezzo</label>
-          <input id="sw_prezzo" placeholder="prezzo del vino" value="${vino.prezzo || ""}">
-        </div>
-      </div>
-
-      <label>Categoria</label>
-      <input id="sw_categoria" list="lista_categorie" placeholder="categoria del vino" value="${vino.categoria || ""}">
-      <datalist id="lista_categorie">
-        ${categoriePresenti.map(cat => `<option value="${cat}">`).join('')}
-      </datalist>
-
-      <label>Sottocategoria</label>
-      <input id="sw_sottocategoria" list="lista_sottocategorie" placeholder="sottocategoria del vino" value="${vino.sottocategoria || ""}">
-      <datalist id="lista_sottocategorie">
-        ${sottocategoriePresenti.map(sub => `<option value="${sub}">`).join('')}
-      </datalist>
-
-      <label>Uvaggio</label>
-      <input id="sw_uvaggio" placeholder="uvaggio del vino" value="${vino.uvaggio || ""}">
-    </div>
-  `,
-  confirmButtonText: 'Salva',
-  cancelButtonText: 'Cancella',
-  showCancelButton: true,
-  customClass: {
-    popup: 'custom-popup',
-    confirmButton: 'btn-save',
-    cancelButton: 'btn-cancel'
-  },
-  preConfirm: () => {
-    return {
-      nome: document.getElementById('sw_nome').value.trim(),
-      annata: document.getElementById('sw_annata').value.trim() || null,
-      prezzo: document.getElementById('sw_valuta').value + document.getElementById('sw_prezzo').value,
-      categoria: document.getElementById('sw_categoria').value.trim(),
-      sottocategoria: document.getElementById('sw_sottocategoria').value.trim(),
-      uvaggio: document.getElementById('sw_uvaggio').value.trim()
-    };
-  }
-});
-
-  if (result.isConfirmed) {
-    const nuovo = result.value;
-    nuovo.ristorante_id = RESTAURANT_ID;
-
-    await fetch(`${SUPABASE_URL}/rest/v1/wines`, {
-      method: "POST",
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_API_KEY },
-      body: JSON.stringify(nuovo)
+      `,
+      confirmButtonText: 'Salva',
+      cancelButtonText: 'Cancella',
+      showCancelButton: true,
+      customClass: {
+        popup: 'custom-popup',
+        confirmButton: 'btn-save',
+        cancelButton: 'btn-cancel'
+      },
+      preConfirm: () => ({
+        nome: document.getElementById('sw_nome').value.trim(),
+        annata: document.getElementById('sw_annata').value.trim() || null,
+        prezzo: document.getElementById('sw_valuta').value + document.getElementById('sw_prezzo').value,
+        categoria: document.getElementById('sw_categoria').value.trim(),
+        sottocategoria: document.getElementById('sw_sottocategoria').value.trim(),
+        uvaggio: document.getElementById('sw_uvaggio').value.trim()
+      })
     });
 
-    showMessage("Vino salvato da OCR!");
-    loadWines();
+    if (result.isConfirmed) {
+      const nuovo = result.value;
+      nuovo.ristorante_id = RESTAURANT_ID;
+
+      await fetch(`${SUPABASE_URL}/rest/v1/wines`, {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_API_KEY },
+        body: JSON.stringify(nuovo)
+      });
+
+      showMessage("Vino salvato da OCR!");
+      loadWines();
+    }
   }
-}
 }
 
 function normalizeAndCapitalize(arr) {
