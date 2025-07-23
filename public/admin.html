@@ -194,6 +194,7 @@
 <hr style="margin: 2em 0;">
 <div style="text-align: center; margin-top: 1em;">
   <button id="uploadTrigger" style="background-color:#a00;padding: 0.6em 1.2em; border-radius: 12px; color:white; font-weight: 500; font-size: 0.95em;">📷 Carica carta dei vini</button>
+  <input type="file" id="ocrUploadInput" style="display: none;" accept="image/*,.pdf">
 </div>
 
 <div id="progressContainer" style="width:100%;background:#ddd;border-radius:10px;margin-top:1em;display:none;">
@@ -839,6 +840,7 @@ document.body.addEventListener("click", e => {
 
 loadWines();
 document.getElementById("uploadTrigger").addEventListener("click", async () => {
+  
 const result = await Swal.fire({
   title: 'Caricamento Carta dei Vini',
   html: `
