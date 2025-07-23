@@ -70,6 +70,17 @@
   background-color: #aaa;
   color: #333;
 }
+#progressBar {
+  width: 0%;
+  height: 20px;
+  background: #b00;
+  border-radius: 10px;
+  text-align: center;
+  color: #fff;
+  font-size: 0.8em;
+  line-height: 20px;
+  transition: width 0.4s ease; /* aggiungi questa riga */
+}
     @media (max-width: 768px) {
   .admin-panel {
     padding: 1em;
@@ -255,6 +266,13 @@
 </div>
 
 <script>
+  function aggiornaBarraProgresso(percentuale) {
+  const bar = document.getElementById("progressBar");
+  percentuale = Math.max(0, Math.min(100, percentuale));
+  bar.style.width = `${percentuale}%`;
+  bar.textContent = `${percentuale}%`;
+}
+
   function parseWineLine(line) {
   const regex = /(.*?)\s(\d{4})\s([€$£¥CHF])?(\d+(?:[\.,]\d{1,2})?)\s+(\w+)\s+([\w\s]+)\s+(.+)/;
   const match = line.match(regex);
@@ -323,9 +341,8 @@ for (let i = 0; i < images.length; i++) {
   lines.push(...result.data.text.split('\n').map(l => l.trim()).filter(l => l.length > 10));
 
   // Progresso basato sull'indice delle immagini
-  const progress = Math.round(((i + 1) / images.length) * 30); // massimo 30% per l’OCR
-  progressBar.style.width = `${progress}%`;
-  progressBar.textContent = `${progress}%`;
+const progress = Math.round(((i + 1) / images.length) * 30);
+aggiornaBarraProgresso(progress);
 }
 
   const categoriePresenti = Array.from(new Set(winesData.map(w => w.categoria))).filter(Boolean);
@@ -352,9 +369,8 @@ for (let i = 0; i < images.length; i++) {
     parsedVini = parsedVini.concat(json.vini || []);
 
     // Aggiorna progress-bar
-  const progress = 30 + Math.min(70, Math.round(((i + BATCH_SIZE) / lines.length) * 70));
-  progressBar.style.width = `${progress}%`;
-  progressBar.textContent = `${progress}%`;
+const progress = 30 + Math.min(70, Math.round(((i + BATCH_SIZE) / lines.length) * 70));
+aggiornaBarraProgresso(progress);
 }
 
   if (parsedVini.length === 0) {
