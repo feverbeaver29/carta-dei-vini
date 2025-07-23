@@ -839,33 +839,33 @@ document.body.addEventListener("click", e => {
 
 loadWines();
 document.getElementById("uploadTrigger").addEventListener("click", async () => {
-  const { value: file } = await Swal.fire({
-    title: 'Caricamento Carta dei Vini',
-    html: `
-      <p style="text-align:left;margin-bottom:10px;font-size:0.9em;">
-        ⚠️ Consigliamo di caricare al massimo 15 vini per volta per un'estrazione rapida.
-        Caricare più vini sarà più lento.
-      </p>
-      <input type="file" id="popupFileInput" accept="image/*,.pdf" style="margin-top:10px;">
-    `,
-    showCancelButton: true,
-    confirmButtonText: "Estrai vini",
-    cancelButtonText: "Annulla",
-    preConfirm: () => {
-      const fileInput = document.getElementById("popupFileInput");
-      const file = fileInput?.files?.[0];
-      if (!file) {
-        Swal.showValidationMessage("Seleziona un file prima di procedere");
-        return false;
-      }
-      document.getElementById("ocrUploadInput").files = fileInput.files;
-      return true;
+const result = await Swal.fire({
+  title: 'Caricamento Carta dei Vini',
+  html: `
+    <p style="text-align:left;margin-bottom:10px;font-size:0.9em;">
+      ⚠️ Consigliamo di caricare al massimo 15 vini per volta per un'estrazione rapida.
+      Caricare più vini sarà più lento.
+    </p>
+    <input type="file" id="popupFileInput" accept="image/*,.pdf" style="margin-top:10px;">
+  `,
+  showCancelButton: true,
+  confirmButtonText: "Estrai vini",
+  cancelButtonText: "Annulla",
+  preConfirm: () => {
+    const fileInput = document.getElementById("popupFileInput");
+    const file = fileInput?.files?.[0];
+    if (!file) {
+      Swal.showValidationMessage("Seleziona un file prima di procedere");
+      return false;
     }
-  });
-
-  if (file) {
-    processOCRFile(); // chiama la funzione già presente
+    document.getElementById("ocrUploadInput").files = fileInput.files;
+    return true;
   }
+});
+
+if (result.isConfirmed) {
+  processOCRFile();
+}
 });
 
 </script>
