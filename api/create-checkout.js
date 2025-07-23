@@ -37,7 +37,9 @@ module.exports = async (req, res) => {
             id: currentSub.items.data[0].id,
             price: selectedPrice
           }],
-          metadata: { plan }
+            proration_behavior: 'none',
+            trial_end: 'now',
+            metadata: { plan }
         });
 
         return res.status(200).json({ url: `${YOUR_DOMAIN}/verifica-successo.html?changed=true` });
