@@ -72,6 +72,7 @@
 <body>
   <div class="container">
     <h1>Gestione Abbonamento</h1>
+    <div id="statusTrial" style="font-size: 0.95em; color: #555; margin: 10px 0 20px;"></div>
     <div class="piani">
       <div id="pianoBase" class="piano">
         <h2>Piano Base - 14,99€/mese</h2>
@@ -112,33 +113,42 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
-    async function mostraPianoUtente() {
-      const { data, error } = await supabase
-        .from("ristoranti")
-        .select("subscription_plan, subscription_status")
-        .eq("id", RESTAURANT_ID)
-        .single();
+async function mostraPianoUtente() {
+  const { data, error } = await supabase
+    .from("ristoranti")
+    .select("subscription_plan, subscription_status, trial_used")
+    .eq("id", RESTAURANT_ID)
+    .single();
 
-      if (error || !data) return;
+  if (error || !data) return;
 
-      const { subscription_plan, subscription_status } = data;
-      const base = document.getElementById("pianoBase");
-      const pro = document.getElementById("pianoPro");
+  const { subscription_plan, subscription_status, trial_used } = data;
+  const base = document.getElementById("pianoBase");
+  const pro = document.getElementById("pianoPro");
+  const trialText = document.getElementById("statusTrial");
 
-      if (subscription_status === "canceled") {
-        document.getElementById("passaBase").style.display = "inline-block";
-        document.getElementById("passaPro").style.display = "inline-block";
-        return;
-      }
+  // Stato visivo dinamico
+  if (subscription_status === "canceled") {
+    trialText.textContent = "⚠️ Nessun abbonamento attivo.";
+    document.getElementById("passaBase").style.display = "inline-block";
+    document.getElementById("passaPro").style.display = "inline-block";
+    return;
+  }
 
-      if (subscription_plan === "pro") {
-        pro.classList.add("attivo");
-        document.getElementById("passaBase").style.display = "inline-block";
-      } else {
-        base.classList.add("attivo");
-        document.getElementById("passaPro").style.display = "inline-block";
-      }
-    }
+  if (!trial_used) {
+    trialText.textContent = "✅ Sei attualmente in prova gratuita. Approfittane!";
+  } else {
+    trialText.textContent = "ℹ️ La prova gratuita è già stata utilizzata.";
+  }
+
+  if (subscription_plan === "pro") {
+    pro.classList.add("attivo");
+    document.getElementById("passaBase").style.display = "inline-block";
+  } else {
+    base.classList.add("attivo");
+    document.getElementById("passaPro").style.display = "inline-block";
+  }
+}
 
 async function vaiACheckoutStripe(plan) {
   const { data: { user }, error } = await supabase.auth.getUser();
