@@ -312,18 +312,25 @@ async function processOCRFile() {
 const categoriePresenti = Array.from(new Set(winesData.map(w => w.categoria))).filter(Boolean);
 const sottocategoriePresenti = Array.from(new Set(winesData.map(w => w.sottocategoria))).filter(Boolean);
 
-const response = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/estrai-vini-carta", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    testo: lines.join('\n'),
-    categorieGiaPresenti: categoriePresenti,
-    sottocategorieGiaPresenti: sottocategoriePresenti
-  })
-});
+const BATCH_SIZE = 30; // 30 righe per volta
+let parsedVini = [];
 
-const json = await response.json();
-const parsedVini = json.vini || [];
+for (let i = 0; i < lines.length; i += BATCH_SIZE) {
+  const batch = lines.slice(i, i + BATCH_SIZE);
+
+  const response = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/estrai-vini-carta", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      testo: batch.join('\n'),
+      categorieGiaPresenti,
+      sottocategorieGiaPresenti
+    })
+  });
+
+  const json = await response.json();
+  parsedVini = parsedVini.concat(json.vini || []);
+}
 
   if (parsedVini.length === 0) {
     status.textContent = "Nessun vino rilevato.";
@@ -774,6 +781,10 @@ document.body.addEventListener("click", e => {
 });
 
 loadWines();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.13.216/pdf.worker.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.13.216/pdf.worker.min.js';
 </script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
