@@ -316,11 +316,17 @@ async function processOCRFile() {
   }
 
   const lines = [];
-  for (const img of images) {
-    status.textContent = "🧠 Elaborazione OCR...";
-    const result = await Tesseract.recognize(img, 'eng');
-    lines.push(...result.data.text.split('\n').map(l => l.trim()).filter(l => l.length > 10));
-  }
+status.textContent = "🧠 Elaborazione OCR...";
+for (let i = 0; i < images.length; i++) {
+  const result = await Tesseract.recognize(images[i], 'eng');
+
+  lines.push(...result.data.text.split('\n').map(l => l.trim()).filter(l => l.length > 10));
+
+  // Progresso basato sull'indice delle immagini
+  const progress = Math.round(((i + 1) / images.length) * 30); // massimo 30% per l’OCR
+  progressBar.style.width = `${progress}%`;
+  progressBar.textContent = `${progress}%`;
+}
 
   const categoriePresenti = Array.from(new Set(winesData.map(w => w.categoria))).filter(Boolean);
   const sottocategoriePresenti = Array.from(new Set(winesData.map(w => w.sottocategoria))).filter(Boolean);
@@ -346,10 +352,10 @@ async function processOCRFile() {
     parsedVini = parsedVini.concat(json.vini || []);
 
     // Aggiorna progress-bar
-    const progress = Math.min(100, Math.round((i + BATCH_SIZE) / lines.length * 100));
-    progressBar.style.width = `${progress}%`;
-    progressBar.textContent = `${progress}%`;
-  }
+  const progress = 30 + Math.min(70, Math.round(((i + BATCH_SIZE) / lines.length) * 70));
+  progressBar.style.width = `${progress}%`;
+  progressBar.textContent = `${progress}%`;
+}
 
   if (parsedVini.length === 0) {
     status.textContent = "Nessun vino rilevato.";
