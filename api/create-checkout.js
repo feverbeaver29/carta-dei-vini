@@ -21,6 +21,18 @@ module.exports = async (req, res) => {
     const customers = await stripe.customers.list({ email });
     const customer = customers.data[0];
 
+    let hasUsedTrial = false;
+
+if (customer) {
+  const allSubs = await stripe.subscriptions.list({
+    customer: customer.id,
+    status: "all", // include anche cancellate
+  });
+
+  hasUsedTrial = allSubs.data.some(sub => sub.trial_end && sub.trial_end * 1000 < Date.now());
+}
+
+
     if (customer) {
       const subscriptions = await stripe.subscriptions.list({
         customer: customer.id,
@@ -52,9 +64,10 @@ module.exports = async (req, res) => {
       customer_email: email,
       line_items: [{ price: selectedPrice, quantity: 1 }],
       subscription_data: {
-        trial_period_days: 7,
+        ...(hasUsedTrial ? {} : { trial_period_days: 7 }),
         metadata: { plan }
       },
+
       success_url: `${YOUR_DOMAIN}/verifica-successo.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${YOUR_DOMAIN}/abbonamento.html`
     });
