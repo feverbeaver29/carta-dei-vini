@@ -337,8 +337,8 @@ async function processOCRFile() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         testo: batch.join('\n'),
-        categorieGiaPresenti,
-        sottocategorieGiaPresenti
+    categorieGiaPresenti: categoriePresenti,
+    sottocategorieGiaPresenti: sottocategoriePresenti
       })
     });
 
@@ -378,52 +378,82 @@ async function processOCRFile() {
         body: JSON.stringify({ nome_completo: vino.nome_completo })
       });
       const uvaggioData = await uvaggioRes.json();
-      vino.uvaggio = uvaggioData?.uvaggio || "Uvaggio non trovato online";
-    }
+  if (uvaggioRes.ok && uvaggioData?.uvaggio) {
+    const testo = uvaggioData.uvaggio.trim();
 
-    const result = await Swal.fire({
-      title: 'Conferma vino',
-      html: `
-        <div class="custom-popup">
-          <label>Nome</label>
-          <input id="sw_nome" value="${vino.nome_completo}">
-          <label>Annata</label>
-          <input id="sw_annata" value="${vino.annata || ""}">
-          <div style="display:flex; gap:8px;">
-            <div style="flex:0.4;">
-              <label>Valuta</label>
-              <input id="sw_valuta" value="${vino.valuta || '€'}">
-            </div>
-            <div style="flex:0.6;">
-              <label>Prezzo</label>
-              <input id="sw_prezzo" value="${vino.prezzo || ""}">
-            </div>
-          </div>
-          <label>Categoria</label>
-          <input id="sw_categoria" list="lista_categorie" value="${vino.categoria || ""}">
-          <label>Sottocategoria</label>
-          <input id="sw_sottocategoria" list="lista_sottocategorie" value="${vino.sottocategoria || ""}">
-          <label>Uvaggio</label>
-          <input id="sw_uvaggio" value="${vino.uvaggio || ""}">
+    // controlla se la risposta è generica o inutile
+    const isInutile = testo.toLowerCase().includes("non posso") ||
+                      testo.toLowerCase().includes("non ho accesso") ||
+                      testo.toLowerCase().includes("non ho") ||
+                      testo.toLowerCase().includes("Sfortunatamente") ||
+                      testo.toLowerCase().includes("non sono") ||
+                      testo.toLowerCase().includes("online") ||
+                      testo.length < 5;
+
+    vino.uvaggio = isInutile ? "Uvaggio non trovato online" : testo;
+  } else {
+    vino.uvaggio = "Uvaggio non trovato online";
+  }
+}
+const categoriePresenti = Array.from(new Set(winesData.map(w => w.categoria))).filter(Boolean);
+const sottocategoriePresenti = Array.from(new Set(winesData.map(w => w.sottocategoria))).filter(Boolean);
+
+const result = await Swal.fire({
+  title: 'Conferma vino',
+  html: `
+    <div class="custom-popup">
+      <label>Nome</label>
+      <input id="sw_nome" placeholder="nome del vino" value="${vino.nome_completo}">
+
+      <label>Annata</label>
+      <input id="sw_annata" placeholder="annata del vino" value="${vino.annata || ""}">
+
+      <div style="display:flex; gap:8px;">
+        <div style="flex:0.4;">
+          <label>Valuta</label>
+          <input id="sw_valuta" placeholder="es. €" value="${vino.valuta || '€'}">
         </div>
-      `,
-      confirmButtonText: 'Salva',
-      cancelButtonText: 'Cancella',
-      showCancelButton: true,
-      customClass: {
-        popup: 'custom-popup',
-        confirmButton: 'btn-save',
-        cancelButton: 'btn-cancel'
-      },
-      preConfirm: () => ({
-        nome: document.getElementById('sw_nome').value.trim(),
-        annata: document.getElementById('sw_annata').value.trim() || null,
-        prezzo: document.getElementById('sw_valuta').value + document.getElementById('sw_prezzo').value,
-        categoria: document.getElementById('sw_categoria').value.trim(),
-        sottocategoria: document.getElementById('sw_sottocategoria').value.trim(),
-        uvaggio: document.getElementById('sw_uvaggio').value.trim()
-      })
-    });
+        <div style="flex:0.6;">
+          <label>Prezzo</label>
+          <input id="sw_prezzo" placeholder="prezzo del vino" value="${vino.prezzo || ""}">
+        </div>
+      </div>
+
+      <label>Categoria</label>
+      <input id="sw_categoria" list="lista_categorie" placeholder="categoria del vino" value="${vino.categoria || ""}">
+      <datalist id="lista_categorie">
+        ${categoriePresenti.map(cat => `<option value="${cat}">`).join('')}
+      </datalist>
+
+      <label>Sottocategoria</label>
+      <input id="sw_sottocategoria" list="lista_sottocategorie" placeholder="sottocategoria del vino" value="${vino.sottocategoria || ""}">
+      <datalist id="lista_sottocategorie">
+        ${sottocategoriePresenti.map(sub => `<option value="${sub}">`).join('')}
+      </datalist>
+
+      <label>Uvaggio</label>
+      <input id="sw_uvaggio" placeholder="uvaggio del vino" value="${vino.uvaggio || ""}">
+    </div>
+  `,
+  confirmButtonText: 'Salva',
+  cancelButtonText: 'Cancella',
+  showCancelButton: true,
+  customClass: {
+    popup: 'custom-popup',
+    confirmButton: 'btn-save',
+    cancelButton: 'btn-cancel'
+  },
+  preConfirm: () => {
+    return {
+      nome: document.getElementById('sw_nome').value.trim(),
+      annata: document.getElementById('sw_annata').value.trim() || null,
+      prezzo: document.getElementById('sw_valuta').value + document.getElementById('sw_prezzo').value,
+      categoria: document.getElementById('sw_categoria').value.trim(),
+      sottocategoria: document.getElementById('sw_sottocategoria').value.trim(),
+      uvaggio: document.getElementById('sw_uvaggio').value.trim()
+    };
+  }
+});
 
     if (result.isConfirmed) {
       const nuovo = result.value;
