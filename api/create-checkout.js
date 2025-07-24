@@ -59,9 +59,10 @@ if (customer) {
     }
 
     // Se nessuna sottoscrizione esistente, crea nuova con trial
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      customer_email: email,
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        customer: customer?.id,
+        customer_email: customer ? undefined : email, // solo se non esiste
       line_items: [{ price: selectedPrice, quantity: 1 }],
       subscription_data: {
         ...(hasUsedTrial ? {} : { trial_period_days: 7 }),
