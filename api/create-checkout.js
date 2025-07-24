@@ -58,20 +58,18 @@ if (customer) {
       }
     }
 
-    // Se nessuna sottoscrizione esistente, crea nuova con trial
-      const session = await stripe.checkout.sessions.create({
-        mode: "subscription",
-        customer: customer?.id,
-        customer_email: customer ? undefined : email, // solo se non esiste
-      line_items: [{ price: selectedPrice, quantity: 1 }],
-      subscription_data: {
-        ...(hasUsedTrial ? {} : { trial_period_days: 7 }),
-        metadata: { plan }
-      },
-
-      success_url: `${YOUR_DOMAIN}/verifica-successo.html?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${YOUR_DOMAIN}/abbonamento.html`
-    });
+const session = await stripe.checkout.sessions.create({
+  mode: "subscription",
+  customer: customer?.id,
+  ...(customer ? {} : { customer_email: email }), // Usa email solo se customer non esiste
+  line_items: [{ price: selectedPrice, quantity: 1 }],
+  subscription_data: {
+    ...(hasUsedTrial ? {} : { trial_period_days: 7 }),
+    metadata: { plan }
+  },
+  success_url: `${YOUR_DOMAIN}/verifica-successo.html?session_id={CHECKOUT_SESSION_ID}`,
+  cancel_url: `${YOUR_DOMAIN}/abbonamento.html`
+});
 
     return res.status(200).json({ url: session.url });
 

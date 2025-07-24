@@ -121,11 +121,13 @@ serve(async (req) => {
     }
 
     const { error: updateErr } = await supabase
-      .from("ristoranti")
-      .update({
-        subscription_status: "canceled"
-      })
-      .eq("id", risto.id);
+  .from("ristoranti")
+  .update({
+    subscription_status: "canceled",
+    subscription_plan: null,
+    stripe_customer_id: null
+  })
+  .eq("id", risto.id);
 
     if (updateErr) {
       console.error("❌ Errore nel marcare come cancellato:", updateErr);
