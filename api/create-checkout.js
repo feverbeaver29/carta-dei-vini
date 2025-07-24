@@ -27,13 +27,16 @@ module.exports = async (req, res) => {
         status: "active"
       });
 
-      // ❌ Annulla tutti gli abbonamenti attivi precedenti (base o pro)
-      for (const sub of subscriptions.data) {
+for (const sub of subscriptions.data) {
   if (sub.status === "active" || sub.status === "trialing") {
-    await stripe.subscriptions.update(sub.id, {
-      cancel_at_period_end: false
-    });
-    await stripe.subscriptions.del(sub.id);
+    try {
+      await stripe.subscriptions.update(sub.id, {
+        cancel_at_period_end: false
+      });
+      await stripe.subscriptions.del(sub.id);
+    } catch (err) {
+      console.warn("⚠️ Impossibile eliminare abbonamento:", sub.id, err.message);
+    }
   }
 }
     }
@@ -53,8 +56,12 @@ module.exports = async (req, res) => {
     return res.status(200).json({ url: session.url });
 
   } catch (err) {
-    console.error("❌ Errore Stripe:", err.message, err);
-    return res.status(500).json({ error: "Errore nella creazione sessione Stripe" });
+console.error("❌ Errore Stripe:", err.message, err);
+
+return res.status(500).json({
+  error: err.message,
+  details: err.raw || err
+});
   }
 };
 
