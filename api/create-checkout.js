@@ -53,7 +53,7 @@ module.exports = async (req, res) => {
     return res.status(200).json({ url: session.url });
 
   } catch (err) {
-    console.error("❌ Errore Stripe:", err);
+    console.error("❌ Errore Stripe:", err.message, err);
     return res.status(500).json({ error: "Errore nella creazione sessione Stripe" });
   }
 };
