@@ -30,9 +30,17 @@ serve(async (req) => {
 
   // ✅ Evento: checkout completato (primo abbonamento)
   if (event.type === "checkout.session.completed") {
-    const session = event.data.object;
-    const email = session.customer_email;
-    const customerId = session.customer;
+const session = event.data.object;
+const customerId = session.customer;
+
+// 🔍 Fallback: recupera email dal customer Stripe se mancante
+let email = session.customer_email;
+if (!email) {
+  const customer = await stripe.customers.retrieve(customerId);
+  if (typeof customer === 'object' && customer.email) {
+    email = customer.email;
+  }
+}
 
     console.log("✅ Checkout completato per:", email, customerId);
 
