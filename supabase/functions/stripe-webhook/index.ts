@@ -75,7 +75,6 @@ if (!risto) {
         stripe_customer_id: customerId,
         subscription_status: "active",
         subscription_plan: selectedPlan,
-        trial_used: session.trial_end ? false : true
       })
       .eq("id", risto.id);
 

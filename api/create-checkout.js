@@ -21,45 +21,32 @@ module.exports = async (req, res) => {
     const customers = await stripe.customers.list({ email });
     const customer = customers.data[0];
 
-    let hasUsedTrial = false;
+    if (customer) {
+      const subscriptions = await stripe.subscriptions.list({
+        customer: customer.id,
+        status: "active"
+      });
 
-if (customer) {
-  const allSubs = await stripe.subscriptions.list({
-    customer: customer.id,
-    status: "all", // include anche cancellate
-  });
+      // ❌ Annulla tutti gli abbonamenti attivi precedenti (base o pro)
+      for (const sub of subscriptions.data) {
+        await stripe.subscriptions.update(sub.id, {
+          cancel_at_period_end: false
+        });
+        await stripe.subscriptions.del(sub.id);
+      }
+    }
 
-  hasUsedTrial = allSubs.data.some(sub => sub.trial_end && sub.trial_end * 1000 < Date.now());
-}
-
-
-if (customer) {
-  const subscriptions = await stripe.subscriptions.list({
-    customer: customer.id,
-    status: "active"
-  });
-
-  // ❌ Annulla tutti gli abbonamenti attivi precedenti (base o pro)
-  for (const sub of subscriptions.data) {
-    await stripe.subscriptions.update(sub.id, {
-      cancel_at_period_end: false
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer: customer?.id,
+      ...(customer ? {} : { customer_email: email }),
+      line_items: [{ price: selectedPrice, quantity: 1 }],
+      subscription_data: {
+        metadata: { plan }
+      },
+      success_url: `${YOUR_DOMAIN}/verifica-successo.html?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${YOUR_DOMAIN}/abbonamento.html`
     });
-    await stripe.subscriptions.del(sub.id);
-  }
-}
-
-const session = await stripe.checkout.sessions.create({
-  mode: "subscription",
-  customer: customer?.id,
-  ...(customer ? {} : { customer_email: email }), // Usa email solo se customer non esiste
-  line_items: [{ price: selectedPrice, quantity: 1 }],
-  subscription_data: {
-    ...(hasUsedTrial ? {} : { trial_period_days: 7 }),
-    metadata: { plan }
-  },
-  success_url: `${YOUR_DOMAIN}/verifica-successo.html?session_id={CHECKOUT_SESSION_ID}`,
-  cancel_url: `${YOUR_DOMAIN}/abbonamento.html`
-});
 
     return res.status(200).json({ url: session.url });
 
