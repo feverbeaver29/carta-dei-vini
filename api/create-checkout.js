@@ -29,11 +29,13 @@ module.exports = async (req, res) => {
 
       // ❌ Annulla tutti gli abbonamenti attivi precedenti (base o pro)
       for (const sub of subscriptions.data) {
-        await stripe.subscriptions.update(sub.id, {
-          cancel_at_period_end: false
-        });
-        await stripe.subscriptions.del(sub.id);
-      }
+  if (sub.status === "active" || sub.status === "trialing") {
+    await stripe.subscriptions.update(sub.id, {
+      cancel_at_period_end: false
+    });
+    await stripe.subscriptions.del(sub.id);
+  }
+}
     }
 
     const session = await stripe.checkout.sessions.create({
