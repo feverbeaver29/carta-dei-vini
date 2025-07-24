@@ -22,27 +22,32 @@ module.exports = async (req, res) => {
     const customer = customers.data[0];
 
     if (customer) {
-const subscriptions = await stripe.subscriptions.list({
-  customer: customer.id,
-  status: "all"  // 🔥 così prendi TUTTI gli abbonamenti!
-});
+      const subscriptions = await stripe.subscriptions.list({
+        customer: customer.id,
+        status: "all"
+      });
 
-for (const sub of subscriptions.data) {
-  const cancellabili = ["active", "trialing", "past_due", "incomplete", "unpaid"];
-  if (cancellabili.includes(sub.status)) {
-    try {
-      await stripe.subscriptions.del(sub.id);
-      console.log(`✅ Abbonamento eliminato: ${sub.id} (${sub.status})`);
-    } catch (err) {
-      console.warn(`⚠️ Errore durante eliminazione ${sub.id}:`, err.message);
-    }
-  } else {
-    console.log(`ℹ️ Ignorato abbonamento ${sub.id} con status ${sub.status}`);
-    console.log(`📦 Eliminato piano: ${sub.items.data[0].price.nickname}`);
-  }
-}
+      const existingSub = subscriptions.data.find(sub =>
+        ["active", "trialing", "past_due", "incomplete", "unpaid"].includes(sub.status)
+      );
+
+      if (existingSub) {
+        // 🔁 Aggiorna il piano esistente
+        await stripe.subscriptions.update(existingSub.id, {
+          cancel_at_period_end: false,
+          items: [{
+            id: existingSub.items.data[0].id,
+            price: selectedPrice
+          }],
+          proration_behavior: "create_prorations",
+          metadata: { plan }
+        });
+
+        return res.status(200).json({ url: `${YOUR_DOMAIN}/verifica-successo.html?changed=true` });
+      }
     }
 
+    // 🎯 Nessun abbonamento esistente: crea nuova sessione checkout
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customer?.id,
@@ -58,12 +63,11 @@ for (const sub of subscriptions.data) {
     return res.status(200).json({ url: session.url });
 
   } catch (err) {
-console.error("❌ Errore Stripe:", err.message, err);
-
-return res.status(500).json({
-  error: err.message,
-  details: err.raw || err
-});
+    console.error("❌ Errore Stripe:", err.message, err);
+    return res.status(500).json({
+      error: err.message,
+      details: err.raw || err
+    });
   }
 };
 
