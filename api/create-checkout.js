@@ -22,10 +22,10 @@ module.exports = async (req, res) => {
     const customer = customers.data[0];
 
     if (customer) {
-      const subscriptions = await stripe.subscriptions.list({
-        customer: customer.id,
-        status: "active"
-      });
+const subscriptions = await stripe.subscriptions.list({
+  customer: customer.id,
+  status: "all"  // 🔥 così prendi TUTTI gli abbonamenti!
+});
 
 for (const sub of subscriptions.data) {
   const cancellabili = ["active", "trialing", "past_due", "incomplete", "unpaid"];
