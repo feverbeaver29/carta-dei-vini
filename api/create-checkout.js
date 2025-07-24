@@ -28,15 +28,17 @@ module.exports = async (req, res) => {
       });
 
 for (const sub of subscriptions.data) {
-  if (sub.status === "active" || sub.status === "trialing") {
+  const cancellabili = ["active", "trialing", "past_due", "incomplete", "unpaid"];
+  if (cancellabili.includes(sub.status)) {
     try {
-      await stripe.subscriptions.update(sub.id, {
-        cancel_at_period_end: false
-      });
       await stripe.subscriptions.del(sub.id);
+      console.log(`✅ Abbonamento eliminato: ${sub.id} (${sub.status})`);
     } catch (err) {
-      console.warn("⚠️ Impossibile eliminare abbonamento:", sub.id, err.message);
+      console.warn(`⚠️ Errore durante eliminazione ${sub.id}:`, err.message);
     }
+  } else {
+    console.log(`ℹ️ Ignorato abbonamento ${sub.id} con status ${sub.status}`);
+    console.log(`📦 Eliminato piano: ${sub.items.data[0].price.nickname}`);
   }
 }
     }
