@@ -33,30 +33,20 @@ if (customer) {
 }
 
 
-    if (customer) {
-      const subscriptions = await stripe.subscriptions.list({
-        customer: customer.id,
-        status: "active"
-      });
+if (customer) {
+  const subscriptions = await stripe.subscriptions.list({
+    customer: customer.id,
+    status: "active"
+  });
 
-      if (subscriptions.data.length > 0) {
-        const currentSub = subscriptions.data[0];
-
-        // Aggiorna il piano esistente
-        await stripe.subscriptions.update(currentSub.id, {
-          cancel_at_period_end: false,
-          items: [{
-            id: currentSub.items.data[0].id,
-            price: selectedPrice
-          }],
-            proration_behavior: 'none',
-            trial_end: 'now',
-            metadata: { plan }
-        });
-
-        return res.status(200).json({ url: `${YOUR_DOMAIN}/verifica-successo.html?changed=true` });
-      }
-    }
+  // ❌ Annulla tutti gli abbonamenti attivi precedenti (base o pro)
+  for (const sub of subscriptions.data) {
+    await stripe.subscriptions.update(sub.id, {
+      cancel_at_period_end: false
+    });
+    await stripe.subscriptions.del(sub.id);
+  }
+}
 
 const session = await stripe.checkout.sessions.create({
   mode: "subscription",

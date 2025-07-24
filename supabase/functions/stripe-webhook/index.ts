@@ -36,11 +36,23 @@ serve(async (req) => {
 
     console.log("✅ Checkout completato per:", email, customerId);
 
-    const { data: risto, error } = await supabase
-      .from("ristoranti")
-      .select("id")
-      .eq("email", email)
-      .maybeSingle();
+// Cerca prima per email, poi per stripe_customer_id se necessario
+let { data: risto, error } = await supabase
+  .from("ristoranti")
+  .select("id")
+  .eq("email", email)
+  .maybeSingle();
+
+if (!risto) {
+  const byStripeId = await supabase
+    .from("ristoranti")
+    .select("id")
+    .eq("stripe_customer_id", customerId)
+    .maybeSingle();
+
+  risto = byStripeId.data;
+  error = byStripeId.error;
+}
 
     if (!risto) {
       console.error("❌ Nessun ristorante trovato per email:", email);
