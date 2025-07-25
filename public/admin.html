@@ -803,12 +803,12 @@ if (CURRENT_PLAN !== "pro") {
   uploadBtn.title = "Funzione disponibile solo con piano PRO";
 
   uploadBtn.addEventListener("click", () => {
-    Swal.fire({
-      icon: "info",
-      title: "Funzione PRO",
-      html: `Questa funzione è disponibile solo per gli utenti <strong>Piano PRO</strong>.<br><br><a href="/abbonamento.html" style="color:#b00;font-weight:bold;text-decoration:underline;">Passa ora al piano superiore</a>`,
-      confirmButtonText: "Chiudi"
-    });
+Swal.fire({
+  icon: "info",
+  title: "Funzione PRO",
+  html: `Questa funzione è disponibile solo per gli utenti <strong>Piano PRO</strong>.<br><br><a href="/abbonamento.html?ristorante_id=${RESTAURANT_ID}" style="color:#b00;font-weight:bold;text-decoration:underline;">Passa ora al piano superiore</a>`,
+  confirmButtonText: "Chiudi"
+});
   });
 }
 }
