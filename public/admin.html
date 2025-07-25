@@ -528,6 +528,7 @@ function formatText(str) {
 const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
 const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
 let RESTAURANT_ID = new URLSearchParams(window.location.search).get("ristorante_id") || null;
+let CURRENT_PLAN = null;
 
 async function fetchUserIfNeeded() {
   if (!RESTAURANT_ID) {
@@ -543,6 +544,15 @@ async function fetchUserIfNeeded() {
       window.location.href = "/login.html";
     }
   }
+    // 🔴 Recupera il piano di abbonamento
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_API_KEY);
+  const { data, error } = await supabase
+    .from("ristoranti")
+    .select("subscription_plan")
+    .eq("id", RESTAURANT_ID)
+    .single();
+
+  CURRENT_PLAN = data?.subscription_plan || "base";
 }
 
 let winesData = [], editIndex = null;
@@ -783,6 +793,23 @@ catFilter.addEventListener("change", () => {
   subFilter.value = "";
   renderTable();
 });
+
+const uploadBtn = document.getElementById("uploadTrigger");
+if (CURRENT_PLAN !== "pro") {
+  uploadBtn.style.opacity = 0.4;
+  uploadBtn.style.pointerEvents = "auto";
+  uploadBtn.style.cursor = "not-allowed";
+  uploadBtn.title = "Funzione disponibile solo con piano PRO";
+
+  uploadBtn.addEventListener("click", () => {
+    Swal.fire({
+      icon: "info",
+      title: "Funzione PRO",
+      html: `Questa funzione è disponibile solo per gli utenti <strong>Piano PRO</strong>.<br><br><a href="/abbonamento.html" style="color:#b00;font-weight:bold;text-decoration:underline;">Passa ora al piano superiore</a>`,
+      confirmButtonText: "Chiudi"
+    });
+  });
+}
 }
 
 async function saveWine() {
