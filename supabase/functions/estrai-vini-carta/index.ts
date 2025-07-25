@@ -1,4 +1,7 @@
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*", // oppure metti 'https://www.winesfever.com' se vuoi restringerlo
@@ -6,12 +9,40 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
 };
 
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+);
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
 const { testo, categorieGiaPresenti, sottocategorieGiaPresenti } = await req.json();
+
+const url = new URL(req.url);
+const ristoranteId = url.searchParams.get("ristorante_id");
+
+if (!ristoranteId) {
+  return new Response(JSON.stringify({ error: "ID ristorante mancante" }), {
+    status: 400,
+    headers: { ...corsHeaders, "Content-Type": "application/json" }
+  });
+}
+
+const { data: risto } = await supabase
+  .from("ristoranti")
+  .select("subscription_plan")
+  .eq("id", ristoranteId)
+  .single();
+
+if (risto?.subscription_plan !== "pro") {
+  return new Response(JSON.stringify({ error: "Funzione OCR disponibile solo per utenti PRO" }), {
+    status: 403,
+    headers: { ...corsHeaders, "Content-Type": "application/json" }
+  });
+}
 
 if (!testo || typeof testo !== "string" || testo.length < 20) {
   return new Response(JSON.stringify({ error: "Testo OCR non valido" }), {
