@@ -1375,6 +1375,8 @@ if (toggle) {
     const isPro = info?.subscription_plan === "pro";
     // Blocco accesso al pulsante boost
 if (!isPro) {
+  document.getElementById("boostLockIcon").style.display = "none";
+document.getElementById("boostLockTooltip").style.display = "none";
   const btn = document.getElementById("addBoostBtn");
   const tooltip = document.getElementById("boostLockTooltip");
   const link = document.getElementById("boostUpgradeLink");
@@ -1416,6 +1418,8 @@ if (!isPro) {
 }
 
 if (!isPro) {
+  document.getElementById("lockIcon").style.display = "none";
+document.getElementById("proTooltip").style.display = "none";
   const inputFile = document.getElementById("sommelierLogoUpload");
   if (inputFile) {
     inputFile.disabled = true;
