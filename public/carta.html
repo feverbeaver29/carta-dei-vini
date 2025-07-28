@@ -946,14 +946,14 @@ if (ristorante) {
     nameElem.appendChild(span);
   }
     // 🔒 Limita lingue se NON PRO
-  if (ristorante.subscription_plan !== "pro") {
-    const langSelector = document.getElementById("langSelector");
-    if (langSelector) {
-      [...langSelector.options].forEach(opt => {
-        if (opt.value !== "en") opt.remove(); // lascia solo 🇬🇧
-      });
-    }
+if (ristorante.subscription_plan !== "pro") {
+  const langSelector = document.getElementById("langSelector");
+  if (langSelector) {
+    [...langSelector.options].forEach(opt => {
+      if (!["it", "en"].includes(opt.value)) opt.remove(); // lascia solo 🇮🇹 e 🇬🇧
+    });
   }
+}
   setTimeout(() => aggiornaAltezzaNavbar(), 20);
 }
 
