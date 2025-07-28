@@ -938,9 +938,8 @@ footer {
       <label><strong>Vini da spingere in carta</strong></label>
       <div id="boostContainer"></div>
 
-<div style="position: relative; display: inline-block;">
+<div style="position: relative; display: inline-flex; align-items: center; gap: 8px; margin-top: 6px;">
   <button id="addBoostBtn" type="button" onclick="addBoostInput()" style="
-    margin-top: 6px;
     background: transparent;
     color: #b00;
     border: 1px solid #b00;
@@ -948,11 +947,13 @@ footer {
     padding: 6px 14px;
     font-size: 0.9em;
     cursor: pointer;
-    transition: 0.3s;">+ Aggiungi vino da spingere</button>
-  <span id="boostLockTooltip" style="display: none; font-size: 0.85em; margin-top: 4px; color: #555;">
-    🔒 Solo per utenti <strong>PRO</strong>. 
-    <a href="abbonamento.html" id="boostUpgradeLink" style="color:#b00; text-decoration:underline;">Passa ora al piano superiore</a>
-  </span>
+    transition: 0.3s;
+  ">+ Aggiungi vino da spingere</button>
+  <span id="boostLockIcon" title="Solo per utenti PRO" style="cursor: pointer; color: #b00; font-size: 1.2em;">🔒</span>
+</div>
+<div id="boostLockTooltip" style="display: none; font-size: 0.85em; margin-top: 4px; color: #555;">
+  🔒 Solo per utenti <strong>PRO</strong>. 
+  <a href="abbonamento.html" id="boostUpgradeLink" style="color:#b00; text-decoration:underline;">Passa ora al piano superiore</a>
 </div>
 
       <button class="save-btn" style="margin-top: 16px;" onclick="saveSommelierSettings()">Salva Impostazioni Sommelier</button>
@@ -1377,13 +1378,21 @@ if (!isPro) {
   const btn = document.getElementById("addBoostBtn");
   const tooltip = document.getElementById("boostLockTooltip");
   const link = document.getElementById("boostUpgradeLink");
+  const lockIcon = document.getElementById("boostLockIcon");
 
   btn.disabled = true;
-  btn.style.opacity = "0.5";
+  btn.style.opacity = "0.4";
   btn.style.cursor = "not-allowed";
-  btn.addEventListener("click", () => {
+
+  const showTooltip = () => {
     tooltip.style.display = "block";
-  });
+    setTimeout(() => {
+      tooltip.style.display = "none";
+    }, 4000);
+  };
+
+  btn.addEventListener("click", showTooltip);
+  lockIcon.addEventListener("click", showTooltip);
 
   link.href = `abbonamento.html?ristorante_id=${RESTAURANT_ID}`;
 }
