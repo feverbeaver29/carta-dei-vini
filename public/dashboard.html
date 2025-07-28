@@ -1374,9 +1374,10 @@ if (toggle) {
     const gender = info?.sommelier_gender || "uomo";
     const isPro = info?.subscription_plan === "pro";
     // Blocco accesso al pulsante boost
-if (!isPro) {
+if (isPro) {
   document.getElementById("boostLockIcon").style.display = "none";
-document.getElementById("boostLockTooltip").style.display = "none";
+  document.getElementById("boostLockTooltip").style.display = "none";
+} else {
   const btn = document.getElementById("addBoostBtn");
   const tooltip = document.getElementById("boostLockTooltip");
   const link = document.getElementById("boostUpgradeLink");
@@ -1417,23 +1418,26 @@ if (!isPro) {
   sommelierRangeLabel.insertAdjacentElement("afterend", rangeTooltip);
 }
 
-if (!isPro) {
+if (isPro) {
   document.getElementById("lockIcon").style.display = "none";
-document.getElementById("proTooltip").style.display = "none";
+  document.getElementById("proTooltip").style.display = "none";
+}
+
+if (!isPro) {
   const inputFile = document.getElementById("sommelierLogoUpload");
   if (inputFile) {
     inputFile.disabled = true;
     inputFile.style.opacity = "0.5";
     inputFile.style.cursor = "not-allowed";
     const lockIcon = document.getElementById("lockIcon");
-const tooltip = document.getElementById("proTooltip");
-const upgradeLink = document.getElementById("upgradeLink");
+    const tooltip = document.getElementById("proTooltip");
+    const upgradeLink = document.getElementById("upgradeLink");
 
-lockIcon.addEventListener("click", () => {
-  tooltip.style.display = "block";
-});
+    lockIcon.addEventListener("click", () => {
+      tooltip.style.display = "block";
+    });
 
-upgradeLink.href = `abbonamento.html?ristorante_id=${RESTAURANT_ID}`;
+    upgradeLink.href = `abbonamento.html?ristorante_id=${RESTAURANT_ID}`;
   }
 }
     const sommelierUrl = info?.sommelier_url || (gender === "donna" ? "sommelier_femmina.png" : "sommelier.png");
