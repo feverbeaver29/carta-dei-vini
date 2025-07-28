@@ -918,8 +918,15 @@ footer {
 </div>
 
 <!-- o logo personalizzato -->
-<label for="sommelierLogoUpload" style="margin-top: 4px;">oppure carica un logo personalizzato</label>
+<div style="display: flex; align-items: center; gap: 6px;">
+  <label for="sommelierLogoUpload" style="margin-top: 4px;">oppure carica un logo personalizzato</label>
+  <span id="lockIcon" title="Disponibile solo per utenti PRO" style="font-size: 1em; color: #b00; cursor: pointer;">🔒</span>
+</div>
 <input type="file" id="sommelierLogoUpload" accept="image/*">
+<div id="proTooltip" style="display: none; font-size: 0.85em; margin-top: 4px; color: #555;">
+  🔒 Disponibile solo per utenti <strong>PRO</strong>. 
+  <a href="#" id="upgradeLink" style="color:#b00; text-decoration:underline;">Passa ora al piano superiore</a>
+</div>
 
       <label for="sommelierRange"><strong>Numero di vini da consigliare</strong></label>
       <select id="sommelierRange">
@@ -1371,6 +1378,15 @@ if (!isPro) {
     warning.style.marginTop = "6px";
     warning.style.color = "#555";
     inputFile.insertAdjacentElement("afterend", warning);
+    const lockIcon = document.getElementById("lockIcon");
+const tooltip = document.getElementById("proTooltip");
+const upgradeLink = document.getElementById("upgradeLink");
+
+lockIcon.addEventListener("click", () => {
+  tooltip.style.display = "block";
+});
+
+upgradeLink.href = `abbonamento.html?ristorante_id=${RESTAURANT_ID}`;
   }
 }
     const sommelierUrl = info?.sommelier_url || (gender === "donna" ? "sommelier_femmina.png" : "sommelier.png");
