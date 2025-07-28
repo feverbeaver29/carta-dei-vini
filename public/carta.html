@@ -575,6 +575,9 @@ window.paletteColors = {
 
 function changeLanguage() {
   currentLang = document.getElementById("langSelector").value;
+  if (!translations[langSelector.value]) {
+  langSelector.value = "en";
+}
   applyTranslations();
   showCategories();
   if (window.showSommelier === true) {
@@ -941,6 +944,15 @@ if (ristorante) {
     span.style.fontWeight = ristorante.name_bold ? "bold" : "normal";
     ensureFontLoaded(ristorante.name_font);
     nameElem.appendChild(span);
+  }
+    // 🔒 Limita lingue se NON PRO
+  if (ristorante.subscription_plan !== "pro") {
+    const langSelector = document.getElementById("langSelector");
+    if (langSelector) {
+      [...langSelector.options].forEach(opt => {
+        if (opt.value !== "en") opt.remove(); // lascia solo 🇬🇧
+      });
+    }
   }
   setTimeout(() => aggiornaAltezzaNavbar(), 20);
 }
