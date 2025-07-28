@@ -938,15 +938,22 @@ footer {
       <label><strong>Vini da spingere in carta</strong></label>
       <div id="boostContainer"></div>
 
-      <button type="button" onclick="addBoostInput()" style="
-        margin-top: 6px;
-        background: transparent;
-        color: #b00;
-        border: 1px solid #b00;
-        border-radius: 20px;
-        padding: 6px 14px;
-        font-size: 0.9em;
-        cursor: pointer;">+ Aggiungi vino da spingere</button>
+<div style="position: relative; display: inline-block;">
+  <button id="addBoostBtn" type="button" onclick="addBoostInput()" style="
+    margin-top: 6px;
+    background: transparent;
+    color: #b00;
+    border: 1px solid #b00;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: 0.3s;">+ Aggiungi vino da spingere</button>
+  <span id="boostLockTooltip" style="display: none; font-size: 0.85em; margin-top: 4px; color: #555;">
+    🔒 Solo per utenti <strong>PRO</strong>. 
+    <a href="abbonamento.html" id="boostUpgradeLink" style="color:#b00; text-decoration:underline;">Passa ora al piano superiore</a>
+  </span>
+</div>
 
       <button class="save-btn" style="margin-top: 16px;" onclick="saveSommelierSettings()">Salva Impostazioni Sommelier</button>
     </div>
@@ -1365,6 +1372,22 @@ if (toggle) {
     document.getElementById("sommelierRange").value = info?.sommelier_range || "1-3";
     const gender = info?.sommelier_gender || "uomo";
     const isPro = info?.subscription_plan === "pro";
+    // Blocco accesso al pulsante boost
+if (!isPro) {
+  const btn = document.getElementById("addBoostBtn");
+  const tooltip = document.getElementById("boostLockTooltip");
+  const link = document.getElementById("boostUpgradeLink");
+
+  btn.disabled = true;
+  btn.style.opacity = "0.5";
+  btn.style.cursor = "not-allowed";
+  btn.addEventListener("click", () => {
+    tooltip.style.display = "block";
+  });
+
+  link.href = `abbonamento.html?ristorante_id=${RESTAURANT_ID}`;
+}
+
     const sommelierRangeSelect = document.getElementById("sommelierRange");
 const sommelierRangeLabel = sommelierRangeSelect.previousElementSibling;
 
