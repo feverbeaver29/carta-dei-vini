@@ -1365,6 +1365,24 @@ if (toggle) {
     document.getElementById("sommelierRange").value = info?.sommelier_range || "1-3";
     const gender = info?.sommelier_gender || "uomo";
     const isPro = info?.subscription_plan === "pro";
+    const sommelierRangeSelect = document.getElementById("sommelierRange");
+const sommelierRangeLabel = sommelierRangeSelect.previousElementSibling;
+
+if (!isPro) {
+  sommelierRangeSelect.disabled = true;
+  sommelierRangeSelect.style.opacity = "0.5";
+  sommelierRangeSelect.style.cursor = "not-allowed";
+
+  const rangeTooltip = document.createElement("div");
+  rangeTooltip.style.fontSize = "0.85em";
+  rangeTooltip.style.color = "#555";
+  rangeTooltip.style.marginTop = "4px";
+  rangeTooltip.innerHTML = `🔒 Disponibile solo per utenti <strong>PRO</strong>. 
+    <a href="abbonamento.html?ristorante_id=${RESTAURANT_ID}" style="color:#b00; text-decoration:underline;">Passa ora al piano superiore</a>`;
+
+  sommelierRangeLabel.insertAdjacentElement("afterend", rangeTooltip);
+}
+
 if (!isPro) {
   const inputFile = document.getElementById("sommelierLogoUpload");
   if (inputFile) {
