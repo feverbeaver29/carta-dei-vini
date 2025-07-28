@@ -1371,13 +1371,6 @@ if (!isPro) {
     inputFile.disabled = true;
     inputFile.style.opacity = "0.5";
     inputFile.style.cursor = "not-allowed";
-
-    const warning = document.createElement("div");
-    warning.innerHTML = `🔒 Disponibile solo per utenti <strong>PRO</strong>. <a href="abbonamento.html?ristorante_id=${RESTAURANT_ID}" style="color:#b00; text-decoration:underline;">Passa ora al piano superiore</a>`;
-    warning.style.fontSize = "0.85em";
-    warning.style.marginTop = "6px";
-    warning.style.color = "#555";
-    inputFile.insertAdjacentElement("afterend", warning);
     const lockIcon = document.getElementById("lockIcon");
 const tooltip = document.getElementById("proTooltip");
 const upgradeLink = document.getElementById("upgradeLink");
