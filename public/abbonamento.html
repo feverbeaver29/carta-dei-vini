@@ -150,6 +150,15 @@ async function mostraPianoUtente() {
   const base = document.getElementById("pianoBase");
   const pro = document.getElementById("pianoPro");
   const trialText = document.getElementById("statusTrial");
+  
+if (!subscription_status) {
+  document.querySelector("h1").textContent = "Scegli il tuo piano per continuare";
+  trialText.style.display = "none";
+  document.getElementById("passaBase").style.display = "inline-block";
+  document.getElementById("passaPro").style.display = "inline-block";
+  document.getElementById("annullaAbbonamento").style.display = "none";
+  return;
+}
 
   if (subscription_status === "canceled") {
     trialText.textContent = "⚠️ Nessun abbonamento attivo.";
