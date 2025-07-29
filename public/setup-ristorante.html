@@ -38,7 +38,11 @@ window.salvaNomeRistorante = async function () {
   const nome = document.getElementById("ristorante").value;
   if (!nome) return alert("Inserisci il nome del ristorante.");
 
-  // ✅ Salva ristorante in Supabase
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
+    return alert("Utente non autenticato.");
+  }
+
   const { error: insertError } = await supabase
     .from("ristoranti")
     .insert([{ id: user.id, nome, email: user.email }]);
@@ -47,24 +51,10 @@ window.salvaNomeRistorante = async function () {
     return alert("Errore nel salvataggio: " + insertError.message);
   }
 
-  // ✅ Crea sessione Stripe per prova gratuita piano base
-  const checkoutRes = await fetch("/api/create-checkout", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      plan: "base",
-      email: user.email
-    })
-  });
+  // ✅ Reindirizza all'abbonamento, non a Stripe
+  window.location.href = "abbonamento.html";
+};
 
-  const data = await checkoutRes.json();
-  if (data.url) {
-    window.location.href = data.url;
-  } else {
-    alert("Errore nella creazione del checkout Stripe");
-    console.error(data);
-  }
-}
   });
 </script>
 </body>
