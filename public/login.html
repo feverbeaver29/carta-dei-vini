@@ -158,7 +158,24 @@
         localStorage.removeItem("rememberedEmail");
       }
 
-      window.location.href = `dashboard.html?ristorante_id=${data.user.id}`;
+      const { data: ristoData, error: ristoError } = await supabase
+  .from("ristoranti")
+  .select("subscription_status")
+  .eq("id", data.user.id)
+  .single();
+
+if (ristoError) {
+  alert("Errore nel controllo abbonamento. Accesso bloccato.");
+  return;
+}
+
+if (!ristoData || ristoData.subscription_status !== "active") {
+  // primo login oppure abbonamento non ancora attivo
+  window.location.href = "abbonamento.html";
+} else {
+  window.location.href = `dashboard.html?ristorante_id=${data.user.id}`;
+}
+
     }
 
 window.loginWithGoogle = async function () {
