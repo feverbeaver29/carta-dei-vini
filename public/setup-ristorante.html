@@ -52,7 +52,7 @@ window.salvaNomeRistorante = async function () {
   }
 
   // ✅ Reindirizza all'abbonamento, non a Stripe
-  window.location.href = "abbonamento.html";
+  window.location.href = `abbonamento.html?ristorante_id=${user.id}`;
 };
 
   });
