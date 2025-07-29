@@ -1,45 +1,73 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="5; url=login.html">
+  <meta charset="UTF-8" />
+  <meta http-equiv="refresh" content="5; url=login.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Email verificata - Wine's Fever</title>
   <style>
     body {
       background-color: #fff9f4;
       font-family: 'Segoe UI', Tahoma, sans-serif;
+      color: #333;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      color: #333;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
     }
     .container {
       background: white;
-      padding: 40px;
+      padding: 30px;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       text-align: center;
+      max-width: 500px;
+      width: 100%;
     }
     h1 {
       color: #b00;
+      font-size: 1.4rem;
+      margin-bottom: 1rem;
+    }
+    p {
+      font-size: 1.1rem;
+      margin-bottom: 1.5rem;
     }
     a {
-      margin-top: 20px;
       display: inline-block;
       text-decoration: none;
       background-color: #b00;
       color: white;
       padding: 12px 24px;
       border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 20px;
+      }
+      h1 {
+        font-size: 1.2rem;
+      }
+      p {
+        font-size: 1rem;
+      }
+      a {
+        padding: 10px 20px;
+        font-size: 0.95rem;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>✅ Email verificata con successo!</h1>
-    <p>Grazie per aver confermato la tua email. Puoi ora accedere alla tua area riservata.</p>
+    <p>Grazie per aver confermato la tua email.<br>Puoi ora accedere alla tua area riservata.</p>
     <a href="login.html">Vai al login</a>
   </div>
 </body>
 </html>
+
