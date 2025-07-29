@@ -56,7 +56,7 @@ module.exports = async (req, res) => {
       subscription_data: {
         metadata: { plan }
       },
-      success_url: `${YOUR_DOMAIN}/verifica-successo.html?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${YOUR_DOMAIN}/login.html?checkout=success`,
       cancel_url: `${YOUR_DOMAIN}/abbonamento.html`
     });
 
