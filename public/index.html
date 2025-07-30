@@ -37,6 +37,12 @@
       height: auto;
     }
 
+    #logo {
+  max-height: 80px;
+  max-width: 200px;
+  height: auto;
+  width: auto;
+}
     .nav-buttons {
       margin-top: 1.5em;
     }
@@ -183,12 +189,28 @@
     @media (max-width: 600px) {
       header h1 { font-size: 2em; }
       .mockup iframe { width: 90%; height: 500px; }
-    }
+  .phone-frame {
+    width: 90vw;
+    height: 80vh;
+    border-radius: 36px;
+    padding: 10px 5px;
+  }
+
+  .screen {
+    border-radius: 28px;
+  }
+
+  .phone-frame::before {
+    width: 40px;
+    height: 4px;
+    top: 8px;
+  }
+}
   </style>
 </head>
 <body>
   <header>
-    <img src="logo.PNG" alt="Wine's Fever Logo">
+    <img src="logo.PNG" alt="Wine's Fever Logo" id="logo" class="logo">
     <div class="nav-buttons">
       <a href="login.html">Login</a>
       <a href="register.html">Registrati</a>
