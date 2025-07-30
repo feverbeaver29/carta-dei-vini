@@ -758,6 +758,17 @@ if (from && to) {
 }
 
 window.suggestWine = async function () {
+    if (RESTAURANT_ID === "fc28c874-b195-4660-9c78-c58d8dc3c092") {
+    const suggestion = document.getElementById('wineSuggestion');
+    if (suggestion) {
+      suggestion.innerHTML = `
+        <div style="background:#fff3f0; padding:15px; border-radius:12px; border:1px solid #ddd; color:#b00; font-weight:bold;">
+          Funzione disabilitata per la demo.
+        </div>`;
+    }
+    return; // 🔒 blocca esecuzione
+  }
+
   const paroleBloccate = [
     "come ti chiami", "come stai", "ciao", "chi sei", "sei reale", "sei umano",
     "parolacce", "cazzo", "merda", "stronzo", "scemo", "stupido", "ubriaco",
