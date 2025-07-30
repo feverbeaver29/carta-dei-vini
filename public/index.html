@@ -99,6 +99,43 @@
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
     }
 
+    .phone-frame {
+  width: 380px;
+  height: 700px;
+  background: #222;
+  border-radius: 50px;
+  padding: 20px 10px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+  margin: 0 auto;
+  position: relative;
+}
+
+.phone-frame::before {
+  content: '';
+  width: 60px;
+  height: 6px;
+  background: #555;
+  border-radius: 10px;
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.screen {
+  width: 100%;
+  height: 100%;
+  background: white;
+  border-radius: 40px;
+  overflow: hidden;
+}
+
+.screen iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
     .pricing {
       background: var(--light);
       border-top: 1px solid #eee;
@@ -188,9 +225,13 @@
     </div>
   </section>
 
-  <div class="mockup">
-    <iframe src="carta.html?ristorante_id=fc28c874-b195-4660-9c78-c58d8dc3c092" title="Anteprima carta demo"></iframe>
+<div class="mockup">
+  <div class="phone-frame">
+    <div class="screen">
+      <iframe src="carta.html?ristorante_id=fc28c874-b195-4660-9c78-c58d8dc3c092" title="Anteprima carta demo"></iframe>
+    </div>
   </div>
+</div>
 
   <section class="section pricing">
     <h2 style="text-align:center; font-size:1.6em;">Scegli il tuo piano</h2>
