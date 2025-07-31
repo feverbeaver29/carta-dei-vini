@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Wine's Fever</title>
+  <meta name="description" content="La carta dei vini digitale con AI per ristoranti. Personalizzabile, elegante, smart.">
+  <meta property="og:title" content="Wine's Fever">
+  <meta property="og:description" content="La carta dei vini intelligente per il tuo ristorante.">
+  <meta property="og:image" content="https://www.winesfever.com//preview.jpg"> <!-- cambia URL con uno tuo -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.winesfever.com/"> <!-- cambia URL -->
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Quicksand&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -236,7 +243,7 @@
 </head>
 <body>
   <header>
-    <img src="logo.PNG" alt="Wine's Fever Logo" id="logo" class="logo">
+    <img src="logo.PNG" alt="Logo Wine's Fever - carta vini digitale" id="logo" class="logo">
     <div class="nav-buttons">
       <a href="login.html">Login</a>
       <a href="register.html">Registrati</a>
@@ -273,10 +280,11 @@
     </div>
   </section>
 
+  <h2 style="text-align: center; font-size: 1.4em; margin-top: 3em;">Guarda la carta demo in azione</h2>
 <div class="mockup">
   <div class="phone-frame">
     <div class="screen">
-      <iframe src="carta.html?ristorante_id=fc28c874-b195-4660-9c78-c58d8dc3c092" title="Anteprima carta demo"></iframe>
+      <iframe src="carta.html?ristorante_id=fc28c874-b195-4660-9c78-c58d8dc3c092" title="Anteprima carta demo" loading="lazy"></iframe>
     </div>
   </div>
 </div>
@@ -314,6 +322,9 @@
   <footer>
     © 2025 Wine's Fever – Tutti i diritti riservati
   </footer>
+  <div id="cookie-banner" style="position: fixed; bottom: 0; background: #222; color: white; padding: 1em; width: 100%; text-align: center; z-index: 999;">
+  Usiamo cookie tecnici per migliorare la tua esperienza. <button onclick="this.parentElement.style.display='none'" style="margin-left:1em; padding:0.4em 1em;">OK</button>
+</div>
 </body>
 </html>
 
