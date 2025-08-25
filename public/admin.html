@@ -28,7 +28,13 @@
 
 .custom-popup .btn-cancel {  background-color: #aaa;  color: #333;}
 #progressBar {  width: 0%;  height: 20px;  background: #b00;  border-radius: 10px;  text-align: center;  color: #fff;  font-size: 0.8em;  line-height: 20px;  transition: width 0.4s ease; /* aggiungi questa riga */}
-    @media (max-width: 768px) {  .admin-panel {    padding: 1em;  }
+.price-row{display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap;max-width:100%;}
+.price-row > select{padding:0.4em;border-radius:8px;flex:0 0 auto;}
+.price-inline{display:flex;align-items:center;gap:8px;flex:0 0 auto;}
+.price-inline input[type="text"]{width:110px;padding:0.45em 0.6em;border-radius:8px;margin-top:0}
+.icon-16{width:16px;height:16px;display:inline-block}
+.hint{font-size:0.75em;color:#666;margin-top:2px}
+@media (max-width: 768px) {  .admin-panel {    padding: 1em;  }
 
 #wineCardContainer > div {  font-size: 0.85em;  padding: 0.5em 0.4em;}
 #wineCardContainer > div button {  font-size: 0.75em;  padding: 4px 6px;}
@@ -44,7 +50,8 @@
 
   #searchInput {    min-width: 100%;  }
 }
-@media (max-width: 480px) {  h1 {    font-size: 1.3em;  }
+@media (max-width: 480px) {  
+h1 {    font-size: 1.3em;  }
 #wineCardContainer > div {  font-size: 0.8em;  padding: 0.4em 0.3em;}
 #wineCardContainer > div button {  font-size: 0.7em;  padding: 3px 5px;}
 #wineCardContainer {  width: 100%;}
@@ -58,13 +65,7 @@
   button {    font-size: 0.95rem;    padding: 0.7em;  }
 
   .admin-panel {    padding: 1em 0.5em;  }
-  /* --- prezzi per formati --- */
-.price-row{display:flex;align-items:center;gap:10px;margin-top:6px}
-.price-inline{display:flex;align-items:center;gap:8px}
-.price-inline input[type="text"]{width:110px;padding:0.45em 0.6em;border-radius:8px;margin-top:0}
-.icon-16{width:16px;height:16px;display:inline-block}
-.hint{font-size:0.75em;color:#666;margin-top:2px}
-
+  .price-inline input[type="text"]{ width:90px; }
 }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
@@ -104,20 +105,16 @@
   </select>
 
   <!-- Bottiglia 0,75 L -->
-  <div class="price-inline" title="Prezzo bottiglia 0,75">
-    <svg class="icon-16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M10 2h4v3a2 2 0 0 1-2 2 2 2 0 0 0-2 2v2c0 .7-.3 1.3-.8 1.8A3 3 0 0 0 8 16v5a3 3 0 0 0 3 3h2a3 3 0 0 0 3-3v-5a3 3 0 0 0-1.2-2.4c-.5-.5-.8-1.1-.8-1.8V9a2 2 0 0 0-2-2 2 2 0 0 1-2-2V2z"/>
-    </svg>
-    <input type="text" id="prezzo" placeholder="bott. 0,75">
-  </div>
+<div class="price-inline" title="Prezzo bottiglia 0,75">
+  <img src="bottleicon.png" alt="Bottiglia" class="icon-16">
+  <input type="text" id="prezzo" placeholder="bott. 0,75">
+</div>
 
   <!-- Prezzo al bicchiere -->
-  <div class="price-inline" title="Prezzo al calice">
-    <svg class="icon-16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M7 2h10l-1.2 7.2A5.5 5.5 0 0 1 10.5 14H11v5h2v3H9v-3h2v-5h.5a3.5 3.5 0 0 0 3.46-2.86L16.7 4H7.3l.64 4h9.36l-.24 1.5H8.06L7 2z"/>
-    </svg>
-    <input type="text" id="prezzo_bicchiere" placeholder="calice">
-  </div>
+<div class="price-inline" title="Prezzo al calice">
+  <img src="glassico.png" alt="Calice" class="icon-16">
+  <input type="text" id="prezzo_bicchiere" placeholder="calice">
+</div>
 </div>
 <div class="hint">La valuta selezionata si applica ad entrambi i prezzi.</div>
 
