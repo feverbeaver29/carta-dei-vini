@@ -31,7 +31,7 @@
 .price-row{display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap: nowrap;max-width:100%;}
 .price-row > select{padding:0.4em;border-radius:8px;flex:0 0 auto;}
 .price-inline{display:flex;align-items:center;gap:8px;flex:1 1 0;min-width:0;}
-.price-inline input[type="text"]{  flex:1 1 auto;  width:clamp(64px, 22vw, 110px);  padding:0.45em 0.6em;  border-radius:8px;  margin-top:0;}
+.price-inline input[type="text"]{  flex:1 1 auto;  width:clamp(56px, 20vw, 110px); padding:0.4em 0.55em;  border-radius:8px;  margin-top:0;}
 .icon-16{width:20px;height:20px;object-fit: contain;}
 .hint{font-size:0.75em;color:#666;margin-top:2px}
 @media (max-width: 768px) {  .admin-panel {    padding: 1em;  }
@@ -65,13 +65,14 @@ h1 {    font-size: 1.3em;  }
   button {    font-size: 0.95rem;    padding: 0.7em;  }
 
   .admin-panel {    padding: 1em 0.5em;  }
-  .price-row{ gap:6px; }
+.price-row{ gap:6px; }
 .price-inline{ gap:6px; }
 .price-inline input[type="text"]{
-  width:clamp(56px, 24vw, 100px);
-  padding:0.4em 0.55em;
+  width:clamp(52px, 22vw, 96px);  /* ancora un filo più compatto sui telefoni piccoli */
+  padding:0.38em 0.5em;
 }
-#valuta{ padding:0.35em; }
+#valuta{ padding:0.35em; min-width:56px; } /* riduce l’impatto del select */
+.icon-16{ width:16px; height:16px; }       /* icone un pelo più piccole su SE */
 }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
