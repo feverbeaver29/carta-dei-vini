@@ -13,176 +13,57 @@
     button { margin-top: 1em; padding: 0.7em 1em; background-color: #b00; color: white; border: none; border-radius: 8px; cursor: pointer; }
     #searchInput { margin-top: 1em; padding: 0.5em; width: 100%; border-radius: 8px; border: 1px solid #ccc; }
     #message { margin: 1em auto; text-align: center; color: green; max-width: 600px; }
-    #backToDashboard {
-  display: inline-block;
-  margin-bottom: 1em;
-  font-size: 0.85em;
-  color: #b00;
-  text-decoration: none;
-  padding-left: 4px;
-  padding-right: 6px;
-  border-left: 2px solid transparent;
-  transition: all 0.2s ease;
-}
-#backToDashboard:hover {
-  text-decoration: underline;
-  color: #800000;
-  border-left: 2px solid #b00;
-}
-.swal2-popup.swal2-rounded-popup {
-  border-radius: 18px !important;
-  max-width: 400px;
-}
-.custom-popup {
-  border-radius: 16px;
-  border: 2px solid #000;
-  padding: 20px;
-  background-color: #fff;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
+    #backToDashboard {  display: inline-block;  margin-bottom: 1em;  font-size: 0.85em;  color: #b00;  text-decoration: none;  padding-left: 4px;  padding-right: 6px;  border-left: 2px solid transparent;  transition: all 0.2s ease;}
+    #backToDashboard:hover {  text-decoration: underline;  color: #800000;  border-left: 2px solid #b00;}
+    .swal2-popup.swal2-rounded-popup {  border-radius: 18px !important;  max-width: 400px;}
+    .custom-popup {  border-radius: 16px;  border: 2px solid #000;  padding: 20px;  background-color: #fff;  box-shadow: 0 4px 8px rgba(0,0,0,0.1);}
 
-.custom-popup input {
-  border-radius: 20px;
-  padding: 8px 16px;
-  border: 1px solid #000;
-  width: 100%;
-  box-sizing: border-box;
-}
+    .custom-popup input {  border-radius: 20px;  padding: 8px 16px;  border: 1px solid #000;  width: 100%;  box-sizing: border-box;}
 
-.custom-popup input::placeholder {
-  font-style: italic;
-  color: #999;
-}
+.custom-popup input::placeholder {  font-style: italic;  color: #999;}
 
-.custom-popup button {
-  padding: 8px 16px;
-  border-radius: 20px;
-  cursor: pointer;
-  border: none;
-}
+.custom-popup button {  padding: 8px 16px;  border-radius: 20px;  cursor: pointer;  border: none;}
 
-.custom-popup .btn-save {
-  background-color: #a00;
-  color: #fff;
-}
+.custom-popup .btn-save {  background-color: #a00;  color: #fff;}
 
-.custom-popup .btn-cancel {
-  background-color: #aaa;
-  color: #333;
-}
-#progressBar {
-  width: 0%;
-  height: 20px;
-  background: #b00;
-  border-radius: 10px;
-  text-align: center;
-  color: #fff;
-  font-size: 0.8em;
-  line-height: 20px;
-  transition: width 0.4s ease; /* aggiungi questa riga */
-}
-    @media (max-width: 768px) {
-  .admin-panel {
-    padding: 1em;
-  }
+.custom-popup .btn-cancel {  background-color: #aaa;  color: #333;}
+#progressBar {  width: 0%;  height: 20px;  background: #b00;  border-radius: 10px;  text-align: center;  color: #fff;  font-size: 0.8em;  line-height: 20px;  transition: width 0.4s ease; /* aggiungi questa riga */}
+    @media (max-width: 768px) {  .admin-panel {    padding: 1em;  }
 
-#wineCardContainer > div {
-  font-size: 0.85em;
-  padding: 0.5em 0.4em;
-}
-#wineCardContainer > div button {
-  font-size: 0.75em;
-  padding: 4px 6px;
-}
-#wineCardContainer {
-  width: 100%;
-}
-#wineCardContainer > div {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  text-align: left;
-  padding: 0.4em 0.3em;
-  font-size: 0.85em;
-  border-bottom: 1px solid #ddd;
-}
-#wineCardContainer > div > div:first-child {
-  padding-left: 0.4em;
-  font-weight: 500;
-  font-size: 0.82em;
-}
-#wineCardContainer > div > div:last-child {
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-  padding-right: 0.4em;
-}
-#wineCardContainer button {
-  font-size: 0.7em;
-  padding: 3px 6px;
-}
+#wineCardContainer > div {  font-size: 0.85em;  padding: 0.5em 0.4em;}
+#wineCardContainer > div button {  font-size: 0.75em;  padding: 4px 6px;}
+#wineCardContainer {  width: 100%;}
+#wineCardContainer > div {  display: flex;  flex-direction: column;  align-items: stretch;  text-align: left;  padding: 0.4em 0.3em;  font-size: 0.85em;  border-bottom: 1px solid #ddd;}
+#wineCardContainer > div > div:first-child {  padding-left: 0.4em;  font-weight: 500;  font-size: 0.82em;}
+#wineCardContainer > div > div:last-child {  display: flex;  justify-content: flex-end;  gap: 6px;  padding-right: 0.4em;}
+#wineCardContainer button {  font-size: 0.7em;  padding: 3px 6px;}
 
   input[type="text"],
   select,
-  button {
-    font-size: 1rem;
-    padding: 0.8em;
-  }
+  button {    font-size: 1rem;    padding: 0.8em;  }
 
-  #searchInput {
-    min-width: 100%;
-  }
+  #searchInput {    min-width: 100%;  }
 }
-@media (max-width: 480px) {
-  h1 {
-    font-size: 1.3em;
-  }
-#wineCardContainer > div {
-  font-size: 0.8em;
-  padding: 0.4em 0.3em;
-}
-#wineCardContainer > div button {
-  font-size: 0.7em;
-  padding: 3px 5px;
-}
-#wineCardContainer {
-  width: 100%;
-}
-#wineCardContainer > div {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  text-align: left;
-  padding: 0.4em 0.3em;
-  font-size: 0.85em;
-  border-bottom: 1px solid #ddd;
-}
-#wineCardContainer > div > div:first-child {
-  padding-left: 0.4em;
-  font-weight: 500;
-  font-size: 0.82em;
-}
-#wineCardContainer > div > div:last-child {
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-  padding-right: 0.4em;
-}
-#wineCardContainer button {
-  font-size: 0.7em;
-  padding: 3px 6px;
-}
+@media (max-width: 480px) {  h1 {    font-size: 1.3em;  }
+#wineCardContainer > div {  font-size: 0.8em;  padding: 0.4em 0.3em;}
+#wineCardContainer > div button {  font-size: 0.7em;  padding: 3px 5px;}
+#wineCardContainer {  width: 100%;}
+#wineCardContainer > div {  display: flex;  flex-direction: column;  align-items: stretch;  text-align: left;  padding: 0.4em 0.3em;  font-size: 0.85em;  border-bottom: 1px solid #ddd;}
+#wineCardContainer > div > div:first-child {  padding-left: 0.4em;  font-weight: 500;  font-size: 0.82em;}
+#wineCardContainer > div > div:last-child {  display: flex;  justify-content: flex-end;  gap: 6px;  padding-right: 0.4em;}
+#wineCardContainer button {  font-size: 0.7em;  padding: 3px 6px;}
 
   input[type="text"],
   select,
-  button {
-    font-size: 0.95rem;
-    padding: 0.7em;
-  }
+  button {    font-size: 0.95rem;    padding: 0.7em;  }
 
-  .admin-panel {
-    padding: 1em 0.5em;
-  }
+  .admin-panel {    padding: 1em 0.5em;  }
+  /* --- prezzi per formati --- */
+.price-row{display:flex;align-items:center;gap:10px;margin-top:6px}
+.price-inline{display:flex;align-items:center;gap:8px}
+.price-inline input[type="text"]{width:110px;padding:0.45em 0.6em;border-radius:8px;margin-top:0}
+.icon-16{width:16px;height:16px;display:inline-block}
+.hint{font-size:0.75em;color:#666;margin-top:2px}
 
 }
   </style>
@@ -212,17 +93,34 @@
 <input type="text" id="nome_completo" placeholder="Nome completo del vino">
   <label>Annata:</label>
   <input type="text" id="annata" placeholder="non obbligatorio">
-  <label>Prezzo:</label>
-  <div style="display: flex; gap: 8px; align-items: center;">
-    <select id="valuta" style="padding: 0.4em; border-radius: 8px;">
-      <option value="€" selected>€</option>
-      <option value="$">$</option>
-      <option value="£">£</option>
-      <option value="¥">¥</option>
-      <option value="CHF">CHF</option>
-    </select>
-    <input type="text" id="prezzo" style="flex: 1;">
+<label>Prezzo:</label>
+<div class="price-row">
+  <select id="valuta" style="padding:0.4em;border-radius:8px;">
+    <option value="€" selected>€</option>
+    <option value="$">$</option>
+    <option value="£">£</option>
+    <option value="¥">¥</option>
+    <option value="CHF">CHF</option>
+  </select>
+
+  <!-- Bottiglia 0,75 L -->
+  <div class="price-inline" title="Prezzo bottiglia 0,75">
+    <svg class="icon-16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M10 2h4v3a2 2 0 0 1-2 2 2 2 0 0 0-2 2v2c0 .7-.3 1.3-.8 1.8A3 3 0 0 0 8 16v5a3 3 0 0 0 3 3h2a3 3 0 0 0 3-3v-5a3 3 0 0 0-1.2-2.4c-.5-.5-.8-1.1-.8-1.8V9a2 2 0 0 0-2-2 2 2 0 0 1-2-2V2z"/>
+    </svg>
+    <input type="text" id="prezzo" placeholder="bott. 0,75">
   </div>
+
+  <!-- Prezzo al bicchiere -->
+  <div class="price-inline" title="Prezzo al calice">
+    <svg class="icon-16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M7 2h10l-1.2 7.2A5.5 5.5 0 0 1 10.5 14H11v5h2v3H9v-3h2v-5h.5a3.5 3.5 0 0 0 3.46-2.86L16.7 4H7.3l.64 4h9.36l-.24 1.5H8.06L7 2z"/>
+    </svg>
+    <input type="text" id="prezzo_bicchiere" placeholder="calice">
+  </div>
+</div>
+<div class="hint">La valuta selezionata si applica ad entrambi i prezzi.</div>
+
   <label>Categoria:</label>
   <input type="text" id="categoria" list="categoriaList">
   <datalist id="categoriaList"></datalist>
@@ -567,7 +465,7 @@ function showMessage(msg, ok = true) {
 }
 
 function resetForm() {
-  ["annata", "prezzo", "categoria", "sottocategoria", "uvaggio", "nome_completo"].forEach(id => {
+  ["annata","prezzo","prezzo_bicchiere","categoria","sottocategoria","uvaggio","nome_completo"].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.value = "";
 });
@@ -580,9 +478,13 @@ function fillForm(index) {
 
 // Dividi nome in due parti (grezzo: fino al primo spazio = produttore)
 document.getElementById("nome_completo").value = wine.nome || "";
-  const match = wine.prezzo?.match(/^(€|$|£|¥|CHF)?(.*)$/);
-  document.getElementById("valuta").value = match?.[1] || "€";
-  document.getElementById("prezzo").value = match?.[2]?.trim() || "";
+const m = wine.prezzo?.match(/^(€|\$|£|¥|CHF)?\s*(.*)$/);
+document.getElementById("valuta").value = m?.[1] || "€";
+document.getElementById("prezzo").value = (m?.[2] || "").trim();
+
+const g = wine.prezzo_bicchiere?.match(/^(€|\$|£|¥|CHF)?\s*(.*)$/);
+document.getElementById("prezzo_bicchiere").value = (g?.[2] || "").trim();
+
   editIndex = index;
   document.getElementById("formTitle").innerHTML = 'Modifica Vino <button id="resetButton">Aggiungi nuovo</button>';
   document.getElementById("saveButton").textContent = "Aggiorna";
@@ -815,15 +717,19 @@ Swal.fire({
 
 async function saveWine() {
   await fetchUserIfNeeded();
-  const wine = {
-    ristorante_id: RESTAURANT_ID,
-    nome: document.getElementById("nome_completo").value.trim(),
-    annata: document.getElementById("annata").value,
-    prezzo: document.getElementById("valuta").value + document.getElementById("prezzo").value,
-    categoria: formatText(document.getElementById("categoria").value),
-    sottocategoria: formatText(document.getElementById("sottocategoria").value),
-    uvaggio: formatText(document.getElementById("uvaggio").value),
-  };
+  const valuta = document.getElementById("valuta").value;
+  const prezzoCalice = document.getElementById("prezzo_bicchiere").value.trim();
+
+const wine = {
+  ristorante_id: RESTAURANT_ID,
+  nome: document.getElementById("nome_completo").value.trim(),
+  annata: document.getElementById("annata").value,
+  prezzo: document.getElementById("valuta").value + document.getElementById("prezzo").value,
+  prezzo_bicchiere: prezzoCalice ? (valuta + prezzoCalice) : "",
+  categoria: formatText(document.getElementById("categoria").value),
+  sottocategoria: formatText(document.getElementById("sottocategoria").value),
+  uvaggio: formatText(document.getElementById("uvaggio").value),
+};
 
   const url = editIndex !== null ? `${SUPABASE_URL}/rest/v1/wines?id=eq.${winesData[editIndex].id}` : `${SUPABASE_URL}/rest/v1/wines`;
   const method = editIndex !== null ? "PATCH" : "POST";
