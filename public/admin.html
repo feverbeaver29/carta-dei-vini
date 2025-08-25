@@ -28,11 +28,12 @@
 
 .custom-popup .btn-cancel {  background-color: #aaa;  color: #333;}
 #progressBar {  width: 0%;  height: 20px;  background: #b00;  border-radius: 10px;  text-align: center;  color: #fff;  font-size: 0.8em;  line-height: 20px;  transition: width 0.4s ease; /* aggiungi questa riga */}
-.price-row{display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap: nowrap;max-width:100%;}
-.price-row > select{padding:0.4em;border-radius:8px;flex:0 0 auto;}
-.price-inline{display:flex;align-items:center;gap:8px;flex:1 1 0;min-width:0;}
-.price-inline input[type="text"]{  flex:1 1 auto;  width:clamp(56px, 20vw, 110px); padding:0.4em 0.55em;  border-radius:8px;  margin-top:0;}
-.icon-16{width:20px;height:20px;object-fit: contain;}
+.price-row{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:nowrap;max-width:100%;}
+.price-inline{display:flex;align-items:center;gap:6px;flex:1 1 0;min-width:0;}
+.price-row > select{padding:0.32em 0.45em;border-radius:8px;flex:0 0 auto;min-width:52px;}
+.price-inline input[type="text"]{  flex:1 1 auto;  width:clamp(56px, 20vw, 106px);  padding:0.40em 0.55em;  border-radius:8px;  margin-top:0;}
+
+.icon-16{width:14px;height:14px;object-fit:contain;vertical-align:middle;}
 .hint{font-size:0.75em;color:#666;margin-top:2px}
 @media (max-width: 768px) {  .admin-panel {    padding: 1em;  }
 
@@ -68,10 +69,10 @@ h1 {    font-size: 1.3em;  }
 .price-row{ gap:6px; }
 .price-inline{ gap:6px; }
 .price-inline input[type="text"]{
-  width:clamp(52px, 22vw, 96px);  /* ancora un filo più compatto sui telefoni piccoli */
+  width:clamp(52px, 22vw, 96px);
   padding:0.38em 0.5em;
 }
-#valuta{ padding:0.35em; min-width:56px; } /* riduce l’impatto del select */
+#valuta{ padding:0.32em 0.4em; min-width:50px; }
 .icon-16{ width:16px; height:16px; }       /* icone un pelo più piccole su SE */
 }
   </style>
