@@ -36,20 +36,26 @@
 .icon-16{width:14px;height:14px;object-fit:contain;vertical-align:middle;}
 .hint{font-size:0.75em;color:#666;margin-top:2px}
 
-/* toggle altri formati */
-#toggleFormats{
+/* — repeater formati — */
+#formatsWrap{ margin-top:6px; }
+#addFormatBtn{
   background:none;border:none;color:#b00;cursor:pointer;
   padding:0;margin:.35em 0;font-size:.9em;font-weight:600;
 }
-#extraFormats{ display:none; margin-top:6px; }
-#extraFormats.open{ display:flex; align-items:center; gap:8px; flex-wrap:nowrap; }
-.extra-chip{
+.fmt-picker{ display:none; margin-left:8px; padding:.35em .5em; border-radius:8px; }
+.formats{ display:flex; flex-direction:column; gap:6px; margin-top:6px; }
+.fmt-row{ display:flex; align-items:center; gap:8px; }
+.fmt-chip{
   font-size:.8em; background:#f3f3f3; border-radius:999px;
-  padding:.2em .55em; line-height:1;
+  padding:.2em .55em; line-height:1; white-space:nowrap;
 }
-.extra-input{
-  width:clamp(56px, 16vw, 90px);
-  padding:.4em .55em; border:1px solid #ccc; border-radius:8px;
+.fmt-input{
+  flex:1 1 auto;
+  width:clamp(64px, 24vw, 110px);
+  padding:.40em .55em; border:1px solid #ccc; border-radius:8px;
+}
+.fmt-del{
+  background:none;border:none;color:#666;cursor:pointer;font-size:18px;line-height:1;
 }
 @media (max-width: 768px) {  .admin-panel {    padding: 1em;  }
 
@@ -91,8 +97,8 @@ h1 {    font-size: 1.3em;  }
 #valuta{ padding:0.32em 0.4em; min-width:50px; }
 .icon-16{ width:16px; height:16px; }       /* icone un pelo più piccole su SE */
 
-#extraFormats.open{ gap:6px; }
-.extra-input{ width:clamp(52px, 20vw, 84px); padding:.36em .5em; }
+  .fmt-input{ width:clamp(56px, 26vw, 96px); padding:.38em .5em; }
+  .fmt-row{ gap:6px; }
 }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
@@ -144,16 +150,17 @@ h1 {    font-size: 1.3em;  }
 </div>
 </div>
 <div class="hint">La valuta selezionata si applica ad entrambi i prezzi.</div>
-<button type="button" id="toggleFormats">+ altri formati</button>
-<div id="extraFormats">
-  <span class="extra-chip">0,375 L</span>
-  <input type="text" id="prezzo_0375" class="extra-input" placeholder="0,375">
-
-  <span class="extra-chip">1,5 L</span>
-  <input type="text" id="prezzo_15" class="extra-input" placeholder="1,5">
-
-  <span class="extra-chip">3 L</span>
-  <input type="text" id="prezzo_3l" class="extra-input" placeholder="3">
+<div id="formatsWrap">
+  <button type="button" id="addFormatBtn">+ aggiungi formato</button>
+  <select id="formatPicker" class="fmt-picker">
+    <option value="" selected disabled>Seleziona formato…</option>
+    <option value="025">1/4 L (0,25)</option>
+    <option value="0375">0,375 L</option>
+    <option value="05">1/2 L (0,5)</option>
+    <option value="15">1,5 L</option>
+    <option value="3l">3 L</option>
+  </select>
+  <div id="formatsRepeater" class="formats"></div>
 </div>
 
   <label>Categoria:</label>
@@ -504,6 +511,8 @@ function resetForm() {
   const el = document.getElementById(id);
   if (el) el.value = "";
 });
+document.getElementById("formatsRepeater").innerHTML = "";
+document.getElementById("formatPicker").style.display = "none";
   editIndex = null;
 }
 
@@ -519,15 +528,33 @@ document.getElementById("prezzo").value = (m?.[2] || "").trim();
 
 const g = wine.prezzo_bicchiere?.match(/^(€|\$|£|¥|CHF)?\s*(.*)$/);
 document.getElementById("prezzo_bicchiere").value = (g?.[2] || "").trim();
-
-const m0375 = wine.prezzo_0375?.match(/^(€|\$|£|¥|CHF)?\s*(.*)$/);
-document.getElementById("prezzo_0375").value = (m0375?.[2] || "").trim();
-
-const m15 = wine.prezzo_15?.match(/^(€|\$|£|¥|CHF)?\s*(.*)$/);
-document.getElementById("prezzo_15").value = (m15?.[2] || "").trim();
-
-const m3 = wine.prezzo_3l?.match(/^(€|\$|£|¥|CHF)?\s*(.*)$/);
-document.getElementById("prezzo_3l").value = (m3?.[2] || "").trim();
+document.getElementById("formatsRepeater").innerHTML = "";
+const valutaSel = document.getElementById("valuta").value;
+// 025
+if (wine.prezzo_025){
+  const v = wine.prezzo_025.replace(/^(€|\$|£|¥|CHF)?\s*/,"");
+  addFormatRow("025", v);
+}
+// 0375
+if (wine.prezzo_0375){
+  const v = wine.prezzo_0375.replace(/^(€|\$|£|¥|CHF)?\s*/,"");
+  addFormatRow("0375", v);
+}
+// 05
+if (wine.prezzo_05){
+  const v = wine.prezzo_05.replace(/^(€|\$|£|¥|CHF)?\s*/,"");
+  addFormatRow("05", v);
+}
+// 15
+if (wine.prezzo_15){
+  const v = wine.prezzo_15.replace(/^(€|\$|£|¥|CHF)?\s*/,"");
+  addFormatRow("15", v);
+}
+// 3l
+if (wine.prezzo_3l){
+  const v = wine.prezzo_3l.replace(/^(€|\$|£|¥|CHF)?\s*/,"");
+  addFormatRow("3l", v);
+}
 
   editIndex = index;
   document.getElementById("formTitle").innerHTML = 'Modifica Vino <button id="resetButton">Aggiungi nuovo</button>';
@@ -757,40 +784,47 @@ Swal.fire({
 });
   });
 }
-
-document.getElementById("toggleFormats").addEventListener("click", () => {
-  const box = document.getElementById("extraFormats");
-  box.classList.toggle("open");
-  document.getElementById("toggleFormats").textContent =
-    box.classList.contains("open") ? "– nascondi formati" : "+ altri formati";
-});
-
 }
 
 async function saveWine() {
   await fetchUserIfNeeded();
-  const valuta = document.getElementById("valuta").value;
-  const prezzoCalice = document.getElementById("prezzo_bicchiere").value.trim();
-  const p0375 = document.getElementById("prezzo_0375").value.trim();
-const p15   = document.getElementById("prezzo_15").value.trim();
-const p3l   = document.getElementById("prezzo_3l").value.trim();
 
-const wine = {
-  ristorante_id: RESTAURANT_ID,
-  nome: document.getElementById("nome_completo").value.trim(),
-  annata: document.getElementById("annata").value,
-  prezzo: document.getElementById("valuta").value + document.getElementById("prezzo").value,
-  prezzo_bicchiere: prezzoCalice ? (valuta + prezzoCalice) : "",
-  categoria: formatText(document.getElementById("categoria").value),
-  sottocategoria: formatText(document.getElementById("sottocategoria").value),
-  uvaggio: formatText(document.getElementById("uvaggio").value),
-  prezzo_0375: p0375 ? (valuta + p0375) : "",
-prezzo_15:   p15   ? (valuta + p15)   : "",
-prezzo_3l:   p3l   ? (valuta + p3l)   : "",
-};
+  const valuta        = document.getElementById("valuta").value;
+  const prezzoCalice  = (document.getElementById("prezzo_bicchiere").value || "").trim();
+  const prezzoBott075 = (document.getElementById("prezzo").value || "").trim();
 
-  const url = editIndex !== null ? `${SUPABASE_URL}/rest/v1/wines?id=eq.${winesData[editIndex].id}` : `${SUPABASE_URL}/rest/v1/wines`;
-  const method = editIndex !== null ? "PATCH" : "POST";
+  // 1) oggetto base
+  const wine = {
+    ristorante_id: RESTAURANT_ID,
+    nome: document.getElementById("nome_completo").value.trim(),
+    annata: document.getElementById("annata").value,
+    prezzo: (prezzoBott075 ? (valuta + prezzoBott075) : ""),
+    prezzo_bicchiere: (prezzoCalice ? (valuta + prezzoCalice) : ""),
+    categoria: formatText(document.getElementById("categoria").value),
+    sottocategoria: formatText(document.getElementById("sottocategoria").value),
+    uvaggio: formatText(document.getElementById("uvaggio").value),
+  };
+
+  // 2) inizializza i campi formati extra
+  wine.prezzo_025 = "";
+  wine.prezzo_0375 = "";
+  wine.prezzo_05 = "";
+  wine.prezzo_15 = "";
+  wine.prezzo_3l = "";
+
+  // 3) prendi le righe del repeater e mappa sui campi
+  document.querySelectorAll("#formatsRepeater .fmt-row").forEach(row => {
+    const code = row.dataset.code;           // "025" | "0375" | "05" | "15" | "3l"
+    const key  = FORMAT_KEYS[code];          // es. "prezzo_0375"
+    const val  = row.querySelector(".fmt-input").value.trim();
+    if (key && val) wine[key] = (valuta + val);
+  });
+
+  // 4) invio a Supabase
+  const url = (editIndex !== null)
+    ? `${SUPABASE_URL}/rest/v1/wines?id=eq.${winesData[editIndex].id}`
+    : `${SUPABASE_URL}/rest/v1/wines`;
+  const method = (editIndex !== null) ? "PATCH" : "POST";
 
   const res = await fetch(url, {
     method,
@@ -800,10 +834,12 @@ prezzo_3l:   p3l   ? (valuta + p3l)   : "",
 
   if (!res.ok) return showMessage("Errore salvataggio", false);
   showMessage(editIndex !== null ? "Vino aggiornato" : "Vino aggiunto");
+
   resetForm();
   loadWines();
-  document.getElementById("formTitle").innerHTML = 'Aggiungi Vino <button id="resetButton" style="display:none; margin-left: 10px; padding: 0.3em 0.6em; font-size: 0.8em;">Aggiungi nuovo</button>';
-document.getElementById("saveButton").textContent = "Salva";
+  document.getElementById("formTitle").innerHTML =
+    'Aggiungi Vino <button id="resetButton" style="display:none; margin-left: 10px; padding: 0.3em 0.6em; font-size: 0.8em;">Aggiungi nuovo</button>';
+  document.getElementById("saveButton").textContent = "Salva";
 }
 
 async function deleteWine(id) {
@@ -821,6 +857,18 @@ document.getElementById("saveButton").onclick = saveWine;
 document.getElementById("itemsPerPage").addEventListener("change", () => {
   currentPage = 1;
   renderTable();
+});
+document.getElementById("addFormatBtn").addEventListener("click", ()=>{
+  const picker = document.getElementById("formatPicker");
+  picker.style.display = "inline-block";
+  refreshPickerOptions();
+  picker.focus();
+});
+document.getElementById("formatPicker").addEventListener("change", (e)=>{
+  if(!e.target.value) return;
+  addFormatRow(e.target.value);
+  e.target.value = "";
+  e.target.style.display = "none";
 });
 document.body.addEventListener("click", e => {
   if (e.target.id === "resetButton") {
@@ -861,6 +909,43 @@ if (result.isConfirmed) {
   processOCRFile();
 }
 });
+
+const FORMAT_LABELS = {
+  "025": "1/4 L (0,25)", "0375": "0,375 L",
+  "05": "1/2 L (0,5)",   "15": "1,5 L", "3l": "3 L"
+};
+const FORMAT_KEYS = {
+  "025":"prezzo_025", "0375":"prezzo_0375",
+  "05":"prezzo_05",   "15":"prezzo_15", "3l":"prezzo_3l"
+};
+
+function addFormatRow(code, value=""){
+  if(!FORMAT_KEYS[code]) return;
+  const wrap = document.getElementById("formatsRepeater");
+  // evita duplicati
+  if([...wrap.querySelectorAll(".fmt-row")].some(r=>r.dataset.code===code)) return;
+
+  const row = document.createElement("div");
+  row.className = "fmt-row";
+  row.dataset.code = code;
+  row.innerHTML = `
+    <span class="fmt-chip">${FORMAT_LABELS[code]}</span>
+    <input type="text" class="fmt-input" placeholder="prezzo" value="${value || ""}">
+    <button type="button" class="fmt-del" aria-label="Rimuovi">×</button>
+  `;
+  row.querySelector(".fmt-del").onclick = () => row.remove();
+  wrap.appendChild(row);
+  refreshPickerOptions();
+}
+
+function refreshPickerOptions(){
+  const picker = document.getElementById("formatPicker");
+  const used = new Set([...document.querySelectorAll("#formatsRepeater .fmt-row")].map(r=>r.dataset.code));
+  [...picker.options].forEach(opt=>{
+    if(!opt.value) return;
+    opt.disabled = used.has(opt.value);
+  });
+}
 
 </script>
 <!-- PDF.js Library -->
