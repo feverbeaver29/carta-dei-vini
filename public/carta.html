@@ -301,6 +301,11 @@ button, .save-btn {
   backdrop-filter: blur(6px);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
+/* — prezzi in card vino — */
+.price-row{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:6px 0 4px}
+.price-chip{display:inline-flex;align-items:center;gap:6px;font-size:.95em}
+.price-chip img.icon{width:14px;height:14px;vertical-align:middle;object-fit:contain}
+.price-chip strong{font-weight:600}
 
 /* RESPONSIVE */
 @media (max-width: 768px) {
@@ -1228,6 +1233,38 @@ function goToCategories() {
   if (subcatList) subcatList.style.display = "none";
   if (wineList) wineList.style.display = "none";
 }
+function buildPriceHTML(w){
+  const chips = [];
+
+  if (w.prezzo) {
+    chips.push(
+      `<span class="price-chip">
+         <img class="icon" src="bottleico.png"
+              onerror="this.onerror=null;this.src='bottleicon.png';"
+              alt="bottiglia">
+         ${w.prezzo}
+       </span>`
+    );
+  }
+  if (w.prezzo_bicchiere) {
+    chips.push(
+      `<span class="price-chip">
+         <img class="icon" src="glassico.png" alt="calice">
+         ${w.prezzo_bicchiere}
+       </span>`
+    );
+  }
+
+  const add = (label, val) => { if (val) chips.push(`<span class="price-chip"><strong>${label}</strong> ${val}</span>`); };
+  add('1/4lt',   w.prezzo_025);
+  add('0,375lt', w.prezzo_0375);
+  add('1/2lt',   w.prezzo_05);
+  add('1,5lt',   w.prezzo_15);
+  add('3lt',     w.prezzo_3l);
+
+  if (!chips.length) return '';
+  return `<div class="price-row">${chips.join(' ')}</div>`;
+}
 
 function showWinesBySubcategory(subcat) {
   currentView = 'wines';
@@ -1242,9 +1279,11 @@ const annata = w.annata ? ` (${w.annata})` : '';
 
 const nomePulito = (w.nome || "").trim();
 const t = translations[currentLang];
-card.innerHTML = `<strong>${nomePulito}${annata}</strong><br>
-<em>${w.prezzo}</em><br>
-<small>${t.grape}: ${w.uvaggio}</small>`;
+card.innerHTML = `
+  <strong>${nomePulito}${annata}</strong>
+  ${buildPriceHTML(w)}
+  ${w.uvaggio ? `<small>${t.grape}: ${w.uvaggio}</small>` : ""}`;
+
     wineList.appendChild(card);
     card.onclick = () => {
   mostraPopupDescrizione(w); // w è il vino cliccato
