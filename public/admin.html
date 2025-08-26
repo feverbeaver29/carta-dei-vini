@@ -257,6 +257,8 @@ async function estraiDatiConIA(riga1, riga2) {
 }
 
 async function processOCRFile() {
+  if (!winesData.length) await loadWines();
+
   const file = document.getElementById("ocrUploadInput").files[0];
   const status = document.getElementById("ocrStatus");
   const progressContainer = document.getElementById("progressContainer");
@@ -288,6 +290,11 @@ async function processOCRFile() {
   }
 
   const lines = [];
+
+  // Calcolo una sola volta le categorie/sottocategorie già presenti
+const categoriePresenti = Array.from(new Set(winesData.map(w => w.categoria))).filter(Boolean);
+const sottocategoriePresenti = Array.from(new Set(winesData.map(w => w.sottocategoria))).filter(Boolean);
+
 status.textContent = "🧠 Elaborazione OCR...";
 for (let i = 0; i < images.length; i++) {
   const result = await Tesseract.recognize(images[i], 'eng');
@@ -371,8 +378,6 @@ progressContainer.style.display = "none";
     vino.uvaggio = "Uvaggio non trovato online";
   }
 }
-const categoriePresenti = Array.from(new Set(winesData.map(w => w.categoria))).filter(Boolean);
-const sottocategoriePresenti = Array.from(new Set(winesData.map(w => w.sottocategoria))).filter(Boolean);
 
 const result = await Swal.fire({
   title: 'Conferma vino',
