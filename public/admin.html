@@ -35,6 +35,22 @@
 
 .icon-16{width:14px;height:14px;object-fit:contain;vertical-align:middle;}
 .hint{font-size:0.75em;color:#666;margin-top:2px}
+
+/* toggle altri formati */
+#toggleFormats{
+  background:none;border:none;color:#b00;cursor:pointer;
+  padding:0;margin:.35em 0;font-size:.9em;font-weight:600;
+}
+#extraFormats{ display:none; margin-top:6px; }
+#extraFormats.open{ display:flex; align-items:center; gap:8px; flex-wrap:nowrap; }
+.extra-chip{
+  font-size:.8em; background:#f3f3f3; border-radius:999px;
+  padding:.2em .55em; line-height:1;
+}
+.extra-input{
+  width:clamp(56px, 16vw, 90px);
+  padding:.4em .55em; border:1px solid #ccc; border-radius:8px;
+}
 @media (max-width: 768px) {  .admin-panel {    padding: 1em;  }
 
 #wineCardContainer > div {  font-size: 0.85em;  padding: 0.5em 0.4em;}
@@ -74,6 +90,9 @@ h1 {    font-size: 1.3em;  }
 }
 #valuta{ padding:0.32em 0.4em; min-width:50px; }
 .icon-16{ width:16px; height:16px; }       /* icone un pelo più piccole su SE */
+
+#extraFormats.open{ gap:6px; }
+.extra-input{ width:clamp(52px, 20vw, 84px); padding:.36em .5em; }
 }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
@@ -125,6 +144,17 @@ h1 {    font-size: 1.3em;  }
 </div>
 </div>
 <div class="hint">La valuta selezionata si applica ad entrambi i prezzi.</div>
+<button type="button" id="toggleFormats">+ altri formati</button>
+<div id="extraFormats">
+  <span class="extra-chip">0,375 L</span>
+  <input type="text" id="prezzo_0375" class="extra-input" placeholder="0,375">
+
+  <span class="extra-chip">1,5 L</span>
+  <input type="text" id="prezzo_15" class="extra-input" placeholder="1,5">
+
+  <span class="extra-chip">3 L</span>
+  <input type="text" id="prezzo_3l" class="extra-input" placeholder="3">
+</div>
 
   <label>Categoria:</label>
   <input type="text" id="categoria" list="categoriaList">
@@ -470,7 +500,7 @@ function showMessage(msg, ok = true) {
 }
 
 function resetForm() {
-  ["annata","prezzo","prezzo_bicchiere","categoria","sottocategoria","uvaggio","nome_completo"].forEach(id => {
+  ["annata","prezzo","prezzo_bicchiere","prezzo_0375","prezzo_15","prezzo_3l","categoria","sottocategoria","uvaggio","nome_completo"].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.value = "";
 });
@@ -489,6 +519,15 @@ document.getElementById("prezzo").value = (m?.[2] || "").trim();
 
 const g = wine.prezzo_bicchiere?.match(/^(€|\$|£|¥|CHF)?\s*(.*)$/);
 document.getElementById("prezzo_bicchiere").value = (g?.[2] || "").trim();
+
+const m0375 = wine.prezzo_0375?.match(/^(€|\$|£|¥|CHF)?\s*(.*)$/);
+document.getElementById("prezzo_0375").value = (m0375?.[2] || "").trim();
+
+const m15 = wine.prezzo_15?.match(/^(€|\$|£|¥|CHF)?\s*(.*)$/);
+document.getElementById("prezzo_15").value = (m15?.[2] || "").trim();
+
+const m3 = wine.prezzo_3l?.match(/^(€|\$|£|¥|CHF)?\s*(.*)$/);
+document.getElementById("prezzo_3l").value = (m3?.[2] || "").trim();
 
   editIndex = index;
   document.getElementById("formTitle").innerHTML = 'Modifica Vino <button id="resetButton">Aggiungi nuovo</button>';
@@ -718,12 +757,23 @@ Swal.fire({
 });
   });
 }
+
+document.getElementById("toggleFormats").addEventListener("click", () => {
+  const box = document.getElementById("extraFormats");
+  box.classList.toggle("open");
+  document.getElementById("toggleFormats").textContent =
+    box.classList.contains("open") ? "– nascondi formati" : "+ altri formati";
+});
+
 }
 
 async function saveWine() {
   await fetchUserIfNeeded();
   const valuta = document.getElementById("valuta").value;
   const prezzoCalice = document.getElementById("prezzo_bicchiere").value.trim();
+  const p0375 = document.getElementById("prezzo_0375").value.trim();
+const p15   = document.getElementById("prezzo_15").value.trim();
+const p3l   = document.getElementById("prezzo_3l").value.trim();
 
 const wine = {
   ristorante_id: RESTAURANT_ID,
@@ -734,6 +784,9 @@ const wine = {
   categoria: formatText(document.getElementById("categoria").value),
   sottocategoria: formatText(document.getElementById("sottocategoria").value),
   uvaggio: formatText(document.getElementById("uvaggio").value),
+  prezzo_0375: p0375 ? (valuta + p0375) : "",
+prezzo_15:   p15   ? (valuta + p15)   : "",
+prezzo_3l:   p3l   ? (valuta + p3l)   : "",
 };
 
   const url = editIndex !== null ? `${SUPABASE_URL}/rest/v1/wines?id=eq.${winesData[editIndex].id}` : `${SUPABASE_URL}/rest/v1/wines`;
