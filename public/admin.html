@@ -298,10 +298,6 @@ for (let i = 0; i < images.length; i++) {
 const progress = Math.round(((i + 1) / images.length) * 30);
 aggiornaBarraProgressoFinoAl(progress);
 }
-
-  const categoriePresenti = Array.from(new Set(winesData.map(w => w.categoria))).filter(Boolean);
-  const sottocategoriePresenti = Array.from(new Set(winesData.map(w => w.sottocategoria))).filter(Boolean);
-
   const BATCH_SIZE = 30; 
   let parsedVini = [];
   const totalBatches = Math.ceil(lines.length / BATCH_SIZE);
@@ -383,20 +379,37 @@ const result = await Swal.fire({
   html: `
     <div class="custom-popup">
       <label>Nome</label>
-      <input id="sw_nome" placeholder="nome del vino" value="${vino.nome_completo}">
+      <input id="sw_nome" placeholder="nome del vino" value="${vino.nome_completo || ""}">
 
       <label>Annata</label>
       <input id="sw_annata" placeholder="annata del vino" value="${vino.annata || ""}">
 
-      <div style="display:flex; gap:8px;">
-        <div style="flex:0.4;">
+      <div style="display:flex; gap:8px; align-items:flex-end;">
+        <div style="flex:0 0 80px;">
           <label>Valuta</label>
           <input id="sw_valuta" placeholder="es. €" value="${vino.valuta || '€'}">
         </div>
-        <div style="flex:0.6;">
-          <label>Prezzo</label>
-          <input id="sw_prezzo" placeholder="prezzo del vino" value="${vino.prezzo || ""}">
+        <div style="flex:1;">
+          <label>Prezzo (bott. 0,75)</label>
+          <input id="sw_prezzo" placeholder="es. 24" value="${(vino.prezzo || '').toString().replace(/^(€|\$|£|¥|CHF)?\s*/,'')}">
         </div>
+        <div style="flex:1;">
+          <label>Prezzo al calice</label>
+          <input id="sw_prezzo_calice" placeholder="es. 6" value="${(vino.prezzo_bicchiere || '').toString().replace(/^(€|\$|£|¥|CHF)?\s*/,'')}">
+        </div>
+      </div>
+
+      <div id="sw_formatsWrap" style="margin-top:8px;">
+        <button type="button" id="sw_addFormatBtn" style="background:none;border:none;color:#b00;cursor:pointer;font-weight:600;padding:0;">+ aggiungi formato</button>
+        <select id="sw_formatPicker" class="fmt-picker">
+          <option value="" selected disabled>Seleziona formato…</option>
+          <option value="025">1/4 L (0,25)</option>
+          <option value="0375">0,375 L</option>
+          <option value="05">1/2 L (0,5)</option>
+          <option value="15">1,5 L</option>
+          <option value="3l">3 L</option>
+        </select>
+        <div id="sw_formatsRepeater" class="formats"></div>
       </div>
 
       <label>Categoria</label>
@@ -415,23 +428,82 @@ const result = await Swal.fire({
       <input id="sw_uvaggio" placeholder="uvaggio del vino" value="${vino.uvaggio || ""}">
     </div>
   `,
+  didOpen: () => {
+    const LABELS = { "025":"1/4 L (0,25)", "0375":"0,375 L", "05":"1/2 L (0,5)", "15":"1,5 L", "3l":"3 L" };
+    const KEYS   = { "025":"prezzo_025", "0375":"prezzo_0375", "05":"prezzo_05", "15":"prezzo_15", "3l":"prezzo_3l" };
+
+    const picker  = document.getElementById('sw_formatPicker');
+    const addBtn  = document.getElementById('sw_addFormatBtn');
+    const wrap    = document.getElementById('sw_formatsRepeater');
+
+    function refresh() {
+      const used = new Set([...wrap.querySelectorAll('.fmt-row')].map(r => r.dataset.code));
+      [...picker.options].forEach(o => { if(o.value) o.disabled = used.has(o.value); });
+    }
+    function addRow(code, value="") {
+      if(!KEYS[code]) return;
+      if([...wrap.querySelectorAll('.fmt-row')].some(r => r.dataset.code === code)) return;
+      const row = document.createElement('div');
+      row.className = 'fmt-row';
+      row.dataset.code = code;
+row.innerHTML = `
+  <span class="fmt-chip">${LABELS[code]}</span>
+  <input type="text" class="fmt-input" placeholder="prezzo" value="${(value||'').toString().replace(/^(€|\$|£|¥|CHF)?\s*/, '')}">
+  <button type="button" class="fmt-del" aria-label="Rimuovi">×</button>
+`;
+      row.querySelector('.fmt-del').onclick = () => { row.remove(); refresh(); };
+      wrap.appendChild(row);
+      refresh();
+    }
+
+    addBtn.addEventListener('click', () => {
+      picker.style.display = 'inline-block';
+      refresh();
+      picker.focus();
+    });
+    picker.addEventListener('change', (e) => {
+      if(!e.target.value) return;
+      addRow(e.target.value);
+      e.target.value = '';
+      e.target.style.display = 'none';
+    });
+
+    // Pre-compila dai valori OCR se presenti
+    const pre = {
+      "025": vino.prezzo_025, "0375": vino.prezzo_0375,
+      "05":  vino.prezzo_05,  "15":   vino.prezzo_15, "3l": vino.prezzo_3l
+    };
+    Object.entries(pre).forEach(([code,val]) => { if(val) addRow(code, val); });
+  },
   confirmButtonText: 'Salva',
   cancelButtonText: 'Cancella',
   showCancelButton: true,
-  customClass: {
-    popup: 'custom-popup',
-    confirmButton: 'btn-save',
-    cancelButton: 'btn-cancel'
-  },
+  customClass: { popup: 'custom-popup', confirmButton: 'btn-save', cancelButton: 'btn-cancel' },
   preConfirm: () => {
-    return {
+    const valuta = (document.getElementById('sw_valuta').value || '€').trim();
+    const out = {
       nome: document.getElementById('sw_nome').value.trim(),
       annata: document.getElementById('sw_annata').value.trim() || null,
-      prezzo: document.getElementById('sw_valuta').value + document.getElementById('sw_prezzo').value,
+      prezzo: valuta + (document.getElementById('sw_prezzo').value || '').trim(),
+      prezzo_bicchiere: (document.getElementById('sw_prezzo_calice').value || '').trim()
+                          ? valuta + (document.getElementById('sw_prezzo_calice').value || '').trim()
+                          : "",
       categoria: document.getElementById('sw_categoria').value.trim(),
       sottocategoria: document.getElementById('sw_sottocategoria').value.trim(),
-      uvaggio: document.getElementById('sw_uvaggio').value.trim()
+      uvaggio: document.getElementById('sw_uvaggio').value.trim(),
     };
+    // inizializza campi extra
+    out.prezzo_025 = ""; out.prezzo_0375 = ""; out.prezzo_05 = ""; out.prezzo_15 = ""; out.prezzo_3l = "";
+
+    const map = { "025":"prezzo_025", "0375":"prezzo_0375", "05":"prezzo_05", "15":"prezzo_15", "3l":"prezzo_3l" };
+    Swal.getPopup().querySelectorAll('#sw_formatsRepeater .fmt-row').forEach(row => {
+      const code = row.dataset.code;
+      const key  = map[code];
+      const val  = row.querySelector('.fmt-input').value.trim();
+      if (key && val) out[key] = valuta + val;
+    });
+
+    return out;
   }
 });
 

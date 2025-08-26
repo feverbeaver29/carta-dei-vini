@@ -52,17 +52,45 @@ if (!testo || typeof testo !== "string" || testo.length < 20) {
 }
 
 const prompt = `
-Hai ricevuto un testo OCR che rappresenta una carta dei vini. Analizza e riconosci ogni vino contenuto nel testo. Per ogni vino estrai:
+Riceverai il testo OCR di una carta dei vini. Estrai ogni vino come oggetto JSON con i campi:
 
-- nome_completo (es: "PIAGGIA 'Sasso' Carmignano DOCG")
-- annata (se presente)
-- prezzo (se presente)
-- valuta (€, $, £, CHF, ecc.)
-- categoria (se possibile scegli la categoria più simile tra queste già presenti: ${categorieGiaPresenti.join(", ")})
-- sottocategoria (se possibile scegli la sottocategoria più simile tra queste già presenti: ${sottocategorieGiaPresenti.join(", ")})
-- uvaggio (se assente, deducilo dal nome)
+- "nome_completo": string (es. "PIAGGIA 'Sasso' Carmignano DOCG")
+- "annata": string oppure "" se assente
+- "valuta": uno tra "€", "$", "£", "CHF", "¥" (indovina dal contesto se possibile, altrimenti "€")
+- "prezzo": string numero SENZA simbolo valuta (bottiglia 0,75 L) oppure "" se assente
+- "prezzo_bicchiere": string numero SENZA simbolo valuta (prezzo al calice) oppure ""
+- "prezzo_025": string numero SENZA simbolo valuta per 1/4 L (0,25) oppure ""
+- "prezzo_0375": string numero SENZA simbolo valuta per 0,375 L oppure ""
+- "prezzo_05": string numero SENZA simbolo valuta per 1/2 L (0,5) oppure ""
+- "prezzo_15": string numero SENZA simbolo valuta per 1,5 L oppure ""
+- "prezzo_3l": string numero SENZA simbolo valuta per 3 L oppure ""
+- "categoria": una delle categorie più simili tra: ${categorieGiaPresenti.join(", ")} (oppure "" se non deducibile)
+- "sottocategoria": una delle sottocategorie più simili tra: ${sottocategorieGiaPresenti.join(", ")} (oppure "")
+- "uvaggio": vitigni principali (se assente prova a dedurlo dal nome, altrimenti "")
 
-❗Rispondi solo con un array JSON valido.
+Linee guida:
+- Riconosci sinonimi: "calice", "by the glass", "g.", "glass" → prezzo_bicchiere.  
+- 1/4 L = 0,25; 1/2 L = 0,5; "mezza" = 0,375; "magnum" = 1,5 L; "jeroboam" = 3 L.  
+- Se un prezzo non è presente, restituisci "" (stringa vuota).
+- Usa il punto o la virgola come in input; NON includere il simbolo di valuta nei prezzi.
+- Rispondi **solo** con un ARRAY JSON valido di oggetti con ESATTAMENTE queste chiavi.
+
+Esempio di un elemento:
+{
+  "nome_completo":"Chianti Classico Riserva",
+  "annata":"2019",
+  "valuta":"€",
+  "prezzo":"28",
+  "prezzo_bicchiere":"6",
+  "prezzo_025":"",
+  "prezzo_0375":"15",
+  "prezzo_05":"",
+  "prezzo_15":"55",
+  "prezzo_3l":"",
+  "categoria":"Rossi",
+  "sottocategoria":"Toscana",
+  "uvaggio":"Sangiovese"
+}
 
 Testo OCR:
 ${testo}
