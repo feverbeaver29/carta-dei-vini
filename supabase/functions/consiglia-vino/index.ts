@@ -5,40 +5,80 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
 };
+const LANGS = {
+  it: { name: "italiano", GRAPE: "UVAGGIO", MOTIVE: "MOTIVAZIONE" },
+  en: { name: "English",  GRAPE: "GRAPE",   MOTIVE: "RATIONALE" },
+  de: { name: "Deutsch",  GRAPE: "REBSORTE",MOTIVE: "BEGRÜNDUNG" },
+  es: { name: "Español",  GRAPE: "UVA",     MOTIVE: "MOTIVACIÓN" },
+  fr: { name: "Français", GRAPE: "CÉPAGES", MOTIVE: "JUSTIFICATION" },
+  zh: { name: "中文",       GRAPE: "葡萄品种",  MOTIVE: "理由" }
+};
+const norm = (s:string) => (s || "")
+  .toLowerCase()
+  .normalize("NFD")
+  .replace(/\p{Diacritic}/gu, "")
+  .replace(/\s+/g, " ")
+  .trim();
+
 
 function filtraEVotiVini({ vini, boost = [], prezzo_massimo = null, colori = [], recenti = {}, usageStats = {} }) {
   if (!Array.isArray(vini)) return [];
 
-  return vini
+  // ranking base
+  const ranked = vini
     .filter(v => v.visibile !== false)
+    .filter(v => { // hard filter per prezzo massimo
+      if (!prezzo_massimo) return true;
+      const num = parseFloat((v.prezzo || "").replace(/[^\d.,]/g, "").replace(",", ".")) || 0;
+      return num <= prezzo_massimo;
+    })
     .map(v => {
       let score = 0;
-      const prezzoNum = parseFloat((v.prezzo || "").replace(/[^\d.,]/g, "").replace(",", ".")) || 0;
       const isBoost = boost.includes(v.nome);
 
       if (isBoost) score += 100;
-      if (prezzo_massimo && prezzoNum <= prezzo_massimo) score += 20;
 
+      // filtro categorie richieste (rosso/bianco/…)
       if (Array.isArray(colori) && colori.length > 0) {
         const cat = (v.categoria || "").toLowerCase();
         const match = colori.some(c => cat.includes(c.toLowerCase()));
-        if (!match) return null; // ❌ ESCLUDI vino
+        if (!match) return null; // escludi
         score += 15;
       }
 
+      // anti-ripetizione recente (tranne i boost)
       if (!isBoost) {
-        const penalitaRecenti = recenti[v.nome] || 0;
         score -= penalitaRecenti * 15;
-        if (!recenti[v.nome]) {
-          score += 10; // bonus
-        }
+        const isBoost = boost.includes(norm(v.nome));              // qui "boost" contiene già nomi normalizzati
+        const nomeN = norm(v.nome);
+        const penalitaRecenti = recenti[nomeN] || 0;
+        if (!recenti[nomeN]) score += 10;
       }
+
+      // leggero bonus se disponibile al calice
+      if (v.prezzo_bicchiere) score += 8;
+
+      // euristica produttore (per diversificazione)
+      const producer = (v.nome || "").split(/\s+/)[0].toLowerCase();
+      v.__producer = producer;
 
       return { ...v, score };
     })
-    .filter(Boolean) // ✅ qui va messo
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 20);
+    .filter(Boolean)
+    .sort((a, b) => b.score - a.score);
+
+  // diversificazione: max 2 vini per produttore
+  const seenProd = new Map();
+  const diversified = [];
+  for (const w of ranked) {
+    const c = seenProd.get(w.__producer) || 0;
+    if (c < 2) {
+      diversified.push(w);
+      seenProd.set(w.__producer, c + 1);
+    }
+    if (diversified.length >= 20) break;
+  }
+  return diversified;
 }
 
 serve(async (req) => {
@@ -50,7 +90,8 @@ serve(async (req) => {
   }
 
   try {
-    const { vini, piatto, ristorante_id, prezzo_massimo, colori } = await req.json();
+    const { vini, piatto, ristorante_id, prezzo_massimo, colori, lang } = await req.json();
+    const L = LANGS[lang] || LANGS.it; // default italiano
     const supabaseUrl = "https://ldunvbftxhbtuyabgxwh.supabase.co";
     const supabaseKey = Deno.env.get("SERVICE_ROLE_KEY");
     const headers = { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` };
@@ -64,6 +105,7 @@ serve(async (req) => {
     let boost = [];
     try {
       boost = JSON.parse(info?.sommelier_boost_multi || "[]");
+      const boostNorm = new Set((boost || []).map(norm));
     } catch (_) {
       boost = [];
     }
@@ -82,17 +124,23 @@ serve(async (req) => {
       });
     }
 
-    // 🧠 Recupera gli ultimi 10 vini consigliati dal log Supabase
-      const recentRes = await fetch(`${supabaseUrl}/rest/v1/consigliati_log?ristorante_id=eq.${ristorante_id}&order=creato_il.desc&limit=100`, {
-      headers
-    });
-    const recentLog = await recentRes.json();
+let recentLog = [];
+try {
+  const recentRes = await fetch(`${supabaseUrl}/rest/v1/consigliati_log?ristorante_id=eq.${ristorante_id}&order=creato_il.desc&limit=100`, { headers });
+  if (recentRes.ok) {
+    recentLog = await recentRes.json();
+  }
+} catch (_) {
+  recentLog = [];
+}
+
 // 🔁 Calcola la frequenza dei vini (non boost) negli ultimi suggerimenti
-const frequenzaRecenti = {};
+const frequenzaRecenti: Record<string, number> = {};
 recentLog.forEach(r => {
-  (r.vini || []).forEach(nome => {
-    if (!boost.includes(nome)) {
-      frequenzaRecenti[nome] = (frequenzaRecenti[nome] || 0) + 1;
+  (r.vini || []).forEach((nome: string) => {
+    const n = norm(nome);
+    if (!boostNorm.has(n)) {
+      frequenzaRecenti[n] = (frequenzaRecenti[n] || 0) + 1;
     }
   });
 });
@@ -113,12 +161,22 @@ recentLog.forEach(r => {
       });
     }
 
-    const vinoList = viniFiltrati.map(w => {
-      const isBoost = boost.includes(w.nome);
-      return `- ${w.nome}${isBoost ? " ⭐" : ""} (${w.tipo || "tipo non specificato"}, ${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || "uvaggio non specificato"}, €${w.prezzo})`;
-    }).join("\n");
+const vinoList = viniFiltrati.map(w => {
+  const isBoost = boostNorm.has(norm(w.nome));
+  const prezzi = [
+    w.prezzo ? `bottiglia: ${w.prezzo}` : null,
+    w.prezzo_bicchiere ? `calice: ${w.prezzo_bicchiere}` : null,
+    w.prezzo_025 ? `1/4lt: ${w.prezzo_025}` : null,
+    w.prezzo_0375 ? `0,375lt: ${w.prezzo_0375}` : null,
+    w.prezzo_05 ? `1/2lt: ${w.prezzo_05}` : null,
+    w.prezzo_15 ? `1,5lt: ${w.prezzo_15}` : null,
+    w.prezzo_3l ? `3lt: ${w.prezzo_3l}` : null,
+  ].filter(Boolean).join(" • ");
 
-    const prompt = `Sei un sommelier professionale che lavora all’interno di un ristorante. Il cliente ha ordinato il seguente pasto:
+  return `- ${w.nome}${isBoost ? " ⭐" : ""} (${w.tipo || "tipo non specificato"}, ${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || "uvaggio non specificato"}) [${prezzi || "prezzi non indicati"}]`;
+}).join("\n");
+
+const prompt = `Sei un sommelier professionale che lavora all’interno di un ristorante. Il cliente ha ordinato il seguente pasto:
 
 "${piatto}"
 
@@ -133,16 +191,16 @@ Il tuo compito è consigliare **da ${min} a ${max} vini**, presenti nella lista 
 ${prezzo_massimo ? `❗ Consiglia solo vini con prezzo massimo €${prezzo_massimo}.` : ""}
 ${Array.isArray(colori) && colori.length < 4 ? `✅ Filtra per categoria: includi solo vini ${colori.join(", ")}` : ""}
 
-Per ogni vino consigliato, rispondi con questo formato:
+Rispondi in **${L.name}** e usa ESATTAMENTE questo formato (senza altre righe o caratteri):
 
-- Nome del vino  Prezzo  
-Uvaggio  
-Motivazione tecnica in massimo 2 frasi (acidità, struttura, freschezza, tannini, versatilità…)
+- NOME DEL VINO (solo nome, senza prezzi)
+${L.GRAPE}: ...
+${L.MOTIVE}: ... (massimo 2 frasi, tecniche)
 
 Esempio:
-- Chianti Classico DOCG  €24  
-Sangiovese  
-Tannini levigati e buona acidità: ideale per piatti strutturati a base di carne.
+- Chianti Classico DOCG
+${L.GRAPE}: Sangiovese
+${L.MOTIVE}: Tannini levigati e buona acidità...
 
 ⛔ Non inventare vini. Consiglia solo tra quelli elencati sopra.  
 Se non ci sono abbinamenti perfetti, suggerisci comunque quelli più adatti.  
@@ -180,19 +238,20 @@ Non aggiungere altro testo oltre il formato richiesto.`;
     const json = await completion.json();
     const reply = json.choices?.[0]?.message?.content;
 
-    // 🔍 Estrai i nomi dei vini consigliati dalla risposta
-    const viniSuggeriti = [];
-    const righe = reply?.split("\n") || [];
-
-    for (const riga of righe) {
-      const match = riga.match(/^- (.+?)\s+€\d+/);
-      if (match && match[1]) {
-        viniSuggeriti.push(match[1].trim());
-      }
-    }
+// 🔍 Estrai i nomi dei vini consigliati (prima riga di ogni blocco, senza dipendere da €)
+const viniSuggeriti = (reply || "")
+  .split(/^- /m)              // separa i blocchi che iniziano con "- "
+  .map(b => b.trim())
+  .filter(Boolean)
+  .map(b => b.split("\n")[0]  // prendi solo la prima riga del blocco
+    .split(/€|EUR|CHF|\$|£|¥/)[0] // taglia eventuali prezzi se l'AI li avesse messi
+    .replace(/^[-•]\s*/, "")
+    .trim()
+  )
+  .filter(Boolean);
 
     // 🔴 Verifica se almeno un boost è stato incluso
-    const boostInclusi = viniSuggeriti.some(nome => boost.includes(nome));
+    const boostInclusi = viniSuggeriti.some(nome => boostNorm.has(norm(nome)));
 
     // 💾 Salva log del suggerimento
     await fetch(`${supabaseUrl}/rest/v1/consigliati_log`, {
