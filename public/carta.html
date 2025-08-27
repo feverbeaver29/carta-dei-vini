@@ -425,6 +425,8 @@ const translations = {
     sommelierFooter: "Il tuo Sommelier Virtuale 🍷",
     sommelierTitleBox: "Dimmi cosa mangerai e ti suggerirò il vino perfetto!",
     sommelierTooltip: "Fatti dare una mano con l’abbinamento vino-cibo",
+    anyPrice: "Indifferente",   // it
+    motive:   "Motivazione",
   },
   en: {
     wineList: "Wine List",
@@ -446,6 +448,8 @@ const translations = {
     sommelierFooter: "Your Virtual Sommelier 🍷",
     sommelierTitleBox: "Tell me what you'll eat and I'll suggest the perfect wine!",
     sommelierTooltip: "Let me help with wine & food pairing",
+    anyPrice: "Any",
+    motive:   "Rationale",
   },
   fr: {
     wineList: "Carte des Vins",
@@ -467,6 +471,8 @@ const translations = {
     sommelierFooter: "Votre Sommelier Virtuel 🍷",
     sommelierTitleBox: "Dites-moi ce que vous mangez et je vous suggère le vin idéal !",
     sommelierTooltip: "Laissez-moi vous aider à associer vins et mets",
+    anyPrice: "Sans préférence",
+    motive:   "Justification",
   },
   de: {
     wineList: "Weinkarte",
@@ -488,6 +494,8 @@ const translations = {
     sommelierFooter: "Dein virtueller Sommelier 🍷",
     sommelierTitleBox: "Sag mir, was du isst, und ich empfehle dir den perfekten Wein!",
     sommelierTooltip: "Ich helfe dir bei der Weinauswahl zum Essen",
+    anyPrice: "Beliebig",
+    motive:   "Begründung",
   },
   es: {
     wineList: "Carta de Vinos",
@@ -509,6 +517,8 @@ const translations = {
     sommelierFooter: "Tu Sumiller Virtual 🍷",
     sommelierTitleBox: "Dime qué comerás y te sugiero el vino perfecto",
     sommelierTooltip: "Te ayudo con el maridaje vino-comida",
+    anyPrice: "Cualquiera",
+    motive:   "Motivación",
   },
   zh: {
     wineList: "酒单",
@@ -530,6 +540,8 @@ const translations = {
     sommelierFooter: "您的虚拟侍酒师 🍷",
     sommelierTitleBox: "告诉我你要吃什么，我会推荐最适合的酒！",
     sommelierTooltip: "我可以帮你选择搭配的葡萄酒",
+    anyPrice: "不限",
+    motive:   "理由",
   }
 };
 
@@ -655,6 +667,8 @@ if (tooltip && translations[currentLang].sommelierTooltip) {
   tooltip.innerText = translations[currentLang].sommelierTooltip;
 }
 
+const priceAnyOpt = document.querySelector('#priceFilter option[value=""]');
+if (priceAnyOpt) priceAnyOpt.textContent = t.anyPrice;
 }
 
 function aggiornaAltezzaNavbar() {
@@ -851,12 +865,20 @@ const shadow = palette && window.paletteColors?.boxShadow || "0 2px 6px rgba(0,0
 let cardsHtml = rawBlocks.map(block => {
   const lines = block.split(/\n/).map(l => l.trim()).filter(Boolean);
   const titleLine = lines[0] || "";
-  const uvaggio = lines[1] || "";
-  const motivazione = lines.slice(2).join(" ");
+const uvRiga = lines[1] || "";
+const motRiga = lines.slice(2).join(" ");
+
+const uvVal = stripLabelPrefix(uvRiga, [
+  "uvaggio","grape","grape variety","cepages","cépages","variedad de uva","rebsorte","uva","葡萄品种"
+]);
+
+const motVal = stripLabelPrefix(motRiga, [
+  "motivazione","rationale","justification","begrundung","begründung","motivacion","motivación","理由"
+]);
 
   // prendo SOLO il nome del vino dalla prima riga (ignoro eventuale €... scritto dall'AI)
   const nomeVino = (titleLine.split(/€|EUR|CHF|\$|£|¥/)[0] || "").replace(/^[-•]\s*/, "").trim();
-  if (!nomeVino || !motivazione) return '';
+  if (!nomeVino) return '';
 
   // cerco lo stesso vino nella carta per recuperare TUTTI i prezzi
   const norm = s => (s || "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim();
@@ -889,8 +911,8 @@ let cardsHtml = rawBlocks.map(block => {
         <div style="font-weight:600; font-size:1em; flex:1;">${nomeVino}</div>
       </div>
       ${prezziHtml}
-      ${uvaggio ? `<div style="font-size:0.9em; color:#666; margin-top:4px;">${translations[currentLang].grape}: ${uvaggio}</div>` : ""}
-      <div style="margin-top:10px; font-style:italic; font-size:0.95em;">${motivazione}</div>
+      ${uvVal ? `<div style="font-size:0.9em; color:#666; margin-top:4px;">${translations[currentLang].grape}: ${uvVal}</div>` : ""}
+      ${motVal ? `<div style="margin-top:10px; font-size:0.95em;"><strong>${translations[currentLang].motive}:</strong> ${motVal}</div>` : ""}
     </div>`;
 }).join('');
 
@@ -925,6 +947,18 @@ suggestion.innerHTML = `
     console.error(err);
     suggestion.innerHTML = "Errore nel generare il suggerimento.";
   }
+}
+
+function stripLabelPrefix(line, labels) {
+  if (!line) return "";
+  const raw  = String(line).trim();
+  const norm = raw.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  for (const lab of labels) {
+    if (norm.startsWith(lab)) {
+      return raw.replace(/^.*?[:：-]\s*/, ""); // rimuove "LABEL: "
+    }
+  }
+  return raw;
 }
 
 window.addEventListener('click', e => {
@@ -1406,7 +1440,7 @@ async function creaUIBaseSommelier() {
           <div style="flex: 1 1 48%;">
             <label for="priceFilter" class="translate-label" data-key="filterPrice" style="font-size: 0.85em; display: block; margin-bottom: 4px;">Filtra per prezzo</label>
             <select id="priceFilter" style="width: 100%; padding: 8px; font-size: 0.95em; border-radius: 8px; border: 1px solid #ccc;">
-              <option value="">Indifferente</option>
+              <option value="" class="translate-label" data-key="anyPrice">Indifferente</option>
               <option value="25">Max €25</option>
               <option value="35">Max €35</option>
               <option value="45">Max €45</option>
