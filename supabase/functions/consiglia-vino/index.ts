@@ -21,24 +21,28 @@ const norm = (s:string) => (s || "")
   .trim();
 
 
-function filtraEVotiVini({ vini, boost = [], prezzo_massimo = null, colori = [], recenti = {}, usageStats = {} }) {
+function filtraEVotiVini({
+  vini, boost = [], prezzo_massimo = null, colori = [], recenti = {}, usageStats = {}
+}: {
+  vini: any[]; boost?: string[]; prezzo_massimo?: number|null; colori?: string[]; recenti?: Record<string, number>; usageStats?: any;
+}) {
   if (!Array.isArray(vini)) return [];
 
-  // ranking base
   const ranked = vini
     .filter(v => v.visibile !== false)
-    .filter(v => { // hard filter per prezzo massimo
+    .filter(v => { // hard filter prezzo massimo
       if (!prezzo_massimo) return true;
       const num = parseFloat((v.prezzo || "").replace(/[^\d.,]/g, "").replace(",", ".")) || 0;
       return num <= prezzo_massimo;
     })
     .map(v => {
       let score = 0;
-      const isBoost = boost.includes(v.nome);
+      const nomeN = norm(v.nome);
+      const isBoost = boost.includes(nomeN);  // <<— boost è già normalizzato
 
       if (isBoost) score += 100;
 
-      // filtro categorie richieste (rosso/bianco/…)
+      // filtro categorie richieste
       if (Array.isArray(colori) && colori.length > 0) {
         const cat = (v.categoria || "").toLowerCase();
         const match = colori.some(c => cat.includes(c.toLowerCase()));
@@ -46,21 +50,18 @@ function filtraEVotiVini({ vini, boost = [], prezzo_massimo = null, colori = [],
         score += 15;
       }
 
-      // anti-ripetizione recente (tranne i boost)
+      // anti-ripetizione recente (solo se non boost)
       if (!isBoost) {
-        score -= penalitaRecenti * 15;
-        const isBoost = boost.includes(norm(v.nome));              // qui "boost" contiene già nomi normalizzati
-        const nomeN = norm(v.nome);
         const penalitaRecenti = recenti[nomeN] || 0;
-        if (!recenti[nomeN]) score += 10;
+        score -= penalitaRecenti * 15;
+        if (!recenti[nomeN]) score += 10; // bonus novità
       }
 
-      // leggero bonus se disponibile al calice
+      // bonus se disponibile al calice
       if (v.prezzo_bicchiere) score += 8;
 
       // euristica produttore (per diversificazione)
-      const producer = (v.nome || "").split(/\s+/)[0].toLowerCase();
-      v.__producer = producer;
+      v.__producer = (v.nome || "").split(/\s+/)[0].toLowerCase();
 
       return { ...v, score };
     })
@@ -68,8 +69,8 @@ function filtraEVotiVini({ vini, boost = [], prezzo_massimo = null, colori = [],
     .sort((a, b) => b.score - a.score);
 
   // diversificazione: max 2 vini per produttore
-  const seenProd = new Map();
-  const diversified = [];
+  const seenProd = new Map<string, number>();
+  const diversified: any[] = [];
   for (const w of ranked) {
     const c = seenProd.get(w.__producer) || 0;
     if (c < 2) {
@@ -102,13 +103,15 @@ serve(async (req) => {
     const range = info?.sommelier_range || "2-3";
     const [min, max] = range.split("-").map(n => parseInt(n));
 
-    let boost = [];
-    try {
-      boost = JSON.parse(info?.sommelier_boost_multi || "[]");
-      const boostNorm = new Set((boost || []).map(norm));
-    } catch (_) {
-      boost = [];
-    }
+let boost: string[] = [];
+let boostNorm = new Set<string>();
+try {
+  boost = JSON.parse(info?.sommelier_boost_multi || "[]");
+  boostNorm = new Set((boost || []).map(norm));
+} catch (_) {
+  boost = [];
+  boostNorm = new Set();
+}
 
     if (!vini || !Array.isArray(vini) || vini.length === 0) {
       return new Response(JSON.stringify({ error: "Nessun vino nel sistema." }), {
@@ -148,7 +151,7 @@ recentLog.forEach(r => {
     // ✅ Filtra e valuta i vini
     const viniFiltrati = filtraEVotiVini({
       vini,
-      boost,
+      boost: Array.from(boostNorm),  // <— normalizzati
       prezzo_massimo: prezzo_massimo ? parseInt(prezzo_massimo) : null,
       colori,
       recenti: frequenzaRecenti,
