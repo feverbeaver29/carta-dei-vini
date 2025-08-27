@@ -826,7 +826,8 @@ try {
       piatto: input,
       ristorante_id: RESTAURANT_ID,
       prezzo_massimo: priceLimit ? parseInt(priceLimit) : null,
-      colori: wineColors
+      colori: wineColors,
+      lang: (currentLang === "gb" ? "en" : currentLang)  // << invia sempre en, non gb
     })
   });
 

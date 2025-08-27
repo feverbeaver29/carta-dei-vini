@@ -91,8 +91,10 @@ serve(async (req) => {
   }
 
   try {
-    const { vini, piatto, ristorante_id, prezzo_massimo, colori, lang } = await req.json();
-    const L = LANGS[lang] || LANGS.it; // default italiano
+ const { vini, piatto, ristorante_id, prezzo_massimo, colori, lang } = await req.json();
+ const code = String(lang || "it").toLowerCase();
+ const normCode = (code === "gb" ? "en" : code);   // alias GB → EN
+ const L = LANGS[normCode] || LANGS.it;
     const supabaseUrl = "https://ldunvbftxhbtuyabgxwh.supabase.co";
     const supabaseKey = Deno.env.get("SERVICE_ROLE_KEY");
     const headers = { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` };
@@ -194,7 +196,8 @@ Il tuo compito è consigliare **da ${min} a ${max} vini**, presenti nella lista 
 ${prezzo_massimo ? `❗ Consiglia solo vini con prezzo massimo €${prezzo_massimo}.` : ""}
 ${Array.isArray(colori) && colori.length < 4 ? `✅ Filtra per categoria: includi solo vini ${colori.join(", ")}` : ""}
 
-Rispondi in **${L.name}** e usa ESATTAMENTE questo formato (senza altre righe o caratteri):
+Rispondi **solo in ${L.name}** (anche la motivazione). Non usare altre lingue.
+Usa ESATTAMENTE questo formato (senza altre righe o caratteri):
 
 - NOME DEL VINO (solo nome, senza prezzi)
 ${L.GRAPE}: ...
