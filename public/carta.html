@@ -151,38 +151,62 @@ button, .save-btn {
 }
 
 /* BOTTONE SOMMELIER */
-#sommelierBtn {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: var(--accent-color);
-  color: white;
-  border: none;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  font-size: 1.5em;
-  cursor: pointer;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+#sommelierBtn{
+  position:fixed;
+  bottom:16px;
+  left:50%;
+  transform:translateX(-50%);
+  background:var(--accent-color);
+  color:#fff;
+  border:none;
+  height:52px;
+  padding:0 16px;
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:0.95em;
+  font-weight:600;
+  cursor:pointer;
+  z-index:1000;
+  box-shadow:0 10px 24px rgba(0,0,0,.18);
+}
+#sommelierBtn img{
+  width:24px; height:24px; border-radius:50%; object-fit:cover;
+}
+#sommelierBtn.pulse::after{
+  content:"";
+  position:absolute; inset:-6px;
+  border:2px solid rgba(255,255,255,.8);
+  border-radius:999px;
+  opacity:0; pointer-events:none;
+  animation:sommPulse 2s ease-out infinite;
+}
+@keyframes sommPulse{
+  0%{opacity:.6; transform:scale(1)}
+  100%{opacity:0; transform:scale(1.25)}
 }
 
 /* TOOLTIP */
-#tooltipSommelier {
-  position: fixed;
-  bottom: 90px;
-  right: 20px;
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 12px;
-  padding: 10px 15px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  font-size: 0.9em;
-  animation: tooltipSlide 3s ease-in-out;
-  z-index: 999;
-  display: none;
+#tooltipSommelier{
+  position:fixed;
+  bottom:84px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#fff;
+  border:1px solid #ccc;
+  border-radius:12px;
+  padding:10px 14px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  font-size:.9em;
+  animation:tooltipSlide 3s ease-in-out;
+  z-index:999;
+  display:none;
+  max-width:calc(100vw - 40px);
+  text-align:center;
+}
+@media (max-width:420px){
+  #sommelierBtn{ height:48px; padding:0 12px; font-size:.9em; }
 }
 
 /* POPUP SOMMELIER */
@@ -427,6 +451,7 @@ const translations = {
     sommelierTooltip: "Fatti dare una mano con l’abbinamento vino-cibo",
     anyPrice: "Indifferente",   // it
     motive:   "Motivazione",
+    sommelierBtn: "Sommelier",
   },
   en: {
     wineList: "Wine List",
@@ -450,6 +475,7 @@ const translations = {
     sommelierTooltip: "Let me help with wine & food pairing",
     anyPrice: "Any",
     motive:   "Rationale",
+    sommelierBtn: "Sommelier",
   },
   fr: {
     wineList: "Carte des Vins",
@@ -473,6 +499,7 @@ const translations = {
     sommelierTooltip: "Laissez-moi vous aider à associer vins et mets",
     anyPrice: "Sans préférence",
     motive:   "Justification",
+    sommelierBtn: "Sommelier",
   },
   de: {
     wineList: "Weinkarte",
@@ -496,6 +523,7 @@ const translations = {
     sommelierTooltip: "Ich helfe dir bei der Weinauswahl zum Essen",
     anyPrice: "Beliebig",
     motive:   "Begründung",
+    sommelierBtn: "Sommelier",
   },
   es: {
     wineList: "Carta de Vinos",
@@ -519,6 +547,7 @@ const translations = {
     sommelierTooltip: "Te ayudo con el maridaje vino-comida",
     anyPrice: "Cualquiera",
     motive:   "Motivación",
+    sommelierBtn: "Sumiller",
   },
   zh: {
     wineList: "酒单",
@@ -542,6 +571,7 @@ const translations = {
     sommelierTooltip: "我可以帮你选择搭配的葡萄酒",
     anyPrice: "不限",
     motive:   "理由",
+    sommelierBtn: "侍酒师",
   }
 };
 
@@ -669,6 +699,14 @@ if (tooltip && translations[currentLang].sommelierTooltip) {
 
 const priceAnyOpt = document.querySelector('#priceFilter option[value=""]');
 if (priceAnyOpt) priceAnyOpt.textContent = t.anyPrice;
+
+// aggiorna testo del bottone sommelier
+const sBtn = document.getElementById("sommelierBtn");
+if (sBtn) {
+  const lbl = sBtn.querySelector(".label");
+  if (lbl) lbl.textContent = translations[currentLang].sommelierBtn;
+  sBtn.setAttribute("aria-label", translations[currentLang].sommelierBtn);
+}
 }
 
 function aggiornaAltezzaNavbar() {
@@ -1421,10 +1459,19 @@ async function setupSommelierUI() {
   await aggiornaCategorieSommelier();
 }
 async function creaUIBaseSommelier() {
-  const btn = document.createElement("button");
-  btn.id = "sommelierBtn";
-  btn.innerText = "🍷";
-  document.body.appendChild(btn);
+const btn = document.createElement("button");
+btn.id = "sommelierBtn";
+btn.setAttribute("aria-label", translations[currentLang].sommelierBtn || "Sommelier");
+btn.innerHTML = `
+  <img src="${ristoranteSommelierURL || 'sommelier.png'}" alt="" />
+  <span class="label translate-label" data-key="sommelierBtn">${translations[currentLang].sommelierBtn}</span>
+`;
+document.body.appendChild(btn);
+
+// pulse finché non è stato aperto almeno una volta
+if (!localStorage.getItem("sommelier_seen")) {
+  btn.classList.add("pulse");
+}
 
     const tooltip = document.createElement("div");
     tooltip.id = "tooltipSommelier";
@@ -1492,10 +1539,13 @@ async function creaUIBaseSommelier() {
 btn.addEventListener("click", () => {
   const overlay = document.getElementById("sommelierOverlay");
   if (overlay) {
-    overlay.classList.remove("fade-out");     // ✅ rimuove la vecchia animazione
-    overlay.classList.add("fade-in");         // ✅ forza animazione entrata
+    overlay.classList.remove("fade-out");
+    overlay.classList.add("fade-in");
     overlay.style.display = "flex";
   }
+  // segna come visto → rimuovi pulse
+  localStorage.setItem("sommelier_seen", "1");
+  btn.classList.remove("pulse");
 });
 
   aggiornaEtichettaCategorie();
