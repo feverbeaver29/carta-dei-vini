@@ -173,7 +173,7 @@ button, .save-btn {
   box-shadow:0 10px 24px rgba(0,0,0,.18);
 }
 #sommelierBtn img{
-  width:24px; height:24px; border-radius:50%; object-fit:cover;
+  width:30px; height:30px; border-radius:50%; object-fit:cover;
 }
 /* 🔁 nuovo effetto pulse */
 #sommelierBtn.pulse{
@@ -1472,16 +1472,17 @@ btn.innerHTML = `
 `;
 document.body.appendChild(btn);
 
-// pulse finché non è stato aperto almeno una volta
+// crea prima il tooltip…
+const tooltip = document.createElement("div");
+tooltip.id = "tooltipSommelier";
+tooltip.innerText = translations[currentLang].sommelierTooltip;
+document.body.appendChild(tooltip);
+
+// …poi fai pulse + mostra tooltip (solo alla prima volta)
 if (!localStorage.getItem("sommelier_seen")) {
   btn.classList.add("pulse");
-  showSommelierTooltipOnce(); // 👈 finalmente lo vediamo
+  showSommelierTooltipOnce();
 }
-
-    const tooltip = document.createElement("div");
-    tooltip.id = "tooltipSommelier";
-    tooltip.innerText = translations[currentLang].sommelierTooltip;
-    document.body.appendChild(tooltip);
 
     const overlay = document.createElement("div");
     overlay.id = "sommelierOverlay";
@@ -2062,12 +2063,8 @@ function toggleWineTypeDropdown() {
   const popupRect = document.getElementById("sommelierPopup")?.getBoundingClientRect();
   const top = popupRect ? (rect.bottom + popupRect.top) : rect.bottom;
 
-  // ✅ Scroll del documento + compensazione del popup scrollabile
-  const popupScroll = document.getElementById("sommelierPopup")?.scrollTop || 0;
-  const offsetTop = rect.bottom + window.scrollY;
-
   dropdown.style.position = "fixed";
-  dropdown.style.top = `${offsetTop}px`;
+  dropdown.style.top = `${rect.bottom}px`;
   dropdown.style.left = `${rect.left}px`;
   dropdown.style.display = "block";
 }
@@ -2102,6 +2099,8 @@ function aggiornaEtichettaCategorie() {
   if (textSpan) textSpan.textContent = baseLabel;
 }
 window.addEventListener("popstate", (event) => {
+ const overlay = document.getElementById('sommelierOverlay');
+ if (overlay && overlay.style.display === 'flex') return;
   const state = event.state;
 
   window._manualNavigation = true; // ✅ evita pushState
