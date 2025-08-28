@@ -633,22 +633,23 @@ window.paletteColors = {
 };
 
 function changeLanguage() {
-  currentLang = document.getElementById("langSelector").value;
-  if (!translations[langSelector.value]) {
-  langSelector.value = "en";
-}
+  const langSelector = document.getElementById("langSelector");
+  currentLang = langSelector.value;
+
+  // fallback sicuro
+  if (!translations[currentLang]) {
+    currentLang = "en";
+    langSelector.value = "en";
+  }
+
   applyTranslations();
   showCategories();
+
   if (window.showSommelier === true) {
     setupSommelierUI();
   } else {
-    const sommelierBtn = document.getElementById("sommelierBtn");
-if (sommelierBtn && window.showSommelier === true) {
-  sommelierBtn.style.display = "block";
-}
-    if (sommelierBtn) sommelierBtn.remove();
-    const tooltip = document.getElementById("tooltipSommelier");
-    if (tooltip) tooltip.remove();
+    document.getElementById("sommelierBtn")?.remove();
+    document.getElementById("tooltipSommelier")?.remove();
   }
 }
   window.changeLanguage = changeLanguage;
@@ -724,13 +725,12 @@ function aggiornaAltezzaNavbar() {
     el.style.paddingTop = height + "px";
   });
   // Forza aggiornamento navbar anche da iframe dopo postMessage
+}
 window.addEventListener("message", (event) => {
   if (event.data?.action === "updateNameLive" || event.data?.action === "updateLogoLive") {
     setTimeout(() => aggiornaAltezzaNavbar(), 30);
   }
 });
-}
-
 function toggleSommelier() {
   const useCustom = window.paletteOverrideLive || ristorante?.palette_color === "custom";
   const overlay = document.getElementById('sommelierOverlay');
@@ -1475,7 +1475,7 @@ if (!localStorage.getItem("sommelier_seen")) {
 
     const tooltip = document.createElement("div");
     tooltip.id = "tooltipSommelier";
-    tooltip.innerText = "Fatti dare una mano dal nostro sommelier artificiale";
+    tooltip.innerText = translations[currentLang].sommelierTooltip;
     document.body.appendChild(tooltip);
 
     const overlay = document.createElement("div");
@@ -2034,6 +2034,8 @@ function toggleWineTypeDropdown() {
   }
 
   const rect = button.getBoundingClientRect();
+  const popupRect = document.getElementById("sommelierPopup")?.getBoundingClientRect();
+  const top = popupRect ? (rect.bottom + popupRect.top) : rect.bottom;
 
   // ✅ Scroll del documento + compensazione del popup scrollabile
   const popupScroll = document.getElementById("sommelierPopup")?.scrollTop || 0;
@@ -2097,7 +2099,7 @@ function mostraPopupDescrizione(vino) {
     <div class="popup-descrizione">
       <button class="close-btn" onclick="this.closest('.popup-overlay').remove()">✖</button>
       <h3>${vino.nome}${vino.annata ? ` (${vino.annata})` : ""}</h3>
-      <div id="descrizioneTesto">Sto caricando una descrizione...</div>
+      <div id="descrizioneTesto">${translations[currentLang].loadingDescription}</div>
     </div>
   `;
   document.body.appendChild(overlay);
