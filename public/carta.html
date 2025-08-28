@@ -184,24 +184,33 @@ button, .save-btn {
   100% { box-shadow:0 0 0 16px rgba(0,0,0,0), 0 10px 24px rgba(0,0,0,.18); }
 }
 
-/* TOOLTIP */
+/* TOOLTIP (pos. gestita da JS; animiamo SOLO il contenuto interno) */
 #tooltipSommelier{
-  position:fixed;
-  bottom:84px;
-  left:50%;
-  transform:translateX(-50%);
+  position: fixed;
+  display: none;
+  z-index: 9999;
   background:#fff;
   border:1px solid #ccc;
   border-radius:12px;
   padding:10px 14px;
   box-shadow:0 2px 8px rgba(0,0,0,0.1);
   font-size:.9em;
-  animation:tooltipSlide 3s ease-in-out;
-  z-index:999;
-  display:none;
   max-width:calc(100vw - 40px);
   text-align:center;
 }
+
+/* il contenuto interno entra/esce in fade+slide verticale */
+#tooltipSommelier .tip-content{
+  animation: tipFade 2.2s ease;
+}
+
+@keyframes tipFade{
+  0%   { opacity:0; transform: translateY(10px); }
+  20%  { opacity:1; transform: translateY(0); }
+  80%  { opacity:1; transform: translateY(0); }
+  100% { opacity:0; transform: translateY(-8px); }
+}
+
 @media (max-width:420px){
   #sommelierBtn{ height:48px; padding:0 12px; font-size:.9em; }
 }
@@ -692,7 +701,8 @@ if (sendBtn && translations[currentLang].sendButton) {
 }
 const tooltip = document.getElementById("tooltipSommelier");
 if (tooltip && translations[currentLang].sommelierTooltip) {
-  tooltip.innerText = translations[currentLang].sommelierTooltip;
+  const inner = tooltip.querySelector(".tip-content") || tooltip;
+  inner.textContent = translations[currentLang].sommelierTooltip;
 }
 
 const priceAnyOpt = document.querySelector('#priceFilter option[value=""]');
@@ -1472,16 +1482,15 @@ btn.innerHTML = `
 `;
 document.body.appendChild(btn);
 
-// crea prima il tooltip…
 const tooltip = document.createElement("div");
 tooltip.id = "tooltipSommelier";
-tooltip.innerText = translations[currentLang].sommelierTooltip;
+tooltip.innerHTML = `<div class="tip-content">${translations[currentLang].sommelierTooltip}</div>`;
 document.body.appendChild(tooltip);
 
 // …poi fai pulse + mostra tooltip (solo alla prima volta)
 if (!localStorage.getItem("sommelier_seen")) {
   btn.classList.add("pulse");
-  showSommelierTooltipOnce();
+  startSommelierTooltipCycle();
 }
 
     const overlay = document.createElement("div");
@@ -1552,29 +1561,10 @@ btn.addEventListener("click", () => {
   // segna come visto → rimuovi pulse
   localStorage.setItem("sommelier_seen", "1");
   btn.classList.remove("pulse");
+  stopSommelierTooltipCycle(); // 👈 niente più ripetizioni
 });
 
   aggiornaEtichettaCategorie();
-}
-function showSommelierTooltipOnce() {
-  const tip = document.getElementById("tooltipSommelier");
-  const btn = document.getElementById("sommelierBtn");
-  if (!tip || !btn) return;
-
-  // mostra
-  tip.style.display = "block";
-
-  // auto-hide dopo 3.5s o al primo click/scroll/hover
-  const hide = () => { tip.style.display = "none"; cleanup(); };
-  const cleanup = () => {
-    document.removeEventListener("click", hide);
-    window.removeEventListener("scroll", hide);
-    btn.removeEventListener("mouseenter", hide);
-  };
-  setTimeout(hide, 3500);
-  document.addEventListener("click", hide, { once:true });
-  window.addEventListener("scroll", hide, { once:true });
-  btn.addEventListener("mouseenter", hide, { once:true });
 }
 
     window.closeSommelierPopup = function () {
@@ -2167,6 +2157,81 @@ function mostraPopupDescrizione(vino) {
     overlay.querySelector("#descrizioneTesto").innerText = "Errore durante il recupero della descrizione.";
   });
 }
+
+function positionTooltipOverButton() {
+  const tip = document.getElementById("tooltipSommelier");
+  const btn = document.getElementById("sommelierBtn");
+  if (!tip || !btn) return;
+
+  // renderizza offscreen per calcolare dimensioni
+  tip.style.visibility = "hidden";
+  tip.style.display = "block";
+  const tipRect = tip.getBoundingClientRect();
+
+  const b = btn.getBoundingClientRect();
+  const margin = 10; // distanza dal bottone
+  let left = b.left + (b.width / 2) - (tipRect.width / 2);
+  let top  = b.top - margin - tipRect.height;
+
+  // clamp entro viewport
+  const minX = 8;
+  const maxX = window.innerWidth - tipRect.width - 8;
+  left = Math.max(minX, Math.min(maxX, left));
+  top  = Math.max(8, top);
+
+  tip.style.left = `${left}px`;
+  tip.style.top  = `${top}px`;
+  tip.style.visibility = "visible";
+}
+
+function showTooltipOnceAnimated() {
+  const tip = document.getElementById("tooltipSommelier");
+  if (!tip) return;
+  positionTooltipOverButton();
+  tip.style.display = "block";
+
+  // riavvia l’animazione sul contenuto
+  const inner = tip.querySelector(".tip-content");
+  if (inner) {
+    inner.style.animation = "none";
+    // force reflow
+    void inner.offsetHeight;
+    inner.style.animation = "";
+  }
+
+  // auto-hide alla fine dell’animazione (~2.2s)
+  clearTimeout(window._sommTipHideT);
+  window._sommTipHideT = setTimeout(() => {
+    tip.style.display = "none";
+  }, 2300);
+}
+
+function startSommelierTooltipCycle() {
+  stopSommelierTooltipCycle();
+  // prima comparsa rapida
+  showTooltipOnceAnimated();
+  // poi ripeti in modo soft ogni 12s
+  window._sommTipTimer = setInterval(() => {
+    showTooltipOnceAnimated();
+  }, 12000);
+}
+
+function stopSommelierTooltipCycle() {
+  clearInterval(window._sommTipTimer);
+  clearTimeout(window._sommTipHideT);
+  const tip = document.getElementById("tooltipSommelier");
+  if (tip) tip.style.display = "none";
+}
+
+// se l’utente ridimensiona / ruota, riposiziona SOLO se visibile
+window.addEventListener("resize", () => {
+  const tip = document.getElementById("tooltipSommelier");
+  if (tip && tip.style.display === "block") positionTooltipOverButton();
+});
+window.addEventListener("scroll", () => {
+  const tip = document.getElementById("tooltipSommelier");
+  if (tip && tip.style.display === "block") positionTooltipOverButton();
+});
 
 </script>
 </body>
