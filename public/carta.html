@@ -151,6 +151,7 @@ button, .save-btn {
 }
 
 /* BOTTONE SOMMELIER */
+/* BOTTONE SOMMELIER */
 #sommelierBtn{
   position:fixed;
   bottom:16px;
@@ -171,20 +172,14 @@ button, .save-btn {
   z-index:1000;
   box-shadow:0 10px 24px rgba(0,0,0,.18);
 }
-#sommelierBtn img{
-  width:24px; height:24px; border-radius:50%; object-fit:cover;
-}
-#sommelierBtn.pulse::after{
-  content:"";
-  position:absolute; inset:-6px;
-  border:2px solid rgba(255,255,255,.8);
-  border-radius:999px;
-  opacity:0; pointer-events:none;
-  animation:sommPulse 2s ease-out infinite;
+
+/* 🔁 nuovo effetto pulse */
+#sommelierBtn.pulse{
+  animation:sommPulse 1.8s ease-out infinite;
 }
 @keyframes sommPulse{
-  0%{opacity:.6; transform:scale(1)}
-  100%{opacity:0; transform:scale(1.25)}
+  0%   { box-shadow:0 0 0 0 rgba(0,0,0,.22), 0 10px 24px rgba(0,0,0,.18); }
+  100% { box-shadow:0 0 0 16px rgba(0,0,0,0), 0 10px 24px rgba(0,0,0,.18); }
 }
 
 /* TOOLTIP */
@@ -1020,6 +1015,12 @@ const res = await fetch(`${SUPABASE_URL}/rest/v1/ristoranti?select=subscription_
   ristorante = data[0]; // senza const
   const gender = ristorante?.sommelier_gender || "uomo";
 ristoranteSommelierURL = ristorante.sommelier_url || (gender === "donna" ? "sommelier_femmina.png" : "sommelier.png");
+// aggiorna avatar nel bottone (se già creato) e fallback
+const btnImg = document.querySelector('#sommelierBtn img');
+if (btnImg) {
+  btnImg.src = ristoranteSommelierURL;
+  btnImg.onerror = () => { btnImg.onerror = null; btnImg.src = (gender === "donna" ? "sommelier_femmina.png" : "sommelier.png"); };
+}
 
 if (ristorante.font) {
   document.body.style.fontFamily = ristorante.font;
@@ -1463,7 +1464,8 @@ const btn = document.createElement("button");
 btn.id = "sommelierBtn";
 btn.setAttribute("aria-label", translations[currentLang].sommelierBtn || "Sommelier");
 btn.innerHTML = `
-  <img src="${ristoranteSommelierURL || 'sommelier.png'}" alt="" />
+  <img src="${ristoranteSommelierURL || 'sommelier.png'}" alt=""
+       onerror="this.onerror=null;this.src='${(ristorante?.sommelier_gender||'uomo')==='donna'?'sommelier_femmina.png':'sommelier.png'}'"/>
   <span class="label translate-label" data-key="sommelierBtn">${translations[currentLang].sommelierBtn}</span>
 `;
 document.body.appendChild(btn);
@@ -1471,6 +1473,7 @@ document.body.appendChild(btn);
 // pulse finché non è stato aperto almeno una volta
 if (!localStorage.getItem("sommelier_seen")) {
   btn.classList.add("pulse");
+  showSommelierTooltipOnce(); // 👈 finalmente lo vediamo
 }
 
     const tooltip = document.createElement("div");
@@ -1549,6 +1552,26 @@ btn.addEventListener("click", () => {
 });
 
   aggiornaEtichettaCategorie();
+}
+function showSommelierTooltipOnce() {
+  const tip = document.getElementById("tooltipSommelier");
+  const btn = document.getElementById("sommelierBtn");
+  if (!tip || !btn) return;
+
+  // mostra
+  tip.style.display = "block";
+
+  // auto-hide dopo 3.5s o al primo click/scroll/hover
+  const hide = () => { tip.style.display = "none"; cleanup(); };
+  const cleanup = () => {
+    document.removeEventListener("click", hide);
+    window.removeEventListener("scroll", hide);
+    btn.removeEventListener("mouseenter", hide);
+  };
+  setTimeout(hide, 3500);
+  document.addEventListener("click", hide, { once:true });
+  window.addEventListener("scroll", hide, { once:true });
+  btn.addEventListener("mouseenter", hide, { once:true });
 }
 
     window.closeSommelierPopup = function () {
