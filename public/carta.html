@@ -201,7 +201,8 @@ button, .save-btn {
 
 /* il contenuto interno entra/esce in fade+slide verticale */
 #tooltipSommelier .tip-content{
-  animation: tipFade 2.2s ease;
+  animation: tipFade 2.2s ease both; /* 'both' = niente flash finale */
+  will-change: transform, opacity;
 }
 
 @keyframes tipFade{
@@ -312,11 +313,6 @@ button, .save-btn {
 @keyframes fadeSlideIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
-}
-@keyframes tooltipSlide {
-  0% { opacity: 0; transform: translateY(10px); }
-  50% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(-10px); }
 }
 
 /* GLASS EFFECT */
@@ -2190,20 +2186,16 @@ function showTooltipOnceAnimated() {
   positionTooltipOverButton();
   tip.style.display = "block";
 
-  // riavvia l’animazione sul contenuto
+  // riavvia animazione e nascondi a fine animazione (niente timer)
   const inner = tip.querySelector(".tip-content");
   if (inner) {
     inner.style.animation = "none";
-    // force reflow
-    void inner.offsetHeight;
-    inner.style.animation = "";
+    void inner.offsetHeight;                 // reflow
+    inner.style.animation = "tipFade 2.2s ease both";
+    inner.addEventListener("animationend", () => {
+      tip.style.display = "none";
+    }, { once: true });
   }
-
-  // auto-hide alla fine dell’animazione (~2.2s)
-  clearTimeout(window._sommTipHideT);
-  window._sommTipHideT = setTimeout(() => {
-    tip.style.display = "none";
-  }, 2300);
 }
 
 function startSommelierTooltipCycle() {
