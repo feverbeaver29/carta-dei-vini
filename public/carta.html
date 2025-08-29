@@ -5,6 +5,29 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Raleway&family=Dancing+Script&family=Montserrat&family=Roboto&family=Edu+NSW+ACT+Hand+Pre&family=Lavishly+Yours&family=Kolker+Brush&family=Pacifico&family=Indie+Flower&family=Cormorant+Garamond&family=Great+Vibes&family=Bebas+Neue&family=Merriweather&family=Abril+Fatface&family=Lobster&family=Oswald&family=Amatic+SC&family=Bitter&family=Quicksand&display=swap" rel="stylesheet">
 <title>Carta dei Vini</title>
 <style id="dynamic-style">
+  .helper-banner{
+  position: relative;
+  z-index: 900;
+  margin: 8px 16px 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid;
+  box-shadow: 0 2px 4px rgba(0,0,0,.08);
+}
+
+/* si adatta ai colori/palette esistenti */
+:root .helper-banner{
+  background: var(--bg-default, #fff9f4);
+  border-color: #ddd;
+  color: #333;
+}
+
+@media (max-width:480px){
+  .helper-banner{ margin: 6px 10px 0; padding: 8px 12px; font-size: .95em; }
+}
+
 :root {
   --accent-color: #b00;
   --bg-default: #fff9f4;
@@ -422,6 +445,10 @@ button, .save-btn {
   </select>
 </nav>
 
+<div id="helperBanner" class="helper-banner" aria-live="polite">
+  Scegli una categoria!
+</div>
+
 <div id="app" class="flipbook">
   <div class="category-list page" id="category-list"></div>
   <div class="subcategory-list page" id="subcategory-list"></div>
@@ -576,6 +603,11 @@ const translations = {
     sommelierBtn: "侍酒师",
   }
 };
+
+function setHelper(text){
+  const el = document.getElementById('helperBanner');
+  if (el) el.textContent = text;
+}
 
   function getContrastingTextColor(bgColor) {
   if (!bgColor) return "#000000";
@@ -1338,6 +1370,7 @@ function goToCategories() {
   if (catList) catList.style.display = "block";
   if (subcatList) subcatList.style.display = "none";
   if (wineList) wineList.style.display = "none";
+  setHelper('Scegli una categoria!');
 }
 function buildPriceHTML(w){
   const chips = [];
@@ -1373,6 +1406,7 @@ function buildPriceHTML(w){
 }
 
 function showWinesBySubcategory(subcat) {
+  setHelper('Clicca sul vino per maggiori dettagli.');
   currentView = 'wines';
   const wineList = document.getElementById('wine-list');
   if (wineList) wineList.style.display = 'block';
@@ -1846,6 +1880,7 @@ const originalShowCategories = window.showCategories;
 const originalShowSubcategories = window.showSubcategories;
 
 window.showCategories = async function (categories) {
+  setHelper('Scegli una categoria!');
   const seen = new Map();
   wines.forEach(w => {
     const key = normalize(w.categoria);
@@ -1915,6 +1950,7 @@ container.appendChild(div);                 // ✅ SEMPRE fuori
 
 window.showSubcategories = function (category) {
   currentCategory = category;
+  setHelper(String(category).toUpperCase());
   currentView = 'subcategory';
   const seen = new Map();
   wines.forEach(w => {
