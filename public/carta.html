@@ -1633,7 +1633,6 @@ btn.addEventListener("click", () => {
   // segna come visto → rimuovi pulse
   localStorage.setItem("sommelier_seen", "1");
   btn.classList.remove("pulse");
-  stopSommelierTooltipCycle(); // 👈 niente più ripetizioni
 });
 
   aggiornaEtichettaCategorie();
