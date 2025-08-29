@@ -1922,7 +1922,7 @@ const originalShowCategories = window.showCategories;
 const originalShowSubcategories = window.showSubcategories;
 
 window.showCategories = async function (categories) {
-  setHelper('Scegli una categoria!');
+  setHelperByKey('helperChooseCategory');
   const seen = new Map();
   wines.forEach(w => {
     const key = normalize(w.categoria);
