@@ -481,6 +481,8 @@ const translations = {
     anyPrice: "Indifferente",   // it
     motive:   "Motivazione",
     sommelierBtn: "Sommelier",
+    helperChooseCategory: "Scegli una categoria!",          // it
+    helperClickWine: "Clicca sul vino per maggiori dettagli." // it
   },
   en: {
     wineList: "Wine List",
@@ -505,6 +507,8 @@ const translations = {
     anyPrice: "Any",
     motive:   "Rationale",
     sommelierBtn: "Sommelier",
+    helperChooseCategory: "Choose a category!",        
+    helperClickWine: "Click a wine for details." // it
   },
   fr: {
     wineList: "Carte des Vins",
@@ -529,6 +533,8 @@ const translations = {
     anyPrice: "Sans préférence",
     motive:   "Justification",
     sommelierBtn: "Sommelier",
+    helperChooseCategory: "Choisissez une catégorie !",          // it
+    helperClickWine: "Cliquez sur le vin pour plus de détails." // it
   },
   de: {
     wineList: "Weinkarte",
@@ -553,6 +559,8 @@ const translations = {
     anyPrice: "Beliebig",
     motive:   "Begründung",
     sommelierBtn: "Sommelier",
+    helperChooseCategory: "Wählen Sie eine Kategorie!",          // it
+    helperClickWine: "Klicken Sie auf den Wein, um weitere Details zu erhalten." // it
   },
   es: {
     wineList: "Carta de Vinos",
@@ -577,6 +585,8 @@ const translations = {
     anyPrice: "Cualquiera",
     motive:   "Motivación",
     sommelierBtn: "Sumiller",
+    helperChooseCategory: "¡Elige una categoría!",          // it
+    helperClickWine: "Haz clic en el vino para más detalles." // it
   },
   zh: {
     wineList: "酒单",
@@ -601,12 +611,36 @@ const translations = {
     anyPrice: "不限",
     motive:   "理由",
     sommelierBtn: "侍酒师",
+    helperChooseCategory: "选择一个类别！",          // it
+    helperClickWine: "点击葡萄酒了解更多详情。" // it
   }
 };
 
 function setHelper(text){
   const el = document.getElementById('helperBanner');
   if (el) el.textContent = text;
+}
+
+function setHelperByKey(key){
+  const t = translations[currentLang];
+  if (!t || !t[key]) return;
+  setHelper(t[key]);
+}
+
+async function setHelperCategoryName(category){
+  let label = String(category || "");
+  if (currentLang !== "it" && label) {
+    try {
+      const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-categoria", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: label, targetLang: currentLang })
+      });
+      const data = await res.json();
+      label = (data.text || label).trim();
+    } catch(e){ /* fallback: label originale */ }
+  }
+  setHelper(label.toUpperCase());
 }
 
   function getContrastingTextColor(bgColor) {
@@ -677,6 +711,14 @@ function changeLanguage() {
   }
 
   applyTranslations();
+  // refresh banner in base alla vista corrente
+if (currentView === 'categories') {
+  setHelperByKey('helperChooseCategory');
+} else if (currentView === 'subcategory') {
+  setHelperCategoryName(currentCategory);
+} else if (currentView === 'wines') {
+  setHelperByKey('helperClickWine');
+}
   showCategories();
 
   if (window.showSommelier === true) {
@@ -1370,7 +1412,7 @@ function goToCategories() {
   if (catList) catList.style.display = "block";
   if (subcatList) subcatList.style.display = "none";
   if (wineList) wineList.style.display = "none";
-  setHelper('Scegli una categoria!');
+  setHelperByKey('helperChooseCategory');
 }
 function buildPriceHTML(w){
   const chips = [];
@@ -1406,7 +1448,7 @@ function buildPriceHTML(w){
 }
 
 function showWinesBySubcategory(subcat) {
-  setHelper('Clicca sul vino per maggiori dettagli.');
+  setHelperByKey('helperClickWine');
   currentView = 'wines';
   const wineList = document.getElementById('wine-list');
   if (wineList) wineList.style.display = 'block';
@@ -1950,7 +1992,7 @@ container.appendChild(div);                 // ✅ SEMPRE fuori
 
 window.showSubcategories = function (category) {
   currentCategory = category;
-  setHelper(String(category).toUpperCase());
+  setHelperCategoryName(category);
   currentView = 'subcategory';
   const seen = new Map();
   wines.forEach(w => {
