@@ -1559,11 +1559,12 @@ tooltip.id = "tooltipSommelier";
 tooltip.innerHTML = `<div class="tip-content">${translations[currentLang].sommelierTooltip}</div>`;
 document.body.appendChild(tooltip);
 
-// …poi fai pulse + mostra tooltip (solo alla prima volta)
+// Pulse solo se mai cliccato
 if (!localStorage.getItem("sommelier_seen")) {
   btn.classList.add("pulse");
-  startSommelierTooltipCycle();
 }
+// Tooltip SEMPRE attivo (anche dopo il click)
+startSommelierTooltipCycle();
 
     const overlay = document.createElement("div");
     overlay.id = "sommelierOverlay";
