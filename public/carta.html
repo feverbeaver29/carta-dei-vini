@@ -5,16 +5,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Raleway&family=Dancing+Script&family=Montserrat&family=Roboto&family=Edu+NSW+ACT+Hand+Pre&family=Lavishly+Yours&family=Kolker+Brush&family=Pacifico&family=Indie+Flower&family=Cormorant+Garamond&family=Great+Vibes&family=Bebas+Neue&family=Merriweather&family=Abril+Fatface&family=Lobster&family=Oswald&family=Amatic+SC&family=Bitter&family=Quicksand&display=swap" rel="stylesheet">
 <title>Carta dei Vini</title>
 <style id="dynamic-style">
-  .helper-banner{
+.helper-banner{
   position: relative;
   z-index: 900;
-  margin: 8px 16px 0;
-  padding: 10px 14px;
-  border-radius: 12px;
+  margin: 8px 16px 6px;     /* 8px sotto navbar, 6px sopra le categorie */
+  padding: 0;               /* niente box */
   font-weight: 600;
   text-align: center;
-  border: 1px solid;
-  box-shadow: 0 2px 4px rgba(0,0,0,.08);
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  color: inherit;
 }
 
 /* si adatta ai colori/palette esistenti */
@@ -25,7 +26,7 @@
 }
 
 @media (max-width:480px){
-  .helper-banner{ margin: 6px 10px 0; padding: 8px 12px; font-size: .95em; }
+  .helper-banner{ margin: 6px 10px 4px; font-size: .95em; }
 }
 
 :root {
@@ -141,7 +142,6 @@ button, .save-btn {
 /* CONTENUTO */
 .category-list, .subcategory-list, .wine-list {
   padding: 0.5em 1em;
-  padding: 80px 1em 0; /* fallback se JS non parte subito */
 }
 
 .category, .subcategory, .wine-card {
@@ -790,20 +790,18 @@ if (sBtn) {
 function aggiornaAltezzaNavbar() {
   const nav = document.querySelector("nav");
   const nameBlock = document.getElementById("restaurantName");
-
   if (!nav || !nameBlock) return;
 
   const rect = nameBlock.getBoundingClientRect();
-  const height = rect.height + 20;
+  const height = rect.height + 20;      // altezza effettiva navbar
 
   nav.style.minHeight = height + "px";
-  document.body.style.paddingTop = height + "px";
+  document.body.style.paddingTop = height + "px";  // sposta tutta la pagina sotto la navbar
 
-  document.querySelectorAll(".category-list, .subcategory-list, .wine-list").forEach(el => {
-    el.style.paddingTop = height + "px";
-  });
-  // Forza aggiornamento navbar anche da iframe dopo postMessage
+  // ❌ rimuovi il codice che faceva paddingTop sulle liste
 }
+window.addEventListener('resize', aggiornaAltezzaNavbar);
+
 window.addEventListener("message", (event) => {
   if (event.data?.action === "updateNameLive" || event.data?.action === "updateLogoLive") {
     setTimeout(() => aggiornaAltezzaNavbar(), 30);
