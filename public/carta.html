@@ -5,28 +5,30 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Raleway&family=Dancing+Script&family=Montserrat&family=Roboto&family=Edu+NSW+ACT+Hand+Pre&family=Lavishly+Yours&family=Kolker+Brush&family=Pacifico&family=Indie+Flower&family=Cormorant+Garamond&family=Great+Vibes&family=Bebas+Neue&family=Merriweather&family=Abril+Fatface&family=Lobster&family=Oswald&family=Amatic+SC&family=Bitter&family=Quicksand&display=swap" rel="stylesheet">
 <title>Carta dei Vini</title>
 <style id="dynamic-style">
-  #filterBtn {
+#filterBtn {
   position: fixed;
   bottom: 16px;
   right: 16px;
   background: var(--accent-color);
   color: #fff;
   border: none;
-  height: 52px;
-  padding: 0 18px;
-  border-radius: 999px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.95em;
-  font-weight: 600;
+  justify-content: center;
   cursor: pointer;
   z-index: 1000;
   box-shadow: 0 10px 24px rgba(0,0,0,.18);
+  transition: background-color 0.3s ease;
+}
+#filterBtn:hover {
+  background: #800; /* o un tono più scuro della palette */
 }
 #filterBtn img {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
 }
 
 .helper-banner{
@@ -1374,6 +1376,12 @@ if (nav) {
   nav.style.backgroundColor = typeof navbarColor !== "undefined" ? navbarColor : background;
 }
 
+const filterBtn = document.getElementById("filterBtn");
+if (filterBtn) {
+  filterBtn.style.backgroundColor = primary;
+  filterBtn.style.borderColor = primary;
+}
+
 window.paletteColors = {
   background,
   cardBackground,
@@ -1416,6 +1424,12 @@ if (sommelierBtn) {
 if (ristorante.navbar_color) {
   const nav = document.querySelector("nav");
   if (nav) nav.style.backgroundColor = ristorante.navbar_color;
+}
+const filterBtn = document.getElementById("filterBtn");
+if (filterBtn) {
+  if (ristorante.border_color) filterBtn.style.backgroundColor = ristorante.border_color;
+  if (ristorante.border_color) filterBtn.style.borderColor = ristorante.border_color;
+  if (ristorante.text_color) filterBtn.style.color = ristorante.text_color;
 }
 }
 
@@ -2407,8 +2421,7 @@ function applyFilters() {
 
 </script>
 <button id="filterBtn">
-  <img src="images.png" alt="filter icon">
-  <span>Filtra</span>
+  <img src="iconfilter.png" alt="filter icon">
 </button>
 <div id="filterMenu" style="display:none; position:fixed; bottom:70px; right:16px; background:#fff; border:1px solid #ccc; border-radius:12px; padding:12px; box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:2000; min-width:200px;">
   <strong style="display:block; margin-bottom:8px;">Filtra per:</strong>
