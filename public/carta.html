@@ -30,6 +30,43 @@
   width: 26px;
   height: 26px;
 }
+#filterBtnWrapper {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 1000;
+}
+
+#filterBtn {
+  background: var(--accent-color);
+  color: #fff;
+  border: none;
+  width: 52px;   /* stessa altezza Sommelier */
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(0,0,0,.18);
+  transition: background-color 0.3s ease;
+}
+
+#filterBtn img {
+  width: 26px;
+  height: 26px;
+}
+
+.filter-label {
+  margin-top: 4px;
+  font-size: 0.8em;
+  font-weight: 600;
+  color: var(--accent-color);
+  text-align: center;
+}
 
 .helper-banner{
   position: relative;
@@ -2420,9 +2457,12 @@ function applyFilters() {
 }
 
 </script>
-<button id="filterBtn">
-  <img src="iconfilter.png" alt="filter icon">
-</button>
+<div id="filterBtnWrapper">
+  <button id="filterBtn">
+    <img src="iconfilter.png" alt="filter icon">
+  </button>
+  <div class="filter-label">Filtra</div>
+</div>
 <div id="filterMenu" style="display:none; position:fixed; bottom:70px; right:16px; background:#fff; border:1px solid #ccc; border-radius:12px; padding:12px; box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:2000; min-width:200px;">
   <strong style="display:block; margin-bottom:8px;">Filtra per:</strong>
   <div id="filterOptions"></div>
