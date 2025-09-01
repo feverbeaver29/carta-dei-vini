@@ -258,7 +258,8 @@ button, .save-btn {
 #tooltipSommelier{
   position: fixed;
   display: none;
-  z-index: 9999;
+  z-index: 900;          /* sotto a overlay(1000) e dropdown(3000) */
+  pointer-events: none;  /* non blocca i click sotto */
   background:#fff;
   border:1px solid #ccc;
   border-radius:12px;
@@ -896,6 +897,7 @@ if (input) {
 if (inputEl) inputEl.focus();
   history.pushState({ sommelier: true }, '', '#sommelier');
   sommelierAperto = true;
+  document.getElementById('tooltipSommelier')?.style.setProperty('display','none','important');
 }
 
 function closeSommelierPopup() {
