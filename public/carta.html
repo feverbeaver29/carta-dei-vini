@@ -2420,10 +2420,9 @@ function setupFilterUI() {
   applyFilters();
 }
 
-function applyFilters() {
-  const checked = Array.from(document.querySelectorAll("#filterOptions input:checked")).map(cb => cb.value);
-
-  const formatsMap = {
+function getCheckedFormats() {
+  const ids = Array.from(document.querySelectorAll("#filterOptions input:checked")).map(cb => cb.value);
+  const map = {
     bottle: "prezzo",
     glass: "prezzo_bicchiere",
     quarter: "prezzo_025",
@@ -2432,19 +2431,67 @@ function applyFilters() {
     onehalf: "prezzo_15",
     three: "prezzo_3l"
   };
+  return { ids, map };
+}
 
-  const wineList = document.getElementById("wine-list");
-  if (!wineList) return;
+function winesMatchFormats(list, ids, map) {
+  if (!ids.length) return []; // nessun formato selezionato → nessun vino
+  return list.filter(w => ids.some(f => w[map[f]]));
+}
 
-  // Nascondi vini che non hanno nessuno dei formati selezionati
-  wineList.querySelectorAll(".wine-card").forEach(card => {
-    const wineName = card.querySelector("strong")?.textContent || "";
-    const wine = wines.find(w => (w.nome || "").trim() === wineName.trim());
-    if (!wine) return;
+function applyFilters() {
+  const { ids, map } = getCheckedFormats();
+  // 1) ricava i vini che hanno almeno uno dei formati scelti
+  const filteredWines = winesMatchFormats(wines, ids, map);
 
-    const hasFormat = checked.some(f => wine[formatsMap[f]]);
-    card.style.display = hasFormat ? "block" : "none";
-  });
+  // 2) capiamo dove siamo e rigeneriamo l’UI di conseguenza
+  if (currentView === 'categories') {
+    // mostro solo le categorie che hanno almeno un vino valido
+    const haveCats = Array.from(new Set(filteredWines.map(w => w.categoria).filter(Boolean)));
+    const ordered = (categoriaOrder && categoriaOrder.length)
+      ? haveCats.sort((a,b) => categoriaOrder.indexOf(normalize(a)) - categoriaOrder.indexOf(normalize(b)))
+      : haveCats;
+    const container = document.getElementById('category-list');
+    container.innerHTML = '';
+    ordered.forEach(cat => {
+      const div = document.createElement('div');
+      div.className = 'category';
+      div.textContent = cat;
+      div.onclick = () => showSubcategories(cat);
+      container.appendChild(div);
+    });
+  } else if (currentView === 'subcategory') {
+    // solo le sottocategorie della categoria corrente che hanno un vino valido
+    const list = filteredWines.filter(w => normalize(w.categoria) === normalize(currentCategory));
+    const haveSub = Array.from(new Set(list.map(w => w.sottocategoria).filter(Boolean)));
+    let ordered = haveSub;
+    const order = Object.entries(sottocategoriaOrderMap).find(
+      ([key]) => normalize(key) === normalize(currentCategory)
+    )?.[1] || [];
+    if (order.length) {
+      ordered = haveSub.sort((a,b) => order.indexOf(normalize(a)) - order.indexOf(normalize(b)));
+    }
+    const container = document.getElementById('subcategory-list');
+    container.innerHTML = '';
+    ordered.forEach(sub => {
+      const div = document.createElement('div');
+      div.className = 'subcategory';
+      div.textContent = sub.charAt(0).toUpperCase() + sub.slice(1).toLowerCase();
+      div.onclick = () => showWinesBySubcategory(sub);
+      container.appendChild(div);
+    });
+  } else if (currentView === 'wines') {
+    // siamo nella lista vini: nascondo/mostro le card in base ai formati
+    const wineList = document.getElementById("wine-list");
+    if (!wineList) return;
+    wineList.querySelectorAll(".wine-card").forEach(card => {
+      const wineName = card.querySelector("strong")?.textContent || "";
+      const wine = wines.find(w => (w.nome || "").trim() === wineName.trim());
+      if (!wine) return;
+      const hasFormat = ids.some(f => wine[map[f]]);
+      card.style.display = hasFormat ? "block" : "none";
+    });
+  }
 }
 
 </script>
