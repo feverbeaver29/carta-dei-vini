@@ -1519,7 +1519,12 @@ function showWinesBySubcategory(subcat) {
   const wineList = document.getElementById('wine-list');
   if (wineList) wineList.style.display = 'block';
   wineList.innerHTML = '';
-  const filtered = wines.filter(w => normalize(w.categoria) === normalize(currentCategory) && normalize(w.sottocategoria) === normalize(subcat));
+  const { ids, map } = getCheckedFormats();
+const allInSub = wines.filter(w =>
+  normalize(w.categoria) === normalize(currentCategory) &&
+  normalize(w.sottocategoria) === normalize(subcat)
+);
+const filtered = winesMatchFormats(allInSub, ids, map);
   filtered.forEach(w => {
     const card = document.createElement('div');
 card.className = 'wine-card';
