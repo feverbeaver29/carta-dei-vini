@@ -9,16 +9,12 @@
 #filterBtn:hover {
   background: #800; /* o un tono più scuro della palette */
 }
-#filterBtn img {
-  width: 26px;
-  height: 26px;
-}
+
 #filterBtnWrapper{
   position: fixed;
   bottom: 16px;
   right: 16px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   z-index: 1000;
 }
@@ -27,26 +23,32 @@
   background: var(--accent-color);
   color: #fff;
   border: none;
-  width: 52px;   /* stessa misura del Sommelier */
+  width: 52px;               /* uguale al Sommelier */
   height: 52px;
   border-radius: 50%;
   display: flex;
+  flex-direction: column;    /* icona sopra, testo sotto */
   align-items: center;
   justify-content: center;
+  gap: 2px;                  /* spazio tra icona e testo */
   cursor: pointer;
   box-shadow: 0 10px 24px rgba(0,0,0,.18);
   transition: background-color .3s ease, transform .15s ease;
 }
 #filterBtn:active{ transform: scale(.97); }
 
-#filterBtn img{ width: 26px; height: 26px; }
+#filterBtn img{
+  width: 18px;               /* più piccolo per far entrare il testo */
+  height: 18px;
+  display: block;
+}
 
-.filter-label{
-  margin-top: 4px;
-  font-size: .8em;
-  font-weight: 600;
-  color: #000;          /* <-- sempre NERA */
-  text-align: center;
+#filterBtn .filter-inside-label{
+  line-height: 1;
+  font-size: 10px;           /* compatto ma leggibile */
+  font-weight: 700;
+  text-transform: uppercase; /* coerente con “FILTRA” */
+  color: #fff;               /* sempre bianco sul bottone colorato */
 }
 
 .helper-banner{
@@ -2445,10 +2447,10 @@ function applyFilters() {
 
 </script>
 <div id="filterBtnWrapper">
-  <button id="filterBtn">
-    <img src="iconfilter.png" alt="filter icon">
+  <button id="filterBtn" aria-label="Filtra">
+    <img src="iconfilter.png" alt="" aria-hidden="true">
+    <span class="filter-inside-label translate-label" data-key="filterLabel">Filtra</span>
   </button>
-  <div class="filter-label translate-label" data-key="filterLabel">Filtra</div>
 </div>
 
 <div id="filterMenu" style="display:none; position:fixed; bottom:70px; right:16px; background:#fff; border:1px solid #ccc; border-radius:12px; padding:12px; box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:2000; min-width:200px;">
