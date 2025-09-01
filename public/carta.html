@@ -5,6 +5,30 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Raleway&family=Dancing+Script&family=Montserrat&family=Roboto&family=Edu+NSW+ACT+Hand+Pre&family=Lavishly+Yours&family=Kolker+Brush&family=Pacifico&family=Indie+Flower&family=Cormorant+Garamond&family=Great+Vibes&family=Bebas+Neue&family=Merriweather&family=Abril+Fatface&family=Lobster&family=Oswald&family=Amatic+SC&family=Bitter&family=Quicksand&display=swap" rel="stylesheet">
 <title>Carta dei Vini</title>
 <style id="dynamic-style">
+  #filterBtn {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  background: var(--accent-color);
+  color: #fff;
+  border: none;
+  height: 52px;
+  padding: 0 18px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95em;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 0 10px 24px rgba(0,0,0,.18);
+}
+#filterBtn img {
+  width: 22px;
+  height: 22px;
+}
+
 .helper-banner{
   position: relative;
   z-index: 900;
@@ -2055,6 +2079,7 @@ await fetchCategoryOrder();
 await loadRestaurantData();
 if (ristorante && RESTAURANT_ID) {
   await loadWineData();
+  setupFilterUI();
   showCategories();
 }
 
@@ -2303,6 +2328,91 @@ window.addEventListener("scroll", () => {
   if (tip && tip.style.display === "block") positionTooltipOverButton();
 });
 
+function setupFilterUI() {
+  const btn = document.getElementById("filterBtn");
+  const menu = document.getElementById("filterMenu");
+  const optionsContainer = document.getElementById("filterOptions");
+
+  // Trova i formati disponibili nei vini
+  const formatsMap = {
+    bottle: { label: "Bottiglia", key: "prezzo" },
+    glass: { label: "Bicchiere", key: "prezzo_bicchiere" },
+    quarter: { label: "1/4 litro", key: "prezzo_025" },
+    half: { label: "1/2 litro", key: "prezzo_05" },
+    threequart: { label: "0,375 litro", key: "prezzo_0375" },
+    onehalf: { label: "1,5 litri", key: "prezzo_15" },
+    three: { label: "3 litri", key: "prezzo_3l" }
+  };
+
+  const availableFormats = {};
+  wines.forEach(w => {
+    for (const [id, f] of Object.entries(formatsMap)) {
+      if (w[f.key]) availableFormats[id] = f;
+    }
+  });
+
+  // Popola le checkbox
+  optionsContainer.innerHTML = "";
+  for (const [id, f] of Object.entries(availableFormats)) {
+    const label = document.createElement("label");
+    label.style.display = "flex";
+    label.style.alignItems = "center";
+    label.style.gap = "6px";
+    label.style.marginBottom = "6px";
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.value = id;
+    cb.checked = true;
+    cb.onchange = applyFilters;
+
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(f.label));
+    optionsContainer.appendChild(label);
+  }
+
+  btn.onclick = () => {
+    menu.style.display = (menu.style.display === "none") ? "block" : "none";
+  };
+
+  applyFilters();
+}
+
+function applyFilters() {
+  const checked = Array.from(document.querySelectorAll("#filterOptions input:checked")).map(cb => cb.value);
+
+  const formatsMap = {
+    bottle: "prezzo",
+    glass: "prezzo_bicchiere",
+    quarter: "prezzo_025",
+    threequart: "prezzo_0375",
+    half: "prezzo_05",
+    onehalf: "prezzo_15",
+    three: "prezzo_3l"
+  };
+
+  const wineList = document.getElementById("wine-list");
+  if (!wineList) return;
+
+  // Nascondi vini che non hanno nessuno dei formati selezionati
+  wineList.querySelectorAll(".wine-card").forEach(card => {
+    const wineName = card.querySelector("strong")?.textContent || "";
+    const wine = wines.find(w => (w.nome || "").trim() === wineName.trim());
+    if (!wine) return;
+
+    const hasFormat = checked.some(f => wine[formatsMap[f]]);
+    card.style.display = hasFormat ? "block" : "none";
+  });
+}
+
 </script>
+<button id="filterBtn">
+  <img src="images.png" alt="filter icon">
+  <span>Filtra</span>
+</button>
+<div id="filterMenu" style="display:none; position:fixed; bottom:70px; right:16px; background:#fff; border:1px solid #ccc; border-radius:12px; padding:12px; box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:2000; min-width:200px;">
+  <strong style="display:block; margin-bottom:8px;">Filtra per:</strong>
+  <div id="filterOptions"></div>
+</div>
 </body>
 </html>
