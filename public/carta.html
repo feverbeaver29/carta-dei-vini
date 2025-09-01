@@ -5,24 +5,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Raleway&family=Dancing+Script&family=Montserrat&family=Roboto&family=Edu+NSW+ACT+Hand+Pre&family=Lavishly+Yours&family=Kolker+Brush&family=Pacifico&family=Indie+Flower&family=Cormorant+Garamond&family=Great+Vibes&family=Bebas+Neue&family=Merriweather&family=Abril+Fatface&family=Lobster&family=Oswald&family=Amatic+SC&family=Bitter&family=Quicksand&display=swap" rel="stylesheet">
 <title>Carta dei Vini</title>
 <style id="dynamic-style">
-#filterBtn {
-  position: fixed;
-  bottom: 16px;
-  right: 16px;
-  background: var(--accent-color);
-  color: #fff;
-  border: none;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 1000;
-  box-shadow: 0 10px 24px rgba(0,0,0,.18);
-  transition: background-color 0.3s ease;
-}
+
 #filterBtn:hover {
   background: #800; /* o un tono più scuro della palette */
 }
@@ -30,7 +13,7 @@
   width: 26px;
   height: 26px;
 }
-#filterBtnWrapper {
+#filterBtnWrapper{
   position: fixed;
   bottom: 16px;
   right: 16px;
@@ -40,11 +23,11 @@
   z-index: 1000;
 }
 
-#filterBtn {
+#filterBtn{
   background: var(--accent-color);
   color: #fff;
   border: none;
-  width: 52px;   /* stessa altezza Sommelier */
+  width: 52px;   /* stessa misura del Sommelier */
   height: 52px;
   border-radius: 50%;
   display: flex;
@@ -52,19 +35,17 @@
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 10px 24px rgba(0,0,0,.18);
-  transition: background-color 0.3s ease;
+  transition: background-color .3s ease, transform .15s ease;
 }
+#filterBtn:active{ transform: scale(.97); }
 
-#filterBtn img {
-  width: 26px;
-  height: 26px;
-}
+#filterBtn img{ width: 26px; height: 26px; }
 
-.filter-label {
+.filter-label{
   margin-top: 4px;
-  font-size: 0.8em;
+  font-size: .8em;
   font-weight: 600;
-  color: var(--accent-color);
+  color: #000;          /* <-- sempre NERA */
   text-align: center;
 }
 
@@ -2461,8 +2442,9 @@ function applyFilters() {
   <button id="filterBtn">
     <img src="iconfilter.png" alt="filter icon">
   </button>
-  <div class="filter-label">Filtra</div>
+  <div class="filter-label translate-label" data-key="filterLabel">Filtra</div>
 </div>
+
 <div id="filterMenu" style="display:none; position:fixed; bottom:70px; right:16px; background:#fff; border:1px solid #ccc; border-radius:12px; padding:12px; box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:2000; min-width:200px;">
   <strong style="display:block; margin-bottom:8px;">Filtra per:</strong>
   <div id="filterOptions"></div>
