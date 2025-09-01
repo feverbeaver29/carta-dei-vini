@@ -1519,10 +1519,6 @@ function showWinesBySubcategory(subcat) {
   const wineList = document.getElementById('wine-list');
   if (wineList) wineList.style.display = 'block';
   wineList.innerHTML = '';
-  if (!filtered.length) {
-  wineList.innerHTML = '<div style="opacity:.7;padding:12px;">Nessun vino con i formati selezionati.</div>';
-  return;
-}
   const { ids, map } = getCheckedFormats();
 const allInSub = wines.filter(w =>
   normalize(w.categoria) === normalize(currentCategory) &&
