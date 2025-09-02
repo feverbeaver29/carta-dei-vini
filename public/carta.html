@@ -2065,14 +2065,17 @@ window.showSubcategories = function (category) {
   currentCategory = category;
   setHelperCategoryName(category);
   currentView = 'subcategory';
+
+  // ⭐️ Prendi i formati selezionati e filtra i vini della categoria
+  const { ids, map } = getCheckedFormats();
+  const inCategory = wines.filter(w => normalize(w.categoria) === normalize(category));
+  const list = (ids && ids.length) ? winesMatchFormats(inCategory, ids, map) : inCategory;
+
+  // Calcola solo le sottocategorie che hanno almeno un vino "list"
   const seen = new Map();
-  wines.forEach(w => {
-    if (normalize(w.categoria) === normalize(category)) {
-      const key = normalize(w.sottocategoria);
-      if (key && !seen.has(key)) {
-        seen.set(key, w.sottocategoria);
-      }
-    }
+  list.forEach(w => {
+    const key = normalize(w.sottocategoria);
+    if (key && !seen.has(key)) seen.set(key, w.sottocategoria);
   });
 
   let orderedKeys = Array.from(seen.keys());
