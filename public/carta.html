@@ -1479,6 +1479,7 @@ function goToCategories() {
   if (subcatList) subcatList.style.display = "none";
   if (wineList) wineList.style.display = "none";
   setHelperByKey('helperChooseCategory');
+  applyFilters();
 }
 function buildPriceHTML(w){
   const chips = [];
@@ -1995,8 +1996,12 @@ const originalShowSubcategories = window.showSubcategories;
 
 window.showCategories = async function (categories) {
   setHelperByKey('helperChooseCategory');
+
+    // ⭐️ prendi i formati selezionati e filtra i vini
+  const { ids, map } = getCheckedFormats();
+  const filtered = winesMatchFormats(wines, ids, map); // ⭐️
   const seen = new Map();
-  wines.forEach(w => {
+  filtered.forEach(w => {
     const key = normalize(w.categoria);
     if (key && !seen.has(key)) {
       seen.set(key, w.categoria);
