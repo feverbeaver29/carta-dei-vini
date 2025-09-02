@@ -765,22 +765,22 @@ function changeLanguage() {
   }
 
   applyTranslations();
-  // refresh banner in base alla vista corrente
+// aggiorna solo la vista corrente
 if (currentView === 'categories') {
-  setHelperByKey('helperChooseCategory');
+  applyFilters();                       // ricostruisce categorie coi filtri attivi
 } else if (currentView === 'subcategory') {
-  setHelperCategoryName(currentCategory);
+  showSubcategories(currentCategory);   // ricostruisce le sottocategorie correnti
 } else if (currentView === 'wines') {
-  setHelperByKey('helperClickWine');
+  showWinesBySubcategory(window.currentSubcategory); // ricostruisce i vini correnti
 }
-  showCategories();
 
-  if (window.showSommelier === true) {
-    setupSommelierUI();
-  } else {
-    document.getElementById("sommelierBtn")?.remove();
-    document.getElementById("tooltipSommelier")?.remove();
-  }
+// sommelier UI come già fai
+if (window.showSommelier === true) {
+  setupSommelierUI();
+} else {
+  document.getElementById("sommelierBtn")?.remove();
+  document.getElementById("tooltipSommelier")?.remove();
+}
 }
   window.changeLanguage = changeLanguage;
 
