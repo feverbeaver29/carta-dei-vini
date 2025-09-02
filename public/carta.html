@@ -5,10 +5,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Raleway&family=Dancing+Script&family=Montserrat&family=Roboto&family=Edu+NSW+ACT+Hand+Pre&family=Lavishly+Yours&family=Kolker+Brush&family=Pacifico&family=Indie+Flower&family=Cormorant+Garamond&family=Great+Vibes&family=Bebas+Neue&family=Merriweather&family=Abril+Fatface&family=Lobster&family=Oswald&family=Amatic+SC&family=Bitter&family=Quicksand&display=swap" rel="stylesheet">
 <title>Carta dei Vini</title>
 <style id="dynamic-style">
-
-#filterBtn:hover {
-  background: #800; /* o un tono più scuro della palette */
-}
+#filterBtn:hover, #searchBtn:hover { background: #800; }
 
 #filterBtnWrapper{
   position: fixed;
@@ -18,37 +15,42 @@
   align-items: center;
   z-index: 1000;
 }
+#searchBtnWrapper{
+  position: fixed;
+  bottom: 16px;
+  left: 16px;   /* ⬅ lato opposto del filtro */
+  display: flex;
+  align-items: center;
+  z-index: 1000;
+}
 
-#filterBtn{
+#filterBtn, #searchBtn{
   background: var(--accent-color);
   color: #fff;
   border: none;
-  width: 52px;               /* uguale al Sommelier */
+  width: 52px;
   height: 52px;
   border-radius: 50%;
   display: flex;
-  flex-direction: column;    /* icona sopra, testo sotto */
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;                  /* spazio tra icona e testo */
+  gap: 2px;
   cursor: pointer;
   box-shadow: 0 10px 24px rgba(0,0,0,.18);
   transition: background-color .3s ease, transform .15s ease;
 }
-#filterBtn:active{ transform: scale(.97); }
+#filterBtn:active, #searchBtn:active{ transform: scale(.97); }
 
-#filterBtn img{
-  width: 18px;               /* più piccolo per far entrare il testo */
-  height: 18px;
-  display: block;
-}
+#filterBtn img, #searchBtn img{ width: 18px; height: 18px; display:block; }
 
-#filterBtn .filter-inside-label{
-  line-height: 1;
-  font-size: 10px;           /* compatto ma leggibile */
-  font-weight: 700;
-  text-transform: uppercase; /* coerente con “FILTRA” */
-  color: #fff;               /* sempre bianco sul bottone colorato */
+#filterBtn .filter-inside-label,
+#searchBtn .filter-inside-label{
+  line-height:1;
+  font-size:10px;
+  font-weight:700;
+  text-transform:uppercase;
+  color:#fff;
 }
 
 .helper-banner{
@@ -1410,6 +1412,12 @@ if (filterBtn) {
   filterBtn.style.borderColor = primary;
 }
 
+const searchBtn = document.getElementById("searchBtn");
+if (searchBtn) {
+  searchBtn.style.backgroundColor = primary;
+  searchBtn.style.borderColor = primary;
+}
+
 window.paletteColors = {
   background,
   cardBackground,
@@ -1459,6 +1467,14 @@ if (filterBtn) {
   if (ristorante.border_color) filterBtn.style.borderColor = ristorante.border_color;
   if (ristorante.text_color) filterBtn.style.color = ristorante.text_color;
 }
+
+const searchBtn = document.getElementById("searchBtn");
+if (searchBtn) {
+  if (ristorante.border_color) searchBtn.style.backgroundColor = ristorante.border_color;
+  if (ristorante.border_color) searchBtn.style.borderColor = ristorante.border_color;
+  if (ristorante.text_color)   searchBtn.style.color = ristorante.text_color;
+}
+
 }
 
 function normalize(str) {
@@ -2537,12 +2553,112 @@ ordered.forEach(async (cat) => {
 
 }
 
+let lastSearchQuery = "";
+let searchResults = [];
+
+window.openSearch = function() {
+  const overlay = document.getElementById('searchOverlay');
+  overlay.style.display = 'flex';
+  const input = document.getElementById('searchInput');
+  input.value = lastSearchQuery || "";
+  setTimeout(() => input.focus(), 40);
+};
+window.closeSearch = function(){ document.getElementById('searchOverlay').style.display='none'; };
+window.handleSearchKey = function(e){ if(e.key==='Enter'){ e.preventDefault(); runSearch(); } };
+window.runSearch = function(){
+  const q = (document.getElementById('searchInput').value||"").trim();
+  lastSearchQuery = q;
+  closeSearch();
+  showSearchResults(q);
+};
+
+window.showSearchResults = function(query){
+  currentView = 'search';
+  const t = translations[currentLang];
+  const wineList = document.getElementById('wine-list');
+  const sub = document.getElementById('subcategory-list');
+  const cat = document.getElementById('category-list');
+  if (cat) cat.style.display = 'none';
+  if (sub) sub.style.display = 'none';
+  if (wineList) wineList.style.display = 'block';
+
+  const norm = s => (s||"").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu,"").trim();
+  const nq = norm(query);
+
+  searchResults = wines.filter(w => nq && [
+    w.nome, w.uvaggio, w.note, w.sottocategoria, w.categoria, w.denominazione
+  ].some(f => norm(f).includes(nq)));
+
+  wineList.innerHTML = "";
+  if (!searchResults.length){
+    wineList.innerHTML = `<div class="wine-card">${t?.noMatch || "Nessun risultato."}</div>`;
+    return;
+  }
+
+  searchResults.forEach(w => {
+    const card = document.createElement('div');
+    card.className = 'wine-card';
+    const annata = w.annata ? ` (${w.annata})` : '';
+    const nomePulito = (w.nome || "").trim();
+    card.innerHTML = `
+      <strong>${nomePulito}${annata}</strong>
+      ${buildPriceHTML(w)}
+      ${w.uvaggio ? `<small>${translations[currentLang].grape}: ${w.uvaggio}</small>` : ""}
+      <div style="margin-top:6px; font-size:.85em; opacity:.8;">
+        <em>${(w.categoria||"").trim()}${w.sottocategoria ? " • " + w.sottocategoria : ""}</em>
+      </div>`;
+    card.onclick = () => mostraPopupDescrizione(w);
+    wineList.appendChild(card);
+  });
+
+  // re-applica palette alla UI appena generata
+  if (window.paletteOverrideLive && window.ristorantePalette === "custom") {
+    applyCustomBoxStyles();
+  } else {
+    applyPalette(window.ristorantePalette);
+  }
+
+  setHelper(`Risultati per: “${query}”`);
+  history.pushState({ view:"search", query }, "");
+};
+
+// se cambi lingua mentre sei in cerca, rigenera i risultati
+const _origChangeLang = window.changeLanguage;
+window.changeLanguage = function(){
+  _origChangeLang();
+  if (currentView === 'search' && lastSearchQuery) showSearchResults(lastSearchQuery);
+};
+
+// supporta back/forward del browser
+window.addEventListener('popstate', (ev) => {
+  if (ev.state?.view === 'search') showSearchResults(ev.state.query || "");
+});
+
+
 </script>
 <div id="filterBtnWrapper">
   <button id="filterBtn" aria-label="Filtra">
     <img src="iconfilter.png" alt="" aria-hidden="true">
     <span class="filter-inside-label translate-label" data-key="filterLabel">Filtra</span>
   </button>
+</div>
+
+<div id="searchBtnWrapper">
+  <button id="searchBtn" aria-label="Cerca" onclick="openSearch()">
+    <img src="iconsearch.png" alt="" aria-hidden="true">
+    <span class="filter-inside-label translate-label" data-key="search">Cerca</span>
+  </button>
+</div>
+
+<div id="searchOverlay" class="popup-overlay" style="display:none;">
+  <div class="popup-descrizione" style="max-width:520px;">
+    <button class="close-btn" onclick="closeSearch()">✖</button>
+    <h3 style="margin:0 0 10px;">Cerca nella carta</h3>
+    <input id="searchInput" type="text" placeholder="Cerca nome, uvaggio, note…" onkeydown="handleSearchKey(event)" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px;">
+    <div style="margin-top:12px; text-align:right;">
+      <button class="save-btn" onclick="runSearch()" style="padding:8px 12px; border-radius:8px; border:none; cursor:pointer;">Cerca</button>
+    </div>
+  </div>
 </div>
 
 <div id="filterMenu" style="display:none; position:fixed; bottom:70px; right:16px; background:#fff; border:1px solid #ccc; border-radius:12px; padding:12px; box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:2000; min-width:200px;">
