@@ -2467,13 +2467,29 @@ function applyFilters() {
       : haveCats;
     const container = document.getElementById('category-list');
     container.innerHTML = '';
-    ordered.forEach(cat => {
-      const div = document.createElement('div');
-      div.className = 'category';
-      div.textContent = cat;
-      div.onclick = () => showSubcategories(cat);
-      container.appendChild(div);
-    });
+ordered.forEach(async (cat) => {
+  const div = document.createElement('div');
+  div.className = 'category';
+
+  // traduzione dinamica se lingua != it
+  let display = cat;
+  if (currentLang !== 'it') {
+    try {
+      const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-categoria", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: cat, targetLang: currentLang })
+      });
+      const data = await res.json();
+      display = (data.text || cat).trim();
+    } catch (_) { /* fallback: cat */ }
+  }
+  div.textContent = display;
+
+  div.onclick = () => showSubcategories(cat);
+  container.appendChild(div);
+});
+
   } else if (currentView === 'subcategory') {
     // solo le sottocategorie della categoria corrente che hanno un vino valido
     const list = filteredWines.filter(w => normalize(w.categoria) === normalize(currentCategory));
