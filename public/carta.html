@@ -539,6 +539,8 @@ const translations = {
     searchPlaceholder: "Cerca nome, uvaggio, note…",
     filterBy: "Filtra per:",
     searchButton: "Cerca",
+    formatBottle: "Bottiglia",
+    formatGlass: "Bicchiere",
   },
   en: {
     wineList: "Wine List",
@@ -570,6 +572,8 @@ const translations = {
     searchPlaceholder: "Search name, grape, notes…",
     filterBy: "Filter by:",
     searchButton: "Search",
+    formatBottle: "Bottle",
+    formatGlass: "By the glass",
   },
   fr: {
     wineList: "Carte des Vins",
@@ -601,6 +605,7 @@ const translations = {
     searchPlaceholder: "Rechercher nom, cépage, notes…",
     filterBy: "Filtrer par :",
     searchButton: "Chercher",
+    formatBottle: "Bouteille", formatGlass: "Au verre",
   },
   de: {
     wineList: "Weinkarte",
@@ -632,6 +637,7 @@ const translations = {
     searchPlaceholder: "Suche Name, Rebsorte, Notizen…",
     filterBy: "Filtern nach:",
     searchButton: "Suchen",
+    formatBottle: "Flasche",   formatGlass: "Im Glas",
   },
   es: {
     wineList: "Carta de Vinos",
@@ -663,6 +669,7 @@ const translations = {
     searchPlaceholder: "Buscar nombre, uva, notas…",
     filterBy: "Filtrar por:",
     searchButton: "Buscar",
+    formatBottle: "Botella",   formatGlass: "Copa",
   },
   zh: {
     wineList: "酒单",
@@ -694,6 +701,7 @@ const translations = {
     searchPlaceholder: "搜索名称、葡萄品种、备注…",
     filterBy: "筛选条件：",
     searchButton: "搜索",
+    formatBottle: "瓶",   formatGlass: "杯",
   }
 };
 
@@ -792,6 +800,7 @@ function changeLanguage() {
   }
 
   applyTranslations();
+  refreshFilterOptionsPreservingState();
 // aggiorna solo la vista corrente
 if (currentView === 'categories') {
   applyFilters();                       // ricostruisce categorie coi filtri attivi
@@ -2487,13 +2496,13 @@ function setupFilterUI() {
 
   // Trova i formati disponibili nei vini
   const formatsMap = {
-    bottle: { label: "Bottiglia", key: "prezzo" },
-    glass: { label: "Bicchiere", key: "prezzo_bicchiere" },
-    quarter: { label: "1/4 litro", key: "prezzo_025" },
-    half: { label: "1/2 litro", key: "prezzo_05" },
-    threequart: { label: "0,375 litro", key: "prezzo_0375" },
-    onehalf: { label: "1,5 litri", key: "prezzo_15" },
-    three: { label: "3 litri", key: "prezzo_3l" }
+    bottle: { label: t.formatBottle || "Bottiglia", key: "prezzo" },
+    glass:  { label: t.formatGlass  || "Bicchiere", key: "prezzo_bicchiere" },
+    quarter: { label: "1/4 lt", key: "prezzo_025" },
+    half: { label: "1/2 lt", key: "prezzo_05" },
+    threequart: { label: "0,375 lt", key: "prezzo_0375" },
+    onehalf: { label: "1,5 lt", key: "prezzo_15" },
+    three: { label: "3 lt", key: "prezzo_3l" }
   };
 
   const availableFormats = {};
@@ -2528,6 +2537,55 @@ function setupFilterUI() {
   };
 
   applyFilters();
+}
+function refreshFilterOptionsPreservingState() {
+  const optionsContainer = document.getElementById("filterOptions");
+  if (!optionsContainer) return;
+
+  // Ricorda quali erano spuntate
+  const checked = new Set(
+    Array.from(optionsContainer.querySelectorAll("input[type='checkbox']:checked"))
+         .map(cb => cb.value)
+  );
+
+  // Ricostruisci con le label tradotte (copiando la logica di setupFilterUI)
+  const t = translations[currentLang];
+  const formatsMap = {
+    bottle: { label: t.formatBottle || "Bottiglia", key: "prezzo" },
+    glass:  { label: t.formatGlass  || "Bicchiere", key: "prezzo_bicchiere" },
+    quarter:    { label: "1/4 lt",   key: "prezzo_025" },
+    half:       { label: "1/2 lt",   key: "prezzo_05" },
+    threequart: { label: "0,375 lt", key: "prezzo_0375" },
+    onehalf:    { label: "1,5 lt",   key: "prezzo_15" },
+    three:      { label: "3 lt",     key: "prezzo_3l" }
+  };
+
+  // Limita ai formati effettivamente presenti nei vini (stessa logica di setup)
+  const availableFormats = {};
+  wines.forEach(w => {
+    for (const [id, f] of Object.entries(formatsMap)) {
+      if (w[f.key]) availableFormats[id] = f;
+    }
+  });
+
+  optionsContainer.innerHTML = "";
+  for (const [id, f] of Object.entries(availableFormats)) {
+    const label = document.createElement("label");
+    label.style.display = "flex";
+    label.style.alignItems = "center";
+    label.style.gap = "6px";
+    label.style.marginBottom = "6px";
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.value = id;
+    cb.checked = checked.size ? checked.has(id) : true;
+    cb.onchange = applyFilters;
+
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(f.label));
+    optionsContainer.appendChild(label);
+  }
 }
 
 function getCheckedFormats() {
