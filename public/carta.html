@@ -5,6 +5,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Raleway&family=Dancing+Script&family=Montserrat&family=Roboto&family=Edu+NSW+ACT+Hand+Pre&family=Lavishly+Yours&family=Kolker+Brush&family=Pacifico&family=Indie+Flower&family=Cormorant+Garamond&family=Great+Vibes&family=Bebas+Neue&family=Merriweather&family=Abril+Fatface&family=Lobster&family=Oswald&family=Amatic+SC&family=Bitter&family=Quicksand&display=swap" rel="stylesheet">
 <title>Carta dei Vini</title>
 <style id="dynamic-style">
+  #restaurantName { cursor: pointer; }
 #filterBtn:hover, #searchBtn:hover { background: #800; }
 
 #filterBtnWrapper{
@@ -2595,6 +2596,25 @@ ordered.forEach(async (cat) => {
 }
 
 }
+function closeFilterMenu(){ 
+  const m = document.getElementById('filterMenu');
+  if (m) m.style.display = 'none';
+}
+// Chiudi il menu Filtra cliccando fuori o su altri elementi
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('filterMenu');
+  const btn  = document.getElementById('filterBtn');
+  if (!menu || !btn) return;
+
+  if (
+    menu.style.display === 'block' &&
+    !menu.contains(e.target) &&
+    e.target !== btn &&
+    !btn.contains(e.target)
+  ) {
+    menu.style.display = 'none';
+  }
+});
 
 let lastSearchQuery = "";
 let searchResults = [];
@@ -2712,6 +2732,20 @@ window.addEventListener('popstate', (ev) => {
   if (ev.state?.view === 'search') showSearchResults(ev.state.query || "");
 });
 
+const rn = document.getElementById('restaurantName');
+if (rn) {
+  rn.addEventListener('click', () => {
+    closeFilterMenu();
+    // reset view → categorie
+    currentCategory = null;
+    window.currentSubcategory = null;
+    setHelper(translations[currentLang].helperChooseCategory);
+    goToCategories(); // esiste già e viene usata anche dal back (:contentReference[oaicite:6]{index=6})
+    if (!window._manualNavigation) {
+      history.pushState({ view: "categories" }, "");
+    }
+  });
+}
 
 </script>
 <div id="filterBtnWrapper">
