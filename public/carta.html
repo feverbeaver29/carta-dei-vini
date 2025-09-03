@@ -1418,6 +1418,27 @@ if (searchBtn) {
   searchBtn.style.borderColor = primary;
 }
 
+const searchPop = document.getElementById("searchPopover");
+if (searchPop) {
+  // usa i colori della palette per card/contorni/testo/ombra
+  searchPop.style.backgroundColor = window.paletteColors?.cardBackground || "#fff";
+  searchPop.style.borderColor     = window.paletteColors?.borderColor   || "#ccc";
+  searchPop.style.color           = window.paletteColors?.textColor     || "#000";
+  searchPop.style.boxShadow       = window.paletteColors?.boxShadow     || "0 2px 6px rgba(0,0,0,.15)";
+  // input interno coerente
+  const input = searchPop.querySelector('input');
+  if (input) {
+    input.style.backgroundColor = "#fff";
+    input.style.color = "#000";
+    input.style.borderColor = "#ccc";
+  }
+  const btn = searchPop.querySelector('button.save-btn');
+  if (btn) {
+    btn.style.backgroundColor = (document.getElementById("searchBtn")?.style.backgroundColor) || "#b00";
+    btn.style.color = "#fff";
+  }
+}
+
 window.paletteColors = {
   background,
   cardBackground,
@@ -1473,6 +1494,22 @@ if (searchBtn) {
   if (ristorante.border_color) searchBtn.style.backgroundColor = ristorante.border_color;
   if (ristorante.border_color) searchBtn.style.borderColor = ristorante.border_color;
   if (ristorante.text_color)   searchBtn.style.color = ristorante.text_color;
+}
+
+const searchPop = document.getElementById("searchPopover");
+if (searchPop && ristorante) {
+  if (ristorante.card_color)  searchPop.style.backgroundColor = ristorante.card_color;
+  if (ristorante.border_color) searchPop.style.borderColor     = ristorante.border_color;
+  if (ristorante.text_color)   searchPop.style.color           = ristorante.text_color;
+
+  const input = searchPop.querySelector('input');
+  if (input) { input.style.backgroundColor = "#fff"; input.style.color = "#000"; input.style.borderColor = "#ccc"; }
+
+  const btn = searchPop.querySelector('button.save-btn');
+  if (btn) {
+    btn.style.backgroundColor = ristorante.border_color || "#b00";
+    btn.style.color = ristorante.text_color ? getContrastingTextColor(btn.style.backgroundColor) : "#fff";
+  }
 }
 
 }
@@ -2556,21 +2593,56 @@ ordered.forEach(async (cat) => {
 let lastSearchQuery = "";
 let searchResults = [];
 
+// apre/chiude il popover come fai per il filtro categorie
 window.openSearch = function() {
-  const overlay = document.getElementById('searchOverlay');
-  overlay.style.display = 'flex';
+  const pop = document.getElementById('searchPopover');
   const input = document.getElementById('searchInput');
-  input.value = lastSearchQuery || "";
-  setTimeout(() => input.focus(), 40);
+  if (!pop || !input) return;
+
+  const isOpen = pop.style.display === 'block';
+  pop.style.display = isOpen ? 'none' : 'block';
+
+  if (!isOpen) {
+    // posiziona sopra al bottone (se serve ricalcolo dinamico)
+    const wrapper = document.getElementById('searchBtnWrapper');
+    if (wrapper) {
+      const r = wrapper.getBoundingClientRect();
+      pop.style.position = 'fixed';
+      pop.style.left = '16px';            // ancorato a sinistra come il FAB
+      pop.style.bottom = '78px';          // 52px bottone + ~10/12px gap
+    }
+    setTimeout(() => input.focus(), 40);
+  }
 };
-window.closeSearch = function(){ document.getElementById('searchOverlay').style.display='none'; };
-window.handleSearchKey = function(e){ if(e.key==='Enter'){ e.preventDefault(); runSearch(); } };
+
+window.closeSearch = function() {
+  const pop = document.getElementById('searchPopover');
+  if (pop) pop.style.display = 'none';
+};
+
+window.handleSearchKey = function(e){
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    runSearch();
+  }
+};
+
 window.runSearch = function(){
-  const q = (document.getElementById('searchInput').value||"").trim();
+  const el = document.getElementById('searchInput');
+  const q = (el?.value || "").trim();
   lastSearchQuery = q;
   closeSearch();
   showSearchResults(q);
 };
+
+// chiudi se clicchi fuori dal popover e fuori dal bottone
+document.addEventListener('click', function(ev){
+  const pop = document.getElementById('searchPopover');
+  const btn = document.getElementById('searchBtn');
+  if (!pop || !btn) return;
+  const clickInside = pop.contains(ev.target) || btn.contains(ev.target);
+  if (pop.style.display === 'block' && !clickInside) pop.style.display = 'none';
+});
 
 window.showSearchResults = function(query){
   currentView = 'search';
@@ -2649,15 +2721,15 @@ window.addEventListener('popstate', (ev) => {
     <span class="filter-inside-label translate-label" data-key="search">Cerca</span>
   </button>
 </div>
-
-<div id="searchOverlay" class="popup-overlay" style="display:none;">
-  <div class="popup-descrizione" style="max-width:520px;">
-    <button class="close-btn" onclick="closeSearch()">✖</button>
-    <h3 style="margin:0 0 10px;">Cerca nella carta</h3>
-    <input id="searchInput" type="text" placeholder="Cerca nome, uvaggio, note…" onkeydown="handleSearchKey(event)" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px;">
-    <div style="margin-top:12px; text-align:right;">
-      <button class="save-btn" onclick="runSearch()" style="padding:8px 12px; border-radius:8px; border:none; cursor:pointer;">Cerca</button>
-    </div>
+<!-- Popover di ricerca sopra al FAB (chiuso di default) -->
+<div id="searchPopover" style="display:none; position:fixed; left:16px; bottom:78px; z-index:2000; border:1px solid #ccc; border-radius:12px; padding:10px; background:#fff; box-shadow:0 4px 12px rgba(0,0,0,.2); min-width:240px;">
+  <div style="display:flex; gap:8px;">
+    <input id="searchInput" type="text" placeholder="Cerca nome, uvaggio, note…" 
+           onkeydown="handleSearchKey(event)"
+           style="flex:1; padding:8px 10px; border:1px solid #ccc; border-radius:8px; font-size:0.95em;">
+    <button class="save-btn" onclick="runSearch()" style="padding:8px 12px; border-radius:8px; border:none; cursor:pointer;">
+      Cerca
+    </button>
   </div>
 </div>
 
