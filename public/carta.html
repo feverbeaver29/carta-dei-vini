@@ -128,6 +128,35 @@
   animation: slideDown 0.2s ease-out;
 }
 
+/* --- Language chooser modal --- */
+#langOverlay{
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  display: none;                 /* mostrato via JS */
+  align-items: center; justify-content: center;
+  z-index: 12000;                /* > sommelier (1000) e descrizione (9999) */
+}
+#langModal{
+  background: #fff; border-radius: 16px; padding: 20px;
+  width: min(92vw, 520px); box-shadow: 0 10px 28px rgba(0,0,0,.25);
+}
+#langModal h3{ margin: 0 0 12px; text-align:center; }
+.lang-grid{
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+}
+.lang-btn{
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  padding: 10px; border:1px solid #ddd; border-radius:12px;
+  background:#fff; cursor:pointer; font-weight:600;
+}
+.lang-btn span.flag{ font-size: 22px; line-height:1; }
+#langSkip{
+  margin-top:12px; width:100%;
+  background: var(--accent-color); color:#fff;
+  border:none; border-radius:12px; padding:10px; cursor:pointer;
+}
+@media (max-width:420px){ .lang-grid{ grid-template-columns: repeat(2, 1fr);} }
+
 body {
   font-family: sans-serif;
   background: var(--bg-default);
@@ -705,6 +734,66 @@ const translations = {
     formatBottle: "瓶",   formatGlass: "杯",
   }
 };
+// --- Language chooser popup ---
+function setLanguageAndClose(lang){
+  const select = document.getElementById("langSelector");
+  currentLang = lang;
+  if (select) select.value = lang;
+  localStorage.setItem("preferred_lang", lang);
+  changeLanguage();
+  document.getElementById("langOverlay").style.display = "none";
+}
+function openLanguagePopup(){
+  const overlay = document.getElementById("langOverlay");
+  if (!overlay) return;
+  // palette friendly
+  const useCustom = window.paletteOverrideLive || ristorante?.palette_color === "custom";
+  const modal = document.getElementById("langModal");
+  if (modal){
+    if (useCustom){
+      modal.style.backgroundColor = ristorante?.card_color || "#fff";
+      modal.style.color = ristorante?.text_color || "#000";
+      modal.style.border = `1px solid ${ristorante?.border_color || "#ddd"}`;
+    }else{
+      modal.style.backgroundColor = window.paletteColors?.cardBackground || "#fff";
+      modal.style.color = window.paletteColors?.textColor || "#000";
+      modal.style.border = `1px solid ${window.paletteColors?.borderColor || "#ddd"}`;
+    }
+  }
+  // limita bandiere se piano non PRO (già fai per il select) 
+  if (ristorante && ristorante.subscription_plan !== "pro"){
+    document.querySelectorAll('#langGrid .lang-btn').forEach(btn=>{
+      if (!["it","en"].includes(btn.dataset.lang)) btn.style.display = "none";
+    });
+  }
+  overlay.style.display = "flex";
+}
+function initLanguagePopup(){
+  // 1) URL ?lang=xx → imposta e non mostra popup
+  const url = new URL(location.href);
+  const qLang = url.searchParams.get("lang");
+  if (qLang && translations[qLang]){
+    setLanguageAndClose(qLang);
+    return;
+  }
+  // 2) preferenza salvata → imposta e non mostra popup
+  const saved = localStorage.getItem("preferred_lang");
+  if (saved && translations[saved]){
+    const select = document.getElementById("langSelector");
+    if (select) select.value = saved;
+    currentLang = saved;
+    changeLanguage();
+    return;
+  }
+  // 3) altrimenti apri popup
+  openLanguagePopup();
+}
+// listeners
+document.addEventListener("click", (e)=>{
+  const btn = e.target.closest(".lang-btn");
+  if (btn) setLanguageAndClose(btn.dataset.lang);
+});
+document.getElementById("langSkip")?.addEventListener("click", ()=> setLanguageAndClose("it"));
 
 function setHelper(text){
   const el = document.getElementById('helperBanner');
@@ -2242,6 +2331,7 @@ await loadRestaurantData();
 if (ristorante && RESTAURANT_ID) {
   await loadWineData();
   setupFilterUI();
+  initLanguagePopup();
   showCategories();
 }
 
@@ -2872,4 +2962,19 @@ if (rn) {
   <div id="filterOptions"></div>
 </div>
 </body>
+<!-- Language chooser -->
+<div id="langOverlay" role="dialog" aria-modal="true" aria-labelledby="langTitle">
+  <div id="langModal">
+    <h3 id="langTitle">Scegli la tua lingua</h3>
+    <div class="lang-grid" id="langGrid">
+      <button class="lang-btn" data-lang="it"><span class="flag">🇮🇹</span>Italiano</button>
+      <button class="lang-btn" data-lang="en"><span class="flag">🇬🇧</span>English</button>
+      <button class="lang-btn" data-lang="fr"><span class="flag">🇫🇷</span>Français</button>
+      <button class="lang-btn" data-lang="de"><span class="flag">🇩🇪</span>Deutsch</button>
+      <button class="lang-btn" data-lang="es"><span class="flag">🇪🇸</span>Español</button>
+      <button class="lang-btn" data-lang="zh"><span class="flag">🇨🇳</span>中文</button>
+    </div>
+    <button id="langSkip">Continua in Italiano</button>
+  </div>
+</div>
 </html>
