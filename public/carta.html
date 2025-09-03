@@ -2493,6 +2493,7 @@ function setupFilterUI() {
   const btn = document.getElementById("filterBtn");
   const menu = document.getElementById("filterMenu");
   const optionsContainer = document.getElementById("filterOptions");
+  const t = translations[currentLang] || translations.it;  // ← AGGIUNGI QUESTA RIGA
 
   // Trova i formati disponibili nei vini
   const formatsMap = {
