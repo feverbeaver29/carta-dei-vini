@@ -536,6 +536,9 @@ const translations = {
     helperClickWine: "Clicca sul vino per maggiori dettagli.", // it
     filterLabel: "Filtra",
     search:"Cerca",
+    searchPlaceholder: "Cerca nome, uvaggio, note…",
+    filterBy: "Filtra per:",
+    searchButton: "Cerca",
   },
   en: {
     wineList: "Wine List",
@@ -564,6 +567,9 @@ const translations = {
     helperClickWine: "Click a wine for details.",
     filterLabel: "Filter",
     search:"Search",
+    searchPlaceholder: "Search name, grape, notes…",
+    filterBy: "Filter by:",
+    searchButton: "Search",
   },
   fr: {
     wineList: "Carte des Vins",
@@ -591,7 +597,10 @@ const translations = {
     helperChooseCategory: "Choisissez une catégorie !",          // it
     helperClickWine: "Cliquez sur le vin pour plus de détails.",
     filterLabel: "Filtrer",
-    search:"Chercher"
+    search:"Chercher",
+    searchPlaceholder: "Rechercher nom, cépage, notes…",
+    filterBy: "Filtrer par :",
+    searchButton: "Chercher",
   },
   de: {
     wineList: "Weinkarte",
@@ -620,6 +629,9 @@ const translations = {
     helperClickWine: "Klicken Sie auf den Wein, um weitere Details zu erhalten.",
     filterLabel: "Filtern",
     search:"Suchen",
+    searchPlaceholder: "Suche Name, Rebsorte, Notizen…",
+    filterBy: "Filtern nach:",
+    searchButton: "Suchen",
   },
   es: {
     wineList: "Carta de Vinos",
@@ -648,6 +660,9 @@ const translations = {
     helperClickWine: "Haz clic en el vino para más detalles.",
     filterLabel: "Filtrar",
     search:"Buscar",
+    searchPlaceholder: "Buscar nombre, uva, notas…",
+    filterBy: "Filtrar por:",
+    searchButton: "Buscar",
   },
   zh: {
     wineList: "酒单",
@@ -672,10 +687,13 @@ const translations = {
     anyPrice: "不限",
     motive:   "理由",
     sommelierBtn: "侍酒师",
-    helperChooseCategory: "选择一个类别！",          // it
+    helperChooseCategory: "选择一个类别！",          
     helperClickWine: "点击葡萄酒了解更多详情。",
     filterLabel: "筛选",
     search:"搜索",
+    searchPlaceholder: "搜索名称、葡萄品种、备注…",
+    filterBy: "筛选条件：",
+    searchButton: "搜索",
   }
 };
 
@@ -847,6 +865,24 @@ if (sBtn) {
   const lbl = sBtn.querySelector(".label");
   if (lbl) lbl.textContent = translations[currentLang].sommelierBtn;
   sBtn.setAttribute("aria-label", translations[currentLang].sommelierBtn);
+}
+
+// 1) placeholder dell'input di ricerca (popover)
+const si = document.getElementById("searchInput");
+if (si && t.searchPlaceholder) {
+  si.placeholder = t.searchPlaceholder;
+}
+
+// 2) titolo del menu filtro ("Filtra per:")
+const filterTitle = document.querySelector('#filterMenu .translate-text[data-key="filterBy"]');
+if (filterTitle && t.filterBy) {
+  filterTitle.textContent = t.filterBy;
+}
+
+// 3) bottone "Cerca" dentro al popover
+const searchBtnInside = document.querySelector('#searchPopover button.save-btn.translate-label[data-key="searchButton"]');
+if (searchBtnInside && t.searchButton) {
+  searchBtnInside.textContent = t.searchButton;
 }
 }
 
@@ -2767,14 +2803,12 @@ if (rn) {
     <input id="searchInput" type="text" placeholder="Cerca nome, uvaggio, note…" 
            onkeydown="handleSearchKey(event)"
            style="flex:1; padding:8px 10px; border:1px solid #ccc; border-radius:8px; font-size:0.95em;">
-    <button class="save-btn" onclick="runSearch()" style="padding:8px 12px; border-radius:8px; border:none; cursor:pointer;">
-      Cerca
-    </button>
+    <button class="save-btn translate-label" data-key="searchButton" onclick="runSearch()">Cerca</button>
   </div>
 </div>
 
 <div id="filterMenu" style="display:none; position:fixed; bottom:70px; right:16px; background:#fff; border:1px solid #ccc; border-radius:12px; padding:12px; box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:2000; min-width:200px;">
-  <strong style="display:block; margin-bottom:8px;">Filtra per:</strong>
+  <strong class="translate-text" data-key="filterBy">Filtra per:</strong>
   <div id="filterOptions"></div>
 </div>
 </body>
