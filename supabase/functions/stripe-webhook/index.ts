@@ -315,6 +315,114 @@ if (event.type === "invoice.finalized") {
     console.error("❌ Errore invoice.finalized:", e);
   }
 }
+// =====================================================================================
+// ✅ INVOICE PAID: invia a Make (utile se hai creato una bozza e poi l'hai pagata)
+// =====================================================================================
+if (event.type === "invoice.paid") {
+  const invoice = event.data.object as any;
+
+  try {
+    const customerId = invoice.customer as string;
+    const number = invoice.number;
+    const invoiceId = invoice.id;
+    const currency = invoice.currency;
+    const total = invoice.total;
+    const subtotal = invoice.subtotal;
+    const tax = invoice.tax || 0;
+    const status = invoice.status;
+    const hostedUrl = invoice.hosted_invoice_url;
+    const pdfUrl = invoice.invoice_pdf;
+    const createdAt = invoice.created ? new Date(invoice.created * 1000).toISOString() : null;
+
+    // periodo (prima linea se c'è)
+    let period_start: string | null = null;
+    let period_end: string | null = null;
+    const firstLine = invoice.lines?.data?.[0];
+    if (firstLine?.period) {
+      period_start = new Date(firstLine.period.start * 1000).toISOString();
+      period_end   = new Date(firstLine.period.end   * 1000).toISOString();
+    }
+    const lineDescription =
+      firstLine?.description ||
+      `Abbonamento ${firstLine?.plan?.nickname || ""}`.trim();
+
+    // prendi i dati del ristorante
+    let { data: risto } = await supabase
+      .from("ristoranti")
+      .select("id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan")
+      .eq("stripe_customer_id", customerId)
+      .maybeSingle();
+
+    if (!risto && invoice.customer_email) {
+      const byEmail = await supabase
+        .from("ristoranti")
+        .select("id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan")
+        .eq("email", invoice.customer_email)
+        .maybeSingle();
+      risto = byEmail.data || null;
+    }
+
+    // aggiorna/crea riga fattura anche qui (stato pagata)
+    await supabase.from("fatture").upsert({
+      id_stripe: invoiceId,
+      numero: number,
+      customer_id: customerId,
+      ristorante_id: risto?.id || null,
+      stato: status,
+      currency,
+      totale_cent: total,
+      imponibile_cent: subtotal,
+      imposta_cent: tax,
+      hosted_url: hostedUrl,
+      pdf_url: pdfUrl,
+      periodo_inizio: period_start,
+      periodo_fine: period_end,
+      created_at_iso: createdAt,
+      raw_json: invoice
+    }, { onConflict: "id_stripe" });
+
+    // anagrafica Stripe (nome/indirizzo)
+    const customer = await stripe.customers.retrieve(customerId);
+
+    // payload per Make
+    const payload = {
+      id_stripe: invoiceId,
+      number,
+      currency,
+      subtotal_cent: subtotal,
+      total_cent: total,
+      hosted_invoice_url: hostedUrl,
+      invoice_pdf: pdfUrl,
+      period_start,
+      period_end,
+      description: lineDescription,
+      client: {
+        name:
+          risto?.ragione_sociale ||
+          (typeof customer === "object" ? (customer as any).name : null) ||
+          risto?.email,
+        vat_number: risto?.partita_iva || null,
+        sdi: risto?.codice_destinatario || null,
+        pec: risto?.pec || null,
+        address:
+          (typeof customer === "object" ? (customer as any).address : null) ||
+          risto?.indirizzo_json ||
+          null,
+        email: risto?.email || (typeof customer === "object" ? (customer as any).email : null)
+      }
+    };
+
+    await fetch("https://hook.eu2.make.com/965yirr978fbj3h0ckzwlni3mvkbnm9s", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    console.log("➡️  Inviato a Make (invoice.paid):", invoiceId);
+  } catch (e) {
+    console.error("❌ Errore invoice.paid:", e);
+  }
+}
 
   return new Response("ok", { status: 200 });
 });
