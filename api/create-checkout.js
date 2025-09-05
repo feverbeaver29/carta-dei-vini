@@ -9,7 +9,7 @@ module.exports = async (req, res) => {
   const { plan, email } = req.body;
   const priceMap = {
     base: "price_1RiFO4RWDcfnUagZw1Z12VEj",
-    pro: "price_1RiFLtRWDcfnUagZp0bIKnOL"
+    pro:  "price_1RiFLtRWDcfnUagZp0bIKnOL"
   };
 
   const selectedPrice = priceMap[plan];
@@ -18,10 +18,12 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const customers = await stripe.customers.list({ email });
+    // Prova a riusare un Customer esistente con la stessa email
+    const customers = await stripe.customers.list({ email, limit: 1 });
     const customer = customers.data[0];
 
     if (customer) {
+      // Se esiste già un abbonamento attivo/in corso, esegui cambio piano
       const subscriptions = await stripe.subscriptions.list({
         customer: customer.id,
         status: "all"
@@ -32,7 +34,6 @@ module.exports = async (req, res) => {
       );
 
       if (existingSub) {
-        // 🔁 Aggiorna il piano esistente
         await stripe.subscriptions.update(existingSub.id, {
           cancel_at_period_end: false,
           items: [{
@@ -43,19 +44,48 @@ module.exports = async (req, res) => {
           metadata: { plan }
         });
 
-        return res.status(200).json({ url: `${YOUR_DOMAIN}/verifica-successo.html?changed=true` });
+        return res.status(200).json({
+          url: `${YOUR_DOMAIN}/verifica-successo.html?changed=true`
+        });
       }
     }
 
-    // 🎯 Nessun abbonamento esistente: crea nuova sessione checkout
+    // Nessun abbonamento esistente: crea una nuova sessione di Checkout
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
+      // Se non c'è un customer esistente, passiamo l'email e facciamo creare il Customer
       customer: customer?.id,
       ...(customer ? {} : { customer_email: email }),
+      customer_creation: "always",                 // crea sempre un Customer se non esiste
+      customer_update: { address: "auto", name: "auto" }, // salva automaticamente su Customer
+
+      // Raccogliamo i dati necessari per la fattura elettronica
+      tax_id_collection: { enabled: true },       // P.IVA / VAT
+      billing_address_collection: "required",     // indirizzo di fatturazione
+      custom_fields: [
+        {
+          key: "codice_destinatario",
+          label: { type: "custom", custom: "Codice Destinatario (SdI)" },
+          type: "text"
+        },
+        {
+          key: "pec",
+          label: { type: "custom", custom: "PEC (in alternativa al Codice SdI)" },
+          type: "text",
+          optional: true
+        }
+      ],
+
+      // Se sei in forfettario e non applichi IVA, NON attivare automatic_tax/Stripe Tax
+      automatic_tax: { enabled: false },
+
       line_items: [{ price: selectedPrice, quantity: 1 }],
       subscription_data: {
         metadata: { plan }
       },
+
+      // UX
+      locale: "it",
       success_url: `${YOUR_DOMAIN}/login.html?checkout=success`,
       cancel_url: `${YOUR_DOMAIN}/abbonamento.html`
     });

@@ -23,58 +23,99 @@ serve(async (req) => {
   let event;
   try {
     event = await stripe.webhooks.constructEventAsync(body, sig, webhookSecret);
-  } catch (err) {
+  } catch (err: any) {
     console.error("❌ Errore verifica firma:", err.message);
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
-  // ✅ Evento: checkout completato (primo abbonamento)
+  // =====================================================================================
+  // ✅ CHECKOUT COMPLETATO: salva Customer + dati FE (P.IVA, SdI/PEC, anagrafica)
+  // =====================================================================================
   if (event.type === "checkout.session.completed") {
-const session = event.data.object;
-const customerId = session.customer;
+    const session = event.data.object as any;
+    const customerId = session.customer as string;
 
-// 🔍 Fallback: recupera email dal customer Stripe se mancante
-let email = session.customer_email;
-if (!email) {
-  const customer = await stripe.customers.retrieve(customerId);
-  if (typeof customer === 'object' && customer.email) {
-    email = customer.email;
-  }
-}
+    // Email: preferisci quella in sessione, altrimenti dal Customer
+    let email = session.customer_email as string | null;
+    let customer: any = null;
+
+    if (!email || !customerId) {
+      // estrema prudenza, ma il customerId dovrebbe esserci sempre
+      const _c = customerId ? await stripe.customers.retrieve(customerId) : null;
+      if (_c && typeof _c === "object") {
+        customer = _c;
+        email = email || _c.email || null;
+      }
+    } else {
+      // recupera comunque il Customer per anagrafica completa
+      const _c = await stripe.customers.retrieve(customerId);
+      if (_c && typeof _c === "object") customer = _c;
+    }
 
     console.log("✅ Checkout completato per:", email, customerId);
 
-// Cerca prima per email, poi per stripe_customer_id se necessario
-let { data: risto, error } = await supabase
-  .from("ristoranti")
-  .select("id")
-  .eq("email", email)
-  .maybeSingle();
+    // Trova il ristorante (prima per email, poi per customerId)
+    let { data: risto, error } = await supabase
+      .from("ristoranti")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
 
-if (!risto) {
-  const byStripeId = await supabase
-    .from("ristoranti")
-    .select("id")
-    .eq("stripe_customer_id", customerId)
-    .maybeSingle();
+    if (!risto && customerId) {
+      const byStripeId = await supabase
+        .from("ristoranti")
+        .select("id")
+        .eq("stripe_customer_id", customerId)
+        .maybeSingle();
 
-  risto = byStripeId.data;
-  error = byStripeId.error;
-}
+      risto = byStripeId.data;
+      error = byStripeId.error;
+    }
 
     if (!risto) {
       console.error("❌ Nessun ristorante trovato per email:", email);
       return new Response("Utente non trovato", { status: 404 });
     }
 
-    const selectedPlan = session.metadata?.plan || "base";
+    // ⬇️ Estrai i custom fields (SdI/PEC) dal Checkout
+    const customFields = Array.isArray(session.custom_fields) ? session.custom_fields : [];
+    const getCF = (key: string) =>
+      customFields.find((f: any) => f.key === key)?.text?.value || null;
 
+    const codiceDestinatario = getCF("codice_destinatario");
+    const pec = getCF("pec");
+
+    // ⬇️ Tax IDs (P.IVA) dal Customer
+    let partitaIVA: string | null = null;
+    if (customerId) {
+      const taxIds = await stripe.customers.listTaxIds(customerId, { limit: 10 });
+      // prendi la prima VAT/P.IVA disponibile
+      const vat = taxIds.data.find((t) => t.type === "eu_vat" || t.type === "it_vat");
+      partitaIVA = vat?.value || null;
+    }
+
+    // ⬇️ Ragione sociale + indirizzo
+    const ragioneSociale =
+      (customer && typeof customer === "object" && customer.name) || null;
+    const indirizzo =
+      (customer && typeof customer === "object" && customer.address) || null;
+
+    const selectedPlan = (session.metadata?.plan as string) || "base";
+
+    // Aggiorna ristorante con customerId, stato abbonamento e dati di fatturazione
     const { error: updateErr } = await supabase
       .from("ristoranti")
       .update({
         stripe_customer_id: customerId,
         subscription_status: "active",
         subscription_plan: selectedPlan,
+
+        // campi per FE (assicurati che esistano in schema, vedi sezione NOTE)
+        ragione_sociale: ragioneSociale,
+        indirizzo_json: indirizzo ? JSON.stringify(indirizzo) : null,
+        partita_iva: partitaIVA,
+        codice_destinatario: codiceDestinatario,
+        pec: pec
       })
       .eq("id", risto.id);
 
@@ -86,10 +127,12 @@ if (!risto) {
     console.log("✅ Ristorante aggiornato:", risto.id);
   }
 
-  // ✅ Evento: abbonamento aggiornato (upgrade/downgrade, fine trial, cambio status)
+  // =====================================================================================
+  // 🔁 SUBSCRIPTION UPDATED: tieni allineato piano e stato
+  // =====================================================================================
   if (event.type === "customer.subscription.updated") {
-    const sub = event.data.object;
-    const customerId = sub.customer;
+    const sub = event.data.object as any;
+    const customerId = sub.customer as string;
 
     const { data: risto, error } = await supabase
       .from("ristoranti")
@@ -123,12 +166,14 @@ if (!risto) {
     }
   }
 
-  // ✅ Evento: abbonamento cancellato manualmente o da Stripe
+  // =====================================================================================
+  // 🚫 SUBSCRIPTION DELETED: pulisci stato
+  // =====================================================================================
   if (event.type === "customer.subscription.deleted") {
-    const sub = event.data.object;
-    const customerId = sub.customer;
+    const sub = event.data.object as any;
+    const customerId = sub.customer as string;
 
-    const { data: risto, error } = await supabase
+    const { data: risto } = await supabase
       .from("ristoranti")
       .select("id")
       .eq("stripe_customer_id", customerId)
@@ -140,13 +185,13 @@ if (!risto) {
     }
 
     const { error: updateErr } = await supabase
-  .from("ristoranti")
-  .update({
-    subscription_status: "canceled",
-    subscription_plan: null,
-    stripe_customer_id: null
-  })
-  .eq("id", risto.id);
+      .from("ristoranti")
+      .update({
+        subscription_status: "canceled",
+        subscription_plan: null,
+        stripe_customer_id: null
+      })
+      .eq("id", risto.id);
 
     if (updateErr) {
       console.error("❌ Errore nel marcare come cancellato:", updateErr);
@@ -154,6 +199,122 @@ if (!risto) {
       console.log("🚫 Abbonamento cancellato per:", risto.id);
     }
   }
+
+// =====================================================================================
+// 🧾 INVOICE FINALIZED: salva dati e manda a Make per creare la fattura in FIC
+// =====================================================================================
+if (event.type === "invoice.finalized") {
+  const invoice = event.data.object as any;
+
+  try {
+    const customerId = invoice.customer as string;
+    const number = invoice.number;               // es. "A-0001"
+    const invoiceId = invoice.id;                // inv_***
+    const currency = invoice.currency;           // "eur"
+    const total = invoice.total;                 // in centesimi
+    const subtotal = invoice.subtotal;           // in centesimi
+    const tax = invoice.tax || 0;                // in centesimi (di solito 0 se forfettario)
+    const status = invoice.status;               // draft, open, paid, uncollectible, void
+    const hostedUrl = invoice.hosted_invoice_url;
+    const pdfUrl = invoice.invoice_pdf;          // URL PDF di Stripe
+    const createdAt = invoice.created ? new Date(invoice.created * 1000).toISOString() : null;
+
+    // periodo dell'abbonamento (prima linea)
+    let period_start: string | null = null;
+    let period_end: string | null = null;
+    const firstLine = invoice.lines?.data?.[0];
+    if (firstLine?.period) {
+      period_start = new Date(firstLine.period.start * 1000).toISOString();
+      period_end   = new Date(firstLine.period.end   * 1000).toISOString();
+    }
+
+    // prendi anche descrizione riga (fallback al nome piano)
+    const lineDescription =
+      firstLine?.description ||
+      `Abbonamento ${firstLine?.plan?.nickname || ""}`.trim();
+
+    // aggancia ristorante con TUTTI i campi che ci servono
+    let { data: risto } = await supabase
+      .from("ristoranti")
+      .select("id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan")
+      .eq("stripe_customer_id", customerId)
+      .maybeSingle();
+
+    // fallback per email
+    if (!risto && invoice.customer_email) {
+      const byEmail = await supabase
+        .from("ristoranti")
+        .select("id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan")
+        .eq("email", invoice.customer_email)
+        .maybeSingle();
+      risto = byEmail.data || null;
+    }
+
+    // Salva/aggiorna record fattura in Supabase
+    await supabase.from("fatture").upsert({
+      id_stripe: invoiceId,
+      numero: number,
+      customer_id: customerId,
+      ristorante_id: risto?.id || null,
+      stato: status,
+      currency,
+      totale_cent: total,
+      imponibile_cent: subtotal,
+      imposta_cent: tax,
+      hosted_url: hostedUrl,
+      pdf_url: pdfUrl,
+      periodo_inizio: period_start,
+      periodo_fine: period_end,
+      created_at_iso: createdAt,
+      raw_json: invoice
+    }, { onConflict: "id_stripe" });
+
+    console.log("🧾 Invoice salvata:", number || invoiceId);
+
+    // ====== INVIO A MAKE ======
+    // Recupera anagrafica Customer da Stripe (per nome/indirizzo)
+    const customer = await stripe.customers.retrieve(customerId);
+
+    // Costruisci payload per Make
+    const payload = {
+      id_stripe: invoiceId,
+      number,
+      currency,
+      subtotal_cent: subtotal,
+      total_cent: total,
+      hosted_invoice_url: hostedUrl,
+      invoice_pdf: pdfUrl,
+      period_start,
+      period_end,
+      description: lineDescription,
+      client: {
+        name:
+          risto?.ragione_sociale ||
+          (typeof customer === "object" ? (customer as any).name : null) ||
+          risto?.email,
+        vat_number: risto?.partita_iva || null,
+        sdi: risto?.codice_destinatario || null,
+        pec: risto?.pec || null,
+        address:
+          (typeof customer === "object" ? (customer as any).address : null) ||
+          risto?.indirizzo_json ||
+          null,
+        email: risto?.email || (typeof customer === "object" ? (customer as any).email : null)
+      }
+    };
+
+    // manda a Make (URL tuo)
+    await fetch("https://hook.eu2.make.com/965yirr978fbj3h0ckzwlni3mvkbnm9s", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    console.log("➡️  Inviato a Make per FE:", invoiceId);
+  } catch (e) {
+    console.error("❌ Errore invoice.finalized:", e);
+  }
+}
 
   return new Response("ok", { status: 200 });
 });
