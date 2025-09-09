@@ -50,47 +50,58 @@ module.exports = async (req, res) => {
       }
     }
 
-    // Nessun abbonamento esistente: crea una nuova sessione di Checkout
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      // Se non c'è un customer esistente, passiamo l'email e facciamo creare il Customer
-      customer: customer?.id,
-      ...(customer ? {} : { customer_email: email }),
-      customer_creation: "always",                 // crea sempre un Customer se non esiste
-      customer_update: { address: "auto", name: "auto" }, // salva automaticamente su Customer
+// Nessun abbonamento esistente: crea una nuova sessione di Checkout
+const baseParams = {
+  mode: "subscription",
+  // Dati FE / anagrafica
+  tax_id_collection: { enabled: true },
+  billing_address_collection: "required",
+  custom_fields: [
+    {
+      key: "codice_destinatario",
+      label: { type: "custom", custom: "Codice Destinatario (SdI)" },
+      type: "text"
+    },
+    {
+      key: "pec",
+      label: { type: "custom", custom: "PEC (in alternativa al Codice SdI)" },
+      type: "text",
+      optional: true
+    }
+  ],
+  automatic_tax: { enabled: false },
 
-      // Raccogliamo i dati necessari per la fattura elettronica
-      tax_id_collection: { enabled: true },       // P.IVA / VAT
-      billing_address_collection: "required",     // indirizzo di fatturazione
-      custom_fields: [
-        {
-          key: "codice_destinatario",
-          label: { type: "custom", custom: "Codice Destinatario (SdI)" },
-          type: "text"
-        },
-        {
-          key: "pec",
-          label: { type: "custom", custom: "PEC (in alternativa al Codice SdI)" },
-          type: "text",
-          optional: true
-        }
-      ],
+  // Linea abbonamento
+  line_items: [{ price: selectedPrice, quantity: 1 }],
+  subscription_data: { metadata: { plan } },
 
-      // Se sei in forfettario e non applichi IVA, NON attivare automatic_tax/Stripe Tax
-      automatic_tax: { enabled: false },
+  // UX
+  locale: "it",
+  success_url: `${YOUR_DOMAIN}/login.html?checkout=success`,
+  cancel_url: `${YOUR_DOMAIN}/abbonamento.html`
+};
 
-      line_items: [{ price: selectedPrice, quantity: 1 }],
-      subscription_data: {
-        metadata: { plan }
-      },
+// Se ho trovato un customer esistente, lo riuso.
+// Altrimenti faccio creare un customer nuovo indicando l’email.
+let sessionParams;
+if (customer) {
+  sessionParams = {
+    ...baseParams,
+    customer: customer.id,
+    customer_update: { address: "auto", name: "auto" }
+  };
+} else {
+  sessionParams = {
+    ...baseParams,
+    customer_email: email,
+    customer_creation: "always",
+    customer_update: { address: "auto", name: "auto" }
+  };
+}
 
-      // UX
-      locale: "it",
-      success_url: `${YOUR_DOMAIN}/login.html?checkout=success`,
-      cancel_url: `${YOUR_DOMAIN}/abbonamento.html`
-    });
+const session = await stripe.checkout.sessions.create(sessionParams);
+return res.status(200).json({ url: session.url });
 
-    return res.status(200).json({ url: session.url });
 
   } catch (err) {
     console.error("❌ Errore Stripe:", err.message, err);
