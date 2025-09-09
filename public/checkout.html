@@ -21,7 +21,22 @@
 <body>
   <h1>Attiva il tuo abbonamento</h1>
   <p>Inizia ora con 7 giorni di prova gratuita.</p>
-  <button id="subscribeBtn">Abbonati</button>
+  <form id="b2bForm" style="max-width:480px;margin:1.5em auto;text-align:left">
+  <label>Ragione sociale*</label>
+  <input id="businessName" required placeholder="OSTERIA SRL" style="width:100%;padding:.7em;margin:.3em 0 1em;border-radius:10px;border:1px solid #ccc" />
+
+  <label>Partita IVA* (IT###########)</label>
+  <input id="vat" required placeholder="IT12345678901" style="width:100%;padding:.7em;margin:.3em 0 1em;border-radius:10px;border:1px solid #ccc" />
+
+  <label>Codice SDI (oppure PEC)</label>
+  <input id="sdi" placeholder="ABCDEF1" maxlength="7" style="width:100%;padding:.7em;margin:.3em 0 1em;border-radius:10px;border:1px solid #ccc" />
+
+  <label>PEC (oppure SDI)</label>
+  <input id="pec" type="email" placeholder="amministrazione@pec.azienda.it" style="width:100%;padding:.7em;margin:.3em 0 1.2em;border-radius:10px;border:1px solid #ccc" />
+
+  <button type="submit" style="background:#b00;color:#fff;font-size:1.2em;padding:1em 2em;border:none;border-radius:12px;cursor:pointer;width:100%">Abbonati</button>
+  <p style="font-size:.9em;opacity:.8;margin-top:.6em">* Campi obbligatori. Inserisci <b>SDI</b> <em>oppure</em> <b>PEC</b>.</p>
+</form>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -38,26 +53,51 @@
       window.location.href = "/login.html";
     }
 
-    const email = user.email;
+const form = document.getElementById("b2bForm");
 
-    document.getElementById("subscribeBtn").addEventListener("click", async () => {
-      const res = await fetch("/api/create-checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plan: "base",
-          email: email
-        })
-      });
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert("Errore durante la creazione del pagamento");
-        console.error(data);
-      }
-    });
+  const businessName = document.getElementById("businessName").value.trim();
+  let vat = document.getElementById("vat").value.trim().toUpperCase();
+  const sdi = document.getElementById("sdi").value.trim().toUpperCase();
+  const pec = document.getElementById("pec").value.trim();
+
+  // Validazioni base lato client (per aiutare l'utente)
+  if (!businessName) return alert("Ragione sociale obbligatoria.");
+  if (!vat) return alert("Partita IVA obbligatoria.");
+  if (!sdi && !pec) return alert("Inserisci SDI oppure PEC.");
+
+  // Normalizza P.IVA: accetta anche senza 'IT'
+  if (!vat.startsWith("IT")) vat = "IT" + vat.replace(/\s+/g, "");
+  if (!/^IT\d{11}$/.test(vat)) return alert("P.IVA non valida. Formato: IT###########");
+
+  // (facoltativo) controllo veloce su SDI: 7 caratteri
+  if (sdi && sdi.length !== 7) return alert("Il Codice SDI deve essere di 7 caratteri.");
+
+  // Chiama il backend con tutti i dati B2B
+  const res = await fetch("/api/create-checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      plan: "base",           // o "pro" se scegli quel piano
+      email: email,           // già letto dall'utente Supabase
+      businessName,
+      vat,
+      sdi,
+      pec
+    })
+  });
+
+  const data = await res.json();
+  if (res.ok && data.url) {
+    window.location.href = data.url;
+  } else {
+    alert(data.error || "Errore durante la creazione del pagamento");
+    console.error(data);
+  }
+});
+
   </script>
 </body>
 </html>

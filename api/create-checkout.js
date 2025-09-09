@@ -6,102 +6,93 @@ module.exports = async (req, res) => {
     return res.status(405).send({ error: "Method not allowed" });
   }
 
-  const { plan, email } = req.body;
+  const { plan, email, businessName, vat, sdi, pec } = req.body;
+
   const priceMap = {
     base: "price_1RiFO4RWDcfnUagZw1Z12VEj",
     pro:  "price_1RiFLtRWDcfnUagZp0bIKnOL"
   };
-
   const selectedPrice = priceMap[plan];
+
+  // ===== Validazioni B2B obbligatorie =====
   if (!selectedPrice || !email) {
-    return res.status(400).send({ error: "Dati mancanti" });
+    return res.status(400).send({ error: "Dati mancanti (plan/email)." });
+  }
+  if (!businessName) {
+    return res.status(400).send({ error: "Ragione sociale obbligatoria." });
+  }
+  if (!vat) {
+    return res.status(400).send({ error: "Partita IVA obbligatoria." });
+  }
+  if (!sdi && !pec) {
+    return res.status(400).send({ error: "Serve Codice SDI oppure PEC." });
+  }
+
+  // Normalizza P.IVA: IT + 11 cifre
+  const normVat = String(vat).replace(/\s+/g, "").toUpperCase();
+  const vatWithCountry = normVat.startsWith("IT") ? normVat : `IT${normVat}`;
+  if (!/^IT\d{11}$/.test(vatWithCountry)) {
+    return res.status(400).send({ error: "P.IVA non valida. Formato atteso: IT###########" });
   }
 
   try {
-    // Prova a riusare un Customer esistente con la stessa email
-    const customers = await stripe.customers.list({ email, limit: 1 });
-    const customer = customers.data[0];
+    // 1) Trova o crea il Customer
+    let customer = (await stripe.customers.list({ email, limit: 1 })).data[0];
 
     if (customer) {
-      // Se esiste già un abbonamento attivo/in corso, esegui cambio piano
-      const subscriptions = await stripe.subscriptions.list({
-        customer: customer.id,
-        status: "all"
+      await stripe.customers.update(customer.id, {
+        name: businessName,
+        email,
+        metadata: {
+          codice_destinatario: sdi || "",
+          pec: pec || ""
+        }
       });
+    } else {
+      customer = await stripe.customers.create({
+        name: businessName,
+        email,
+        metadata: {
+          codice_destinatario: sdi || "",
+          pec: pec || ""
+        }
+      });
+    }
 
-      const existingSub = subscriptions.data.find(sub =>
-        ["active", "trialing", "past_due", "incomplete", "unpaid"].includes(sub.status)
-      );
-
-      if (existingSub) {
-        await stripe.subscriptions.update(existingSub.id, {
-          cancel_at_period_end: false,
-          items: [{
-            id: existingSub.items.data[0].id,
-            price: selectedPrice
-          }],
-          proration_behavior: "create_prorations",
-          metadata: { plan }
+    // 2) Garantisci che la P.IVA sia presente sul Customer (blocca i privati)
+    const taxIds = await stripe.customers.listTaxIds(customer.id, { limit: 100 });
+    const alreadyHasVat = taxIds.data.find(
+      t => t.type === "eu_vat" && String(t.value).toUpperCase() === vatWithCountry
+    );
+    if (!alreadyHasVat) {
+      try {
+        await stripe.customers.createTaxId(customer.id, {
+          type: "eu_vat",
+          value: vatWithCountry
         });
-
-        return res.status(200).json({
-          url: `${YOUR_DOMAIN}/verifica-successo.html?changed=true`
-        });
+      } catch (e) {
+        return res.status(400).send({ error: "P.IVA rifiutata da Stripe. Controlla il numero." });
       }
     }
 
-// Nessun abbonamento esistente: crea una nuova sessione di Checkout
-const baseParams = {
-  mode: "subscription",
-  // Dati FE / anagrafica
-  tax_id_collection: { enabled: true },
-  billing_address_collection: "required",
-  custom_fields: [
-    {
-      key: "codice_destinatario",
-      label: { type: "custom", custom: "Codice Destinatario (SdI)" },
-      type: "text"
-    },
-    {
-      key: "pec",
-      label: { type: "custom", custom: "PEC (in alternativa al Codice SdI)" },
-      type: "text",
-      optional: true
-    }
-  ],
-  automatic_tax: { enabled: false },
+    // 3) Crea la sessione di Checkout (solo con 'customer', niente 'customer_creation')
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
 
-  // Linea abbonamento
-  line_items: [{ price: selectedPrice, quantity: 1 }],
-  subscription_data: { metadata: { plan } },
+      customer: customer.id,
+      customer_update: { address: "auto", name: "auto" }, // aggiorna ciò che inserisce in checkout
+      billing_address_collection: "required",
+      tax_id_collection: { enabled: true }, // mantiene visibile/aggiornabile il campo P.IVA
 
-  // UX
-  locale: "it",
-  success_url: `${YOUR_DOMAIN}/login.html?checkout=success`,
-  cancel_url: `${YOUR_DOMAIN}/abbonamento.html`
-};
+      line_items: [{ price: selectedPrice, quantity: 1 }],
+      subscription_data: { metadata: { plan } },
 
-// Se ho trovato un customer esistente, lo riuso.
-// Altrimenti faccio creare un customer nuovo indicando l’email.
-let sessionParams;
-if (customer) {
-  sessionParams = {
-    ...baseParams,
-    customer: customer.id,
-    customer_update: { address: "auto", name: "auto" }
-  };
-} else {
-  const newCustomer = await stripe.customers.create({ email });
-  sessionParams = {
-    ...baseParams,
-    customer: newCustomer.id,
-    customer_update: { address: "auto", name: "auto" }
-  };
-}
-const session = await stripe.checkout.sessions.create(sessionParams);
-return res.status(200).json({ url: session.url });
+      locale: "it",
+      success_url: `${YOUR_DOMAIN}/login.html?checkout=success`,
+      cancel_url: `${YOUR_DOMAIN}/abbonamento.html`
+    });
 
-
+    return res.status(200).json({ url: session.url });
   } catch (err) {
     console.error("❌ Errore Stripe:", err.message, err);
     return res.status(500).json({
@@ -110,5 +101,6 @@ return res.status(200).json({ url: session.url });
     });
   }
 };
+
 
 
