@@ -6,6 +6,7 @@ const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET")!;
 const stripe = Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
   apiVersion: "2022-11-15"
 });
+const MAKE_WEBHOOK_URL = "https://hook.eu2.make.com/n9foz8yobzhb2yn6ijv9v7mztuybyepj";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -304,11 +305,11 @@ if (event.type === "invoice.finalized") {
     };
 
     // manda a Make (URL tuo)
-    await fetch("https://hook.eu2.make.com/965yirr978fbj3h0ckzwlni3mvkbnm9s", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+await fetch(MAKE_WEBHOOK_URL, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(payload)
+});
 
     console.log("➡️  Inviato a Make per FE:", invoiceId);
   } catch (e) {
@@ -412,11 +413,11 @@ if (event.type === "invoice.paid") {
       }
     };
 
-    await fetch("https://hook.eu2.make.com/965yirr978fbj3h0ckzwlni3mvkbnm9s", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+await fetch(MAKE_WEBHOOK_URL, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(payload)
+});
 
     console.log("➡️  Inviato a Make (invoice.paid):", invoiceId);
   } catch (e) {
