@@ -81,6 +81,33 @@
   <div class="container">
     <h1>Gestione Abbonamento</h1>
     <div id="statusTrial" style="margin-bottom: 1rem; color: #555;"></div>
+    <!-- Dati fatturazione aziendali (obbligatori) -->
+<div id="b2bForm" style="max-width:520px;margin:16px 0 20px;">
+  <div style="font-weight:600;margin-bottom:8px;">Dati fatturazione (solo aziende)</div>
+
+  <label style="display:block;margin:8px 0 4px;">Ragione sociale*</label>
+  <input id="businessName" placeholder="OSTERIA SRL"
+         style="width:100%;padding:.7em;border-radius:10px;border:1px solid #ccc" />
+
+  <label style="display:block;margin:12px 0 4px;">Partita IVA* (IT###########)</label>
+  <input id="vat" placeholder="IT12345678901"
+         style="width:100%;padding:.7em;border-radius:10px;border:1px solid #ccc" />
+
+  <div style="display:flex;gap:12px;margin-top:12px;">
+    <div style="flex:1">
+      <label style="display:block;margin-bottom:4px;">Codice SDI (oppure PEC)</label>
+      <input id="sdi" maxlength="7" placeholder="ABCDEF1"
+             style="width:100%;padding:.7em;border-radius:10px;border:1px solid #ccc" />
+    </div>
+    <div style="flex:1">
+      <label style="display:block;margin-bottom:4px;">PEC (oppure SDI)</label>
+      <input id="pec" type="email" placeholder="amministrazione@pec.azienda.it"
+             style="width:100%;padding:.7em;border-radius:10px;border:1px solid #ccc" />
+    </div>
+  </div>
+
+  <p style="font-size:.9em;opacity:.8;margin-top:.6em">* Campi obbligatori. Inserisci <b>SDI</b> <em>oppure</em> <b>PEC</b>.</p>
+</div>
     <div class="piani">
       <div id="pianoBase" class="piano">
         <h2>Piano Base - 14,99€/mese</h2>
@@ -186,21 +213,40 @@ async function vaiACheckoutStripe(plan) {
     return alert("Errore nel recupero dell'email dell'utente.");
   }
 
+  // Leggi i campi B2B
+  const businessName = document.getElementById("businessName").value.trim();
+  let vat = document.getElementById("vat").value.trim().toUpperCase();
+  const sdi = document.getElementById("sdi").value.trim().toUpperCase();
+  const pec = document.getElementById("pec").value.trim();
+
+  // Validazioni lato client (aiuta l'utente, ma il server ricontrolla tutto)
+  if (!businessName) return alert("Ragione sociale obbligatoria.");
+  if (!vat) return alert("Partita IVA obbligatoria.");
+  if (!sdi && !pec) return alert("Inserisci SDI oppure PEC.");
+  if (!vat.startsWith("IT")) vat = "IT" + vat.replace(/\s+/g, "");
+  if (!/^IT\d{11}$/.test(vat)) return alert("P.IVA non valida. Formato: IT###########");
+  if (sdi && sdi.length !== 7) return alert("Il Codice SDI deve essere di 7 caratteri.");
+
+  // Chiamata al backend con i dati B2B
   const res = await fetch("/api/create-checkout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      plan: plan,
-      email: user.email
+      plan,
+      email: user.email,
+      businessName,
+      vat,
+      sdi,
+      pec
     })
   });
 
   const json = await res.json();
-  if (json.url) {
+  if (res.ok && json.url) {
     window.location.href = json.url;
   } else {
-    alert("Errore nella creazione del checkout.");
-    console.error(json.error);
+    alert(json.error || "Errore nella creazione del checkout.");
+    console.error(json);
   }
 }
 
