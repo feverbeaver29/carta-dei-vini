@@ -91,14 +91,13 @@ if (customer) {
     customer_update: { address: "auto", name: "auto" }
   };
 } else {
+  const newCustomer = await stripe.customers.create({ email });
   sessionParams = {
     ...baseParams,
-    customer_email: email,
-    customer_creation: "always",
+    customer: newCustomer.id,
     customer_update: { address: "auto", name: "auto" }
   };
 }
-
 const session = await stripe.checkout.sessions.create(sessionParams);
 return res.status(200).json({ url: session.url });
 
