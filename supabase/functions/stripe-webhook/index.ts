@@ -38,27 +38,34 @@ serve(async (req) => {
 // =====================================================================================
 if (event.type === "checkout.session.completed") {
   const session = event.data.object as any;
-  const customerId = session.customer as string;
+  const customerId = (session.customer as string) || null;
 
-  // Email: preferisci quella in sessione, altrimenti dal Customer
-  let email = (session.customer_email as string) || null;
+  // Fonte primaria: dettagli "snapshot" nel Checkout
+  const det = session.customer_details || {};
+  // email robusta
+  let email = session.customer_email || det.email || null;
+
+  // Prova a recuperare il Customer (ma non bloccare se Stripe dà 503)
   let customer: any = null;
-
   if (customerId) {
-    const _c = await stripe.customers.retrieve(customerId);
-    if (_c && typeof _c === "object") {
-      customer = _c;
-      if (!email) email = (customer as any).email || null;
+    try {
+      const _c = await stripe.customers.retrieve(customerId);
+      if (_c && typeof _c === "object") {
+        customer = _c;
+        if (!email) email = (customer as any).email || null;
+      }
+    } catch (e) {
+      console.warn("⚠️ retrieve(customer) fallito, procedo con customer_details:", (e as any)?.message);
     }
   }
 
   console.log("✅ Checkout completato per:", email, customerId);
 
-  // Trova il ristorante (prima per email, poi per customerId)
+  // Trova ristorante: usa ilike (case-insensitive) sull'email
   let { data: risto } = await supabase
     .from("ristoranti")
     .select("id")
-    .eq("email", email)
+    .ilike("email", email || "") // <-- case-insensitive
     .maybeSingle();
 
   if (!risto && customerId) {
@@ -67,7 +74,6 @@ if (event.type === "checkout.session.completed") {
       .select("id")
       .eq("stripe_customer_id", customerId)
       .maybeSingle();
-
     risto = byStripeId.data || null;
   }
 
@@ -76,58 +82,52 @@ if (event.type === "checkout.session.completed") {
     return new Response("Utente non trovato", { status: 404 });
   }
 
-  // ⬇️ Estrai SdI/PEC: prima dai custom_fields del checkout, poi da customer.metadata
-  const customFields = Array.isArray(session.custom_fields) ? session.custom_fields : [];
-  const getCF = (key: string) =>
-    customFields.find((f: any) => f.key === key)?.text?.value || null;
+  // SdI/PEC: ora prendiamo SOLO dai metadata del Customer (abbiamo tolto i custom_fields)
+  const codiceDestinatario = customer?.metadata?.codice_destinatario || null;
+  const pec = customer?.metadata?.pec || null;
 
-  const sdiFromCF = getCF("codice_destinatario");
-  const pecFromCF = getCF("pec");
-
-  const sdiFromMeta = customer?.metadata?.codice_destinatario || null;
-  const pecFromMeta = customer?.metadata?.pec || null;
-
-  const codiceDestinatario = sdiFromCF || sdiFromMeta || null;
-  const pec = pecFromCF || pecFromMeta || null;
-
-  // ⬇️ P.IVA dal Customer (se c'è)
+  // P.IVA: prima dall'instant snapshot del Checkout, poi dal Customer
   let partitaIVA: string | null = null;
-  if (customerId) {
-    const taxIds = await stripe.customers.listTaxIds(customerId, { limit: 25 });
-    const vat = taxIds.data.find((t) => t.type === "eu_vat" || t.type === "it_vat");
-    partitaIVA = vat?.value || null;
+  const detTaxIds = Array.isArray(det.tax_ids) ? det.tax_ids : [];
+  if (detTaxIds.length) {
+    partitaIVA = detTaxIds[0]?.value || null;
+  }
+  if (!partitaIVA && customerId) {
+    try {
+      const taxIds = await stripe.customers.listTaxIds(customerId, { limit: 25 });
+      const vat = taxIds.data.find((t) => t.type === "eu_vat" || t.type === "it_vat");
+      partitaIVA = vat?.value || null;
+    } catch (e) {
+      console.warn("⚠️ listTaxIds fallito:", (e as any)?.message);
+    }
   }
 
-  // ⬇️ Ragione sociale + indirizzo
-  const ragioneSociale = (customer && customer.name) || null;
-  const indirizzo = (customer && customer.address) || null; // oggetto Stripe (city, country, line1, line2, postal_code, state)
+  // Ragione sociale + indirizzo: snapshot dal Checkout, fallback Customer
+  const ragioneSociale = det.name || customer?.name || null;
+  const indirizzo = det.address || customer?.address || null; // oggetto Stripe
 
-  // ⬇️ Piano reale dal Subscription creato dalla sessione
+  // Piano reale dal Subscription creato dalla sessione
   let selectedPlan = "base";
   try {
     if (session.subscription) {
       const sub = await stripe.subscriptions.retrieve(session.subscription as string);
-      const priceId = sub.items.data[0].price.id;
-      if (priceId === "price_1RiFLtRWDcfnUagZp0bIKnOL") selectedPlan = "pro";
-      else selectedPlan = "base";
+      const firstItem = sub.items?.data?.[0];
+      const priceId = firstItem?.price?.id;
+      selectedPlan = (priceId === "price_1RiFLtRWDcfnUagZp0bIKnOL") ? "pro" : "base";
     }
   } catch (e) {
-    console.warn("⚠️ Impossibile leggere subscription dalla session:", e);
+    console.warn("⚠️ Impossibile leggere subscription dalla session:", (e as any)?.message);
   }
 
-  // Aggiorna ristorante con customerId, stato abbonamento e dati di fatturazione
+  // Aggiorna ristorante
   const { error: updateErr } = await supabase
     .from("ristoranti")
     .update({
       stripe_customer_id: customerId,
       subscription_status: "active",
       subscription_plan: selectedPlan,
-
       ragione_sociale: ragioneSociale,
-      // Se 'indirizzo_json' è JSONB in DB, salva l'oggetto direttamente:
-      indirizzo_json: indirizzo || null,
-      // Se invece è TEXT, usa: JSON.stringify(indirizzo) || null
-
+      indirizzo_json: indirizzo || null,     // se la colonna è JSONB va bene così
       partita_iva: partitaIVA,
       codice_destinatario: codiceDestinatario,
       pec: pec
@@ -161,8 +161,6 @@ if (event.type === "checkout.session.completed") {
     }
 
     const newStatus = sub.status; // active, past_due, canceled, etc.
-    const newPriceId = sub.items.data[0].price.id;
-
 const firstItem = sub.items?.data?.[0];
 const newPriceId = firstItem?.price?.id;
 
