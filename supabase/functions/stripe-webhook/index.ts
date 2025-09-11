@@ -330,9 +330,9 @@ const payload = {
   description: lineDescription,
   client: {
     name: invName || invEmail,
-    vat_number: invVat || null,
-    sdi: invSdi || null,
-    pec: invPec || null,
+    vat_number: (risto?.partita_iva || null)?.replace(/^IT/i, "").replace(/\D/g, "") || null,
+    sdi: risto?.codice_destinatario || null,
+    pec: risto?.pec || null,
     address: invAddress || null,   // oggetto Stripe compatibile con Make
     email: invEmail || null
   }
