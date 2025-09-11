@@ -17,6 +17,13 @@ const supabase = createClient(
 const sum = (arr: {amount:number}[] | undefined | null) =>
   (arr || []).reduce((s, x) => s + (x?.amount || 0), 0);
 
+// --- helper per "pulire" la P.IVA (toglie IT/EU, spazi e non numerici) ---
+const cleanVat = (v: unknown) => {
+  const s = (v ?? "").toString();
+  const cleaned = s.replace(/^IT/i, "").replace(/^EU/i, "").replace(/\D/g, "");
+  return cleaned || null;
+};
+
 serve(async (req) => {
   const sig = req.headers.get("stripe-signature");
   const body = await req.text();
@@ -271,6 +278,7 @@ const invEmail = invoice.customer_email || risto?.email || null;
 // P.IVA dall'invoice se presente, altrimenti dal DB
 let invVat: string | null = null;
 const invTaxIds = Array.isArray(invoice.customer_tax_ids)
+const invVatClean = cleanVat(invVat) || cleanVat(risto?.partita_iva);
   ? invoice.customer_tax_ids
   : (invoice.customer_tax_ids?.data || []);
 if (invTaxIds.length) {
@@ -328,14 +336,14 @@ const payload = {
   period_start,
   period_end,
   description: lineDescription,
-  client: {
-    name: invName || invEmail,
-    vat_number: (risto?.partita_iva || null)?.replace(/^IT/i, "").replace(/\D/g, "") || null,
-    sdi: risto?.codice_destinatario || null,
-    pec: risto?.pec || null,
-    address: invAddress || null,   // oggetto Stripe compatibile con Make
-    email: invEmail || null
-  }
+client: {
+  name: invName || invEmail,
+  vat_number: invVatClean,                 // <--- SANIFICATO
+  sdi: invSdi || null,
+  pec: invPec || null,
+  address: invAddress || null,
+  email: invEmail || null
+}
 };
 
 await fetch(MAKE_WEBHOOK_URL, {
@@ -404,6 +412,7 @@ const invEmail = invoice.customer_email || risto?.email || null;
 // P.IVA dall'invoice se presente, altrimenti dal DB
 let invVat: string | null = null;
 const invTaxIds = Array.isArray(invoice.customer_tax_ids)
+const invVatClean = cleanVat(invVat) || cleanVat(risto?.partita_iva);
   ? invoice.customer_tax_ids
   : (invoice.customer_tax_ids?.data || []);
 if (invTaxIds.length) {
@@ -461,14 +470,14 @@ const payload = {
   period_start,
   period_end,
   description: lineDescription,
-  client: {
-    name: invName || invEmail,
-    vat_number: invVat || null,
-    sdi: invSdi || null,
-    pec: invPec || null,
-    address: invAddress || null,   // oggetto Stripe compatibile con Make
-    email: invEmail || null
-  }
+client: {
+  name: invName || invEmail,
+  vat_number: invVatClean,                 // <--- SANIFICATO
+  sdi: invSdi || null,
+  pec: invPec || null,
+  address: invAddress || null,
+  email: invEmail || null
+}
 };
 
 await fetch(MAKE_WEBHOOK_URL, {
