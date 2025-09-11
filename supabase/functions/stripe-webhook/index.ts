@@ -278,7 +278,7 @@ const invEmail = invoice.customer_email || risto?.email || null;
 // P.IVA dall'invoice se presente, altrimenti dal DB
 let invVat: string | null = null;
 const invTaxIds = Array.isArray(invoice.customer_tax_ids)
-const invVatClean = cleanVat(invVat) || cleanVat(risto?.partita_iva);
+
   ? invoice.customer_tax_ids
   : (invoice.customer_tax_ids?.data || []);
 if (invTaxIds.length) {
@@ -286,6 +286,7 @@ if (invTaxIds.length) {
 } else {
   invVat = risto?.partita_iva || null;
 }
+const invVatClean = cleanVat(invVat) || cleanVat(risto?.partita_iva);
 
 // SdI/PEC: prima DB, poi (se serve) dai metadata del Customer Stripe
 let invSdi = risto?.codice_destinatario || null;
@@ -412,7 +413,7 @@ const invEmail = invoice.customer_email || risto?.email || null;
 // P.IVA dall'invoice se presente, altrimenti dal DB
 let invVat: string | null = null;
 const invTaxIds = Array.isArray(invoice.customer_tax_ids)
-const invVatClean = cleanVat(invVat) || cleanVat(risto?.partita_iva);
+
   ? invoice.customer_tax_ids
   : (invoice.customer_tax_ids?.data || []);
 if (invTaxIds.length) {
@@ -420,6 +421,7 @@ if (invTaxIds.length) {
 } else {
   invVat = risto?.partita_iva || null;
 }
+const invVatClean = cleanVat(invVat) || cleanVat(risto?.partita_iva);
 
 // SdI/PEC: prima DB, poi (se serve) dai metadata del Customer Stripe
 let invSdi = risto?.codice_destinatario || null;
