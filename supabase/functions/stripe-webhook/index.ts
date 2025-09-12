@@ -61,7 +61,7 @@ async function ficCreateAndSend(invoicePayload: {
   const clientsApi = new ClientsApi(cfg);
   const docsApi = new IssuedDocumentsApi(cfg);
   const einvApi = new IssuedEInvoicesApi(cfg);
-  const infoApi    = new InfoApi(cfg);    );
+  const infoApi    = new InfoApi(cfg);   
 
   // Paese nel formato accettato da FIC
   const ficCountry = toFicCountry(invoicePayload.client.address);
