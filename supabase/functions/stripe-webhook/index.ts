@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@12.14.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import {  Configuration,  ClientsApi,  IssuedDocumentsApi,  IssuedEInvoicesApi,  IssuedDocumentType,  CreateClientRequest,  CreateIssuedDocumentRequest,InfoApi,,} from "https://esm.sh/@fattureincloud/fattureincloud-ts-sdk@2";
+import {  Configuration,  ClientsApi,  IssuedDocumentsApi,  IssuedEInvoicesApi,  IssuedDocumentType,  CreateClientRequest,  CreateIssuedDocumentRequest,InfoApi,} from "https://esm.sh/@fattureincloud/fattureincloud-ts-sdk@2";
 
 
 const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET")!;
