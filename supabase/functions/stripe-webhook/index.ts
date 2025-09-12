@@ -147,7 +147,7 @@ async function ficCreateAndSend(invoicePayload: {
           country: ficCountry.country,           // "Italia"
           country_iso: ficCountry.country_iso,   // "IT"
         },
-        currency: (invoicePayload.currency || "EUR").toUpperCase(),
+        currency: { id: (invoicePayload.currency || "EUR").toUpperCase() },
         items_list: [item],
         visible_subject: "Abbonamento Wine's Fever",
       },
