@@ -1,12 +1,13 @@
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@12.14.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {  Configuration,  ClientsApi,  IssuedDocumentsApi,  IssuedEInvoicesApi,  IssuedDocumentType,  CreateClientRequest,  CreateIssuedDocumentRequest,} from "https://esm.sh/@fattureincloud/fattureincloud-ts-sdk@2";
+
 
 const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET")!;
 const stripe = Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
   apiVersion: "2022-11-15"
 });
-const MAKE_WEBHOOK_URL = "https://hook.eu2.make.com/n9foz8yobzhb2yn6ijv9v7mztuybyepj";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -28,6 +29,120 @@ const cleanSdi = (v: unknown) => {
   const s = (v ?? "").toString().trim().toUpperCase();
   return s.length === 7 ? s : null;
 };
+// Converte "IT"/"Italy"/"Italia" -> { country: "Italia", country_iso: "IT" }
+const toFicCountry = (addr?: { country?: string } | null) => {
+  const raw = addr?.country;
+  if (!raw) return { country: "Italia", country_iso: "IT" };
+  const up = String(raw).trim().toUpperCase();
+  if (up === "IT" || up === "ITA" || up === "ITALY" || up === "ITALIA") {
+    return { country: "Italia", country_iso: "IT" };
+  }
+  // fallback: lasciamo quello che arriva e, se è 2 lettere, lo mettiamo anche in country_iso
+  return { country: String(raw), country_iso: up.length === 2 ? up : undefined };
+};
+
+async function ficCreateAndSend(invoicePayload: {
+  client: {
+    name: string | null;
+    vat_number: string | null;
+    sdi?: string | null;
+    pec?: string | null;
+    address?: any | null;  // Stripe.address
+    email?: string | null;
+  };
+  description: string;
+  currency: string;
+  subtotal_cent: number;
+}) {
+  const accessToken = Deno.env.get("FIC_ACCESS_TOKEN")!;
+  const companyId = Number(Deno.env.get("FIC_COMPANY_ID")!);
+  const vat0Id = Deno.env.get("FIC_VAT_0_ID");
+  if (!vat0Id) {
+    throw new Error("FIC_VAT_0_ID mancante: imposta l'ID della tua aliquota 0% (forfettario) in FIC.");
+  }
+
+  const cfg = new Configuration({ accessToken });
+  const clientsApi = new ClientsApi(cfg);
+  const docsApi = new IssuedDocumentsApi(cfg);
+  const einvApi = new IssuedEInvoicesApi(cfg);
+
+  // ⬅️ CALCOLA QUI il paese in formato accettato da FIC
+  const ficCountry = toFicCountry(invoicePayload.client.address);
+
+  // 1) crea/aggiorna cliente (ok se fallisce perché già esiste)
+  let clientId: number | undefined;
+  try {
+    const cReq: CreateClientRequest = {
+      data: {
+        type: "company",
+        name: invoicePayload.client.name ?? invoicePayload.client.email ?? "Cliente",
+        vat_number: invoicePayload.client.vat_number ?? undefined,
+        ei_code: invoicePayload.client.sdi ?? undefined,        // SDI
+        pec: invoicePayload.client.pec ?? undefined,
+        email: invoicePayload.client.email ?? undefined,
+        address_street: invoicePayload.client.address?.line1 ?? undefined,
+        address_postal_code: invoicePayload.client.address?.postal_code ?? undefined,
+        address_city: invoicePayload.client.address?.city ?? undefined,
+        address_province: invoicePayload.client.address?.state ?? undefined,
+        country: ficCountry.country,           // "Italia"
+        country_iso: ficCountry.country_iso,   // "IT"
+      },
+    };
+    const created = await clientsApi.createClient(companyId, cReq);
+    clientId = created.data?.id;
+  } catch (e: any) {
+    console.error("FIC createClient error:", e?.response?.data || e);
+    // proseguiamo comunque: i dati entrano nell'entity della fattura
+  }
+
+  // 2) riga documento (forfettario → imponibile senza IVA)
+  const net = Number((invoicePayload.subtotal_cent / 100).toFixed(2));
+  const item: any = {
+    name: invoicePayload.description || "Abbonamento mensile",
+    qty: 1,
+    net_price: net,
+    vat: { id: Number(vat0Id) },   // forza aliquota 0% corretta
+  };
+
+  // 3) crea documento
+  try {
+    const docReq: CreateIssuedDocumentRequest = {
+      data: {
+        type: IssuedDocumentType.Invoice,
+        entity: {
+          id: clientId,
+          name: invoicePayload.client.name ?? invoicePayload.client.email ?? "Cliente",
+          vat_number: invoicePayload.client.vat_number ?? undefined,
+          ei_code: invoicePayload.client.sdi ?? undefined,       // SDI (campo corretto)
+          pec: invoicePayload.client.pec ?? undefined,
+          email: invoicePayload.client.email ?? undefined,
+          address_street: invoicePayload.client.address?.line1 ?? undefined,
+          address_postal_code: invoicePayload.client.address?.postal_code ?? undefined,
+          address_city: invoicePayload.client.address?.city ?? undefined,
+          address_province: invoicePayload.client.address?.state ?? undefined,
+          country: ficCountry.country,           // "Italia"
+          country_iso: ficCountry.country_iso,   // "IT"
+        },
+        currency: (invoicePayload.currency || "EUR").toUpperCase(),
+        items_list: [item],
+        visible_subject: "Abbonamento Wine's Fever",
+      },
+    };
+
+    const createdDoc = await docsApi.createIssuedDocument(companyId, docReq);
+    const documentId = createdDoc.data?.id;
+    if (!documentId) throw new Error("Documento FIC non creato");
+
+    // 4) invia e-fattura a SDI
+    await einvApi.sendEInvoice(companyId, documentId, {});
+
+    // (opzionale) invia il PDF per email al cliente:
+    // await docsApi.emailIssuedDocument(companyId, documentId, { data: { to_email: invoicePayload.client.email } });
+  } catch (e: any) {
+    console.error("FIC createIssuedDocument error:", e?.response?.data || e);
+    throw e; // così lo vedi nei log Supabase e capiamo subito eventuali 422
+  }
+}
 
 serve(async (req) => {
   const sig = req.headers.get("stripe-signature");
@@ -330,36 +445,22 @@ await supabase.from("fatture").upsert({
 
 console.log("🧾 Invoice salvata:", invoice.number || invoice.id);
 
-// ====== INVIO A MAKE ======
-const payload = {
-  id_stripe: invoice.id,
-  number: invoice.number,
-  currency: invoice.currency,
-  subtotal_cent: invoice.subtotal,
-  total_cent: invoice.total,
-  hosted_invoice_url: invoice.hosted_invoice_url,
-  invoice_pdf: invoice.invoice_pdf,
-  period_start,
-  period_end,
+// ====== CREA E INVIA FATTURA SU FIC ======
+await ficCreateAndSend({
   description: lineDescription,
-client: {
-  name: invName || invEmail,
-  vat_number: invVatClean,                 // <--- SANIFICATO
-  sdi: invSdi || null,
-  pec: invPec || null,
-  address: invAddress || null,
-  email: invEmail || null
-}
-};
-
-await fetch(MAKE_WEBHOOK_URL, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(payload)
+  currency,
+  subtotal_cent: subtotal,
+  client: {
+    name: invName || invEmail,
+    vat_number: invVatClean || null,
+    sdi: invSdi || null,
+    pec: invPec || null,
+    address: invAddress || null,
+    email: invEmail || null,
+  },
 });
+console.log("✅ Fattura creata/inviata su Fatture in Cloud:", invoice.number || invoice.id);
 
-
-    console.log("➡️  Inviato a Make per FE:", invoiceId);
   } catch (e) {
     console.error("❌ Errore invoice.finalized:", e);
   }
