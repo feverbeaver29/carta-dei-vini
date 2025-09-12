@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@12.14.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import {  Configuration,  ClientsApi,  IssuedDocumentsApi,  IssuedEInvoicesApi,  IssuedDocumentType,  CreateClientRequest,  CreateIssuedDocumentRequest,SettingsApi,} from "https://esm.sh/@fattureincloud/fattureincloud-ts-sdk@2";
+import {  Configuration,  ClientsApi,  IssuedDocumentsApi,  IssuedEInvoicesApi,  IssuedDocumentType,  CreateClientRequest,  CreateIssuedDocumentRequest,InfoApi,,} from "https://esm.sh/@fattureincloud/fattureincloud-ts-sdk@2";
 
 
 const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET")!;
@@ -61,7 +61,7 @@ async function ficCreateAndSend(invoicePayload: {
   const clientsApi = new ClientsApi(cfg);
   const docsApi = new IssuedDocumentsApi(cfg);
   const einvApi = new IssuedEInvoicesApi(cfg);
-  const settingsApi = new SettingsApi(cfg);
+  const infoApi    = new InfoApi(cfg);    );
 
   // Paese nel formato accettato da FIC
   const ficCountry = toFicCountry(invoicePayload.client.address);
@@ -69,7 +69,7 @@ async function ficCreateAndSend(invoicePayload: {
   // 🔎 Trova automaticamente un'aliquota 0% (preferibilmente N2.2 Forfettario)
   let vat0IdNum: number;
   try {
-    const vats = await settingsApi.listVatTypes(companyId);
+    const vatsResp = await infoApi.listVatTypes(companyId);
     const list = vats.data?.data ?? [];
 
     const preferred = list.find(v =>
