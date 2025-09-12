@@ -70,7 +70,7 @@ async function ficCreateAndSend(invoicePayload: {
   let vat0IdNum: number;
   try {
     const vatsResp = await infoApi.listVatTypes(companyId);
-    const list = vats.data?.data ?? [];
+    const list = vatsResp.data?.data ?? [];
 
     const preferred = list.find(v =>
       v?.value === 0 &&
