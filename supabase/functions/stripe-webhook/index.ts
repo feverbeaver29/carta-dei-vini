@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@12.14.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import {  Configuration,  ClientsApi,  IssuedDocumentsApi,  IssuedEInvoicesApi,  IssuedDocumentType,  CreateClientRequest,  CreateIssuedDocumentRequest,} from "https://esm.sh/@fattureincloud/fattureincloud-ts-sdk@2";
+import {  Configuration,  ClientsApi,  IssuedDocumentsApi,  IssuedEInvoicesApi,  IssuedDocumentType,  CreateClientRequest,  CreateIssuedDocumentRequest,SettingsApi,} from "https://esm.sh/@fattureincloud/fattureincloud-ts-sdk@2";
 
 
 const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET")!;
@@ -56,18 +56,42 @@ async function ficCreateAndSend(invoicePayload: {
 }) {
   const accessToken = Deno.env.get("FIC_ACCESS_TOKEN")!;
   const companyId = Number(Deno.env.get("FIC_COMPANY_ID")!);
-  const vat0Id = Deno.env.get("FIC_VAT_0_ID");
-  if (!vat0Id) {
-    throw new Error("FIC_VAT_0_ID mancante: imposta l'ID della tua aliquota 0% (forfettario) in FIC.");
-  }
-
   const cfg = new Configuration({ accessToken });
+
   const clientsApi = new ClientsApi(cfg);
   const docsApi = new IssuedDocumentsApi(cfg);
   const einvApi = new IssuedEInvoicesApi(cfg);
+  const settingsApi = new SettingsApi(cfg);
 
-  // ⬅️ CALCOLA QUI il paese in formato accettato da FIC
+  // Paese nel formato accettato da FIC
   const ficCountry = toFicCountry(invoicePayload.client.address);
+
+  // 🔎 Trova automaticamente un'aliquota 0% (preferibilmente N2.2 Forfettario)
+  let vat0IdNum: number;
+  try {
+    const vats = await settingsApi.listVatTypes(companyId);
+    const list = vats.data?.data ?? [];
+
+    const preferred = list.find(v =>
+      v?.value === 0 &&
+      !v?.is_disabled &&
+      (
+        (v as any)?.e_invoice?.nature === "N2.2" ||
+        /forfett/i.test(v?.description ?? "") ||
+        /n2\.2/i.test(v?.description ?? "")
+      )
+    );
+
+    const anyZero = preferred ?? list.find(v => v?.value === 0 && !v?.is_disabled);
+
+    if (!anyZero?.id) {
+      throw new Error("Nessuna aliquota 0% disponibile in FIC: crea un'aliquota 0% con natura N2.2.");
+    }
+    vat0IdNum = Number(anyZero.id);
+  } catch (e) {
+    console.error("FIC listVatTypes error:", (e as any)?.response?.data || e);
+    throw e;
+  }
 
   // 1) crea/aggiorna cliente (ok se fallisce perché già esiste)
   let clientId: number | undefined;
@@ -77,7 +101,7 @@ async function ficCreateAndSend(invoicePayload: {
         type: "company",
         name: invoicePayload.client.name ?? invoicePayload.client.email ?? "Cliente",
         vat_number: invoicePayload.client.vat_number ?? undefined,
-        ei_code: invoicePayload.client.sdi ?? undefined,        // SDI
+        ei_code: invoicePayload.client.sdi ?? undefined,        // SDI (campo corretto)
         pec: invoicePayload.client.pec ?? undefined,
         email: invoicePayload.client.email ?? undefined,
         address_street: invoicePayload.client.address?.line1 ?? undefined,
@@ -92,7 +116,7 @@ async function ficCreateAndSend(invoicePayload: {
     clientId = created.data?.id;
   } catch (e: any) {
     console.error("FIC createClient error:", e?.response?.data || e);
-    // proseguiamo comunque: i dati entrano nell'entity della fattura
+    // ok, proseguiamo: compiliamo comunque entity nella fattura
   }
 
   // 2) riga documento (forfettario → imponibile senza IVA)
@@ -101,10 +125,10 @@ async function ficCreateAndSend(invoicePayload: {
     name: invoicePayload.description || "Abbonamento mensile",
     qty: 1,
     net_price: net,
-    vat: { id: Number(vat0Id) },   // forza aliquota 0% corretta
+    vat: { id: vat0IdNum },   // 0% con natura corretta
   };
 
-  // 3) crea documento
+  // 3) crea documento e invia e-fattura
   try {
     const docReq: CreateIssuedDocumentRequest = {
       data: {
@@ -133,14 +157,12 @@ async function ficCreateAndSend(invoicePayload: {
     const documentId = createdDoc.data?.id;
     if (!documentId) throw new Error("Documento FIC non creato");
 
-    // 4) invia e-fattura a SDI
     await einvApi.sendEInvoice(companyId, documentId, {});
-
-    // (opzionale) invia il PDF per email al cliente:
+    // opzionale: invio email PDF
     // await docsApi.emailIssuedDocument(companyId, documentId, { data: { to_email: invoicePayload.client.email } });
   } catch (e: any) {
     console.error("FIC createIssuedDocument error:", e?.response?.data || e);
-    throw e; // così lo vedi nei log Supabase e capiamo subito eventuali 422
+    throw e; // così lo vedi nei log Supabase
   }
 }
 
