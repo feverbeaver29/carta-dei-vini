@@ -129,29 +129,42 @@ async function ficCreateAndSend(invoicePayload: {
   };
 
   // 3) crea documento e invia e-fattura
-  try {
-    const docReq: CreateIssuedDocumentRequest = {
-      data: {
-        type: IssuedDocumentType.Invoice,
-        entity: {
-          id: clientId,
-          name: invoicePayload.client.name ?? invoicePayload.client.email ?? "Cliente",
-          vat_number: invoicePayload.client.vat_number ?? undefined,
-          ei_code: invoicePayload.client.sdi ?? undefined,       // SDI (campo corretto)
-          pec: invoicePayload.client.pec ?? undefined,
-          email: invoicePayload.client.email ?? undefined,
-          address_street: invoicePayload.client.address?.line1 ?? undefined,
-          address_postal_code: invoicePayload.client.address?.postal_code ?? undefined,
-          address_city: invoicePayload.client.address?.city ?? undefined,
-          address_province: invoicePayload.client.address?.state ?? undefined,
-          country: ficCountry.country,           // "Italia"
-          country_iso: ficCountry.country_iso,   // "IT"
-        },
-        currency: { id: (invoicePayload.currency || "EUR").toUpperCase() },
-        items_list: [item],
-        visible_subject: "Abbonamento Wine's Fever",
-      },
-    };
+// lordo = netto quando IVA 0%
+const gross = net; // 14.99 nel tuo esempio
+const todayIso = new Date().toISOString().slice(0,10); // "YYYY-MM-DD"
+
+const docReq: CreateIssuedDocumentRequest = {
+  data: {
+    type: IssuedDocumentType.Invoice,
+    entity: {
+      id: clientId,
+      name: invoicePayload.client.name ?? invoicePayload.client.email ?? "Cliente",
+      vat_number: invoicePayload.client.vat_number ?? undefined,
+      ei_code: invoicePayload.client.sdi ?? undefined,
+      pec: invoicePayload.client.pec ?? undefined,
+      email: invoicePayload.client.email ?? undefined,
+      address_street: invoicePayload.client.address?.line1 ?? undefined,
+      address_postal_code: invoicePayload.client.address?.postal_code ?? undefined,
+      address_city: invoicePayload.client.address?.city ?? undefined,
+      address_province: invoicePayload.client.address?.state ?? undefined,
+      country: ficCountry.country,
+      country_iso: ficCountry.country_iso,
+    },
+    currency: { id: (invoicePayload.currency || "EUR").toUpperCase() }, // già corretto
+    items_list: [item],
+    visible_subject: "Abbonamento Wine's Fever",
+
+    // 👇 aggiungi una scadenza che copre tutto l'importo
+    payments_list: [{
+      amount: Number(gross.toFixed(2)),
+      due_date: todayIso,                 // oppure period_end, come preferisci
+      status: "not_paid",                 // o "paid" se vuoi segnarla pagata
+      payment_terms: { type: "standard", days: 0 },
+      // payment_account: { id: <ID conto> },    // opzionale
+      // payment_method:  { id: <ID metodo> },   // opzionale
+    }],
+  },
+};
 
     const createdDoc = await docsApi.createIssuedDocument(companyId, docReq);
     const documentId = createdDoc.data?.id;
