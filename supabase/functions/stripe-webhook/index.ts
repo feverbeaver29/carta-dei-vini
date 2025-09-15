@@ -63,7 +63,7 @@ async function ficCreateAndSend(invoicePayload: {
     vat_number: string | null;
     sdi?: string | null;
     pec?: string | null;
-    address?: any | null; // Stripe.Address
+    address?: any | null;  // Stripe.Address
     email?: string | null;
   };
   description: string;
@@ -81,12 +81,11 @@ async function ficCreateAndSend(invoicePayload: {
 
   const ficCountry = toFicCountry(invoicePayload.client.address);
 
-  // 0) Aliquota IVA 0% (preferibilmente N2.2 Forfettario)
+  // 0) Aliquota IVA 0% (preferibilmente N2.2)
   let vat0IdNum: number;
   try {
     const vatsResp = await infoApi.listVatTypes(companyId);
     const list = vatsResp.data?.data ?? [];
-
     const preferred = list.find(
       (v) =>
         v?.value === 0 &&
@@ -95,37 +94,27 @@ async function ficCreateAndSend(invoicePayload: {
           /forfett/i.test(v?.description ?? "") ||
           /n2\.2/i.test(v?.description ?? ""))
     );
-    const anyZero =
-      preferred ?? list.find((v) => v?.value === 0 && !v?.is_disabled);
-
-    if (!anyZero?.id) {
-      throw new Error(
-        "Nessuna aliquota 0% disponibile in FIC: crea un'aliquota 0% con natura N2.2."
-      );
-    }
+    const anyZero = preferred ?? list.find((v) => v?.value === 0 && !v?.is_disabled);
+    if (!anyZero?.id) throw new Error("Nessuna aliquota 0% disponibile in FIC: crea un'aliquota 0% con natura N2.2.");
     vat0IdNum = Number(anyZero.id);
   } catch (e) {
     console.error("FIC listVatTypes error:", (e as any)?.response?.data || e);
     throw e;
   }
 
-  // 1) Crea cliente oppure ricicla quello esistente se duplicato
+  // 1) Crea cliente, altrimenti dedup (P.IVA -> nome)
   let clientId: number | undefined;
   try {
     const cReq: CreateClientRequest = {
       data: {
         type: "company",
-        name:
-          invoicePayload.client.name ??
-          invoicePayload.client.email ??
-          "Cliente",
+        name: invoicePayload.client.name ?? invoicePayload.client.email ?? "Cliente",
         vat_number: invoicePayload.client.vat_number ?? undefined,
-        ei_code: invoicePayload.client.sdi ?? undefined, // SdI
+        ei_code: invoicePayload.client.sdi ?? undefined,
         pec: invoicePayload.client.pec ?? undefined,
         email: invoicePayload.client.email ?? undefined,
         address_street: invoicePayload.client.address?.line1 ?? undefined,
-        address_postal_code:
-          invoicePayload.client.address?.postal_code ?? undefined,
+        address_postal_code: invoicePayload.client.address?.postal_code ?? undefined,
         address_city: invoicePayload.client.address?.city ?? undefined,
         address_province: invoicePayload.client.address?.state ?? undefined,
         country: ficCountry.country,
@@ -133,43 +122,42 @@ async function ficCreateAndSend(invoicePayload: {
       },
     };
     const created = await clientsApi.createClient(companyId, cReq);
-    clientId = created.data?.id;
+    clientId = created.data?.id ?? created.data?.data?.id; // compatibilità doppio nesting
   } catch (e: any) {
-    // Se duplicato, cerchiamo l'esistente (prima per P.IVA, poi per nome)
     console.error("FIC createClient error:", e?.response?.data || e);
+    // → dedup: page/per_page *espliciti* per non sballare i posizionali
     try {
+      // priorità: P.IVA pulita
       if (invoicePayload.client.vat_number) {
-        const q = `vat_number = '${invoicePayload.client.vat_number}'`;
-        const res = await clientsApi.listClients(
+        const qVat = `vat_number = '${invoicePayload.client.vat_number}'`;
+        const foundByVat = await clientsApi.listClients(
           companyId,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          q
+          undefined, // fieldset
+          undefined, // sort
+          1,         // page
+          20,        // per_page  (integer!)
+          qVat
         );
-        clientId = res.data?.data?.[0]?.id ?? clientId;
+        clientId = foundByVat.data?.data?.[0]?.id ?? clientId;
       }
+      // fallback: denominazione esatta
       if (!clientId && invoicePayload.client.name) {
         const safeName = invoicePayload.client.name.replace(/'/g, "\\'");
-        const q = `name = '${safeName}'`;
-        const res = await clientsApi.listClients(
+        const qName = `name = '${safeName}'`;
+        const foundByName = await clientsApi.listClients(
           companyId,
           undefined,
           undefined,
-          undefined,
-          undefined,
-          q
+          1,
+          20,
+          qName
         );
-        clientId = res.data?.data?.[0]?.id ?? clientId;
+        clientId = foundByName.data?.data?.[0]?.id ?? clientId;
       }
     } catch (e2) {
-      console.error(
-        "FIC listClients (dedup) error:",
-        (e2 as any)?.response?.data || e2
-      );
+      console.error("FIC listClients (dedup) error:", (e2 as any)?.response?.data || e2);
     }
-    // se non troviamo comunque l'ID, proseguiremo con entity senza id (valido)
+    // se non troviamo l'ID, proseguiamo con entity “on-the-fly”
   }
 
   // 2) Riga documento (forfettario → imponibile senza IVA)
@@ -182,25 +170,21 @@ async function ficCreateAndSend(invoicePayload: {
   };
 
   // 3) Crea documento
-  const gross = net; // con IVA 0% lordo = netto
-  const todayIso = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const gross = net;
+  const todayIso = new Date().toISOString().slice(0, 10);
 
   const docReq: CreateIssuedDocumentRequest = {
     data: {
       type: IssuedDocumentType.Invoice,
       entity: {
-        id: clientId, // se definito, leghiamo al cliente esistente
-        name:
-          invoicePayload.client.name ??
-          invoicePayload.client.email ??
-          "Cliente",
+        id: clientId, // se presente, linka al cliente esistente
+        name: invoicePayload.client.name ?? invoicePayload.client.email ?? "Cliente",
         vat_number: invoicePayload.client.vat_number ?? undefined,
         ei_code: invoicePayload.client.sdi ?? undefined,
         pec: invoicePayload.client.pec ?? undefined,
         email: invoicePayload.client.email ?? undefined,
         address_street: invoicePayload.client.address?.line1 ?? undefined,
-        address_postal_code:
-          invoicePayload.client.address?.postal_code ?? undefined,
+        address_postal_code: invoicePayload.client.address?.postal_code ?? undefined,
         address_city: invoicePayload.client.address?.city ?? undefined,
         address_province: invoicePayload.client.address?.state ?? undefined,
         country: ficCountry.country,
@@ -222,7 +206,10 @@ async function ficCreateAndSend(invoicePayload: {
 
   try {
     const createdDoc = await docsApi.createIssuedDocument(companyId, docReq);
+
+    // ⬅️ FIX: l’ID può essere in `data.data.id` (Axios-like) o in `data.id`
     const documentId =
+      (createdDoc as any)?.data?.data?.id ??
       (createdDoc as any)?.data?.id ??
       (createdDoc as any)?.id ??
       undefined;
