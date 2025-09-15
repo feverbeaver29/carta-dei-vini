@@ -165,17 +165,17 @@ const docReq: CreateIssuedDocumentRequest = {
     }],
   },
 };
-
+  try {
     const createdDoc = await docsApi.createIssuedDocument(companyId, docReq);
     const documentId = createdDoc.data?.id;
     if (!documentId) throw new Error("Documento FIC non creato");
 
     await einvApi.sendEInvoice(companyId, documentId, {});
-    // opzionale: invio email PDF
+    // opzionale: invio mail PDF
     // await docsApi.emailIssuedDocument(companyId, documentId, { data: { to_email: invoicePayload.client.email } });
   } catch (e: any) {
     console.error("FIC createIssuedDocument error:", e?.response?.data || e);
-    throw e; // così lo vedi nei log Supabase
+    throw e;
   }
 }
 
