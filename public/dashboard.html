@@ -977,12 +977,6 @@ if (palette !== "custom") {
 }
 
 // se custom, prendi i valori personalizzati
-const navBarColor = document.getElementById("navbarColorPicker").value;
-bgColor = document.getElementById("bgColorPicker").value;
-cardColor = document.getElementById("cardColorPicker").value;
-borderColor = document.getElementById("borderColorPicker").value;
-textColor = document.getElementById("textColorPicker").value;
-
   const iframe = document.getElementById("previewFrame");
   if (!iframe || !iframe.contentWindow) return;
 
@@ -1079,13 +1073,19 @@ function updateLogoPreviewLive() {
 function toggleNameLogoOptions(showLogo) {
   const nameOptions = document.getElementById("nameOptions");
   const logoOptions = document.getElementById("logoOptions");
+  const nameInput  = document.getElementById("displayName");
+  const nameLabel  = document.querySelector('label[for="displayName"]');
 
   if (showLogo) {
-    nameOptions.style.display = "none";
-    logoOptions.style.display = "block";
+    if (nameOptions) nameOptions.style.display = "none";
+    if (nameInput)  nameInput.style.display  = "none";
+    if (nameLabel)  nameLabel.style.display  = "none";
+    if (logoOptions) logoOptions.style.display = "block";
   } else {
-    nameOptions.style.display = "block";
-    logoOptions.style.display = "none";
+    if (nameOptions) nameOptions.style.display = "block";
+    if (nameInput)  nameInput.style.display  = "block";
+    if (nameLabel)  nameLabel.style.display  = "block";
+    if (logoOptions) logoOptions.style.display = "none";
   }
 }
 
@@ -1421,10 +1421,6 @@ if (!isPro) {
       }
     document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
     document.getElementById("displayName").value = info?.nome || "";
-    document.getElementById("bgColorPicker").value = info?.bg_color || "#fff9f4";
-    document.getElementById("cardColorPicker").value = info?.card_color || "#ffffff";
-    document.getElementById("borderColorPicker").value = info?.border_color || "#bb0000";
-    document.getElementById("textColorPicker").value = info?.text_color || "#000000";
     document.getElementById("wineOrder").value = info?.ordine_vini || "prezzo";
     document.getElementById("displayName").addEventListener("input", (e) => {
     document.getElementById("ristoranteName").innerText = `${e.target.value || 'Ristorante'} - Dashboard`;
@@ -1463,13 +1459,6 @@ document.getElementById("wineOrder").addEventListener("change", async (e) => {
     .eq("id", RESTAURANT_ID);
     updatePreview(); // forza il refresh dell’anteprima
     updatePreviewLive(); // se già presente, può restare
-});
-
-["bgColorPicker", "cardColorPicker", "borderColorPicker", "textColorPicker", "navbarColorPicker"].forEach(id => {
-  const el = document.getElementById(id);
-  if (el) {
-    el.addEventListener("input", updatePaletteLivePreview);
-  }
 });
 
     const paletteSelector = document.getElementById("paletteSelector");
@@ -1511,11 +1500,6 @@ iframe.addEventListener("load", () => {
     updatePreview();
 // Mostra la sezione carta dei vini all’avvio
 showSettings('carta');
-
-      document.getElementById("navbarColorPicker").addEventListener("input", updatePaletteLivePreview);
-      document.getElementById("bgColorPicker").addEventListener("input", updatePaletteLivePreview);
-      document.getElementById("cardColorPicker").addEventListener("input", updatePaletteLivePreview);
-      document.getElementById("borderColorPicker").addEventListener("input", updatePaletteLivePreview);
       document.getElementById("fontSelector").addEventListener("change", () => {
         updateFontLivePreview(); // anteprima live font body
       });
@@ -1656,7 +1640,7 @@ function capitalize(str) {
 }
 
 function updatePreview() {
-  const url = `carta.html`;
+  const url = `carta.html?ristorante_id=${RESTAURANT_ID}`;
   document.getElementById('previewFrame').src = url;
 }
 
@@ -1748,28 +1732,17 @@ async function saveSettings() {
   let borderColor = null;
   let textColor = null;
   let navbarColor = null;
-
-    bgColor = document.getElementById("bgColorPicker")?.value || "#ffffff";
-    cardColor = document.getElementById("cardColorPicker")?.value || "#ffffff";
-    borderColor = document.getElementById("borderColorPicker")?.value || "#000000";
-    textColor = document.getElementById("textColorPicker")?.value || "#000000";
-    navbarColor = document.getElementById("navbarColorPicker")?.value || "#ffffff";
   
   // Salvataggio su Supabase
   await supabase.from("ristoranti").update({
     nome,
     font,
     palette_color,
-    bg_color: bgColor,
-    card_color: cardColor,
-    border_color: borderColor,
-    text_color: textColor,
     logo_size: logoSize,
     name_size: nameSize,
     name_color: nameColor,
     name_bold: nameBold,
     name_font: nameFont,
-    navbar_color: navbarColor,
     sommelier_attivo: showSommelier,
     sommelier_gender: document.getElementById("sommelierGender").value
   }).eq("id", RESTAURANT_ID);
