@@ -954,16 +954,15 @@ footer {
   <footer>© 2025 Wine's Fever - Tutti i diritti riservati</footer>
   <script>
 
-  let supabase, RESTAURANT_ID = null;
-  let boostCount = 0;
-  const maxBoosts = 5;
+let supabase, RESTAURANT_ID = null;
+let boostCount = 0;
+const maxBoosts = 5;
+let LAST_LOGO_URL = null;   // 👈 cache del logo
+let isPro = false;          // 👈 usato anche fuori dal DOMContentLoaded
 
   function updatePaletteLivePreview() {
   const paletteEl = document.getElementById("paletteSelector");
   const palette = paletteEl.options[paletteEl.selectedIndex].getAttribute("data-palette");
-
-  let bgColor = null, cardColor = null, borderColor = null, textColor = null;
-  let isPro = false;
 
 if (palette !== "custom") {
   // Notifica carta di applicare la palette predefinita
@@ -1066,7 +1065,7 @@ function updateLogoPreviewLive() {
   iframe.contentWindow.postMessage({
     action: "updateLogoLive",
     size,
-    logoUrl: logoEl?.src || ristorante.logo_url || null
+    logoUrl: (logoEl && logoEl.src) ? logoEl.src : (LAST_LOGO_URL || null)
   }, "*");
 }
 
@@ -1134,6 +1133,7 @@ function renderLogoPreview(url) {
   };
 
 preview.insertAdjacentElement("afterend", removeBtn);
+LAST_LOGO_URL = url;
 }
 
 function renderSommelierLogoPreview(url) {
@@ -1177,6 +1177,7 @@ function renderSommelierLogoPreview(url) {
     removeBtn.remove();
     alert("Logo del sommelier rimosso!");
     updatePreviewLive();
+    LAST_LOGO_URL = null;
   };
 
   preview.insertAdjacentElement("afterend", removeBtn);
@@ -1291,6 +1292,8 @@ if (!RESTAURANT_ID && user) {
         .select("*")
         .eq("id", RESTAURANT_ID)
         .single();
+        LAST_LOGO_URL = info?.logo_url || null;   // 👈 salva il logo corrente
+        isPro = info?.subscription_plan === "pro"; // 👈 porta fuori dallo scope locale
 
       const { data: vini } = await supabase
         .from("wines")
@@ -1526,6 +1529,7 @@ document.getElementById("logoUpload").addEventListener("change", async (event) =
 if (!allowedTypes.includes(file.type)) {
   return alert("Formato non supportato. Usa JPG, PNG, WEBP o GIF.");
 }
+LAST_LOGO_URL = publicUrl;
 
   if (!file) return;
 
