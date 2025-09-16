@@ -542,6 +542,7 @@ const translations = {
     searchButton: "Cerca",
     formatBottle: "Bottiglia",
     formatGlass: "Bicchiere",
+    noSearchResult: "Nessun vino per questa ricerca."
   },
   en: {
     wineList: "Wine List",
@@ -575,6 +576,7 @@ const translations = {
     searchButton: "Search",
     formatBottle: "Bottle",
     formatGlass: "By the glass",
+      noSearchResult: "No wines found for this search."
   },
   fr: {
     wineList: "Carte des Vins",
@@ -607,6 +609,7 @@ const translations = {
     filterBy: "Filtrer par :",
     searchButton: "Chercher",
     formatBottle: "Bouteille", formatGlass: "Au verre",
+      noSearchResult: "Aucun vin trouvé pour cette recherche."
   },
   de: {
     wineList: "Weinkarte",
@@ -639,6 +642,7 @@ const translations = {
     filterBy: "Filtern nach:",
     searchButton: "Suchen",
     formatBottle: "Flasche",   formatGlass: "Im Glas",
+    noSearchResult: "Keine Weine für diese Suche gefunden."
   },
   es: {
     wineList: "Carta de Vinos",
@@ -671,6 +675,7 @@ const translations = {
     filterBy: "Filtrar por:",
     searchButton: "Buscar",
     formatBottle: "Botella",   formatGlass: "Copa",
+    noSearchResult: "No se encontraron vinos para esta búsqueda."
   },
   zh: {
     wineList: "酒单",
@@ -703,6 +708,7 @@ const translations = {
     filterBy: "筛选条件：",
     searchButton: "搜索",
     formatBottle: "瓶",   formatGlass: "杯",
+    noSearchResult: "未找到符合此搜索的葡萄酒。"
   }
 };
 
@@ -2579,10 +2585,13 @@ window.showSearchResults = function(query){
   ].some(f => norm(f).includes(nq)));
 
   wineList.innerHTML = "";
-  if (!searchResults.length){
-    wineList.innerHTML = `<div class="wine-card">${t?.noMatch || "Nessun risultato."}</div>`;
-    return;
-  }
+if (!searchResults.length){
+  wineList.innerHTML = `
+    <div class="wine-card" style="text-align:center; font-style:italic; opacity:0.8;">
+      ${t?.noSearchResult || "Nessun vino per questa ricerca."}
+    </div>`;
+  return;
+}
 
   searchResults.forEach(w => {
     const card = document.createElement('div');
