@@ -32,82 +32,40 @@
       margin-bottom: 20px;
       font-size: 1.8em;
     }
-    .piani {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-    .piano {
-      border: 1px solid #ccc;
-      border-radius: 12px;
-      padding: 1.5rem;
-      background-color: #fdfdfd;
-      text-align: left;
-    }
-    .piano.attivo {
-      border: 2px solid #b00;
-    }
-    .piano h2 {
-      color: #b00;
-      margin-bottom: 0.5em;
-    }
-    .piano ul {
-      padding-left: 1.2em;
-      margin: 0;
-    }
-    .piano ul li {
-      margin-bottom: 8px;
-    }
-    .btn {
-      padding: 10px 20px;
-      margin-top: 15px;
-      background-color: #b00;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 1em;
-      cursor: pointer;
-    }
-    .btn.cancel {
-      background-color: transparent;
-      color: #999;
-      font-size: 0.9em;
-      border: none;
-      margin-top: 2rem;
-    }
+    .piani { display: flex; flex-direction: column; gap: 1.5rem; }
+    .piano { border: 1px solid #ccc; border-radius: 12px; padding: 1.5rem; background-color: #fdfdfd; text-align: left; }
+    .piano.attivo { border: 2px solid #b00; }
+    .piano h2 { color: #b00; margin-bottom: 0.5em; }
+    .piano ul { padding-left: 1.2em; margin: 0; }
+    .piano ul li { margin-bottom: 8px; }
+    .btn { padding: 10px 20px; margin-top: 15px; background-color: #b00; color: white; border: none; border-radius: 8px; font-size: 1em; cursor: pointer; }
+    .btn.cancel { background-color: transparent; color: #999; font-size: 0.9em; border: none; margin-top: 2rem; }
+
+    /* ——— MODAL ——— */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+    .modal-backdrop.show { display: flex; }
+    .modal { width: 100%; max-width: 560px; background: #fff; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.25); overflow: hidden; }
+    .modal header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; background: #faf6f3; border-bottom: 1px solid #eee; }
+    .modal header h3 { margin: 0; font-size: 1.1rem; color: #b00; }
+    .modal header button { background: transparent; border: 0; font-size: 1.4rem; line-height: 1; cursor: pointer; color: #777; }
+    .modal .content { padding: 18px 20px; }
+    .modal .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal label { display: block; margin: 8px 0 4px; font-weight: 600; }
+    .modal input { width: 100%; padding: .7em; border-radius: 10px; border: 1px solid #ccc; }
+    .modal .hint { font-size: .9em; opacity: .8; margin-top: .6em; }
+    .modal footer { display: flex; gap: 10px; justify-content: flex-end; padding: 14px 20px 20px; }
+    .btn.secondary { background: #eee; color: #333; }
+    .field-error { color: #b00; font-size: .85em; margin-top: 4px; display:none; }
+    .invalid input { border-color: #b00; }
+    .invalid .field-error { display:block; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Gestione Abbonamento</h1>
     <div id="statusTrial" style="margin-bottom: 1rem; color: #555;"></div>
-    <!-- Dati fatturazione aziendali (obbligatori) -->
-<div id="b2bForm" style="max-width:520px;margin:16px 0 20px;">
-  <div style="font-weight:600;margin-bottom:8px;">Dati fatturazione (solo aziende)</div>
 
-  <label style="display:block;margin:8px 0 4px;">Ragione sociale*</label>
-  <input id="businessName" placeholder="OSTERIA SRL"
-         style="width:100%;padding:.7em;border-radius:10px;border:1px solid #ccc" />
-
-  <label style="display:block;margin:12px 0 4px;">Partita IVA* (IT###########)</label>
-  <input id="vat" placeholder="IT12345678901"
-         style="width:100%;padding:.7em;border-radius:10px;border:1px solid #ccc" />
-
-  <div style="display:flex;gap:12px;margin-top:12px;">
-    <div style="flex:1">
-      <label style="display:block;margin-bottom:4px;">Codice SDI (oppure PEC)</label>
-      <input id="sdi" maxlength="7" placeholder="ABCDEF1"
-             style="width:100%;padding:.7em;border-radius:10px;border:1px solid #ccc" />
-    </div>
-    <div style="flex:1">
-      <label style="display:block;margin-bottom:4px;">PEC (oppure SDI)</label>
-      <input id="pec" type="email" placeholder="amministrazione@pec.azienda.it"
-             style="width:100%;padding:.7em;border-radius:10px;border:1px solid #ccc" />
-    </div>
-  </div>
-
-  <p style="font-size:.9em;opacity:.8;margin-top:.6em">* Campi obbligatori. Inserisci <b>SDI</b> <em>oppure</em> <b>PEC</b>.</p>
-</div>
+    <!-- ▼ Piano cards -->
     <div class="piani">
       <div id="pianoBase" class="piano">
         <h2>Piano Base - 14,99€/mese</h2>
@@ -136,123 +94,194 @@
         <button id="passaPro" class="btn" style="display:none">Passa al Piano PRO</button>
       </div>
     </div>
+
     <button id="annullaAbbonamento" class="btn cancel">Annulla abbonamento</button>
+  </div>
+
+  <!-- ▼ MODAL: Dati fatturazione -->
+  <div id="b2bModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal" role="document">
+      <header>
+        <h3 id="modalTitle">Dati fatturazione (solo aziende)</h3>
+        <button id="closeModal" aria-label="Chiudi">×</button>
+      </header>
+      <div class="content">
+        <div class="field" id="fBusinessName">
+          <label for="businessName">Ragione sociale*</label>
+          <input id="businessName" placeholder="OSTERIA SRL" autocomplete="organization" />
+          <div class="field-error">Obbligatorio.</div>
+        </div>
+
+        <div class="field" id="fVat">
+          <label for="vat">Partita IVA* <small>(IT###########)</small></label>
+          <input id="vat" placeholder="IT12345678901" autocomplete="off" />
+          <div class="field-error">Formato atteso: IT + 11 cifre.</div>
+        </div>
+
+        <div class="grid">
+          <div class="field" id="fSdi">
+            <label for="sdi">Codice SDI <small>(oppure PEC)</small></label>
+            <input id="sdi" maxlength="7" placeholder="ABCDEF1" autocomplete="off" />
+            <div class="field-error">Deve avere 7 caratteri.</div>
+          </div>
+          <div class="field" id="fPec">
+            <label for="pec">PEC <small>(oppure SDI)</small></label>
+            <input id="pec" type="email" placeholder="amministrazione@pec.azienda.it" />
+            <div class="field-error">Inserisci una PEC valida.</div>
+          </div>
+        </div>
+        <p class="hint">* Campi obbligatori. Inserisci <b>SDI</b> <em>oppure</em> <b>PEC</b>.</p>
+      </div>
+      <footer>
+        <button class="btn secondary" id="cancelModal">Annulla</button>
+        <button class="btn" id="continueModal">Continua</button>
+      </footer>
+    </div>
   </div>
 
   <script>
     const supabase = window.supabase.createClient(
       "https://ldunvbftxhbtuyabgxwh.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo" // usa la chiave anonima pubblica
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo"
     );
-    
-if (window.location.hash === "#") {
-  history.replaceState(null, "", window.location.pathname);
-}
+
+    if (window.location.hash === "#") { history.replaceState(null, "", window.location.pathname); }
 
     let RESTAURANT_ID;
+    let SELECTED_PLAN = null;
 
-document.addEventListener("DOMContentLoaded", async () => {
-  try {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error || !user) return window.location.href = "/login.html";
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user) return window.location.href = "/login.html";
+        RESTAURANT_ID = user.id;
+        mostraPianoUtente();
+      } catch (err) {
+        console.error("Errore nel caricamento utente:", err);
+        return window.location.href = "/login.html";
+      }
 
-    RESTAURANT_ID = user.id;
-    mostraPianoUtente();
-  } catch (err) {
-    console.error("Errore nel caricamento utente:", err);
-    return window.location.href = "/login.html";
-  }
-});
+      // Modal wiring
+      document.getElementById('closeModal').addEventListener('click', closeModal);
+      document.getElementById('cancelModal').addEventListener('click', closeModal);
+      document.getElementById('continueModal').addEventListener('click', onContinueFromModal);
+      document.getElementById('b2bModal').addEventListener('click', (e) => { if (e.target.id === 'b2bModal') closeModal(); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+    });
 
-async function mostraPianoUtente() {
-  const { data, error } = await supabase
-    .from("ristoranti")
-    .select("subscription_plan, subscription_status")
-    .eq("id", RESTAURANT_ID)
-    .single();
+    async function mostraPianoUtente() {
+      const { data, error } = await supabase
+        .from("ristoranti")
+        .select("subscription_plan, subscription_status")
+        .eq("id", RESTAURANT_ID)
+        .single();
 
-  if (error || !data) return;
+      if (error || !data) return;
 
-  const { subscription_plan, subscription_status } = data;
-  const base = document.getElementById("pianoBase");
-  const pro = document.getElementById("pianoPro");
-  const trialText = document.getElementById("statusTrial");
-  
-if (!subscription_status) {
-  document.querySelector("h1").textContent = "Scegli il tuo piano per continuare";
-  trialText.style.display = "none";
-  document.getElementById("passaBase").style.display = "inline-block";
-  document.getElementById("passaPro").style.display = "inline-block";
-  document.getElementById("annullaAbbonamento").style.display = "none";
-  return;
-}
+      const { subscription_plan, subscription_status } = data;
+      const base = document.getElementById("pianoBase");
+      const pro = document.getElementById("pianoPro");
+      const trialText = document.getElementById("statusTrial");
 
-  if (subscription_status === "canceled") {
-    trialText.textContent = "⚠️ Nessun abbonamento attivo.";
-    document.getElementById("passaBase").style.display = "inline-block";
-    document.getElementById("passaPro").style.display = "inline-block";
-    return;
-  }
+      if (!subscription_status) {
+        document.querySelector("h1").textContent = "Scegli il tuo piano per continuare";
+        trialText.style.display = "none";
+        document.getElementById("passaBase").style.display = "inline-block";
+        document.getElementById("passaPro").style.display = "inline-block";
+        document.getElementById("annullaAbbonamento").style.display = "none";
+        // Bind buttons to OPEN MODAL
+        bindPlanButtons();
+        return;
+      }
 
-  if (subscription_status === "active") {
-    trialText.textContent = "✅ Hai un abbonamento attivo.";
-  }
+      if (subscription_status === "canceled") {
+        trialText.textContent = "⚠️ Nessun abbonamento attivo.";
+        document.getElementById("passaBase").style.display = "inline-block";
+        document.getElementById("passaPro").style.display = "inline-block";
+        bindPlanButtons();
+        return;
+      }
 
-  if (subscription_plan === "pro") {
-    pro.classList.add("attivo");
-    document.getElementById("passaBase").style.display = "inline-block";
-  } else {
-    base.classList.add("attivo");
-    document.getElementById("passaPro").style.display = "inline-block";
-  }
-}
+      if (subscription_status === "active") {
+        trialText.textContent = "✅ Hai un abbonamento attivo.";
+      }
 
-async function vaiACheckoutStripe(plan) {
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user || !user.email) {
-    return alert("Errore nel recupero dell'email dell'utente.");
-  }
+      if (subscription_plan === "pro") {
+        pro.classList.add("attivo");
+        document.getElementById("passaBase").style.display = "inline-block";
+        bindPlanButtons();
+      } else {
+        base.classList.add("attivo");
+        document.getElementById("passaPro").style.display = "inline-block";
+        bindPlanButtons();
+      }
+    }
 
-  // Leggi i campi B2B
-  const businessName = document.getElementById("businessName").value.trim();
-  let vat = document.getElementById("vat").value.trim().toUpperCase();
-  const sdi = document.getElementById("sdi").value.trim().toUpperCase();
-  const pec = document.getElementById("pec").value.trim();
+    function bindPlanButtons() {
+      document.getElementById("passaPro").onclick = () => openModal('pro');
+      document.getElementById("passaBase").onclick = () => openModal('base');
+    }
 
-  // Validazioni lato client (aiuta l'utente, ma il server ricontrolla tutto)
-  if (!businessName) return alert("Ragione sociale obbligatoria.");
-  if (!vat) return alert("Partita IVA obbligatoria.");
-  if (!sdi && !pec) return alert("Inserisci SDI oppure PEC.");
-  if (!vat.startsWith("IT")) vat = "IT" + vat.replace(/\s+/g, "");
-  if (!/^IT\d{11}$/.test(vat)) return alert("P.IVA non valida. Formato: IT###########");
-  if (sdi && sdi.length !== 7) return alert("Il Codice SDI deve essere di 7 caratteri.");
+    function openModal(plan) {
+      SELECTED_PLAN = plan;
+      clearFieldStates();
+      document.getElementById('b2bModal').classList.add('show');
+      document.getElementById('businessName').focus();
+    }
 
-  // Chiamata al backend con i dati B2B
-  const res = await fetch("/api/create-checkout", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      plan,
-      email: user.email,
-      businessName,
-      vat,
-      sdi,
-      pec
-    })
-  });
+    function closeModal() {
+      document.getElementById('b2bModal').classList.remove('show');
+      SELECTED_PLAN = null;
+    }
 
-  const json = await res.json();
-  if (res.ok && json.url) {
-    window.location.href = json.url;
-  } else {
-    alert(json.error || "Errore nella creazione del checkout.");
-    console.error(json);
-  }
-}
+    function clearFieldStates() {
+      ['fBusinessName','fVat','fSdi','fPec'].forEach(id => document.getElementById(id).classList.remove('invalid'));
+    }
 
-document.getElementById("passaPro").addEventListener("click", () => vaiACheckoutStripe("pro"));
-document.getElementById("passaBase").addEventListener("click", () => vaiACheckoutStripe("base"));
+    async function onContinueFromModal() {
+      if (!SELECTED_PLAN) return closeModal();
+      // Validazione client-side
+      clearFieldStates();
 
+      const businessName = document.getElementById("businessName").value.trim();
+      let vat = document.getElementById("vat").value.trim().toUpperCase();
+      const sdi = document.getElementById("sdi").value.trim().toUpperCase();
+      const pec = document.getElementById("pec").value.trim();
+
+      let hasError = false;
+      if (!businessName) { document.getElementById('fBusinessName').classList.add('invalid'); hasError = true; }
+      if (!vat) { document.getElementById('fVat').classList.add('invalid'); hasError = true; }
+      if (!sdi && !pec) { document.getElementById('fSdi').classList.add('invalid'); document.getElementById('fPec').classList.add('invalid'); hasError = true; }
+      if (vat && !vat.startsWith('IT')) vat = 'IT' + vat.replace(/\s+/g, '');
+      if (vat && !/^IT\d{11}$/.test(vat)) { document.getElementById('fVat').classList.add('invalid'); hasError = true; }
+      if (sdi && sdi.length !== 7) { document.getElementById('fSdi').classList.add('invalid'); hasError = true; }
+      if (hasError) return;
+
+      // Call backend (stessa logica di prima)
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user || !user.email) return alert("Errore nel recupero dell'email dell'utente.");
+
+      const btn = document.getElementById('continueModal');
+      btn.disabled = true; btn.textContent = 'Attendi…';
+      try {
+        const res = await fetch("/api/create-checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: SELECTED_PLAN, email: user.email, businessName, vat, sdi, pec })
+        });
+        const json = await res.json();
+        if (res.ok && json.url) {
+          window.location.href = json.url;
+        } else {
+          alert(json.error || "Errore nella creazione del checkout.");
+          console.error(json);
+          btn.disabled = false; btn.textContent = 'Continua';
+        }
+      } catch (e) {
+        alert('Errore di rete. Riprova.');
+        btn.disabled = false; btn.textContent = 'Continua';
+      }
+    }
 
     document.getElementById("annullaAbbonamento").addEventListener("click", async () => {
       const confirmCancel = confirm("Sei sicuro di voler annullare l'abbonamento?");
