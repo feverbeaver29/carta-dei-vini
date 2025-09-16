@@ -963,6 +963,7 @@ footer {
   const palette = paletteEl.options[paletteEl.selectedIndex].getAttribute("data-palette");
 
   let bgColor = null, cardColor = null, borderColor = null, textColor = null;
+  let isPro = false;
 
 if (palette !== "custom") {
   // Notifica carta di applicare la palette predefinita
@@ -1332,17 +1333,15 @@ setTimeout(() => {
     fontSelect.value = nameFont;
 const toggle = document.getElementById("toggleSommelierBtn");
 if (toggle) {
-  const rawValue = info.sommelier_attivo;
+  const rawValue = info?.sommelier_attivo;
 
   const checked = rawValue === true || rawValue === "true";
   toggle.checked = checked;
 }
-    document.getElementById("navbarColorPicker").value = info?.navbar_color || "#ffffff";
     document.getElementById("nameSize").value = info?.name_size || "28";
     document.getElementById("nameColor").value = info?.name_color || "#000000";
     document.getElementById("nameBold").checked = info?.name_bold || false;
     document.getElementById("logoSize").value = info?.logo_size || "64";
-    document.getElementById("textColorPicker").value = info?.text_color || "#000000";
     document.getElementById("sommelierRange").value = info?.sommelier_range || "1-3";
     const gender = info?.sommelier_gender || "uomo";
     const isPro = info?.subscription_plan === "pro";
@@ -1986,6 +1985,7 @@ function showFontPopupForBody() {
 
   document.getElementById("fontPopup").style.display = "flex";
 }
+function toggleCustomColorPicker(){ /* personalizzazione rimossa */ }
   </script>
 </body>
 </html>
