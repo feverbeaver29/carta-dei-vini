@@ -817,17 +817,45 @@ footer {
                 <option value="vino-rosso" data-palette="vino-rosso">vino-rosso</option>
                 <option value="notte-blu" data-palette="notte-blu">notte-blu</option>
                 <option value="tramonto" data-palette="tramonto">tramonto</option>
-                <option value="champagne-perla" data-palette="champagne-perla">Champagne & Perla</option>
-                <option value="terracotta" data-palette="terracotta">Terracotta Toscana</option>
-                <option value="acciaio-seta" data-palette="acciaio-seta">Acciaio & Seta</option>
-                <option value="caffè-crema" data-palette="caffè-crema">Caffè & Crema</option>
-                <option value="verde-bosco" data-palette="verde-bosco">Verde Bosco</option>
-                <option value="grano-miele" data-palette="grano-miele">Grano & Miele</option>
-                <option value="antracite-avorio" data-palette="antracite-avorio">Antracite & Avorio</option>
-                <option value="rubino-elegante" data-palette="rubino-elegante">Rubino Elegante</option>
-                <option value="ocra-sabbia" data-palette="ocra-sabbia">Ocra & Sabbia</option>
-                <option value="blu-profondo" data-palette="blu-profondo">Blu Profondo</option>
+                <option value="custom" data-palette="custom">🎨 Personalizzato</option>
               </select>
+            </div>
+
+            <div id="customOptions" style="display: none; margin-top: 12px;">
+              <div style="background: #f9f9f9; padding: 16px; border-radius: 10px; border: 1px solid #ddd;"></div>
+              <!-- TITOLO BEN SEPARATO -->
+            <div style="font-weight: 600; font-size: 1em; margin-bottom: 16px; text-align: left;">
+              🎨 Personalizzazione Colori
+            </div>
+
+            <!-- GRIGLIA DUE COLONNE -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="bgColorPicker" style="flex: 1;">Sfondo pagina</label>
+                <input type="color" id="bgColorPicker" style="width: 36px; height: 28px; border-radius: 4px; border: 1px solid #ccc;">
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="cardColorPicker" style="flex: 1;">Colore caselle</label>
+                <input type="color" id="cardColorPicker" style="width: 36px; height: 28px; border-radius: 4px; border: 1px solid #ccc;">
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="borderColorPicker" style="flex: 1;">Colore bordo</label>
+                <input type="color" id="borderColorPicker" style="width: 36px; height: 28px; border-radius: 4px; border: 1px solid #ccc;">
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="textColorPicker" style="flex: 1;">Colore testo</label>
+                <input type="color" id="textColorPicker" style="width: 36px; height: 28px; border-radius: 4px; border: 1px solid #ccc;">
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="navbarColorPicker" style="flex: 1;">Colore navbar</label>
+                <input type="color" id="navbarColorPicker" style="width: 36px; height: 28px; border-radius: 4px; border: 1px solid #ccc;">
+              </div>
+              </div>
             </div>
             <button class="mini-save-btn" onclick="saveSettings()">Salva</button>
           </div>
@@ -954,15 +982,15 @@ footer {
   <footer>© 2025 Wine's Fever - Tutti i diritti riservati</footer>
   <script>
 
-let supabase, RESTAURANT_ID = null;
-let boostCount = 0;
-const maxBoosts = 5;
-let LAST_LOGO_URL = null;   // 👈 cache del logo
-let isPro = false;          // 👈 usato anche fuori dal DOMContentLoaded
+  let supabase, RESTAURANT_ID = null;
+  let boostCount = 0;
+  const maxBoosts = 5;
 
   function updatePaletteLivePreview() {
   const paletteEl = document.getElementById("paletteSelector");
   const palette = paletteEl.options[paletteEl.selectedIndex].getAttribute("data-palette");
+
+  let bgColor = null, cardColor = null, borderColor = null, textColor = null;
 
 if (palette !== "custom") {
   // Notifica carta di applicare la palette predefinita
@@ -977,6 +1005,12 @@ if (palette !== "custom") {
 }
 
 // se custom, prendi i valori personalizzati
+const navBarColor = document.getElementById("navbarColorPicker").value;
+bgColor = document.getElementById("bgColorPicker").value;
+cardColor = document.getElementById("cardColorPicker").value;
+borderColor = document.getElementById("borderColorPicker").value;
+textColor = document.getElementById("textColorPicker").value;
+
   const iframe = document.getElementById("previewFrame");
   if (!iframe || !iframe.contentWindow) return;
 
@@ -1065,7 +1099,7 @@ function updateLogoPreviewLive() {
   iframe.contentWindow.postMessage({
     action: "updateLogoLive",
     size,
-    logoUrl: (logoEl && logoEl.src) ? logoEl.src : (LAST_LOGO_URL || null)
+    logoUrl: logoEl?.src || null
   }, "*");
 }
 
@@ -1073,19 +1107,13 @@ function updateLogoPreviewLive() {
 function toggleNameLogoOptions(showLogo) {
   const nameOptions = document.getElementById("nameOptions");
   const logoOptions = document.getElementById("logoOptions");
-  const nameInput  = document.getElementById("displayName");
-  const nameLabel  = document.querySelector('label[for="displayName"]');
 
   if (showLogo) {
-    if (nameOptions) nameOptions.style.display = "none";
-    if (nameInput)  nameInput.style.display  = "none";
-    if (nameLabel)  nameLabel.style.display  = "none";
-    if (logoOptions) logoOptions.style.display = "block";
+    nameOptions.style.display = "none";
+    logoOptions.style.display = "block";
   } else {
-    if (nameOptions) nameOptions.style.display = "block";
-    if (nameInput)  nameInput.style.display  = "block";
-    if (nameLabel)  nameLabel.style.display  = "block";
-    if (logoOptions) logoOptions.style.display = "none";
+    nameOptions.style.display = "block";
+    logoOptions.style.display = "none";
   }
 }
 
@@ -1133,7 +1161,6 @@ function renderLogoPreview(url) {
   };
 
 preview.insertAdjacentElement("afterend", removeBtn);
-LAST_LOGO_URL = url;
 }
 
 function renderSommelierLogoPreview(url) {
@@ -1177,7 +1204,6 @@ function renderSommelierLogoPreview(url) {
     removeBtn.remove();
     alert("Logo del sommelier rimosso!");
     updatePreviewLive();
-    LAST_LOGO_URL = null;
   };
 
   preview.insertAdjacentElement("afterend", removeBtn);
@@ -1279,7 +1305,6 @@ function attachLogoListeners() {
       if (!user) return (window.location.href = '/');
       const urlParams = new URLSearchParams(window.location.search);
 RESTAURANT_ID = urlParams.get("ristorante_id");
-updatePreview();
 
 if (!RESTAURANT_ID && user) {
   RESTAURANT_ID = user.id;
@@ -1289,11 +1314,9 @@ if (!RESTAURANT_ID && user) {
 
       const { data: info } = await supabase
         .from("ristoranti")
-        .select("*")
+        .select("nome, font, palette_color, bg_color, card_color, border_color, text_color, logo_url, sommelier_url, sommelier_range, sommelier_boost_multi, logo_size, name_size, name_color, name_bold, name_font, ordine_vini, sommelier_attivo, sommelier_gender, subscription_plan")
         .eq("id", RESTAURANT_ID)
         .single();
-        LAST_LOGO_URL = info?.logo_url || null;   // 👈 salva il logo corrente
-        isPro = info?.subscription_plan === "pro"; // 👈 porta fuori dallo scope locale
 
       const { data: vini } = await supabase
         .from("wines")
@@ -1336,15 +1359,17 @@ setTimeout(() => {
     fontSelect.value = nameFont;
 const toggle = document.getElementById("toggleSommelierBtn");
 if (toggle) {
-  const rawValue = info?.sommelier_attivo;
+  const rawValue = info.sommelier_attivo;
 
   const checked = rawValue === true || rawValue === "true";
   toggle.checked = checked;
 }
+    document.getElementById("navbarColorPicker").value = info?.navbar_color || "#ffffff";
     document.getElementById("nameSize").value = info?.name_size || "28";
     document.getElementById("nameColor").value = info?.name_color || "#000000";
     document.getElementById("nameBold").checked = info?.name_bold || false;
     document.getElementById("logoSize").value = info?.logo_size || "64";
+    document.getElementById("textColorPicker").value = info?.text_color || "#000000";
     document.getElementById("sommelierRange").value = info?.sommelier_range || "1-3";
     const gender = info?.sommelier_gender || "uomo";
     const isPro = info?.subscription_plan === "pro";
@@ -1424,6 +1449,10 @@ if (!isPro) {
       }
     document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
     document.getElementById("displayName").value = info?.nome || "";
+    document.getElementById("bgColorPicker").value = info?.bg_color || "#fff9f4";
+    document.getElementById("cardColorPicker").value = info?.card_color || "#ffffff";
+    document.getElementById("borderColorPicker").value = info?.border_color || "#bb0000";
+    document.getElementById("textColorPicker").value = info?.text_color || "#000000";
     document.getElementById("wineOrder").value = info?.ordine_vini || "prezzo";
     document.getElementById("displayName").addEventListener("input", (e) => {
     document.getElementById("ristoranteName").innerText = `${e.target.value || 'Ristorante'} - Dashboard`;
@@ -1462,6 +1491,13 @@ document.getElementById("wineOrder").addEventListener("change", async (e) => {
     .eq("id", RESTAURANT_ID);
     updatePreview(); // forza il refresh dell’anteprima
     updatePreviewLive(); // se già presente, può restare
+});
+
+["bgColorPicker", "cardColorPicker", "borderColorPicker", "textColorPicker", "navbarColorPicker"].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener("input", updatePaletteLivePreview);
+  }
 });
 
     const paletteSelector = document.getElementById("paletteSelector");
@@ -1503,6 +1539,11 @@ iframe.addEventListener("load", () => {
     updatePreview();
 // Mostra la sezione carta dei vini all’avvio
 showSettings('carta');
+
+      document.getElementById("navbarColorPicker").addEventListener("input", updatePaletteLivePreview);
+      document.getElementById("bgColorPicker").addEventListener("input", updatePaletteLivePreview);
+      document.getElementById("cardColorPicker").addEventListener("input", updatePaletteLivePreview);
+      document.getElementById("borderColorPicker").addEventListener("input", updatePaletteLivePreview);
       document.getElementById("fontSelector").addEventListener("change", () => {
         updateFontLivePreview(); // anteprima live font body
       });
@@ -1529,7 +1570,6 @@ document.getElementById("logoUpload").addEventListener("change", async (event) =
 if (!allowedTypes.includes(file.type)) {
   return alert("Formato non supportato. Usa JPG, PNG, WEBP o GIF.");
 }
-LAST_LOGO_URL = publicUrl;
 
   if (!file) return;
 
@@ -1644,7 +1684,7 @@ function capitalize(str) {
 }
 
 function updatePreview() {
-  const url = `carta.html?ristorante_id=${RESTAURANT_ID}`;
+  const url = `carta.html`;
   document.getElementById('previewFrame').src = url;
 }
 
@@ -1736,17 +1776,28 @@ async function saveSettings() {
   let borderColor = null;
   let textColor = null;
   let navbarColor = null;
+
+    bgColor = document.getElementById("bgColorPicker")?.value || "#ffffff";
+    cardColor = document.getElementById("cardColorPicker")?.value || "#ffffff";
+    borderColor = document.getElementById("borderColorPicker")?.value || "#000000";
+    textColor = document.getElementById("textColorPicker")?.value || "#000000";
+    navbarColor = document.getElementById("navbarColorPicker")?.value || "#ffffff";
   
   // Salvataggio su Supabase
   await supabase.from("ristoranti").update({
     nome,
     font,
     palette_color,
+    bg_color: bgColor,
+    card_color: cardColor,
+    border_color: borderColor,
+    text_color: textColor,
     logo_size: logoSize,
     name_size: nameSize,
     name_color: nameColor,
     name_bold: nameBold,
     name_font: nameFont,
+    navbar_color: navbarColor,
     sommelier_attivo: showSommelier,
     sommelier_gender: document.getElementById("sommelierGender").value
   }).eq("id", RESTAURANT_ID);
@@ -1841,6 +1892,13 @@ window.addEventListener("scroll", () => {
   }
 });
 
+function toggleCustomColorPicker() {
+  const paletteSelect = document.getElementById("paletteSelector");
+  const customOptions = document.getElementById("customOptions");
+
+  const isCustom = paletteSelect.value === "custom";
+  customOptions.style.display = isCustom ? "flex" : "none";
+}
   window.updateNamePreviewLive = function () {
   let font = document.getElementById("nameFont").value;
   const size = document.getElementById("nameSize").value;
@@ -1989,7 +2047,6 @@ function showFontPopupForBody() {
 
   document.getElementById("fontPopup").style.display = "flex";
 }
-function toggleCustomColorPicker(){ /* personalizzazione rimossa */ }
   </script>
 </body>
 </html>
