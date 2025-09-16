@@ -369,52 +369,6 @@ footer {
   max-width: 100%;
   display: block;
 }
-/* --- Palette personalizzata --- */
-.custom-colors { display: none; margin-top: 12px; }
-.custom-colors.show { display: block; }
-
-.custom-colors__box {
-  background: #f6f6f6;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  padding: 16px;
-}
-
-.custom-colors__title {
-  font-weight: 600;
-  font-size: 1em;
-  margin-bottom: 14px;
-  text-align: left;
-}
-
-.custom-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-
-.custom-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.custom-item label {
-  margin: 0;            /* niente margine verticale extra */
-  flex: 1;
-  font-size: 0.95em;
-}
-.custom-item input[type="color"] {
-  width: 36px;
-  height: 28px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 0;
-}
-
-/* Mobile: una colonna */
-@media (max-width: 768px) {
-  .custom-grid { grid-template-columns: 1fr; }
-}
 
 @media (max-width: 768px) {
   #titoloCartaVini {
@@ -863,42 +817,17 @@ footer {
                 <option value="vino-rosso" data-palette="vino-rosso">vino-rosso</option>
                 <option value="notte-blu" data-palette="notte-blu">notte-blu</option>
                 <option value="tramonto" data-palette="tramonto">tramonto</option>
-                <option value="custom" data-palette="custom">🎨 Personalizzato</option>
+                <option value="champagne-perla" data-palette="champagne-perla">Champagne & Perla</option>
+                <option value="terracotta" data-palette="terracotta">Terracotta Toscana</option>
+                <option value="acciaio-seta" data-palette="acciaio-seta">Acciaio & Seta</option>
+                <option value="caffè-crema" data-palette="caffè-crema">Caffè & Crema</option>
+                <option value="verde-bosco" data-palette="verde-bosco">Verde Bosco</option>
+                <option value="grano-miele" data-palette="grano-miele">Grano & Miele</option>
+                <option value="antracite-avorio" data-palette="antracite-avorio">Antracite & Avorio</option>
+                <option value="rubino-elegante" data-palette="rubino-elegante">Rubino Elegante</option>
+                <option value="ocra-sabbia" data-palette="ocra-sabbia">Ocra & Sabbia</option>
+                <option value="blu-profondo" data-palette="blu-profondo">Blu Profondo</option>
               </select>
-            </div>
-
-            <!-- SOSTITUISCI questo blocco -->
-            <div id="customOptions" class="custom-colors">
-              <div class="custom-colors__box">
-                <div class="custom-colors__title">🎨 Personalizzazione Colori</div>
-
-                <div class="custom-grid">
-                  <div class="custom-item">
-                    <label for="bgColorPicker">Sfondo pagina</label>
-                    <input type="color" id="bgColorPicker">
-                  </div>
-
-                  <div class="custom-item">
-                    <label for="cardColorPicker">Colore caselle</label>
-                    <input type="color" id="cardColorPicker">
-                  </div>
-
-                  <div class="custom-item">
-                    <label for="borderColorPicker">Colore bordo</label>
-                    <input type="color" id="borderColorPicker">
-                  </div>
-
-                  <div class="custom-item">
-                    <label for="textColorPicker">Colore testo</label>
-                    <input type="color" id="textColorPicker">
-                  </div>
-
-                  <div class="custom-item">
-                    <label for="navbarColorPicker">Colore navbar</label>
-                    <input type="color" id="navbarColorPicker">
-                  </div>
-                </div>
-              </div>
             </div>
             <button class="mini-save-btn" onclick="saveSettings()">Salva</button>
           </div>
@@ -1934,14 +1863,6 @@ window.addEventListener("scroll", () => {
     sticky.classList.remove("scrolled");
   }
 });
-
-function toggleCustomColorPicker() {
-  const paletteSelect = document.getElementById("paletteSelector");
-  const customOptions = document.getElementById("customOptions");
-  const isCustom = paletteSelect.value === "custom";
-  // usa classi, non style inline, e non "flex"
-  customOptions.classList.toggle("show", isCustom);
-}
 
   window.updateNamePreviewLive = function () {
   let font = document.getElementById("nameFont").value;
