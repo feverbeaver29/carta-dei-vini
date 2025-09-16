@@ -369,6 +369,52 @@ footer {
   max-width: 100%;
   display: block;
 }
+/* --- Palette personalizzata --- */
+.custom-colors { display: none; margin-top: 12px; }
+.custom-colors.show { display: block; }
+
+.custom-colors__box {
+  background: #f6f6f6;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.custom-colors__title {
+  font-weight: 600;
+  font-size: 1em;
+  margin-bottom: 14px;
+  text-align: left;
+}
+
+.custom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.custom-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.custom-item label {
+  margin: 0;            /* niente margine verticale extra */
+  flex: 1;
+  font-size: 0.95em;
+}
+.custom-item input[type="color"] {
+  width: 36px;
+  height: 28px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 0;
+}
+
+/* Mobile: una colonna */
+@media (max-width: 768px) {
+  .custom-grid { grid-template-columns: 1fr; }
+}
 
 @media (max-width: 768px) {
   #titoloCartaVini {
@@ -821,40 +867,37 @@ footer {
               </select>
             </div>
 
-            <div id="customOptions" style="display: none; margin-top: 12px;">
-              <div style="background: #f9f9f9; padding: 16px; border-radius: 10px; border: 1px solid #ddd;"></div>
-              <!-- TITOLO BEN SEPARATO -->
-            <div style="font-weight: 600; font-size: 1em; margin-bottom: 16px; text-align: left;">
-              🎨 Personalizzazione Colori
-            </div>
+            <!-- SOSTITUISCI questo blocco -->
+            <div id="customOptions" class="custom-colors">
+              <div class="custom-colors__box">
+                <div class="custom-colors__title">🎨 Personalizzazione Colori</div>
 
-            <!-- GRIGLIA DUE COLONNE -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-              
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <label for="bgColorPicker" style="flex: 1;">Sfondo pagina</label>
-                <input type="color" id="bgColorPicker" style="width: 36px; height: 28px; border-radius: 4px; border: 1px solid #ccc;">
-              </div>
+                <div class="custom-grid">
+                  <div class="custom-item">
+                    <label for="bgColorPicker">Sfondo pagina</label>
+                    <input type="color" id="bgColorPicker">
+                  </div>
 
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <label for="cardColorPicker" style="flex: 1;">Colore caselle</label>
-                <input type="color" id="cardColorPicker" style="width: 36px; height: 28px; border-radius: 4px; border: 1px solid #ccc;">
-              </div>
+                  <div class="custom-item">
+                    <label for="cardColorPicker">Colore caselle</label>
+                    <input type="color" id="cardColorPicker">
+                  </div>
 
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <label for="borderColorPicker" style="flex: 1;">Colore bordo</label>
-                <input type="color" id="borderColorPicker" style="width: 36px; height: 28px; border-radius: 4px; border: 1px solid #ccc;">
-              </div>
+                  <div class="custom-item">
+                    <label for="borderColorPicker">Colore bordo</label>
+                    <input type="color" id="borderColorPicker">
+                  </div>
 
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <label for="textColorPicker" style="flex: 1;">Colore testo</label>
-                <input type="color" id="textColorPicker" style="width: 36px; height: 28px; border-radius: 4px; border: 1px solid #ccc;">
-              </div>
+                  <div class="custom-item">
+                    <label for="textColorPicker">Colore testo</label>
+                    <input type="color" id="textColorPicker">
+                  </div>
 
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <label for="navbarColorPicker" style="flex: 1;">Colore navbar</label>
-                <input type="color" id="navbarColorPicker" style="width: 36px; height: 28px; border-radius: 4px; border: 1px solid #ccc;">
-              </div>
+                  <div class="custom-item">
+                    <label for="navbarColorPicker">Colore navbar</label>
+                    <input type="color" id="navbarColorPicker">
+                  </div>
+                </div>
               </div>
             </div>
             <button class="mini-save-btn" onclick="saveSettings()">Salva</button>
@@ -1895,10 +1938,11 @@ window.addEventListener("scroll", () => {
 function toggleCustomColorPicker() {
   const paletteSelect = document.getElementById("paletteSelector");
   const customOptions = document.getElementById("customOptions");
-
   const isCustom = paletteSelect.value === "custom";
-  customOptions.style.display = isCustom ? "flex" : "none";
+  // usa classi, non style inline, e non "flex"
+  customOptions.classList.toggle("show", isCustom);
 }
+
   window.updateNamePreviewLive = function () {
   let font = document.getElementById("nameFont").value;
   const size = document.getElementById("nameSize").value;
