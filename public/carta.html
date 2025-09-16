@@ -917,7 +917,6 @@ window.addEventListener("message", (event) => {
   }
 });
 function toggleSommelier() {
-  const useCustom = window.paletteOverrideLive || ristorante?.palette_color === "custom";
   const overlay = document.getElementById('sommelierOverlay');
     overlay.classList.remove("fade-out");
     overlay.classList.add("fade-in");
@@ -926,19 +925,6 @@ function toggleSommelier() {
   const popup = document.getElementById("sommelierPopup");
   const palette = window.ristorantePalette;
     if (popup) {
-
-popup.style.backgroundColor = useCustom
-  ? (ristorante.bg_color || "#ffffff")
-  : (palette && window.paletteColors?.background) || "#ffffff";
-
-popup.style.borderColor = useCustom
-  ? (ristorante.border_color || "#cccccc")
-  : (palette && window.paletteColors?.borderColor) || "#cccccc";
-
-popup.style.color = useCustom
-  ? getContrastingTextColor(ristorante.bg_color || "#ffffff")
-  : (palette && window.paletteColors?.textColor) || "#000000";
-
 popup.style.boxShadow = palette && window.paletteColors?.boxShadow || "0 2px 6px rgba(0,0,0,0.15)";
 }
 
@@ -1060,32 +1046,13 @@ try {
     const reply = data.suggestion || "";
     const rawBlocks = reply.split(/^- /m).map(b => b.trim()).filter(Boolean);
 
-    const useCustom = window.paletteOverrideLive || ristorante?.palette_color === "custom";
-const palette = window.ristorantePalette;
-
-const popupBg = useCustom
-  ? (ristorante.bg_color || "#ffffff")
-  : (palette && window.paletteColors?.background) || "#ffffff";
-
-const responseBg = useCustom
-  ? (ristorante.card_color || "#ffffff")
-  : (palette && window.paletteColors?.cardBackground) || "#ffffff";
-
-const vignetteColor = useCustom
-  ? (ristorante.border_color || "#cccccc")
-  : (palette && window.paletteColors?.borderColor) || "#cccccc";
-
-  const prezzoColor = getContrastingTextColor(responseBg);
-
-  const vignetteTextColor = useCustom
-  ? getContrastingTextColor(vignetteColor)
-  : (palette && window.paletteColors?.textColor) || "#000000";
-
-const textColor = useCustom
-  ? getContrastingTextColor(responseBg)
-  : (palette && window.paletteColors?.textColor) || "#000000";
-
-const shadow = palette && window.paletteColors?.boxShadow || "0 2px 6px rgba(0,0,0,0.15)";
+const popupBg      = window.paletteColors?.background    || "#ffffff";
+const responseBg   = window.paletteColors?.cardBackground || "#ffffff";
+const vignetteColor= window.paletteColors?.borderColor    || "#cccccc";
+const textColor    = window.paletteColors?.textColor      || "#000000";
+const vignetteTextColor = textColor;
+const shadow       = window.paletteColors?.boxShadow      || "0 2px 6px rgba(0,0,0,0.15)";
+const prezzoColor = getContrastingTextColor(responseBg);
 
 let cardsHtml = rawBlocks.map(block => {
   const lines = block.split(/\n/).map(l => l.trim()).filter(Boolean);
@@ -1199,11 +1166,15 @@ window.addEventListener('popstate', (event) => {
 });
 
 async function loadRestaurantData() {
-const res = await fetch(`${SUPABASE_URL}/rest/v1/ristoranti?select=subscription_plan,sommelier_attivo,nome,font,palette_color,bg_color,card_color,border_color,text_color,logo_url,logo_size,sommelier_url,sommelier_range,sommelier_boost_multi,name_size,name_color,name_bold,name_font,navbar_color,ordine_vini,ordine_categorie,ordine_sottocategorie,sommelier_gender&id=eq.${RESTAURANT_ID}`, {
+const res = await fetch(`${SUPABASE_URL}/rest/v1/ristoranti?select=subscription_plan,sommelier_attivo,nome,font,palette_color,logo_url,logo_size,sommelier_url,sommelier_range,sommelier_boost_multi,name_size,name_color,name_bold,name_font,ordine_vini,ordine_categorie,ordine_sottocategorie,sommelier_gender&id=eq.${RESTAURANT_ID}`, {
   headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
 });
-  const data = await res.json();
-  ristorante = data[0]; // senza const
+const data = await res.json();
+if (!Array.isArray(data) || data.length === 0) {
+  console.error("Ristorante non trovato");
+  return;
+}
+ristorante = data[0];
   const gender = ristorante?.sommelier_gender || "uomo";
 ristoranteSommelierURL = ristorante.sommelier_url || (gender === "donna" ? "sommelier_femmina.png" : "sommelier.png");
 // aggiorna avatar nel bottone (se già creato) e fallback
@@ -1216,22 +1187,6 @@ if (btnImg) {
 if (ristorante.font) {
   document.body.style.fontFamily = ristorante.font;
   ensureFontLoaded(ristorante.font);
-}
-
-  if (ristorante.bg_color) {
-  document.body.style.backgroundColor = ristorante.bg_color;
-}
-
-  if (ristorante.card_color) {
-    document.querySelectorAll('.category, .subcategory, .wine-card').forEach(el => {
-      el.style.backgroundColor = ristorante.card_color;
-    });
-  }
-
-  if (ristorante.border_color) {
-    document.querySelectorAll('.category, .subcategory, .wine-card').forEach(el => {
-      el.style.borderColor = ristorante.border_color;
-    });
 }
 
 const avatar = document.getElementById('sommelierAvatar');
@@ -1276,19 +1231,7 @@ if (ristorante.subscription_plan !== "pro") {
 
 window.ristorantePalette = ristorante.palette_color;
 
-if (ristorante.palette_color === "custom") {
-  window.paletteOverrideLive = true;
-  applyCustomBoxStyles();
-} else {
-  applyPalette(ristorante.palette_color);
-
-  // Applica anche colori salvati (per palette predefinite)
-  if (ristorante.bg_color) document.body.style.backgroundColor = ristorante.bg_color;
-  if (ristorante.navbar_color) {
-    const nav = document.querySelector("nav");
-    if (nav) nav.style.backgroundColor = ristorante.navbar_color;
-  }
-}
+applyPalette(ristorante.palette_color);
 }
 
 window.goBack = function () {
@@ -1501,72 +1444,6 @@ window.paletteColors = {
 };
 }
 
-function applyCustomBoxStyles() {
-if (!ristorante) return;
-if (ristorante.bg_color) document.body.style.backgroundColor = ristorante.bg_color;
-  const bg = ristorante.card_color;
-  const border = ristorante.border_color;
-  const text = ristorante.text_color;
-
-  document.querySelectorAll('.category, .subcategory, .wine-card').forEach(el => {
-    if (bg) el.style.backgroundColor = bg;
-    if (border) el.style.borderColor = border;
-    if (text) el.style.color = text;
-  });
-
-  const popup = document.getElementById("sommelierPopup");
-if (popup && ristorante) {
-  if (ristorante.card_color) popup.style.backgroundColor = ristorante.card_color;
-  if (ristorante.border_color) popup.style.borderColor = ristorante.border_color;
-  if (ristorante.text_color) popup.style.color = ristorante.text_color;
-}
-const backBtn = document.querySelector("nav button");
-if (backBtn && ristorante.border_color) {
-  backBtn.style.color = ristorante.border_color;
-}
-
-const sommelierBtn = document.getElementById("sommelierBtn");
-if (sommelierBtn) {
-  if (ristorante.border_color) sommelierBtn.style.backgroundColor = ristorante.border_color;
-  if (ristorante.border_color) sommelierBtn.style.borderColor = ristorante.border_color;
-  if (ristorante.text_color) sommelierBtn.style.color = ristorante.text_color;
-}
-if (ristorante.navbar_color) {
-  const nav = document.querySelector("nav");
-  if (nav) nav.style.backgroundColor = ristorante.navbar_color;
-}
-const filterBtn = document.getElementById("filterBtn");
-if (filterBtn) {
-  if (ristorante.border_color) filterBtn.style.backgroundColor = ristorante.border_color;
-  if (ristorante.border_color) filterBtn.style.borderColor = ristorante.border_color;
-  if (ristorante.text_color) filterBtn.style.color = ristorante.text_color;
-}
-
-const searchBtn = document.getElementById("searchBtn");
-if (searchBtn) {
-  if (ristorante.border_color) searchBtn.style.backgroundColor = ristorante.border_color;
-  if (ristorante.border_color) searchBtn.style.borderColor = ristorante.border_color;
-  if (ristorante.text_color)   searchBtn.style.color = ristorante.text_color;
-}
-
-const searchPop = document.getElementById("searchPopover");
-if (searchPop && ristorante) {
-  if (ristorante.card_color)  searchPop.style.backgroundColor = ristorante.card_color;
-  if (ristorante.border_color) searchPop.style.borderColor     = ristorante.border_color;
-  if (ristorante.text_color)   searchPop.style.color           = ristorante.text_color;
-
-  const input = searchPop.querySelector('input');
-  if (input) { input.style.backgroundColor = "#fff"; input.style.color = "#000"; input.style.borderColor = "#ccc"; }
-
-  const btn = searchPop.querySelector('button.save-btn');
-  if (btn) {
-    btn.style.backgroundColor = ristorante.border_color || "#b00";
-    btn.style.color = ristorante.text_color ? getContrastingTextColor(btn.style.backgroundColor) : "#fff";
-  }
-}
-
-}
-
 function normalize(str) {
   return str ? str.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim() : '';
 }
@@ -1650,11 +1527,7 @@ card.innerHTML = `
   mostraPopupDescrizione(w); // w è il vino cliccato
 };
   });
-    if (window.paletteOverrideLive && window.ristorantePalette === "custom") {
-  applyCustomBoxStyles();
-} else {
-  applyPalette(window.ristorantePalette);
-}
+applyPalette(window.ristorantePalette);
 
   const subcatList = document.getElementById('subcategory-list');
   if (subcatList) subcatList.style.display = 'none';
@@ -1885,76 +1758,10 @@ window.addEventListener("message", (event) => {
 }
 
 if (event.data?.action === "updatePaletteLive") {
-  const { palette, bgColor, cardColor, borderColor, textColor, navbarColor } = event.data;
-  window.paletteOverrideLive = true;
-
-  const nav = document.querySelector("nav");
-  if (nav && navbarColor) {
-    nav.style.backgroundColor = navbarColor;
-  }
-
-  if (palette === "custom") {
-    if (!ristorante) ristorante = {};
-
-    ristorante.bg_color = bgColor;
-    ristorante.card_color = cardColor;
-    ristorante.border_color = borderColor;
-    ristorante.text_color = textColor;
-    ristorante.navbar_color = navbarColor;
-
-    if (bgColor) document.body.style.backgroundColor = bgColor;
-
-    document.querySelectorAll('.category, .subcategory, .wine-card').forEach(el => {
-      if (cardColor) el.style.backgroundColor = cardColor;
-      if (borderColor) el.style.borderColor = borderColor;
-      if (textColor) el.style.color = textColor;
-    });
-
-    const popup = document.getElementById("sommelierPopup");
-    if (popup) {
-      if (cardColor) popup.style.backgroundColor = cardColor;
-      if (borderColor) popup.style.borderColor = borderColor;
-      if (textColor) popup.style.color = textColor;
-    }
-
-    const backBtn = document.querySelector("nav button");
-    if (backBtn && borderColor) {
-      backBtn.style.color = borderColor;
-    }
-
-    const sommelierBtn = document.getElementById("sommelierBtn");
-    if (sommelierBtn) {
-      if (borderColor) sommelierBtn.style.backgroundColor = borderColor;
-      if (borderColor) sommelierBtn.style.borderColor = borderColor;
-      if (textColor) sommelierBtn.style.color = textColor;
-    }
-
-  } else {
-    window.paletteOverrideLive = false;
-    window.ristorantePalette = palette;
-    applyPalette(palette);
-  }
-if (palette !== "custom" && nav) {
-  let fallbackColor;
-
-  switch (palette) {
-    case "rosso": fallbackColor = "#ffcccc"; break;
-    case "oro": fallbackColor = "#fdf2c0"; break;
-    case "blu-elegante": fallbackColor = "#cce0f2"; break;
-    case "verde-salvia": fallbackColor = "#e0f0e4"; break;
-    case "grigio-minimal": fallbackColor = "#eeeeee"; break;
-    case "black-white": fallbackColor = "#1a1a1a"; break;
-    case "crema-nero": fallbackColor = "#fff3dd"; break;
-    case "tramonto": fallbackColor = "#c65a1e"; break;
-    case "notte-blu": fallbackColor = "#021639"; break;
-    case "vino-rosso": fallbackColor = "#6e003f"; break;
-    case "tortora": fallbackColor = "#d6ccc2"; break;
-    default: fallbackColor = "#ffffff"; // Fallback finale
-  }
-
-  nav.style.backgroundColor = fallbackColor;
-}
-
+  const { palette } = event.data;
+  window.paletteOverrideLive = false;
+  window.ristorantePalette = palette;
+  applyPalette(palette);
 }
 
   if (event.data?.action === "checkSubcategoryContext") {
@@ -2166,11 +1973,7 @@ div.onclick = () => showSubcategories(key); // ✅ SEMPRE fuori
 container.appendChild(div);                 // ✅ SEMPRE fuori
 
   }
-  if (window.paletteOverrideLive && window.ristorantePalette === "custom") {
-  applyCustomBoxStyles();
-} else {
-  applyPalette(window.ristorantePalette);
-}
+applyPalette(window.ristorantePalette);
 };
 
 window.showSubcategories = function (category) {
@@ -2220,11 +2023,7 @@ if (Array.isArray(order) && order.length) {
     div.onclick = () => showWinesBySubcategory(key);
     container.appendChild(div);
   }
-  if (window.paletteOverrideLive && window.ristorantePalette === "custom") {
-  applyCustomBoxStyles();
-} else {
-  applyPalette(window.ristorantePalette);
-}
+applyPalette(window.ristorantePalette);
 
     const catList = document.getElementById('category-list');
     if (catList) catList.style.display = 'none';
@@ -2258,11 +2057,7 @@ if (isSommelierOn) {
   showCategories();
   history.replaceState({ view: "categories" }, "");
 
-  if (isCustom) {
-    applyCustomBoxStyles();
-  } else {
-    applyPalette(window.ristorantePalette);
-  }
+applyPalette(window.ristorantePalette);
 })();
 
 
@@ -2806,11 +2601,7 @@ window.showSearchResults = function(query){
   });
 
   // re-applica palette alla UI appena generata
-  if (window.paletteOverrideLive && window.ristorantePalette === "custom") {
-    applyCustomBoxStyles();
-  } else {
-    applyPalette(window.ristorantePalette);
-  }
+applyPalette(window.ristorantePalette);
 
   setHelper(`Risultati per: “${query}”`);
   history.pushState({ view:"search", query }, "");
