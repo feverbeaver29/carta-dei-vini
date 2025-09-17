@@ -1239,9 +1239,11 @@ if (!RESTAURANT_ID && user) {
 
 const { data: info } = await supabase
   .from("ristoranti")
-  .select("nome, font, palette_color, logo_url, sommelier_url, sommelier_range, sommelier_boost_multi, logo_size, name_size, name_color, name_bold, name_font, ordine_vini, sommelier_attivo, sommelier_gender, subscription_plan")
+  .select("nome, font, palette_color, logo_url, sommelier_url, sommelier_range, sommelier_boost_multi, logo_size, name_size, name_color, name_bold, name_font, ordine_vini, sommelier_attivo, sommelier_gender, subscription_plan, slug")
   .eq("id", RESTAURANT_ID)
   .single();
+
+window.RISTORANTE_SLUG = (info?.slug || "").trim();
 
       const { data: vini } = await supabase
         .from("wines")
@@ -1595,7 +1597,13 @@ function updatePreview() {
 }
 
 function goTo(path) {
-  window.location.href = `${path}?ristorante_id=${RESTAURANT_ID}`;
+  if (path === 'carta.html' && window.RISTORANTE_SLUG) {
+    // URL bello
+    window.location.href = `/${window.RISTORANTE_SLUG}`;
+  } else {
+    // fallback con ?ristorante_id=
+    window.location.href = `${path}?ristorante_id=${RESTAURANT_ID}`;
+  }
 }
 
 
@@ -1636,7 +1644,10 @@ main.classList.toggle("sommelier-mode", !showCarta);
       const popup = document.getElementById('qrPopup');
       const container = document.getElementById('qrCodeContainer');
       container.innerHTML = '';
-      const url = `https://carta-dei-vini.vercel.app/carta.html?ristorante_id=${RESTAURANT_ID}`;
+      const base = "https://www.winesfever.com";
+      const url = window.RISTORANTE_SLUG
+        ? `${base}/${window.RISTORANTE_SLUG}`                 // es. /osteria-pippo
+        : `${base}/carta.html?ristorante_id=${RESTAURANT_ID}`; // fallback
       new QRCode(container, { text: url, width: 250, height: 250 });
       popup.style.display = 'flex';
       setTimeout(() => {

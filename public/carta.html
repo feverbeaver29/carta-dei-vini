@@ -756,17 +756,44 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_API_KEY);
 
+// --- URL parsing: supporta sia ?slug=... sia /:slug e /:slug.cartadeivini ---
 const urlParams = new URLSearchParams(window.location.search);
 let RESTAURANT_ID = urlParams.get("ristorante_id");
+let slug = urlParams.get("slug");
 
-if (!RESTAURANT_ID) {
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) {
-    console.error("Utente non loggato, impossibile caricare la carta.");
-  } else {
-    RESTAURANT_ID = user.id;
+// Se la pagina è stata aperta come /mioslug o /mioslug.cartadeivini, estraggo lo slug dal path
+if (!slug) {
+  const path = location.pathname.replace(/^\//, ''); // toglie lo slash iniziale
+  if (path && !/\.html$/i.test(path)) {
+    // rimuove l'eventuale .cartadeivini
+    slug = path.replace(/\.cartadeivini$/i, '');
   }
 }
+
+if (slug) {
+  const { data: r, error } = await supabase
+    .from('ristoranti')
+    .select('id, slug')
+    .eq('slug', slug)
+    .single();
+
+  if (r?.id) {
+    RESTAURANT_ID = r.id;
+
+    // Mantieni l'URL "bello" in barra (niente query string)
+    const pretty = `/${r.slug}${/\.cartadeivini$/i.test(location.pathname) ? '.cartadeivini' : ''}`;
+    if (location.pathname !== pretty) history.replaceState({}, '', pretty);
+  } else {
+    console.warn('Slug non trovato, uso eventuale query string o utente loggato.');
+  }
+}
+
+// Fallback: se ancora non ho l'ID, provo con l'utente loggato (solo in area riservata)
+if (!RESTAURANT_ID) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) RESTAURANT_ID = user.id;
+}
+
 // Disabilita sommelier nella demo
 if (RESTAURANT_ID === "fc28c874-b195-4660-9c78-c58d8dc3c092") {
   window.suggestWine = () => {
