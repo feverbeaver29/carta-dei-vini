@@ -369,6 +369,46 @@ footer {
   max-width: 100%;
   display: block;
 }
+/* --- Slug: layout & compact --- */
+.slug-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 360px;
+}
+.slug-row input[type="text"] {
+  flex: 1 1 auto;
+  max-width: none;
+  padding: 8px 10px;
+}
+.slug-row button {
+  flex: 0 0 auto;
+  width: auto; /* evita il width:100% globale dei bottoni */
+}
+
+/* testi compatti */
+.slug-help { display:block; color:#555; margin-top:4px; font-size:0.85em; }
+.slug-status { margin-top:4px; font-size:0.9em; }
+.slug-preview { margin-top:6px; font-size:0.9em; color:#333; }
+
+/* compattiamo l'intero blocco "Nome o Logo" */
+.impostazione .accordion-content {
+  padding: 8px 12px;
+}
+.impostazione label { margin-top:8px; margin-bottom:4px; font-size:0.95em; }
+.impostazione input[type="text"],
+.impostazione select { padding:8px 10px; }
+
+/* mobile: impediamo ai bottoni di occupare tutta la riga in quest'area */
+@media (max-width:768px) {
+  .slug-row { flex-wrap: wrap; }
+  .slug-row input[type="text"] { flex: 1 1 100%; }
+  .slug-row button { width: auto !important; }
+  /* riduciamo ancora un filo spazi e dimensioni */
+  .impostazione .accordion-content { padding: 6px 10px; }
+  .mini-save-btn { padding: 6px 12px; font-size: 0.85em; }
+}
+
 
 @media (max-width: 768px) {
   #titoloCartaVini {
@@ -756,21 +796,21 @@ footer {
         <div class="impostazione accordion">
           <h3 class="accordion-header">Nome o Logo <span class="accordion-icon">+</span></h3>
           <div class="accordion-content">
-            <!-- URL pubblico (slug) -->
-              <label for="slugInput" style="margin-top:14px;">URL pubblico (slug)</label>
-              <div style="display:flex; gap:8px; align-items:center; max-width:400px;">
-                <input type="text" id="slugInput" placeholder="es. osteria-pippo" style="flex:1;">
-                <button type="button" id="suggestSlugBtn" class="mini-save-btn" style="white-space:nowrap;">Suggerisci</button>
-              </div>
-              <small id="slugHelp" style="display:block; color:#555; margin-top:6px;">
-                Solo lettere, numeri e trattini. Esempio: <code>osteria-pippo</code>
-              </small>
-              <div id="slugStatus" style="margin-top:6px; font-size:0.9em;"></div>
+        <!-- URL pubblico (slug) -->
+        <label for="slugInput" style="margin-top:10px;">URL pubblico (slug)</label>
+        <div class="slug-row">
+          <input type="text" id="slugInput" placeholder="es. osteria-pippo">
+          <button type="button" id="checkSlugBtn" class="mini-save-btn">Controlla</button>
+        </div>
+        <small id="slugHelp" class="slug-help">
+          Solo lettere, numeri e trattini. Esempio: <code>osteria-pippo</code>
+        </small>
+        <div id="slugStatus" class="slug-status"></div>
 
-              <!-- Anteprima URL -->
-              <div id="slugPreview" style="margin-top:8px; font-size:0.95em; color:#333;">
-                URL: <span id="slugPreviewUrl">https://www.winesfever.com/</span>
-              </div>
+        <!-- Anteprima URL -->
+        <div id="slugPreview" class="slug-preview">
+          URL: <span id="slugPreviewUrl">https://www.winesfever.com/</span>
+        </div>
             <label for="displayName">Nome da visualizzare</label>
             <input type="text" id="displayName">
             <div id="nameOptions">
@@ -1305,7 +1345,7 @@ window.RISTORANTE_SLUG = (info?.slug || "").trim();
 const slugInput = document.getElementById("slugInput");
 const slugStatus = document.getElementById("slugStatus");
 const slugPreviewUrl = document.getElementById("slugPreviewUrl");
-const suggestSlugBtn = document.getElementById("suggestSlugBtn");
+const checkSlugBtn = document.getElementById("checkSlugBtn");
 const displayNameInput = document.getElementById("displayName");
 
 function renderSlugPreview(s) {
@@ -1316,14 +1356,35 @@ function renderSlugPreview(s) {
 slugInput.value = window.RISTORANTE_SLUG || "";
 renderSlugPreview(slugInput.value);
 
-suggestSlugBtn.addEventListener("click", () => {
-  const suggestion = slugify(displayNameInput.value || "");
-  if (!suggestion) {
-    alert("Inserisci prima il ‘Nome da visualizzare’.");
-    return;
-  }
-  slugInput.value = suggestion;
-  slugInput.dispatchEvent(new Event("input"));
+checkSlugBtn.addEventListener("click", () => {
+  // forza una verifica immediata sul valore attuale
+  debouncedCheck.cancel?.(); // se usi debounce con cancel opzionale
+  (async () => {
+    const s = slugInput.value.trim();
+    if (!s) {
+      slugStatus.textContent = "Inserisci uno slug.";
+      slugStatus.style.color = "#b00";
+      renderSlugPreview("");
+      return;
+    }
+    if (!isValidSlug(s)) {
+      slugStatus.textContent = "Formato non valido. Usa solo lettere, numeri e trattini.";
+      slugStatus.style.color = "#b00";
+      renderSlugPreview(s);
+      return;
+    }
+    const res = await checkSlugAvailability(s);
+    if (res.ok) {
+      slugStatus.textContent = "Disponibile ✅";
+      slugStatus.style.color = "green";
+    } else {
+      slugStatus.textContent = (res.reason === "Già in uso")
+        ? "Già in uso ❌ Scegline un altro"
+        : "Impossibile verificare. Riprova.";
+      slugStatus.style.color = "#b00";
+    }
+    renderSlugPreview(s);
+  })();
 });
 
 const debouncedCheck = debounce(async () => {
