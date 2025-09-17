@@ -91,55 +91,98 @@ serve(async (req) => {
       return new Response(JSON.stringify({ descrizione: exOld.descrizione }), { status: 200, headers: CORS });
     }
 
-    // 3) Genera descrizione con OpenAI
-    const prompt = `Agisci come un sommelier professionista in un ristorante. Scrivi una descrizione sintetica e tecnica di questo vino, suddivisa in 3 sezioni distinte:
+const jsonPrompt = {
+  role: "user",
+  content: `Genera una SCHEDA JSON concisa per un vino e, separatamente, un breve testo tecnico.
+RESTITUISCI SOLO JSON (nessun testo fuori JSON) con questo schema:
 
-Stile: massimo 2 frasi. Descrivi il carattere del vino (es. elegante, fruttato, intenso...), tenendo conto della categoria, dell’uvaggio e della zona. Evita frasi generiche come “elegante e complesso” o “tipico della zona”.
+{
+ "summary": "max 140 caratteri, invogliante ma sobrio",
+ "profile": { "body": 0-100, "sweetness": 0-100, "acidity": 0-100 },
+ "notes": [{"label": "max 1-2 parole"}]  // esattamente 3 voci
+ "pairings": ["...", "...", "..."]       // esattamente 3 voci, categorie
+}
 
-Sensazione al palato: massimo 2 frasi. Spiega struttura, acidità, tannini ed equilibrio. Usa un linguaggio concreto ma sobrio, evitando formule abusate come “tannini morbidi e acidità piacevole”.
-
-Abbinamenti consigliati: massimo 2 frasi. Suggerisci categorie di piatti (es. carne alla griglia, antipasti vegetariani, primi di pesce, formaggi stagionati), senza ricette o ingredienti specifici.
-
-Scrivi in modo professionale, sobrio e adatto a una carta dei vini. Evita ripetizioni e frasi vaghe. evita di ripetere il nome del vino. Non superare i 400 caratteri in totale.
-
-Dati disponibili:
+Linee guida:
+- Italiano, tono professionale.
+- Niente marche/claim di marketing.
+- "notes": termini generici (frutta gialla, agrumi, floreale, erbe, spezie…).
+- Se mancano dati, usa valori plausibili per la tipologia senza inventare annate.
+Dati:
 Nome: ${nome}
 ${annata ? "Annata: " + annata : ""}
 Uvaggio: ${uvaggio || "non specificato"}
 Categoria: ${categoria || "non specificata"}
-Sottocategoria: ${sottocategoria || "non specificata"}`;
+Sottocategoria: ${sottocategoria || "non specificata"}`
+};
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.7,
-      max_tokens: 300
-    });
+const descPrompt = {
+  role: "user",
+  content: `Scrivi una descrizione tecnica breve (max 400 caratteri) con tre mini-sezioni:
+Stile / Palato / Abbinamenti. Evita frasi vuote e ripetere il nome. Stesso vino di prima.`
+};
 
-    const descrizione = completion.choices[0].message?.content?.trim() ?? "";
+// 👉 modelli: se hai "gpt-4o-mini" usalo (ottimo+costo basso). Altrimenti tieni 3.5.
+const model = "gpt-4o-mini"; // fallback: "gpt-3.5-turbo"
 
-    // 4) Salva con UPSERT sulla fingerprint (evita il 23505)
-    //    ignoreDuplicates: true => se esiste già, NON sovrascrive.
-    const { error: upErr } = await supabase
-      .from("descrizioni_vini")
-      .upsert(
-        {
-          fingerprint: fp,
-          nome,
-          annata: annata || null,
-          uvaggio: uvaggio || null,
-          ristorante_id: ristorante_id || null,
-          descrizione
-        },
-        { onConflict: "fingerprint", ignoreDuplicates: true }
-      );
+// prima la scheda JSON
+const sheet = await openai.chat.completions.create({
+  model,
+  messages: [jsonPrompt],
+  temperature: 0.4,
+  max_tokens: 300
+});
 
-    if (upErr) {
-      console.error("❌ Errore salvataggio descrizione:", upErr);
-      // comunque ritorniamo la descrizione generata
-    }
+let scheda: any = null;
+try {
+  scheda = JSON.parse(sheet.choices[0].message?.content ?? "{}");
+  // harden: clamp valori e limiti
+  const clamp = (n: any) => Math.max(0, Math.min(100, Number(n) || 0));
+  scheda.profile = scheda.profile || {};
+  scheda.profile.body = clamp(scheda.profile.body);
+  scheda.profile.sweetness = clamp(scheda.profile.sweetness);
+  scheda.profile.acidity = clamp(scheda.profile.acidity);
+  scheda.notes = Array.isArray(scheda.notes) ? scheda.notes.slice(0,3) : [];
+  scheda.pairings = Array.isArray(scheda.pairings) ? scheda.pairings.slice(0,3) : [];
+  scheda.summary = (scheda.summary || "").slice(0, 160);
+} catch {
+  // se qualcosa va storto, metti una scheda minimale
+  scheda = {
+    summary: "Profilo equilibrato, frutto nitido e buona freschezza.",
+    profile: { body: 50, sweetness: 10, acidity: 60 },
+    notes: [{label:"Frutta gialla"},{label:"Agrumi"},{label:"Floreale"}],
+    pairings: ["Antipasti di pesce","Primi leggeri","Formaggi freschi"]
+  };
+}
 
-    return new Response(JSON.stringify({ descrizione }), { status: 200, headers: CORS });
+// poi il testo tecnico
+const completion = await openai.chat.completions.create({
+  model,
+  messages: [descPrompt],
+  temperature: 0.6,
+  max_tokens: 350
+});
+const descrizione = completion.choices[0].message?.content?.trim() ?? "";
+
+// 4) UPSERT: salviamo sia 'descrizione' sia 'scheda'
+const { error: upErr } = await supabase
+  .from("descrizioni_vini")
+  .upsert(
+    {
+      fingerprint: fp,
+      nome,
+      annata: annata || null,
+      uvaggio: uvaggio || null,
+      ristorante_id: ristorante_id || null,
+      descrizione,
+      scheda
+    },
+    { onConflict: "fingerprint", ignoreDuplicates: false }
+  );
+
+if (upErr) console.error("❌ Errore salvataggio descrizione/scheda:", upErr);
+
+return new Response(JSON.stringify({ descrizione, scheda }), { status: 200, headers: CORS });
 
   } catch (err: any) {
     console.error("Errore interno:", err);
