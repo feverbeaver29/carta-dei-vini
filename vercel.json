@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/:slug", "destination": "/carta.html?slug=:slug" },
+    { "source": "/:slug.cartadeivini", "destination": "/carta.html?slug=:slug" }
+  ]
+}
