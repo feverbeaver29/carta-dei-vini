@@ -408,19 +408,6 @@ button, .save-btn {
 .price-chip img.icon{width:25px;height:25px;vertical-align:middle;object-fit:contain}
 .price-chip strong{font-weight:600}
 
-/* --- Scheda vino compatta --- */
-.vino-card { border-radius:12px; padding:12px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.06); }
-.vino-card h4 { margin:0 0 6px 0; font-size:1.05em; }
-.vino-card p.summary { margin:6px 0 10px; }
-.vino-bars .bar{display:grid;grid-template-columns:64px 1fr 84px;gap:8px;align-items:center;margin:6px 0}
-.vino-bars .track{height:6px;background:#eee;border-radius:999px;position:relative}
-.vino-bars .knob{position:absolute;top:-4px;width:14px;height:14px;border-radius:50%;
-  background: var(--accent-color, #c41d1d); left:0; transform:translateX(-50%)}
-.vino-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
-.vino-chips span{background:#f6f6f6;border-radius:999px;padding:6px 10px;font-size:.9em}
-.vino-chips.muted span{background:#fafafa;color:#666}
-.vino-toggle{margin-top:8px;font-size:.9em;border:none;background:transparent;color:var(--accent-color,#b00);cursor:pointer}
-
 /* RESPONSIVE */
 @media (max-width: 768px) {
   .wine-card {
@@ -2208,46 +2195,6 @@ window.addEventListener("popstate", (event) => {
 
   setTimeout(() => window._manualNavigation = false, 100);
 });
-function renderSchedaInto(el, vinoNome, scheda, descrizione, lang){
-  const clamp = v => Math.max(0, Math.min(100, Number(v||0)));
-
-  const bars = `
-    <div class="vino-bars">
-      <div class="bar"><span>Leggero</span><div class="track"><i class="knob" style="left:${clamp(scheda?.profile?.body)}%"></i></div><span>Strutturato</span></div>
-      <div class="bar"><span>Secco</span>  <div class="track"><i class="knob" style="left:${clamp(scheda?.profile?.sweetness)}%"></i></div><span>Dolce</span></div>
-      <div class="bar"><span>Morbido</span><div class="track"><i class="knob" style="left:${clamp(scheda?.profile?.acidity)}%"></i></div><span>Acido</span></div>
-    </div>`;
-
-  const chips = (arr, muted=false) =>
-    `<div class="vino-chips ${muted?'muted':''}">` +
-    (arr||[]).map(n => `<span>${typeof n==="string"? n : (n?.label||"")}</span>`).join("") +
-    `</div>`;
-
-  const summary = (scheda?.summary||"").toString();
-  const pair = Array.isArray(scheda?.pairings) ? scheda.pairings : [];
-  const notes = Array.isArray(scheda?.notes) ? scheda.notes : [];
-
-  el.innerHTML = `
-    <div class="vino-card">
-      <h4>${vinoNome}</h4>
-      ${summary ? `<p class="summary">${summary}</p>` : ""}
-      ${bars}
-      ${notes.length ? chips(notes,false) : ""}
-      ${pair.length ? chips(pair,true) : ""}
-      <button class="vino-toggle" id="vToggleBtn">Mostra dettagli</button>
-      <p id="vFullDesc" style="display:none; margin-top:6px;">${descrizione||""}</p>
-    </div>
-  `;
-
-  // toggle descrizione
-  const btn = el.querySelector('#vToggleBtn');
-  const p   = el.querySelector('#vFullDesc');
-  btn.onclick = () => {
-    const show = p.style.display === 'none';
-    p.style.display = show ? 'block' : 'none';
-    btn.textContent = show ? 'Nascondi dettagli' : 'Mostra dettagli';
-  };
-}
 function mostraPopupDescrizione(vino) {
   const overlay = document.createElement("div");
   overlay.className = "popup-overlay";
@@ -2255,8 +2202,7 @@ function mostraPopupDescrizione(vino) {
     <div class="popup-descrizione">
       <button class="close-btn" onclick="this.closest('.popup-overlay').remove()">✖</button>
       <h3>${vino.nome}${vino.annata ? ` (${vino.annata})` : ""}</h3>
-      <div id="schedaWrap"></div>
-      <div id="descrizioneTesto" style="display:none;"></div>
+      <div id="descrizioneTesto">${translations[currentLang].loadingDescription}</div>
     </div>
   `;
   document.body.appendChild(overlay);
@@ -2265,50 +2211,41 @@ function mostraPopupDescrizione(vino) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      nome: vino.nome,
-      annata: vino.annata,
-      uvaggio: vino.uvaggio,
-      categoria: vino.categoria,
-      sottocategoria: vino.sottocategoria,
-      ristorante_id: RESTAURANT_ID
-    })
+    nome: vino.nome,
+    annata: vino.annata,
+    uvaggio: vino.uvaggio,
+    prezzo: vino.prezzo,
+    ristorante_id: RESTAURANT_ID  // <-- questo era mancante!
+  })
   })
   .then(res => res.json())
-  .then(async data => {
-    let descr = data.descrizione || translations[currentLang].noDescription || "Nessuna descrizione trovata.";
-    const scheda = data.scheda || null;
+.then(async data => {
+  const testoOriginale = data.descrizione || "Nessuna descrizione trovata.";
 
-    // traduzione solo del testo esteso se lingua ≠ it
-    if (currentLang !== "it" && descr && descr !== "Nessuna descrizione trovata.") {
-      try {
-        const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-descrizione", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: descr, targetLang: currentLang })
-        });
-        const t = await res.json();
-        descr = t.text || descr;
-      } catch {}
+  if (currentLang === "it") {
+    overlay.querySelector("#descrizioneTesto").innerText = testoOriginale;
+  } else {
+    // chiamata a OpenAI, DeepL o traduzione locale (esempio fittizio)
+    try {
+      const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-descrizione", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: testoOriginale,
+          targetLang: currentLang
+        })
+      });
+      const translated = await res.json();
+      overlay.querySelector("#descrizioneTesto").innerText = `${translated.text || testoOriginale} [${currentLang}]`;
+    } catch (err) {
+      overlay.querySelector("#descrizioneTesto").innerText = testoOriginale + " ⚠️ (non tradotto)";
     }
-
-    // Se ho la scheda, render compatto + toggle; altrimenti mostra solo descrizione
-    const wrap = overlay.querySelector("#schedaWrap");
-    const descEl = overlay.querySelector("#descrizioneTesto");
-
-    if (scheda) {
-      renderSchedaInto(wrap, vino.nome + (vino.annata ? ` (${vino.annata})`:""), scheda, descr, currentLang);
-    } else {
-      descEl.style.display = "block";
-      descEl.textContent = descr;
-    }
-  })
+  }
+})
   .catch(() => {
-    const descEl = overlay.querySelector("#descrizioneTesto");
-    descEl.style.display = "block";
-    descEl.textContent = "Errore durante il recupero della descrizione.";
+    overlay.querySelector("#descrizioneTesto").innerText = "Errore durante il recupero della descrizione.";
   });
 }
-
 
 function positionTooltipOverButton() {
   const tip = document.getElementById("tooltipSommelier");
