@@ -756,6 +756,21 @@ footer {
         <div class="impostazione accordion">
           <h3 class="accordion-header">Nome o Logo <span class="accordion-icon">+</span></h3>
           <div class="accordion-content">
+            <!-- URL pubblico (slug) -->
+              <label for="slugInput" style="margin-top:14px;">URL pubblico (slug)</label>
+              <div style="display:flex; gap:8px; align-items:center; max-width:400px;">
+                <input type="text" id="slugInput" placeholder="es. osteria-pippo" style="flex:1;">
+                <button type="button" id="suggestSlugBtn" class="mini-save-btn" style="white-space:nowrap;">Suggerisci</button>
+              </div>
+              <small id="slugHelp" style="display:block; color:#555; margin-top:6px;">
+                Solo lettere, numeri e trattini. Esempio: <code>osteria-pippo</code>
+              </small>
+              <div id="slugStatus" style="margin-top:6px; font-size:0.9em;"></div>
+
+              <!-- Anteprima URL -->
+              <div id="slugPreview" style="margin-top:8px; font-size:0.95em; color:#333;">
+                URL: <span id="slugPreviewUrl">https://www.winesfever.com/</span>
+              </div>
             <label for="displayName">Nome da visualizzare</label>
             <input type="text" id="displayName">
             <div id="nameOptions">
@@ -1221,6 +1236,48 @@ function attachLogoListeners() {
   }
 }
 
+function slugify(str) {
+  return (str || "")
+    .toString()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // rimuove accenti
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")  // non alfanumerico -> trattino
+    .replace(/^-+|-+$/g, "")      // trim trattini
+    .substring(0, 60);            // limite di sicurezza
+}
+
+function isValidSlug(s) {
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(s);
+}
+
+function debounce(fn, ms=350) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn.apply(this, args), ms);
+  };
+}
+
+async function checkSlugAvailability(s) {
+  if (!s) return { ok: false, reason: "Vuoto" };
+  if (!isValidSlug(s)) return { ok: false, reason: "Formato non valido" };
+
+  // Cerca collisioni con altri ristoranti (diversi dall'ID corrente)
+  const { data, error } = await supabase
+    .from("ristoranti")
+    .select("id")
+    .eq("slug", s)
+    .neq("id", RESTAURANT_ID)
+    .limit(1);
+
+  if (error) {
+    console.warn("Errore check slug:", error);
+    return { ok: false, reason: "Errore di verifica" };
+  }
+  const taken = Array.isArray(data) && data.length > 0;
+  return { ok: !taken, reason: taken ? "Già in uso" : "" };
+}
+
   document.addEventListener("DOMContentLoaded", async () => {
     if (window.location.hash === "#") {
   history.replaceState(null, "", window.location.pathname);
@@ -1244,6 +1301,76 @@ const { data: info } = await supabase
   .single();
 
 window.RISTORANTE_SLUG = (info?.slug || "").trim();
+// --- Inizializza UI slug ---
+const slugInput = document.getElementById("slugInput");
+const slugStatus = document.getElementById("slugStatus");
+const slugPreviewUrl = document.getElementById("slugPreviewUrl");
+const suggestSlugBtn = document.getElementById("suggestSlugBtn");
+const displayNameInput = document.getElementById("displayName");
+
+function renderSlugPreview(s) {
+  const base = "https://www.winesfever.com/";
+  slugPreviewUrl.textContent = s ? base + s : base;
+}
+
+slugInput.value = window.RISTORANTE_SLUG || "";
+renderSlugPreview(slugInput.value);
+
+suggestSlugBtn.addEventListener("click", () => {
+  const suggestion = slugify(displayNameInput.value || "");
+  if (!suggestion) {
+    alert("Inserisci prima il ‘Nome da visualizzare’.");
+    return;
+  }
+  slugInput.value = suggestion;
+  slugInput.dispatchEvent(new Event("input"));
+});
+
+const debouncedCheck = debounce(async () => {
+  const s = slugInput.value.trim();
+  if (!s) {
+    slugStatus.textContent = "Inserisci uno slug.";
+    slugStatus.style.color = "#b00";
+    renderSlugPreview("");
+    return;
+  }
+
+  if (!isValidSlug(s)) {
+    slugStatus.textContent = "Formato non valido. Usa solo lettere, numeri e trattini.";
+    slugStatus.style.color = "#b00";
+    renderSlugPreview(s);
+    return;
+  }
+
+  const res = await checkSlugAvailability(s);
+  if (res.ok) {
+    slugStatus.textContent = "Disponibile ✅";
+    slugStatus.style.color = "green";
+  } else {
+    slugStatus.textContent = (res.reason === "Già in uso")
+      ? "Già in uso ❌ Scegline un altro"
+      : "Impossibile verificare. Riprova.";
+    slugStatus.style.color = "#b00";
+  }
+  renderSlugPreview(s);
+}, 400);
+
+slugInput.addEventListener("input", (e) => {
+  // normalizza in tempo reale (consente solo set valido)
+  const raw = e.target.value;
+  const fixed = slugify(raw);
+  if (raw !== fixed) e.target.value = fixed;
+  debouncedCheck();
+});
+
+// Suggerimento automatico quando digiti il “Nome da visualizzare”, se lo slug è ancora vuoto
+displayNameInput.addEventListener("blur", () => {
+  if (!slugInput.value.trim()) {
+    const suggestion = slugify(displayNameInput.value || "");
+    slugInput.value = suggestion;
+    debouncedCheck();
+  }
+});
 
       const { data: vini } = await supabase
         .from("wines")
@@ -1680,34 +1807,74 @@ async function saveSettings() {
   const nome = document.getElementById("displayName").value;
   const font = document.getElementById("fontSelector").value;
 
-  // sola palette predefinita
   const paletteSelect = document.getElementById("paletteSelector");
   const selectedOption = paletteSelect.options[paletteSelect.selectedIndex];
   const palette_color = selectedOption?.getAttribute("data-palette") || "rosso";
 
-  await supabase.from("ristoranti").update({
+  // --- NUOVO: slug ---
+  const slugInput = document.getElementById("slugInput");
+  const wantedSlug = slugInput.value.trim();
+
+  // Se l’utente ha inserito uno slug, validalo e verifica che non sia occupato
+  let slugToSave = null;
+  if (wantedSlug) {
+    if (!isValidSlug(wantedSlug)) {
+      alert("Lo slug non è valido. Usa solo lettere, numeri e trattini.");
+      return;
+    }
+    const res = await checkSlugAvailability(wantedSlug);
+    if (!res.ok) {
+      alert(res.reason === "Già in uso"
+        ? "Questo URL è già in uso. Scegline un altro."
+        : "Impossibile verificare la disponibilità dello slug. Riprova.");
+      return;
+    }
+    slugToSave = wantedSlug;
+  } else {
+    // se vuoto, consenti salvare slug NULL (URL vecchio con query)
+    slugToSave = null;
+  }
+
+  const updatePayload = {
     nome,
     font,
-    palette_color,          // ✅ teniamo solo questo
+    palette_color,
     logo_size: logoSize,
     name_size: nameSize,
     name_color: nameColor,
     name_bold: nameBold,
     name_font: nameFont,
     sommelier_attivo: showSommelier,
-    sommelier_gender: document.getElementById("sommelierGender").value
-  }).eq("id", RESTAURANT_ID);
+    sommelier_gender: document.getElementById("sommelierGender").value,
+    slug: slugToSave
+  };
 
-  // feedback
-  const btn = document.querySelector(".save-btn");
-  const originalText = btn.textContent;
-  btn.textContent = "✅ Salvato!";
-  setTimeout(() => { btn.textContent = originalText; }, 2000);
+  const { error } = await supabase
+    .from("ristoranti")
+    .update(updatePayload)
+    .eq("id", RESTAURANT_ID);
 
+  if (error) {
+    console.error("Errore salvataggio:", error);
+    alert("Errore nel salvataggio. Riprova.");
+    return;
+  }
+
+  // Aggiorna lo stato in pagina
+  window.RISTORANTE_SLUG = slugToSave || "";
   const msg = document.getElementById("saveMessage");
   msg.style.display = "block";
   setTimeout(() => { msg.style.display = "none"; }, 3000);
 
+  // feedback sul bottone principale (se presente)
+  const btn = document.querySelector(".save-btn");
+  if (btn) {
+    const originalText = btn.textContent;
+    btn.textContent = "✅ Salvato!";
+    setTimeout(() => { btn.textContent = originalText; }, 2000);
+  }
+
+  // Aggiorna anteprima/iframe e (indirettamente) QR
   updatePreview();
   updatePreviewLive();
 }
