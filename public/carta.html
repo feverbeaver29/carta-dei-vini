@@ -2260,6 +2260,12 @@ function mostraPopupDescrizione(vino) {
     </div>
   `;
   document.body.appendChild(overlay);
+  // 👇 mostra subito il messaggio "Sto caricando..."
+const descEl = overlay.querySelector("#descrizioneTesto");
+if (descEl) {
+  descEl.style.display = "block";
+  descEl.textContent = (translations[currentLang]?.loadingDescription) || "Sto caricando una descrizione...";
+}
 
   fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/descrizione-vino", {
     method: "POST",
@@ -2290,6 +2296,8 @@ function mostraPopupDescrizione(vino) {
         descr = t.text || descr;
       } catch {}
     }
+// 👇 rimuovi il testo di attesa
+if (descEl) { descEl.textContent = ""; descEl.style.display = "none"; }
 
     // Se ho la scheda, render compatto + toggle; altrimenti mostra solo descrizione
     const wrap = overlay.querySelector("#schedaWrap");
@@ -2301,6 +2309,32 @@ function mostraPopupDescrizione(vino) {
       descEl.style.display = "block";
       descEl.textContent = descr;
     }
+    // 🔁 second-chance: se non ho la scheda, prova una sola volta a ripescare dopo 700ms
+if (!scheda) {
+  setTimeout(async () => {
+    try {
+      const res2 = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/descrizione-vino", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nome: vino.nome,
+          annata: vino.annata,
+          uvaggio: vino.uvaggio,
+          categoria: vino.categoria,
+          sottocategoria: vino.sottocategoria,
+          ristorante_id: RESTAURANT_ID
+        })
+      });
+      const d2 = await res2.json();
+      if (d2?.scheda) {
+        // rendo la scheda (sopra al testo) e nascondo la descrizione lunga finché non cliccano
+        renderSchedaInto(wrap, vino.nome + (vino.annata ? ` (${vino.annata})`:""), d2.scheda, descr, currentLang);
+        if (descEl) { descEl.style.display = "none"; }
+      }
+    } catch {}
+  }, 700);
+}
+
   })
   .catch(() => {
     const descEl = overlay.querySelector("#descrizioneTesto");

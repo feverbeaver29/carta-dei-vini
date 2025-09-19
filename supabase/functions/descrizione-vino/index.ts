@@ -59,20 +59,23 @@ serve(async (req) => {
     // 1) Cerca GLOBALMENTE per fingerprint (riuso tra ristoranti)
     const { data: exGlobal, error: selErr } = await supabase
       .from("descrizioni_vini")
-      .select("descrizione")
+      .select("descrizione, scheda")
       .eq("fingerprint", fp)
       .maybeSingle();
 
     if (selErr) console.warn("Selezione fingerprint errore:", selErr);
 
-    if (exGlobal?.descrizione) {
-      return new Response(JSON.stringify({ descrizione: exGlobal.descrizione }), { status: 200, headers: CORS });
-    }
+if (exGlobal?.descrizione) {
+  return new Response(JSON.stringify({
+    descrizione: exGlobal.descrizione,
+    scheda: exGlobal.scheda || null
+  }), { status: 200, headers: CORS });
+}
 
     // 2) (retrocompatibilità) prova il vecchio match per ristorante/nome/annata/uvaggio
     let q = supabase
       .from("descrizioni_vini")
-      .select("descrizione")
+      .select("descrizione, scheda")
       .eq("nome", nome);
 
     if (ristorante_id) q = q.eq("ristorante_id", ristorante_id);
@@ -119,8 +122,17 @@ Sottocategoria: ${sottocategoria || "non specificata"}`
 
 const descPrompt = {
   role: "user",
-  content: `Scrivi una descrizione tecnica breve (max 400 caratteri) con tre mini-sezioni:
-Stile / Palato / Abbinamenti. Evita frasi vuote e ripetere il nome. Stesso vino di prima.`
+  content: `Scrivi un paragrafo tecnico, sobrio ed elegante in italiano (max 320 caratteri).
+- Non usare titoli, grassetti, elenchi o markdown.
+- Non ripetere il nome del vino.
+- 3 micro-frasi: 1) stile generale; 2) sensazioni al palato (struttura, acidità/tannino, equilibrio); 3) abbinamenti in categorie (es. carni alla griglia, primi di pesce, formaggi stagionati).
+- Evita formule generiche (“elegante e complesso”, “tannini morbidi”).
+Dati:
+Nome: ${nome}
+${annata ? "Annata: " + annata : ""}
+Uvaggio: ${uvaggio || "non specificato"}
+Categoria: ${categoria || "non specificata"}
+Sottocategoria: ${sottocategoria || "non specificata"}`
 };
 
 // 👉 modelli: se hai "gpt-4o-mini" usalo (ottimo+costo basso). Altrimenti tieni 3.5.
