@@ -768,6 +768,8 @@ const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhY
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_API_KEY);
+// 🔴 Disattiva/attiva la descrizione vino dalla UI
+const DESCRIZIONE_VINO_ABILITATA = false; // ← metti true per riattivare
 
 // --- URL parsing: supporta sia ?slug=... sia /:slug e /:slug.cartadeivini ---
 const urlParams = new URLSearchParams(window.location.search);
@@ -2248,17 +2250,21 @@ el.innerHTML = `
   };
 }
 function mostraPopupDescrizione(vino) {
-  const overlay = document.createElement("div");
-  overlay.className = "popup-overlay";
-  overlay.innerHTML = `
-    <div class="popup-descrizione">
-      <button class="close-btn" onclick="this.closest('.popup-overlay').remove()">✖</button>
-      <h3>${vino.nome}${vino.annata ? ` (${vino.annata})` : ""}</h3>
-      <div id="schedaWrap"></div>
-      <div id="descrizioneTesto" style="display:none;"></div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
+  // ⛔ kill-switch client: non chiama l'edge function
+  if (DESCRIZIONE_VINO_ABILITATA === false) {
+    const overlay = document.createElement("div");
+    overlay.className = "popup-overlay";
+    overlay.innerHTML = `
+      <div class="popup-descrizione">
+        <button class="close-btn" onclick="this.closest('.popup-overlay').remove()">✖</button>
+        <h3>${vino.nome}${vino.annata ? ` (${vino.annata})` : ""}</h3>
+        <div style="margin-top:8px; font-size:.95em; opacity:.9;">
+          Descrizione momentaneamente non disponibile.
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    return; // ← niente fetch
+  }
   // 👇 mostra subito il messaggio "Sto caricando..."
 const descEl = overlay.querySelector("#descrizioneTesto");
 if (descEl) {
