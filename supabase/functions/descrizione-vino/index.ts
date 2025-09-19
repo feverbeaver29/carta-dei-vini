@@ -204,7 +204,7 @@ const { error: upErr } = await supabase
 
 if (upErr) console.error("❌ Errore salvataggio descrizione/scheda:", upErr);
 
-return new Response(JSON.stringify({ descrizione, scheda }), { status: 200, headers: CORS });
+return new Response(JSON.stringify({ descrizione: descrizionePulita, scheda }), { status: 200, headers: CORS });
 
 
   } catch (err: any) {
