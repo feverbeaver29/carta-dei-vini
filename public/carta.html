@@ -2227,17 +2227,16 @@ function renderSchedaInto(el, vinoNome, scheda, descrizione, lang){
   const pair = Array.isArray(scheda?.pairings) ? scheda.pairings : [];
   const notes = Array.isArray(scheda?.notes) ? scheda.notes : [];
 
-  el.innerHTML = `
-    <div class="vino-card">
-      <h4>${vinoNome}</h4>
-      ${summary ? `<p class="summary">${summary}</p>` : ""}
-      ${bars}
-      ${notes.length ? chips(notes,false) : ""}
-      ${pair.length ? chips(pair,true) : ""}
-      <button class="vino-toggle" id="vToggleBtn">Mostra dettagli</button>
-      <p id="vFullDesc" style="display:none; margin-top:6px;">${descrizione||""}</p>
-    </div>
-  `;
+el.innerHTML = `
+  <div class="vino-card">
+    ${summary ? `<p class="summary">${summary}</p>` : ""}
+    ${bars}
+    ${notes.length ? chips(notes,false) : ""}
+    ${pair.length ? chips(pair,true) : ""}
+    <button class="vino-toggle" id="vToggleBtn">Mostra dettagli</button>
+    <p id="vFullDesc" style="display:none; margin-top:6px;">${descrizione||""}</p>
+  </div>
+`;
 
   // toggle descrizione
   const btn = el.querySelector('#vToggleBtn');
