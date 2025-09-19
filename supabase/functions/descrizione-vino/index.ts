@@ -82,17 +82,14 @@ if (exGlobal?.descrizione) {
     if (annata) q = q.eq("annata", annata); else q = q.is("annata", null);
     if (uvaggio) q = q.eq("uvaggio", uvaggio); else q = q.is("uvaggio", null);
 
-    const { data: exOld } = await q.maybeSingle();
-    if (exOld?.descrizione) {
-      // backfill fingerprint su record esistente
-      await supabase
-        .from("descrizioni_vini")
-        .update({ fingerprint: fp })
-        .eq("nome", nome)
-        .maybeSingle();
-
-      return new Response(JSON.stringify({ descrizione: exOld.descrizione }), { status: 200, headers: CORS });
-    }
+const { data: exOld } = await q.maybeSingle();
+if (exOld?.descrizione) {
+  await supabase.from("descrizioni_vini").update({ fingerprint: fp }).eq("nome", nome).maybeSingle();
+  return new Response(JSON.stringify({
+    descrizione: exOld.descrizione,
+    scheda: exOld.scheda || null
+  }), { status: 200, headers: CORS });
+}
 
 // 3) Genera scheda + descrizione con OpenAI (JSON + testo)
 const jsonPrompt = {
@@ -176,6 +173,18 @@ const completion = await openai.chat.completions.create({
   max_tokens: 350
 });
 const descrizione = completion.choices[0].message?.content?.trim() ?? "";
+// pulizia: niente markdown/grassetti, niente bullet, compatta spazi
+const stripMd = (s: string) =>
+  s.replace(/\*\*/g, "")
+   .replace(/(^|\s)[\-•]\s+/g, "$1")
+   .replace(/\s+/g, " ")
+   .trim();
+
+// evita che il testo inizi ripetendo il nome
+const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const nomeRe = new RegExp("^\\s*" + esc(nome) + "\\s*[:\\-–—]?\\s*", "i");
+
+let descrizionePulita = stripMd(descrizione).replace(nomeRe, "");
 
 // 4) UPSERT: salviamo sia 'descrizione' sia 'scheda'
 const { error: upErr } = await supabase
@@ -187,7 +196,7 @@ const { error: upErr } = await supabase
       annata: annata || null,
       uvaggio: uvaggio || null,
       ristorante_id: ristorante_id || null,
-      descrizione,
+      descrizione: descrizionePulita,
       scheda
     },
     { onConflict: "fingerprint", ignoreDuplicates: false }

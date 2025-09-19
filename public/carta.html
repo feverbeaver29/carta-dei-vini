@@ -2267,80 +2267,99 @@ if (descEl) {
   descEl.textContent = (translations[currentLang]?.loadingDescription) || "Sto caricando una descrizione...";
 }
 
-  fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/descrizione-vino", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      nome: vino.nome,
-      annata: vino.annata,
-      uvaggio: vino.uvaggio,
-      categoria: vino.categoria,
-      sottocategoria: vino.sottocategoria,
-      ristorante_id: RESTAURANT_ID
-    })
+const FN_URL = "https://ldunvbftxhbtuyabgxwh.functions.supabase.co/descrizione-vino";
+
+fetch(FN_URL, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    // 👇 se l’edge ha verify_jwt attivo, questo evita 401 “Missing Authorization”
+    "Authorization": `Bearer ${SUPABASE_API_KEY}`
+  },
+  body: JSON.stringify({
+    nome: vino.nome,
+    annata: vino.annata,
+    uvaggio: vino.uvaggio,
+    categoria: vino.categoria,
+    sottocategoria: vino.sottocategoria,
+    ristorante_id: RESTAURANT_ID
   })
-  .then(res => res.json())
-  .then(async data => {
-    let descr = data.descrizione || translations[currentLang].noDescription || "Nessuna descrizione trovata.";
-    const scheda = data.scheda || null;
+})
+.then(async res => {
+  const raw = await res.text();              // leggo sempre come testo
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} — ${raw}`);
+  try { return JSON.parse(raw); }            // provo a fare parse JSON
+  catch { throw new Error("Risposta non-JSON: " + raw.slice(0, 200)); }
+})
+.then(async data => {
+  let descr = data.descrizione || translations[currentLang].noDescription || "Nessuna descrizione trovata.";
+  const scheda = data.scheda || null;
 
-    // traduzione solo del testo esteso se lingua ≠ it
-    if (currentLang !== "it" && descr && descr !== "Nessuna descrizione trovata.") {
-      try {
-        const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-descrizione", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: descr, targetLang: currentLang })
-        });
-        const t = await res.json();
-        descr = t.text || descr;
-      } catch {}
-    }
-// 👇 rimuovi il testo di attesa
-if (descEl) { descEl.textContent = ""; descEl.style.display = "none"; }
-
-    // Se ho la scheda, render compatto + toggle; altrimenti mostra solo descrizione
-    const wrap = overlay.querySelector("#schedaWrap");
-    const descEl = overlay.querySelector("#descrizioneTesto");
-
-    if (scheda) {
-      renderSchedaInto(wrap, vino.nome + (vino.annata ? ` (${vino.annata})`:""), scheda, descr, currentLang);
-    } else {
-      descEl.style.display = "block";
-      descEl.textContent = descr;
-    }
-    // 🔁 second-chance: se non ho la scheda, prova una sola volta a ripescare dopo 700ms
-if (!scheda) {
-  setTimeout(async () => {
+  // traduzione SOLO del testo, se necessario
+  if (currentLang !== "it" && descr && descr !== "Nessuna descrizione trovata.") {
     try {
-      const res2 = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/descrizione-vino", {
+      const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-descrizione", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nome: vino.nome,
-          annata: vino.annata,
-          uvaggio: vino.uvaggio,
-          categoria: vino.categoria,
-          sottocategoria: vino.sottocategoria,
-          ristorante_id: RESTAURANT_ID
-        })
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_API_KEY}`
+        },
+        body: JSON.stringify({ text: descr, targetLang: currentLang })
       });
-      const d2 = await res2.json();
-      if (d2?.scheda) {
-        // rendo la scheda (sopra al testo) e nascondo la descrizione lunga finché non cliccano
-        renderSchedaInto(wrap, vino.nome + (vino.annata ? ` (${vino.annata})`:""), d2.scheda, descr, currentLang);
-        if (descEl) { descEl.style.display = "none"; }
-      }
-    } catch {}
-  }, 700);
-}
+      const t = await res.json();
+      descr = t.text || descr;
+    } catch (e) { console.warn("traduci-descrizione:", e); }
+  }
 
-  })
-  .catch(() => {
-    const descEl = overlay.querySelector("#descrizioneTesto");
-    descEl.style.display = "block";
-    descEl.textContent = "Errore durante il recupero della descrizione.";
-  });
+  // rimuovi loader
+  if (descEl) { descEl.textContent = ""; descEl.style.display = "none"; }
+
+  const wrap = overlay.querySelector("#schedaWrap");
+  const descBox = overlay.querySelector("#descrizioneTesto");
+
+  if (scheda) {
+    renderSchedaInto(wrap, vino.nome + (vino.annata ? ` (${vino.annata})`:""), scheda, descr, currentLang);
+  } else {
+    descBox.style.display = "block";
+    descBox.textContent = descr;
+
+    // second-chance: riprova dopo 700ms (magari la scheda è stata appena salvata)
+    setTimeout(async () => {
+      try {
+        const r2 = await fetch(FN_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${SUPABASE_API_KEY}`
+          },
+          body: JSON.stringify({
+            nome: vino.nome,
+            annata: vino.annata,
+            uvaggio: vino.uvaggio,
+            categoria: vino.categoria,
+            sottocategoria: vino.sottocategoria,
+            ristorante_id: RESTAURANT_ID
+          })
+        });
+        const raw2 = await r2.text();
+        if (!r2.ok) return;
+        const d2 = JSON.parse(raw2);
+        if (d2?.scheda) {
+          renderSchedaInto(wrap, vino.nome + (vino.annata ? ` (${vino.annata})`:""), d2.scheda, descr, currentLang);
+          descBox.style.display = "none";
+        }
+      } catch {}
+    }, 700);
+  }
+})
+.catch(err => {
+  console.error("[descrizione-vino]", err);   // 👈 adesso vedi l’errore in console
+  const eBox = overlay.querySelector("#descrizioneTesto");
+  if (eBox) {
+    eBox.style.display = "block";
+    eBox.textContent = "Errore durante il recupero della descrizione.";
+  }
+});
 }
 
 function positionTooltipOverButton() {
