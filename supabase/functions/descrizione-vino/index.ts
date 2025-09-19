@@ -236,32 +236,34 @@ const model = "gpt-4o-mini"; // fallback: "gpt-3.5-turbo"
 const sheet = await openai.chat.completions.create({
   model,
   messages: [jsonPrompt],
-  temperature: 0.4,
-  max_tokens: 300
+  temperature: 0.2,                 // meno “creativo” per il JSON
+  max_tokens: 300,
+  response_format: { type: "json_object" }
 });
 
-let scheda: any = null;
+
+let scheda: any = {};
 try {
-  scheda = JSON.parse(sheet.choices[0].message?.content ?? "{}");
-  // harden: clamp valori e limiti
-  const clamp = (n: any) => Math.max(0, Math.min(100, Number(n) || 0));
-  scheda.profile = scheda.profile || {};
-  scheda.profile.body = clamp(scheda.profile.body);
-  scheda.profile.sweetness = clamp(scheda.profile.sweetness);
-  scheda.profile.acidity = clamp(scheda.profile.acidity);
-  scheda.notes = Array.isArray(scheda.notes) ? scheda.notes.slice(0,3) : [];
-  scheda.pairings = Array.isArray(scheda.pairings) ? scheda.pairings.slice(0,3) : [];
-  scheda.summary = (scheda.summary || "").slice(0, 160);
-  scheda = refineWithGuides(scheda, guides, color);
-} catch {
-  // se qualcosa va storto, metti una scheda minimale
-  scheda = {
-    summary: "Profilo equilibrato, frutto nitido e buona freschezza.",
-    profile: { body: 50, sweetness: 10, acidity: 60 },
-    notes: [{label:"Frutta gialla"},{label:"Agrumi"},{label:"Floreale"}],
-    pairings: ["Antipasti di pesce","Primi leggeri","Formaggi freschi"]
-  };
+  const raw = sheet.choices[0].message?.content ?? "{}";
+  console.log("JSON scheda grezzo:", raw.slice(0,200));
+  const cleaned = raw.replace(/^\s*```(?:json)?\s*|\s*```\s*$/g, ""); // via code fences
+  scheda = JSON.parse(cleaned);
+} catch (e) {
+  console.warn("JSON parse fallito, uso scheda vuota:", e);
 }
+
+// harden minimi
+const clamp = (n: any) => Math.max(0, Math.min(100, Number(n) || 0));
+scheda.profile = scheda.profile || {};
+scheda.profile.body = clamp(scheda.profile.body);
+scheda.profile.sweetness = clamp(scheda.profile.sweetness);
+scheda.profile.acidity = clamp(scheda.profile.acidity);
+scheda.notes = Array.isArray(scheda.notes) ? scheda.notes.slice(0,3) : [];
+scheda.pairings = Array.isArray(scheda.pairings) ? scheda.pairings.slice(0,3) : [];
+scheda.summary = (scheda.summary || "").slice(0,160);
+
+// 👇 APPLICA SEMPRE IL RAFFINATORE (anche se il JSON era vuoto)
+scheda = refineWithGuides(scheda, guides, color);
 
 // poi il testo tecnico
 const completion = await openai.chat.completions.create({
