@@ -9,10 +9,14 @@ const supabase = createClient(
 
 const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY") });
 
+const ALLOWED_ORIGIN = "https://www.winesfever.com"; // oppure "*"
+
 const CORS = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey, x-client-info",
+  "Access-Control-Max-Age": "86400",
+  "Vary": "Origin",
   "Content-Type": "application/json"
 };
 
@@ -43,7 +47,8 @@ function fingerprintName(nome: string): string {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { status: 200, headers: CORS });
+    // 204: nessun body, headers CORS completi
+    return new Response(null, { status: 204, headers: CORS });
   }
 
   try {
