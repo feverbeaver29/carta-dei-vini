@@ -27,6 +27,39 @@
 .custom-popup .btn-save {  background-color: #a00;  color: #fff;}
 
 .custom-popup .btn-cancel {  background-color: #aaa;  color: #333;}
+/* === OCR modal responsive === */
+.swal2-popup.swal2-rounded-popup { width: min(94vw, 460px) !important; } /* meglio su SE/S8+ */
+
+.custom-popup label{ font-size: .95em; margin: 4px 0 2px; word-break: break-word; }
+.custom-popup input, .custom-popup select{ border-radius: 16px; padding: 10px 12px; }
+
+.sw-frm{ display:grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 380px){ .sw-frm{ grid-template-columns: 1fr 1fr; } } /* 2 colonne piccole */
+.sw-span-2{ grid-column: 1 / -1; } /* campo a tutta larghezza */
+
+.sw-price-grid{
+  display:grid;
+  grid-template-columns: 86px 1fr;
+  grid-template-areas:
+    "cur bot"
+    "cal cal";
+  gap: 8px;
+  align-items: end;
+}
+@media (min-width: 420px){
+  .sw-price-grid{
+    grid-template-columns: 86px 1fr 1fr;
+    grid-template-areas: "cur bot cal";
+  }
+}
+.sw-cur{ grid-area: cur; }
+.sw-bot{ grid-area: bot; }
+.sw-cal{ grid-area: cal; }
+
+.sw-inline-help{ font-size:.8em; color:#666; margin-top:2px; }
+.custom-popup .fmt-row{ gap:8px; }
+.custom-popup .fmt-input{ padding:.45em .6em; }
+
 #progressBar {  width: 0%;  height: 20px;  background: #b00;  border-radius: 10px;  text-align: center;  color: #fff;  font-size: 0.8em;  line-height: 20px;  transition: width 0.4s ease; /* aggiungi questa riga */}
 .price-row{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:nowrap;max-width:100%;}
 .price-inline{display:flex;align-items:center;gap:6px;flex:1 1 0;min-width:0;}
@@ -407,29 +440,49 @@ if (!vino.uvaggio || vino.uvaggio.trim() === "") {
 const result = await Swal.fire({
   title: 'Conferma vino',
   html: `
-    <div class="custom-popup">
-      <label>Nome</label>
-      <input id="sw_nome" placeholder="nome del vino" value="${vino.nome_completo || ""}">
+  <div class="custom-popup">
+    <div class="sw-frm">
 
-      <label>Annata</label>
-      <input id="sw_annata" placeholder="annata del vino" value="${vino.annata || ""}">
-
-      <div style="display:flex; gap:8px; align-items:flex-end;">
-        <div style="flex:0 0 80px;">
-          <label>Valuta</label>
-          <input id="sw_valuta" placeholder="es. €" value="${vino.valuta || '€'}">
-        </div>
-        <div style="flex:1;">
-          <label>Prezzo (bott. 0,75)</label>
-          <input id="sw_prezzo" placeholder="es. 24" value="${(vino.prezzo || '').toString().replace(/^(€|\$|£|¥|CHF)?\s*/,'')}">
-        </div>
-        <div style="flex:1;">
-          <label>Prezzo al calice</label>
-          <input id="sw_prezzo_calice" placeholder="es. 6" value="${(vino.prezzo_bicchiere || '').toString().replace(/^(€|\$|£|¥|CHF)?\s*/,'')}">
-        </div>
+      <div class="sw-field sw-span-2">
+        <label>Nome</label>
+        <input id="sw_nome" placeholder="nome del vino" value="${vino.nome_completo || ""}">
       </div>
 
-      <div id="sw_formatsWrap" style="margin-top:8px;">
+      <div class="sw-field sw-span-2">
+        <label>Annata</label>
+        <input id="sw_annata" placeholder="annata del vino" value="${vino.annata || ""}">
+      </div>
+
+      <div class="sw-field sw-span-2">
+        <label>Prezzi</label>
+        <div class="sw-price-grid">
+          <div class="sw-cur">
+            <label style="display:block;margin-bottom:2px;">Valuta</label>
+            <select id="sw_valuta">
+              <option value="€"  ${((vino.valuta||'€')==='€')  ? 'selected':''}>€</option>
+              <option value="$"  ${((vino.valuta||'€')==='$')  ? 'selected':''}>$</option>
+              <option value="£"  ${((vino.valuta||'€')==='£')  ? 'selected':''}>£</option>
+              <option value="¥"  ${((vino.valuta||'€')==='¥')  ? 'selected':''}>¥</option>
+              <option value="CHF"${((vino.valuta||'€')==='CHF')? 'selected':''}>CHF</option>
+            </select>
+          </div>
+          <div class="sw-bot">
+            <label style="display:block;margin-bottom:2px;">Bott. 0,75</label>
+            <input id="sw_prezzo" inputmode="decimal" pattern="[0-9]*[\\.,]?[0-9]*"
+                   placeholder="es. 24"
+                   value="${(vino.prezzo || '').toString().replace(/^(€|\\$|£|¥|CHF)?\\s*/, '')}">
+          </div>
+          <div class="sw-cal">
+            <label style="display:block;margin-bottom:2px;">Calice</label>
+            <input id="sw_prezzo_calice" inputmode="decimal" pattern="[0-9]*[\\.,]?[0-9]*"
+                   placeholder="es. 6"
+                   value="${(vino.prezzo_bicchiere || '').toString().replace(/^(€|\\$|£|¥|CHF)?\\s*/, '')}">
+          </div>
+        </div>
+        <div class="sw-inline-help">La valuta selezionata si applica ad entrambi i prezzi.</div>
+      </div>
+
+      <div class="sw-field sw-span-2" id="sw_formatsWrap" style="margin-top:4px;">
         <button type="button" id="sw_addFormatBtn" style="background:none;border:none;color:#b00;cursor:pointer;font-weight:600;padding:0;">+ aggiungi formato</button>
         <select id="sw_formatPicker" class="fmt-picker">
           <option value="" selected disabled>Seleziona formato…</option>
@@ -442,23 +495,31 @@ const result = await Swal.fire({
         <div id="sw_formatsRepeater" class="formats"></div>
       </div>
 
-      <label>Categoria</label>
-      <input id="sw_categoria" list="lista_categorie" placeholder="categoria del vino" value="${vino.categoria || ""}">
-      <datalist id="lista_categorie">
-        ${categoriePresenti.map(cat => `<option value="${cat}">`).join('')}
-      </datalist>
+      <div class="sw-field sw-span-2">
+        <label>Categoria</label>
+        <input id="sw_categoria" list="lista_categorie" placeholder="categoria del vino" value="${vino.categoria || ""}">
+        <datalist id="lista_categorie">
+          ${categoriePresenti.map(cat => `<option value="${cat}">`).join('')}
+        </datalist>
+      </div>
 
-      <label>Sottocategoria</label>
-      <input id="sw_sottocategoria" list="lista_sottocategorie" placeholder="sottocategoria del vino" value="${vino.sottocategoria || ""}">
-      <datalist id="lista_sottocategorie">
-        ${sottocategoriePresenti.map(sub => `<option value="${sub}">`).join('')}
-      </datalist>
+      <div class="sw-field sw-span-2">
+        <label>Sottocategoria</label>
+        <input id="sw_sottocategoria" list="lista_sottocategorie" placeholder="sottocategoria del vino" value="${vino.sottocategoria || ""}">
+        <datalist id="lista_sottocategorie">
+          ${sottocategoriePresenti.map(sub => `<option value="${sub}">`).join('')}
+        </datalist>
+      </div>
 
-      <label>Uvaggio</label>
-      <input id="sw_uvaggio" placeholder="uvaggio del vino" value="${vino.uvaggio || ""}">
-      <small id="sw_uvaggio_hint" class="hint">${vino._uv_hint || ""}</small>
+      <div class="sw-field sw-span-2">
+        <label>Uvaggio</label>
+        <input id="sw_uvaggio" placeholder="uvaggio del vino" value="${vino.uvaggio || ""}">
+        <small id="sw_uvaggio_hint" class="hint">${vino._uv_hint || ""}</small>
+      </div>
+
     </div>
-  `,
+  </div>
+`,
   didOpen: () => {
     const swUv = document.getElementById('sw_uvaggio');
     const swHint = document.getElementById('sw_uvaggio_hint');
