@@ -100,6 +100,7 @@ h1 {    font-size: 1.3em;  }
   .fmt-input{ width:clamp(56px, 26vw, 96px); padding:.38em .5em; }
   .fmt-row{ gap:6px; }
 }
+.inline-btn{ margin-left:6px; padding:.35em .6em; border-radius:8px; border:1px solid #ccc; background:#fafafa; cursor:pointer; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
 </head>
@@ -545,6 +546,7 @@ function formatText(str) {
 
 const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
 const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_API_KEY);
 let RESTAURANT_ID = new URLSearchParams(window.location.search).get("ristorante_id") || null;
 let CURRENT_PLAN = null;
 
@@ -877,9 +879,9 @@ async function saveWine() {
     annata: document.getElementById("annata").value,
     prezzo: (prezzoBott075 ? (valuta + prezzoBott075) : ""),
     prezzo_bicchiere: (prezzoCalice ? (valuta + prezzoCalice) : ""),
-    categoria: formatText(document.getElementById("categoria").value),
-    sottocategoria: formatText(document.getElementById("sottocategoria").value),
-    uvaggio: formatText(document.getElementById("uvaggio").value),
+    categoria: document.getElementById("categoria").value.trim(),
+    sottocategoria: document.getElementById("sottocategoria").value.trim(),
+    uvaggio: document.getElementById("uvaggio").value.trim(),
   };
 
   // 2) inizializza i campi formati extra
@@ -987,6 +989,30 @@ if (result.isConfirmed) {
 }
 });
 
+let uvaggioTimer = null;
+document.getElementById('nome_completo').addEventListener('input', (e) => {
+  clearTimeout(uvaggioTimer);
+  const nome = e.target.value.trim();
+  if (nome.length < 6) { showUvaggioBadge('');toggleNomeLoader(false); return; }
+  uvaggioTimer = setTimeout(async () => {
+    toggleNomeLoader(true);
+    const suggest = await suggestUvaggioFor(nome);
+    toggleNomeLoader(false);
+    if (suggest?.uvaggio) {
+      const input = document.getElementById('uvaggio');
+      // Compila solo se l’utente non ha già scritto qualcosa
+      if (!input.value || input.value.length < 3) {
+        input.value = suggest.uvaggio;
+      }
+      const conf = Math.round((suggest.confidence || 0)*100);
+      const src  = suggest.source === 'supabase' ? 'dati interni' : 'AI';
+      showUvaggioBadge(`Suggerito da ${src} · conf. ${conf}%`);
+    } else {
+      showUvaggioBadge('Nessun suggerimento trovato');
+    }
+  }, 400);
+});
+
 const FORMAT_LABELS = {
   "025": "1/4 L (0,25)", "0375": "0,375 L",
   "05": "1/2 L (0,5)",   "15": "1,5 L", "3l": "3 L"
@@ -1024,6 +1050,108 @@ function refreshPickerOptions(){
   });
 }
 
+// --- REPLACE: usa l'RPC uvaggio_suggest (security definer) ---
+function niceCaseUvaggio(s) {
+  // opzionale: capitalizza parole principali senza toccare % e numeri
+  return (s || "")
+    .split(",")
+    .map(part =>
+      part.trim().replace(/\b([a-zà-ù])([a-zà-ù]*)/gi, (m,a,b) =>
+        a.toUpperCase() + b.toLowerCase()
+      )
+    )
+    .join(", ");
+}
+
+async function findUvaggioFromSupabaseByName(nome) {
+  const q = (nome || "").trim();
+  if (!q) return null;
+
+  const { data, error } = await sb.rpc('uvaggio_suggest', { q, limit_count: 50 });
+  if (error || !data || !data.length) return null;
+
+  // uvaggio_suggest è già ordinata per cnt DESC: il primo è il “consenso”
+  const top = data[0]; // { uvaggio: "cabernet sauvignon 85%, cabernet franc 15%", cnt: N }
+  const uvaggioCanon = niceCaseUvaggio(top.uvaggio); // "Cabernet Sauvignon 85%, Cabernet Franc 15%"
+  const confidence = Math.min(0.5 + (top.cnt || 1) * 0.1, 0.9);
+
+  return { uvaggio: uvaggioCanon, source: 'supabase', confidence };
+}
+
+// 2) Chiamata Edge Function (fallback AI)
+async function fetchUvaggioFromAI(nome) {
+  try {
+    const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/completa-uvaggio", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome_completo: nome })
+    });
+    const json = await res.json().catch(()=>null);
+
+    if (!res.ok || !json?.uvaggio) return null;
+
+    // filtra risposte inutili
+    const t = String(json.uvaggio).trim();
+    const bad = t.length < 5 || /non (posso|ho|sono)|online|sfortunatamente/i.test(t);
+    if (bad) return null;
+
+    return { uvaggio: t, source: 'openai', confidence: (json.confidence ?? 0.7), sources: json.sources ?? [] };
+  } catch(e){ return null; }
+}
+
+// 3) Strategia: prima Supabase, poi AI
+async function suggestUvaggioFor(nome) {
+  const local = await findUvaggioFromSupabaseByName(nome);
+  if (local) return local;
+  return await fetchUvaggioFromAI(nome);
+}
+
+// 4) UI helpers (badge + loader sottile)
+function showUvaggioBadge(msg) {
+  let b = document.getElementById('uvaggioBadge');
+  if (!b) {
+    b = document.createElement('div');
+    b.id = 'uvaggioBadge';
+    b.style.cssText = 'font-size:.8em;color:#555;margin-top:4px;';
+    document.getElementById('uvaggio').insertAdjacentElement('afterend', b);
+  }
+  b.textContent = msg || '';
+}
+function toggleNomeLoader(on) {
+  let s = document.getElementById('nomeSpinner');
+  if (on) {
+    if (!s) {
+      s = document.createElement('span');
+      s.id = 'nomeSpinner';
+      s.textContent = ' ⏳';
+      document.getElementById('nome_completo').insertAdjacentElement('afterend', s);
+    }
+  } else if (s) {
+    s.remove();
+  }
+}
+(function addAiButton(){
+  const uv = document.getElementById('uvaggio');
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'inline-btn';
+  btn.textContent = 'AI';
+  uv.insertAdjacentElement('afterend', btn);
+
+  btn.addEventListener('click', async () => {
+    const nome = document.getElementById('nome_completo').value.trim();
+    if (nome.length < 3) { showMessage('Scrivi prima il nome del vino', false); return; }
+    toggleNomeLoader(true);
+    const s = await suggestUvaggioFor(nome);
+    toggleNomeLoader(false);
+    if (s?.uvaggio) {
+      document.getElementById('uvaggio').value = s.uvaggio;
+      showUvaggioBadge(`Suggerito da ${s.source === 'supabase' ? 'dati interni' : 'AI'}`);
+    } else {
+      showUvaggioBadge('Nessun suggerimento trovato');
+    }
+  });
+})();
 </script>
 <!-- PDF.js Library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.13.216/pdf.min.js"></script>
