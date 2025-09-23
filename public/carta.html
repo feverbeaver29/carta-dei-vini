@@ -224,31 +224,60 @@ button, .save-btn {
   text-align: center;
 }
 
-/* BOTTONE SOMMELIER */
-/* BOTTONE SOMMELIER */
+/* === SOMMELIER: CTA irresistibile === */
 #sommelierBtn{
   position:fixed;
   bottom:16px;
   left:50%;
   transform:translateX(-50%);
-  background:var(--accent-color);
+  background:linear-gradient(90deg, var(--accent-color), #e05);
   color:#fff;
   border:none;
-  height:52px;
-  padding:0 16px;
+  height:60px;
+  padding:0 18px;
   border-radius:999px;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  font-size:0.95em;
-  font-weight:600;
-  cursor:pointer;
-  z-index:1000;
-  box-shadow:0 10px 24px rgba(0,0,0,.18);
+  display:flex; align-items:center; gap:12px;
+  font-size:1rem; font-weight:700;
+  cursor:pointer; z-index:1000;
+  box-shadow:0 14px 28px rgba(0,0,0,.2), 0 0 0 6px rgba(255,255,255,.35) inset;
+  transition:transform .15s ease, filter .2s ease, box-shadow .2s ease;
+  will-change: transform, filter, box-shadow;
 }
+#sommelierBtn:hover{ transform:translateX(-50%) scale(1.02); filter:saturate(1.1); }
+#sommelierBtn:active{ transform:translateX(-50%) scale(.98); }
+
 #sommelierBtn img{
-  width:30px; height:30px; border-radius:50%; object-fit:cover;
+  width:36px; height:36px; border-radius:50%; object-fit:cover; flex:0 0 auto;
+  box-shadow:0 0 0 2px rgba(255,255,255,.6);
 }
+/* layout testo + badge */
+.somm-text{ display:flex; flex-direction:column; line-height:1.05; }
+.somm-title{ font-weight:800; letter-spacing:.2px; }
+.somm-sub{ font-size:.85em; font-weight:600; opacity:.9; margin-top:2px; }
+
+.somm-badge{
+  margin-left:6px; font-size:.75em; font-weight:800;
+  background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.45);
+  padding:4px 8px; border-radius:999px; text-transform:uppercase;
+}
+/* glow morbido intermittente */
+#sommelierBtn.glow {
+  box-shadow:
+    0 14px 28px rgba(0,0,0,.2),
+    0 0 0 6px rgba(255,255,255,.35) inset,
+    0 0 24px rgba(255, 60, 120, .35);
+}
+/* wiggle ogni tanto per attirare l’occhio */
+@keyframes sommWiggle {
+  0%,100%{ transform:translateX(-50%) rotate(0deg); }
+  15%{ transform:translateX(-50%) rotate(-2deg); }
+  30%{ transform:translateX(-50%) rotate(2deg); }
+  45%{ transform:translateX(-50%) rotate(-1.4deg); }
+  60%{ transform:translateX(-50%) rotate(1.4deg); }
+  75%{ transform:translateX(-50%) rotate(-.6deg); }
+  90%{ transform:translateX(-50%) rotate(.6deg); }
+}
+#sommelierBtn.wiggle { animation:sommWiggle .9s ease; }
 /* 🔁 nuovo effetto pulse */
 #sommelierBtn.pulse{
   animation:sommPulse 1.8s ease-out infinite;
@@ -1644,27 +1673,47 @@ async function setupSommelierUI() {
   await aggiornaCategorieSommelier();
 }
 async function creaUIBaseSommelier() {
-const btn = document.createElement("button");
-btn.id = "sommelierBtn";
-btn.setAttribute("aria-label", translations[currentLang].sommelierBtn || "Sommelier");
-btn.innerHTML = `
-  <img src="${ristoranteSommelierURL || 'sommelier.png'}" alt=""
-       onerror="this.onerror=null;this.src='${(ristorante?.sommelier_gender||'uomo')==='donna'?'sommelier_femmina.png':'sommelier.png'}'"/>
-  <span class="label translate-label" data-key="sommelierBtn">${translations[currentLang].sommelierBtn}</span>
-`;
-document.body.appendChild(btn);
+  const btn = document.createElement("button");
+  btn.id = "sommelierBtn";
+  btn.setAttribute("aria-label", translations[currentLang].sommelierBtn || "Sommelier");
+  btn.innerHTML = `
+    <img src="${ristoranteSommelierURL || 'sommelier.png'}" alt=""
+         onerror="this.onerror=null;this.src='${(ristorante?.sommelier_gender||'uomo')==='donna'?'sommelier_femmina.png':'sommelier.png'}'"/>
+    <div class="somm-text">
+      <span class="somm-title">Consiglio del Sommelier</span>
+      <span class="somm-sub">Scrivi il piatto, troviamo il vino</span>
+    </div>
+    <span class="somm-badge">Novità</span>
+  `;
+  document.body.appendChild(btn);
 
-const tooltip = document.createElement("div");
-tooltip.id = "tooltipSommelier";
-tooltip.innerHTML = `<div class="tip-content">${translations[currentLang].sommelierTooltip}</div>`;
-document.body.appendChild(tooltip);
+  // Apri il popup al click
+  btn.addEventListener("click", () => {
+    localStorage.setItem("sommelier_seen", "1");
+    btn.classList.remove("pulse");
+    toggleSommelier();
+  });
 
-// Pulse solo se mai cliccato
-if (!localStorage.getItem("sommelier_seen")) {
-  btn.classList.add("pulse");
-}
-// Tooltip SEMPRE attivo (anche dopo il click)
-startSommelierTooltipCycle();
+  // Effetti periodici: glow e wiggle (soft)
+  setInterval(() => btn.classList.toggle("glow"), 3500);
+  setInterval(() => {
+    btn.classList.add("wiggle");
+    setTimeout(() => btn.classList.remove("wiggle"), 950);
+  }, 10000);
+
+  // Tooltip: creazione e ciclo
+  const tooltip = document.createElement("div");
+  tooltip.id = "tooltipSommelier";
+  tooltip.innerHTML = `<div class="tip-content"></div>`;
+  document.body.appendChild(tooltip);
+
+  // Pulse solo se mai cliccato
+  if (!localStorage.getItem("sommelier_seen")) {
+    btn.classList.add("pulse");
+  }
+
+  // Avvio ciclo tooltip “rotante”
+  startSommelierTooltipCycle();
 
     const overlay = document.createElement("div");
     overlay.id = "sommelierOverlay";
