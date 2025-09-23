@@ -552,8 +552,7 @@ let CURRENT_PLAN = null;
 
 async function fetchUserIfNeeded() {
   if (!RESTAURANT_ID) {
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_API_KEY);
-    const { data: { user }, error } = await supabase.auth.getUser();
+        const { data: { user }, error } = await sb.auth.getUser();
     if (user) {
       RESTAURANT_ID = user.id;
       // opzionale: aggiorna URL
@@ -565,8 +564,7 @@ async function fetchUserIfNeeded() {
     }
   }
     // 🔴 Recupera il piano di abbonamento
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_API_KEY);
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from("ristoranti")
     .select("subscription_plan")
     .eq("id", RESTAURANT_ID)
@@ -593,6 +591,7 @@ function resetForm() {
 document.getElementById("formatsRepeater").innerHTML = "";
 document.getElementById("formatPicker").style.display = "none";
   editIndex = null;
+  showUvaggioBadge(''); // pulisce l’etichetta sotto l’input uvaggio
 }
 
 function fillForm(index) {
@@ -989,29 +988,52 @@ if (result.isConfirmed) {
 }
 });
 
-let uvaggioTimer = null;
-document.getElementById('nome_completo').addEventListener('input', (e) => {
-  clearTimeout(uvaggioTimer);
-  const nome = e.target.value.trim();
-  if (nome.length < 6) { showUvaggioBadge('');toggleNomeLoader(false); return; }
-  uvaggioTimer = setTimeout(async () => {
-    toggleNomeLoader(true);
-    const suggest = await suggestUvaggioFor(nome);
-    toggleNomeLoader(false);
-    if (suggest?.uvaggio) {
-      const input = document.getElementById('uvaggio');
-      // Compila solo se l’utente non ha già scritto qualcosa
-      if (!input.value || input.value.length < 3) {
-        input.value = suggest.uvaggio;
-      }
-      const conf = Math.round((suggest.confidence || 0)*100);
-      const src  = suggest.source === 'supabase' ? 'dati interni' : 'AI';
-      showUvaggioBadge(`Suggerito da ${src} · conf. ${conf}%`);
-    } else {
-      showUvaggioBadge('Nessun suggerimento trovato');
-    }
-  }, 400);
-});
+ // === CONFIG: se false, l'uvaggio NON si compila mentre scrivi
+ const AUTOFILL_ON_TYPE = true;  // metti false se vuoi SOLO "bottone AI"
+ 
+ let uvaggioTimer = null;
+ document.getElementById('nome_completo').addEventListener('input', (e) => {
+   clearTimeout(uvaggioTimer);
+   const nome = e.target.value.trim();
+ 
+   // Se svuoti il nome, pulisco anche uvaggio + badge + loader
+   if (!nome) {
+     document.getElementById('uvaggio').value = '';
+     showUvaggioBadge('');
+     toggleNomeLoader(false);
+     return;
+   }
+ 
+   if (!AUTOFILL_ON_TYPE) {
+     showUvaggioBadge(''); // niente suggerimenti automatici
+     toggleNomeLoader(false);
+     return;
+   }
+ 
+   if (nome.length < 6) { 
+     showUvaggioBadge('');
+     toggleNomeLoader(false);
+     return; 
+   }
+ 
+   uvaggioTimer = setTimeout(async () => {
+     toggleNomeLoader(true);
+     const suggest = await suggestUvaggioFor(nome);
+     toggleNomeLoader(false);
+     if (suggest?.uvaggio) {
+       const input = document.getElementById('uvaggio');
+       // Compila solo se l’utente non ha già scritto qualcosa
+       if (!input.value || input.value.length < 3) {
+         input.value = suggest.uvaggio;
+       }
+       const conf = Math.round((suggest.confidence || 0)*100);
+       const src  = suggest.source === 'supabase' ? 'dati interni' : 'AI';
+       showUvaggioBadge(`Suggerito da ${src} · conf. ${conf}%`);
+     } else {
+       showUvaggioBadge('Nessun suggerimento trovato');
+     }
+   }, 400);
+ });
 
 const FORMAT_LABELS = {
   "025": "1/4 L (0,25)", "0375": "0,375 L",
