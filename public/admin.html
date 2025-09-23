@@ -326,6 +326,16 @@ aggiornaBarraProgressoFinoAl(progress);
     const json = await response.json();
     parsedVini = parsedVini.concat(json.vini || []);
 
+    // Se l'uvaggio arriva già dal testo OCR, etichetta come "foto"
+parsedVini = parsedVini.map(v => {
+  if (v && v.uvaggio && v.uvaggio.trim()) {
+    v._uv_source = "ocr";
+    v._uv_confidence = null;
+    v._uv_hint = mkUvHint("ocr");
+  }
+  return v;
+});
+
     // Aggiorna progress-bar
 const progress = 30 + Math.min(70, Math.round(((i + BATCH_SIZE) / lines.length) * 70));
 aggiornaBarraProgressoFinoAl(progress);
@@ -355,28 +365,42 @@ progressContainer.style.display = "none";
   });
 
   for (const vino of parsedVini) {
-    if (!vino.uvaggio || vino.uvaggio.trim() === "") {
-      const uvaggioRes = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/completa-uvaggio", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome_completo: vino.nome_completo })
-      });
-      const uvaggioData = await uvaggioRes.json();
-  if (uvaggioRes.ok && uvaggioData?.uvaggio) {
-    const testo = uvaggioData.uvaggio.trim();
-
-    // controlla se la risposta è generica o inutile
-    const isInutile = testo.toLowerCase().includes("non posso") ||
-                      testo.toLowerCase().includes("non ho accesso") ||
-                      testo.toLowerCase().includes("non ho") ||
-                      testo.toLowerCase().includes("Sfortunatamente") ||
-                      testo.toLowerCase().includes("non sono") ||
-                      testo.toLowerCase().includes("online") ||
-                      testo.length < 5;
-
-    vino.uvaggio = isInutile ? "Uvaggio non trovato online" : testo;
+if (!vino.uvaggio || vino.uvaggio.trim() === "") {
+  // 3a) tenta dal DB interno
+  const interno = await suggestUvaggioFromDB(vino.nome_completo || vino.nome || "");
+  if (interno && interno.uvaggio) {
+    vino.uvaggio = interno.uvaggio;
+    vino._uv_source = "db";
+    vino._uv_confidence = interno.confidence;
+    vino._uv_hint = mkUvHint("db", interno.confidence);
   } else {
-    vino.uvaggio = "Uvaggio non trovato online";
+    // 3b) fallback: AI
+    const uvaggioRes = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/completa-uvaggio", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome_completo: vino.nome_completo || vino.nome || "" })
+    });
+    const uv = await uvaggioRes.json(); // la tua funzione ora restituisce {uvaggio, grapes, confidence, sources}
+
+    if (uvaggioRes.ok && uv && typeof uv === "object" && (uv.uvaggio || "").trim()) {
+      const testo = String(uv.uvaggio).trim();
+      // scarta risposte inutili
+      const t = testo.toLowerCase();
+      const inutile = t.includes("non posso") || t.includes("non ho accesso") || t.includes("sfortunatamente") || t.includes("online") || testo.length < 3;
+
+      if (!inutile) {
+        vino.uvaggio = testo;
+        vino._uv_source = "ai";
+        vino._uv_confidence = (typeof uv.confidence === "number" ? uv.confidence : 0.6);
+        vino._uv_hint = mkUvHint("ai", vino._uv_confidence);
+      } else {
+        vino.uvaggio = "Uvaggio non trovato online";
+        vino._uv_hint = "";
+      }
+    } else {
+      vino.uvaggio = "Uvaggio non trovato online";
+      vino._uv_hint = "";
+    }
   }
 }
 
@@ -432,9 +456,13 @@ const result = await Swal.fire({
 
       <label>Uvaggio</label>
       <input id="sw_uvaggio" placeholder="uvaggio del vino" value="${vino.uvaggio || ""}">
+      <small id="sw_uvaggio_hint" class="hint">${vino._uv_hint || ""}</small>
     </div>
   `,
   didOpen: () => {
+    const swUv = document.getElementById('sw_uvaggio');
+    const swHint = document.getElementById('sw_uvaggio_hint');
+    if (swUv && swHint) swUv.addEventListener('input', () => { swHint.textContent = ''; });
     const LABELS = { "025":"1/4 L (0,25)", "0375":"0,375 L", "05":"1/2 L (0,5)", "15":"1,5 L", "3l":"3 L" };
     const KEYS   = { "025":"prezzo_025", "0375":"prezzo_0375", "05":"prezzo_05", "15":"prezzo_15", "3l":"prezzo_3l" };
 
@@ -549,6 +577,39 @@ const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhY
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_API_KEY);
 let RESTAURANT_ID = new URLSearchParams(window.location.search).get("ristorante_id") || null;
 let CURRENT_PLAN = null;
+
+// ——— Helper uvaggio: formato e suggerimenti interni ———
+function formatConfidence(c) {
+  if (c == null || isNaN(c)) return "";
+  const pct = c <= 1 ? Math.round(c * 100) : Math.round(c);
+  return `${pct}%`;
+}
+
+function mkUvHint(source, confidence) {
+  const conf = formatConfidence(confidence);
+  if (source === "ocr") return "Estratto dalla foto";
+  if (source === "db")  return `Suggerito da dati interni · conf. ${conf || "60%"}`;
+  if (source === "ai")  return `Suggerito dall’AI · conf. ${conf || "60%"}`;
+  return "";
+}
+
+async function suggestUvaggioFromDB(nome) {
+  try {
+    const url = `${SUPABASE_URL}/rest/v1/rpc/uvaggio_suggest`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "apikey": SUPABASE_API_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ q: (nome || "").trim(), limit_count: 5 })
+    });
+    const data = await res.json();
+    if (Array.isArray(data) && data.length) {
+      const top = data[0]; // { uvaggio, cnt }
+      const conf = top.cnt >= 5 ? 0.85 : top.cnt >= 2 ? 0.7 : 0.6; // stima semplice
+      return { uvaggio: String(top.uvaggio || "").trim(), confidence: conf, source: "db" };
+    }
+  } catch(e) { /* ignore */ }
+  return null;
+}
 
 async function fetchUserIfNeeded() {
   if (!RESTAURANT_ID) {
@@ -1026,9 +1087,8 @@ if (result.isConfirmed) {
        if (!input.value || input.value.length < 3) {
          input.value = suggest.uvaggio;
        }
-       const conf = Math.round((suggest.confidence || 0)*100);
-       const src  = suggest.source === 'supabase' ? 'dati interni' : 'AI';
-       showUvaggioBadge(`Suggerito da ${src} · conf. ${conf}%`);
+      const srcKey = (suggest.source === 'supabase') ? 'db' : 'ai';
+      showUvaggioBadge(mkUvHint(srcKey, suggest.confidence));
      } else {
        showUvaggioBadge('Nessun suggerimento trovato');
      }
@@ -1134,11 +1194,15 @@ function showUvaggioBadge(msg) {
   if (!b) {
     b = document.createElement('div');
     b.id = 'uvaggioBadge';
-    b.style.cssText = 'font-size:.8em;color:#555;margin-top:4px;';
+    b.className = 'hint';
     document.getElementById('uvaggio').insertAdjacentElement('afterend', b);
   }
   b.textContent = msg || '';
 }
+document.getElementById('uvaggio').addEventListener('input', () => {
+  showUvaggioBadge('');
+});
+
 function toggleNomeLoader(on) {
   let s = document.getElementById('nomeSpinner');
   if (on) {
@@ -1168,7 +1232,8 @@ function toggleNomeLoader(on) {
     toggleNomeLoader(false);
     if (s?.uvaggio) {
       document.getElementById('uvaggio').value = s.uvaggio;
-      showUvaggioBadge(`Suggerito da ${s.source === 'supabase' ? 'dati interni' : 'AI'}`);
+      const srcKey = (s.source === 'supabase') ? 'db' : 'ai';
+      showUvaggioBadge(mkUvHint(srcKey, s.confidence));
     } else {
       showUvaggioBadge('Nessun suggerimento trovato');
     }
