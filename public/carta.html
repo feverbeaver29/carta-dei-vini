@@ -1322,6 +1322,7 @@ function goToCategories() {
     history.pushState({ view: "categories" }, "");
   }
 }
+window.goToCategories = goToCategories;
 
 function buildPriceHTML(w){
   const chips = [];
