@@ -1792,6 +1792,58 @@ btn.addEventListener("click", () => {
 if (overlay) overlay.style.display = "none";
     };
 
+    // ——— Tooltip Sommelier: frasi e ciclo ———
+function getSommelierTips() {
+  const t = translations[currentLang];
+  // tutte prese dal dizionario (quindi già tradotte)
+  return [
+    t.sommelierTooltip,   // es: "Non sai che vino scegliere? ..."
+    t.sommelierTitleBox,  // es: "Dimmi cosa mangerai ..."
+    t.searchLabel         // es: "Ricerca piatti per abbinamento"
+  ];
+}
+
+function showTooltipOnceAnimated() {
+  const tip = document.getElementById("tooltipSommelier");
+  const btn = document.getElementById("sommelierBtn");
+  if (!tip || !btn) return;
+
+  const inner = tip.querySelector(".tip-content") || tip;
+  const tips = getSommelierTips();
+  const idx = (window._sommTipIndex = ((window._sommTipIndex || 0) + 1) % tips.length);
+  inner.textContent = tips[idx];
+
+  // posiziona sopra il bottone (usa la tua se già esiste)
+  if (typeof positionTooltipOverButton === "function") {
+    positionTooltipOverButton();
+  } else {
+    // fallback leggero
+    const r = btn.getBoundingClientRect();
+    tip.style.left = (r.left + r.width/2) + "px";
+    tip.style.top  = (r.top - 12) + "px";
+    tip.style.transform = "translate(-50%, -100%)";
+  }
+
+  tip.style.display = "block";
+
+  // anima e nascondi al termine
+  inner.style.animation = "none"; void inner.offsetHeight;
+  inner.style.animation = "tipFade 2.2s ease both";
+  inner.addEventListener("animationend", () => { tip.style.display = "none"; }, { once: true });
+}
+
+function startSommelierTooltipCycle() {
+  stopSommelierTooltipCycle();
+  showTooltipOnceAnimated();                       // mostra subito
+  window._sommTipTimer = setInterval(showTooltipOnceAnimated, 9000); // poi ogni 9s
+}
+
+function stopSommelierTooltipCycle() {
+  clearInterval(window._sommTipTimer);
+  const tip = document.getElementById("tooltipSommelier");
+  if (tip) tip.style.display = "none";
+}
+
   async function aggiornaCategorieSommelier() {
   const dropdown = document.getElementById("wineTypeDropdown");
   if (!dropdown || !Array.isArray(wines)) return;
