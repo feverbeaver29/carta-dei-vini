@@ -325,7 +325,10 @@ const translations = {
     searchButton: "Cerca",
     formatBottle: "Bottiglia",
     formatGlass: "Bicchiere",
-    noSearchResult: "Nessun vino per questa ricerca."
+    noSearchResult: "Nessun vino per questa ricerca.",
+    sommelierBtnTitle: "Consiglio del Sommelier",
+    sommelierBtnSub:   "Scrivi il piatto, troviamo il vino",
+    sommelierBtnBadge: "Novità",
   },
   en: {
     wineList: "Wine List",
@@ -359,7 +362,10 @@ const translations = {
     searchButton: "Search",
     formatBottle: "Bottle",
     formatGlass: "By the glass",
-      noSearchResult: "No wines found for this search."
+    noSearchResult: "No wines found for this search.",
+    sommelierBtnTitle: "Sommelier’s Advice",
+    sommelierBtnSub:   "Type the dish, we’ll find the wine",
+    sommelierBtnBadge: "New",
   },
   fr: {
     wineList: "Carte des Vins",
@@ -392,7 +398,10 @@ const translations = {
     filterBy: "Filtrer par :",
     searchButton: "Chercher",
     formatBottle: "Bouteille", formatGlass: "Au verre",
-      noSearchResult: "Aucun vin trouvé pour cette recherche."
+      noSearchResult: "Aucun vin trouvé pour cette recherche.",
+      sommelierBtnTitle: "Conseil du Sommelier",
+sommelierBtnSub:   "Écrivez le plat, nous trouvons le vin",
+sommelierBtnBadge: "Nouveauté",
   },
   de: {
     wineList: "Weinkarte",
@@ -425,7 +434,10 @@ const translations = {
     filterBy: "Filtern nach:",
     searchButton: "Suchen",
     formatBottle: "Flasche",   formatGlass: "Im Glas",
-    noSearchResult: "Keine Weine für diese Suche gefunden."
+    noSearchResult: "Keine Weine für diese Suche gefunden.",
+    sommelierBtnTitle: "Empfehlung des Sommeliers",
+sommelierBtnSub:   "Schreibe das Gericht, wir finden den Wein",
+sommelierBtnBadge: "Neu",
   },
   es: {
     wineList: "Carta de Vinos",
@@ -458,7 +470,10 @@ const translations = {
     filterBy: "Filtrar por:",
     searchButton: "Buscar",
     formatBottle: "Botella",   formatGlass: "Copa",
-    noSearchResult: "No se encontraron vinos para esta búsqueda."
+    noSearchResult: "No se encontraron vinos para esta búsqueda.",
+    sommelierBtnTitle: "Consejo del Sumiller",
+sommelierBtnSub:   "Escribe el plato, encontramos el vino",
+sommelierBtnBadge: "Novedad",
   },
   zh: {
     wineList: "酒单",
@@ -491,7 +506,10 @@ const translations = {
     filterBy: "筛选条件：",
     searchButton: "搜索",
     formatBottle: "瓶",   formatGlass: "杯",
-    noSearchResult: "未找到符合此搜索的葡萄酒。"
+    noSearchResult: "未找到符合此搜索的葡萄酒。",
+    sommelierBtnTitle: "侍酒师推荐",
+sommelierBtnSub:   "输入菜品，我们来找酒",
+sommelierBtnBadge: "新品",
   }
 };
 
@@ -1426,15 +1444,15 @@ async function creaUIBaseSommelier() {
   const btn = document.createElement("button");
   btn.id = "sommelierBtn";
   btn.setAttribute("aria-label", translations[currentLang].sommelierBtn || "Sommelier");
-  btn.innerHTML = `
-    <img src="${ristoranteSommelierURL || 'sommelier.png'}" alt=""
-         onerror="this.onerror=null;this.src='${(ristorante?.sommelier_gender||'uomo')==='donna'?'sommelier_femmina.png':'sommelier.png'}'"/>
-    <div class="somm-text">
-      <span class="somm-title">Consiglio del Sommelier</span>
-      <span class="somm-sub">Scrivi il piatto, troviamo il vino</span>
-    </div>
-    <span class="somm-badge">Novità</span>
-  `;
+btn.innerHTML = `
+  <img src="${ristoranteSommelierURL || 'sommelier.png'}" alt=""
+       onerror="this.onerror=null;this.src='${(ristorante?.sommelier_gender||'uomo')==='donna'?'sommelier_femmina.png':'sommelier.png'}'"/>
+  <div class="somm-text">
+    <span class="somm-title translate-label" data-key="sommelierBtnTitle">${translations[currentLang].sommelierBtnTitle}</span>
+    <span class="somm-sub translate-label" data-key="sommelierBtnSub">${translations[currentLang].sommelierBtnSub}</span>
+  </div>
+  <span class="somm-badge translate-label" data-key="sommelierBtnBadge">${translations[currentLang].sommelierBtnBadge}</span>
+`;
   document.body.appendChild(btn);
 
   // Apri il popup al click
