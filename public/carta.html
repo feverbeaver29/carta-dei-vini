@@ -1294,21 +1294,35 @@ function normalize(str) {
 }
 
 function goToCategories() {
-  if (currentView !== 'categories') {
-    history.pushState({ view: "categories" }, "");
-  }
+  // chiudi eventuali overlay/popover
+  closeFilterMenu?.();
+  closeSearch?.();
+
+  // reset contesto
+  currentCategory = null;
+  window.currentSubcategory = null;
   currentView = 'categories';
 
+  // helper in alto
+  setHelperByKey('helperChooseCategory');
+
+  // ricostruisci le categorie (rispetta i filtri attivi)
+  showCategories();
+
+  // visibilità liste
   const catList = document.getElementById("category-list");
   const subcatList = document.getElementById("subcategory-list");
   const wineList = document.getElementById("wine-list");
-
-  if (catList) catList.style.display = "block";
+  if (catList)   catList.style.display   = "block";
   if (subcatList) subcatList.style.display = "none";
-  if (wineList) wineList.style.display = "none";
-  setHelperByKey('helperChooseCategory');
-  applyFilters();
+  if (wineList)   wineList.style.display   = "none";
+
+  // sincronizza la history (evita doppio push se già manualNavigation)
+  if (!window._manualNavigation) {
+    history.pushState({ view: "categories" }, "");
+  }
 }
+
 function buildPriceHTML(w){
   const chips = [];
 
