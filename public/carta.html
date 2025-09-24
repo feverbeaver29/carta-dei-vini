@@ -8,23 +8,6 @@
   #restaurantName { cursor: pointer; }
 #filterBtn:hover, #searchBtn:hover { background: #800; }
 
-#filterBtnWrapper{
-  position: fixed;
-  bottom: 16px;
-  right: 16px;
-  display: flex;
-  align-items: center;
-  z-index: 1000;
-}
-#searchBtnWrapper{
-  position: fixed;
-  bottom: 16px;
-  left: 16px;   /* ⬅ lato opposto del filtro */
-  display: flex;
-  align-items: center;
-  z-index: 1000;
-}
-
 #filterBtn, #searchBtn{
   background: var(--accent-color);
   color: #fff;
@@ -223,6 +206,48 @@ button, .save-btn {
 .subcategory {
   text-align: center;
 }
+/* === Bottom bar fissa === */
+:root { --bottom-bar-height: 56px; }
+
+#bottomBar{
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: var(--bottom-bar-height);
+  background: var(--navbar-color, #222); /* la settiamo da JS */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  z-index: 980; /* sotto al sommelier (1000) e sopra ai contenuti */
+  box-shadow: 0 -2px 8px rgba(0,0,0,.15);
+}
+
+.bottom-btn{
+  flex: 0 0 auto;
+  height: 40px; min-width: 72px;
+  border: none; border-radius: 10px;
+  background: transparent;
+  color: var(--bottom-bar-foreground, #fff);
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  font-size: .9em; font-weight: 700;
+}
+
+.bottom-btn img{
+  width:18px; height:18px; display:block;
+  filter: brightness(100%) contrast(100%);
+}
+
+/* Sposta il sommelier sopra la bottom bar */
+#sommelierBtn{
+  bottom: calc(var(--bottom-bar-height) + 12px);
+}
+
+/* Popover: apri sopra la bottom bar */
+#searchPopover{ bottom: calc(var(--bottom-bar-height) + 22px) !important; }
+#filterMenu{    bottom: calc(var(--bottom-bar-height) + 14px) !important; }
+
+/* Tooltip: centratura testo */
+#tooltipSommelier{ text-align:center; }
 
 #sommelierBtn{
   position:fixed;
@@ -1477,6 +1502,15 @@ const nav = document.querySelector("nav");
 if (nav) {
   nav.style.backgroundColor = typeof navbarColor !== "undefined" ? navbarColor : background;
 }
+// espone i colori a CSS
+document.documentElement.style.setProperty('--navbar-color', (typeof navbarColor!=="undefined" ? navbarColor : background));
+// foreground chiaro/scuro in base allo sfondo
+const bb = document.getElementById("bottomBar");
+if (bb) {
+  const fg = getContrastingTextColor(typeof navbarColor!=="undefined" ? navbarColor : background);
+  bb.style.color = fg;
+  document.documentElement.style.setProperty('--bottom-bar-foreground', fg);
+}
 
 const filterBtn = document.getElementById("filterBtn");
 if (filterBtn) {
@@ -1800,7 +1834,10 @@ function showTooltipOnceAnimated() {
 
   // posiziona sopra il bottone (usa la tua se già esiste)
   if (typeof positionTooltipOverButton === "function") {
+    // posiziona (e riposiziona dopo reflow/raf)
     positionTooltipOverButton();
+    requestAnimationFrame(() => positionTooltipOverButton());
+    setTimeout(() => positionTooltipOverButton(), 120);
   } else {
     // fallback leggero
     const r = btn.getBoundingClientRect();
@@ -2798,19 +2835,24 @@ if (rn) {
 }
 
 </script>
-<div id="filterBtnWrapper">
-  <button id="filterBtn" aria-label="Filtra">
+<!-- Bottom bar -->
+<div id="bottomBar">
+  <button id="searchBtn" class="bottom-btn" aria-label="Cerca" onclick="openSearch()">
+    <img src="iconsearch.png" alt="" aria-hidden="true">
+    <span class="translate-label" data-key="search">Cerca</span>
+  </button>
+
+  <button id="homeBtn" class="bottom-btn" aria-label="Home" onclick="goToCategories()">
+    <img src="iconmenu.png" alt="" aria-hidden="true">
+    <span>Home</span>
+  </button>
+
+  <button id="filterBtn" class="bottom-btn" aria-label="Filtra">
     <img src="iconfilter.png" alt="" aria-hidden="true">
-    <span class="filter-inside-label translate-label" data-key="filterLabel">Filtra</span>
+    <span class="translate-label" data-key="filterLabel">Filtra</span>
   </button>
 </div>
 
-<div id="searchBtnWrapper">
-  <button id="searchBtn" aria-label="Cerca" onclick="openSearch()">
-    <img src="iconsearch.png" alt="" aria-hidden="true">
-    <span class="filter-inside-label translate-label" data-key="search">Cerca</span>
-  </button>
-</div>
 <!-- Popover di ricerca sopra al FAB (chiuso di default) -->
 <div id="searchPopover" style="display:none; position:fixed; left:16px; bottom:78px; z-index:2000; border:1px solid #ccc; border-radius:12px; padding:10px; background:#fff; box-shadow:0 4px 12px rgba(0,0,0,.2); min-width:240px;">
   <div style="display:flex; gap:8px;">
