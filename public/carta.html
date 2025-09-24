@@ -237,9 +237,37 @@ button, .save-btn {
   filter: brightness(100%) contrast(100%);
 }
 
-/* Sposta il sommelier sopra la bottom bar */
+/* --- FIX sommelier: sopra la bottom bar + testo sempre dentro --- */
 #sommelierBtn{
-  bottom: calc(var(--bottom-bar-height) + 12px);
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--bottom-bar-height) + 12px) !important; /* resta sopra la banda */
+  box-sizing: border-box;
+
+  /* layout responsive */
+  min-height: 56px;
+  height: auto;                 /* permette al testo di andare a capo */
+  max-width: min(92vw, 520px);  /* non esce dallo schermo */
+  padding: 10px 16px;
+  white-space: normal;          /* consente il wrap del testo */
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#sommelierBtn .somm-text{
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+  max-width: clamp(160px, 55vw, 360px); /* lo spazio del testo è “elastico” */
+}
+
+#sommelierBtn .somm-title{ font-weight: 800; }
+#sommelierBtn .somm-sub{ font-size: .9em; opacity: .95; }
+
+#sommelierBtn .somm-badge{
+  flex: 0 0 auto;               /* il badge resta compatto e non spinge il testo fuori */
 }
 
 /* Popover: apri sopra la bottom bar */
@@ -249,28 +277,11 @@ button, .save-btn {
 /* Tooltip: centratura testo */
 #tooltipSommelier{ text-align:center; }
 
-#sommelierBtn{
-  position:fixed;
-  bottom:16px;
-  left:50%;
-  transform:translateX(-50%);
-  background:linear-gradient(90deg, var(--accent-color), #e05);
-  color:#fff;
-  border:none;
-  height:60px;
-  padding:0 18px;
-  border-radius:999px;
-  display:flex; align-items:center; gap:12px;
-  font-size:1rem; font-weight:700;
-  cursor:pointer; z-index:1000;
-  box-shadow:0 14px 28px rgba(0,0,0,.2), 0 0 0 6px rgba(255,255,255,.35) inset;
-  transition:transform .15s ease, filter .2s ease, box-shadow .2s ease;
-  will-change: transform, filter, box-shadow;
-}
 #sommelierBtn:hover{ transform:translateX(-50%) scale(1.02); filter:saturate(1.1); }
 #sommelierBtn:active{ transform:translateX(-50%) scale(.98); }
 
 #sommelierBtn img{
+  flex: 0 0 auto;               /* l’avatar non si restringe */
   width:36px; height:36px; border-radius:50%; object-fit:cover; flex:0 0 auto;
   box-shadow:0 0 0 2px rgba(255,255,255,.6);
 }
