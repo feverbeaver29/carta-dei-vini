@@ -1701,10 +1701,10 @@ async function creaUIBaseSommelier() {
   }, 10000);
 
   // Tooltip: creazione e ciclo
-  const tooltip = document.createElement("div");
-  tooltip.id = "tooltipSommelier";
-  tooltip.innerHTML = `<div class="tip-content"></div>`;
-  document.body.appendChild(tooltip);
+const tooltip = document.createElement("div");
+tooltip.id = "tooltipSommelier";
+tooltip.innerHTML = `<div class="tip-content">${translations[currentLang].sommelierTooltip}</div>`;
+document.body.appendChild(tooltip);
 
   // Pulse solo se mai cliccato
   if (!localStorage.getItem("sommelier_seen")) {
@@ -1772,25 +1772,10 @@ async function creaUIBaseSommelier() {
     dropdown.style.display = "none";
     document.body.appendChild(dropdown);
 
-btn.addEventListener("click", () => {
-  const overlay = document.getElementById("sommelierOverlay");
-  if (overlay) {
-    overlay.classList.remove("fade-out");
-    overlay.classList.add("fade-in");
-    overlay.style.display = "flex";
-  }
-  // segna come visto → rimuovi pulse
-  localStorage.setItem("sommelier_seen", "1");
-  btn.classList.remove("pulse");
-});
-
   aggiornaEtichettaCategorie();
 }
 
-    window.closeSommelierPopup = function () {
-      const overlay = document.getElementById("sommelierOverlay");
-if (overlay) overlay.style.display = "none";
-    };
+window.closeSommelierPopup = closeSommelierPopup;
 
     // ——— Tooltip Sommelier: frasi e ciclo ———
 function getSommelierTips() {
@@ -2350,121 +2335,78 @@ el.innerHTML = `
   };
 }
 function mostraPopupDescrizione(vino) {
-  // ⛔ kill-switch client: non chiama l'edge function
+  // Crea sempre l'overlay con gli elementi usati dopo
+  const overlay = document.createElement("div");
+  overlay.className = "popup-overlay";
+  overlay.innerHTML = `
+    <div class="popup-descrizione">
+      <button class="close-btn" onclick="this.closest('.popup-overlay').remove()">✖</button>
+      <h3>${vino.nome}${vino.annata ? ` (${vino.annata})` : ""}</h3>
+      <div id="schedaWrap" style="margin-top:8px;"></div>
+      <div id="descrizioneTesto" style="margin-top:8px; font-size:.95em; opacity:.9;"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  // Kill-switch: se disabilitata, messaggio e stop
   if (DESCRIZIONE_VINO_ABILITATA === false) {
-    const overlay = document.createElement("div");
-    overlay.className = "popup-overlay";
-    overlay.innerHTML = `
-      <div class="popup-descrizione">
-        <button class="close-btn" onclick="this.closest('.popup-overlay').remove()">✖</button>
-        <h3>${vino.nome}${vino.annata ? ` (${vino.annata})` : ""}</h3>
-        <div style="margin-top:8px; font-size:.95em; opacity:.9;">
-          Descrizione momentaneamente non disponibile.
-        </div>
-      </div>`;
-    document.body.appendChild(overlay);
-    return; // ← niente fetch
+    const desc = overlay.querySelector("#descrizioneTesto");
+    if (desc) desc.textContent = "Descrizione momentaneamente non disponibile.";
+    return;
   }
-  // 👇 mostra subito il messaggio "Sto caricando..."
-const descEl = overlay.querySelector("#descrizioneTesto");
-if (descEl) {
-  descEl.style.display = "block";
-  descEl.textContent = (translations[currentLang]?.loadingDescription) || "Sto caricando una descrizione...";
-}
 
-const FN_URL = "https://ldunvbftxhbtuyabgxwh.functions.supabase.co/descrizione-vino";
+  // Altrimenti procedi col loader + fetch
+  const descEl = overlay.querySelector("#descrizioneTesto");
+  const wrapEl = overlay.querySelector("#schedaWrap");
+  if (descEl) descEl.textContent = (translations[currentLang]?.loadingDescription) || "Sto caricando una descrizione...";
 
-fetch(FN_URL, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    // 👇 se l’edge ha verify_jwt attivo, questo evita 401 “Missing Authorization”
-    "Authorization": `Bearer ${SUPABASE_API_KEY}`
-  },
-  body: JSON.stringify({
-    nome: vino.nome,
-    annata: vino.annata,
-    uvaggio: vino.uvaggio,
-    categoria: vino.categoria,
-    sottocategoria: vino.sottocategoria,
-    ristorante_id: RESTAURANT_ID
+  const FN_URL = "https://ldunvbftxhbtuyabgxwh.functions.supabase.co/descrizione-vino";
+  fetch(FN_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${SUPABASE_API_KEY}`
+    },
+    body: JSON.stringify({
+      nome: vino.nome,
+      annata: vino.annata,
+      uvaggio: vino.uvaggio,
+      categoria: vino.categoria,
+      sottocategoria: vino.sottocategoria,
+      ristorante_id: RESTAURANT_ID
+    })
   })
-})
-.then(async res => {
-  const raw = await res.text();              // leggo sempre come testo
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} — ${raw}`);
-  try { return JSON.parse(raw); }            // provo a fare parse JSON
-  catch { throw new Error("Risposta non-JSON: " + raw.slice(0, 200)); }
-})
-.then(async data => {
-  let descr = data.descrizione || translations[currentLang].noDescription || "Nessuna descrizione trovata.";
-  const scheda = data.scheda || null;
+  .then(async res => {
+    const raw = await res.text();
+    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} — ${raw}`);
+    return JSON.parse(raw);
+  })
+  .then(async data => {
+    let descr = data.descrizione || translations[currentLang].noDescription || "Nessuna descrizione trovata.";
+    const scheda = data.scheda || null;
 
-  // traduzione SOLO del testo, se necessario
-  if (currentLang !== "it" && descr && descr !== "Nessuna descrizione trovata.") {
-    try {
-      const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-descrizione", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${SUPABASE_API_KEY}`
-        },
-        body: JSON.stringify({ text: descr, targetLang: currentLang })
-      });
-      const t = await res.json();
-      descr = t.text || descr;
-    } catch (e) { console.warn("traduci-descrizione:", e); }
-  }
-
-  // rimuovi loader
-  if (descEl) { descEl.textContent = ""; descEl.style.display = "none"; }
-
-  const wrap = overlay.querySelector("#schedaWrap");
-  const descBox = overlay.querySelector("#descrizioneTesto");
-
-  if (scheda) {
-    renderSchedaInto(wrap, vino.nome + (vino.annata ? ` (${vino.annata})`:""), scheda, descr, currentLang);
-  } else {
-    descBox.style.display = "block";
-    descBox.textContent = descr;
-
-    // second-chance: riprova dopo 700ms (magari la scheda è stata appena salvata)
-    setTimeout(async () => {
+    if (currentLang !== "it" && descr && descr !== "Nessuna descrizione trovata.") {
       try {
-        const r2 = await fetch(FN_URL, {
+        const r = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-descrizione", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${SUPABASE_API_KEY}`
-          },
-          body: JSON.stringify({
-            nome: vino.nome,
-            annata: vino.annata,
-            uvaggio: vino.uvaggio,
-            categoria: vino.categoria,
-            sottocategoria: vino.sottocategoria,
-            ristorante_id: RESTAURANT_ID
-          })
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_API_KEY}` },
+          body: JSON.stringify({ text: descr, targetLang: currentLang })
         });
-        const raw2 = await r2.text();
-        if (!r2.ok) return;
-        const d2 = JSON.parse(raw2);
-        if (d2?.scheda) {
-          renderSchedaInto(wrap, vino.nome + (vino.annata ? ` (${vino.annata})`:""), d2.scheda, descr, currentLang);
-          descBox.style.display = "none";
-        }
-      } catch {}
-    }, 700);
-  }
-})
-.catch(err => {
-  console.error("[descrizione-vino]", err);   // 👈 adesso vedi l’errore in console
-  const eBox = overlay.querySelector("#descrizioneTesto");
-  if (eBox) {
-    eBox.style.display = "block";
-    eBox.textContent = "Errore durante il recupero della descrizione.";
-  }
-});
+        const t = await r.json();
+        descr = t.text || descr;
+      } catch(e){}
+    }
+
+    if (wrapEl && scheda) {
+      if (descEl) descEl.textContent = "";
+      renderSchedaInto(wrapEl, vino.nome + (vino.annata ? ` (${vino.annata})`:""), scheda, descr, currentLang);
+    } else {
+      if (descEl) descEl.textContent = descr;
+    }
+  })
+  .catch(err => {
+    console.error("[descrizione-vino]", err);
+    if (descEl) descEl.textContent = "Errore durante il recupero della descrizione.";
+  });
 }
 
 function positionTooltipOverButton() {
@@ -2491,41 +2433,6 @@ function positionTooltipOverButton() {
   tip.style.left = `${left}px`;
   tip.style.top  = `${top}px`;
   tip.style.visibility = "visible";
-}
-
-function showTooltipOnceAnimated() {
-  const tip = document.getElementById("tooltipSommelier");
-  if (!tip) return;
-  positionTooltipOverButton();
-  tip.style.display = "block";
-
-  // riavvia animazione e nascondi a fine animazione (niente timer)
-  const inner = tip.querySelector(".tip-content");
-  if (inner) {
-    inner.style.animation = "none";
-    void inner.offsetHeight;                 // reflow
-    inner.style.animation = "tipFade 2.2s ease both";
-    inner.addEventListener("animationend", () => {
-      tip.style.display = "none";
-    }, { once: true });
-  }
-}
-
-function startSommelierTooltipCycle() {
-  stopSommelierTooltipCycle();
-  // prima comparsa rapida
-  showTooltipOnceAnimated();
-  // poi ripeti in modo soft ogni 12s
-  window._sommTipTimer = setInterval(() => {
-    showTooltipOnceAnimated();
-  }, 12000);
-}
-
-function stopSommelierTooltipCycle() {
-  clearInterval(window._sommTipTimer);
-  clearTimeout(window._sommTipHideT);
-  const tip = document.getElementById("tooltipSommelier");
-  if (tip) tip.style.display = "none";
 }
 
 // se l’utente ridimensiona / ruota, riposiziona SOLO se visibile
