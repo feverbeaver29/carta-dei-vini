@@ -14,6 +14,7 @@
   --bottom-bar-height: 56px;
   --sommelier-side-gap: 12px;         /* margine ai lati */
   --sommelier-height:   64px;         /* leggermente > della bottom bar (56px) */
+  --safe-bottom-gap: 24px; /* margine extra per ombre/animazioni */
 }
 
 /* =========================
@@ -51,7 +52,7 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
 /* =========================
    LISTE / CARD
 ========================= */
-.category-list, .subcategory-list, .wine-list{ padding:.5em 1em; padding-bottom:80px; }
+.category-list, .subcategory-list, .wine-list{padding: .5em 1em;padding-bottom: calc(var(--bottom-bar-height) + var(--sommelier-height) + var(--safe-bottom-gap));}
 .category, .subcategory, .wine-card{
   background:inherit; margin-bottom:.6em; padding:1em; border:1px solid; border-radius:12px;
   box-shadow:0 2px 4px rgba(0,0,0,.1);
