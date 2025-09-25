@@ -1,10 +1,26 @@
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
 
+const norm = (s:string) => (s || "")
+  .toLowerCase()
+  .normalize("NFD")
+  .replace(/\p{Diacritic}/gu, "")
+  .replace(/\s+/g, " ")
+  .trim();
+
+  function splitGrapes(uvaggio: string): string[] {
+  const raw = (uvaggio || "").toLowerCase();
+  return raw
+    .split(/[,;+\-\/&]|\b(?:e|con|blend)\b|·/g)
+    .map(s => s.replace(/\d+\s*%/g, "").trim())
+    .filter(Boolean);
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
 };
+
 const LANGS = {
   it: { name: "italiano", GRAPE: "UVAGGIO", MOTIVE: "MOTIVAZIONE" },
   en: { name: "English",  GRAPE: "GRAPE",   MOTIVE: "RATIONALE" },
@@ -13,13 +29,6 @@ const LANGS = {
   fr: { name: "Français", GRAPE: "CÉPAGES", MOTIVE: "JUSTIFICATION" },
   zh: { name: "中文",       GRAPE: "葡萄品种",  MOTIVE: "理由" }
 };
-const norm = (s:string) => (s || "")
-  .toLowerCase()
-  .normalize("NFD")
-  .replace(/\p{Diacritic}/gu, "")
-  .replace(/\s+/g, " ")
-  .trim();
-
 
 function filtraEVotiVini({
   vini, boost = [], prezzo_massimo = null, colori = [], recenti = {}, usageStats = {}
@@ -40,7 +49,7 @@ function filtraEVotiVini({
       const nomeN = norm(v.nome);
       const isBoost = boost.includes(nomeN);  // <<— boost è già normalizzato
 
-      if (isBoost) score += 100;
+      if (isBoost) score += 8; // piccolo vantaggio, non distorce
 
       // filtro categorie richieste
       if (Array.isArray(colori) && colori.length > 0) {
@@ -98,6 +107,158 @@ serve(async (req) => {
     const supabaseUrl = "https://ldunvbftxhbtuyabgxwh.supabase.co";
     const supabaseKey = Deno.env.get("SERVICE_ROLE_KEY");
     const headers = { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` };
+
+    // === Carica mappa uvaggi -> profilo (SOTTO a headers) ===
+const gpRes = await fetch(`${supabaseUrl}/rest/v1/grape_profiles?select=display_name,grape_norm,acid,tannin,body,sweet,bubbles,synonyms`, { headers });
+const grapeProfiles = await gpRes.json();
+
+type Profile = { acid:number; tannin:number; body:number; sweet:number; bubbles:number };
+const priors = new Map<string, Profile>();
+
+for (const r of grapeProfiles) {
+  priors.set(norm(r.display_name), { acid:r.acid, tannin:r.tannin, body:r.body, sweet:r.sweet, bubbles:r.bubbles });
+  for (const syn of (r.synonyms || [])) {
+    priors.set(norm(syn), { acid:r.acid, tannin:r.tannin, body:r.body, sweet:r.sweet, bubbles:r.bubbles });
+  }
+}
+
+// === Fallback per categoria/sottocategoria ===
+function fallbackByCategory(cat:string, sub:string): Profile {
+  const c = (cat||"").toLowerCase();
+  const s = (sub||"").toLowerCase();
+  let p: Profile = { acid:.5, tannin:.3, body:.5, sweet:.0, bubbles:0 };
+  if (/bianco/.test(c))  p = { acid:.60, tannin:.05, body:.45, sweet:.00, bubbles:0 };
+  if (/rosso/.test(c))   p = { acid:.45, tannin:.55, body:.60, sweet:.00, bubbles:0 };
+  if (/ros[ée]/.test(c)) p = { acid:.55, tannin:.15, body:.45, sweet:.00, bubbles:0 };
+  if (/dolce|passito|vendemmia tardiva/i.test(c)) p.sweet = .7;
+  if (/spumante|metodo|franciacorta|champagne/i.test(c)) { p.bubbles=1; p.acid=Math.max(p.acid,.6); }
+  if (/pas dos[eé]|nature/.test(s)) p.sweet = 0.00;
+  else if (/brut/.test(s))          p.sweet = Math.max(p.sweet, .05);
+  else if (/extra ?dry/.test(s))    p.sweet = Math.max(p.sweet, .15);
+  else if (/\bdry\b|\bsec\b/.test(s)) p.sweet = Math.max(p.sweet, .25);
+  if (/riserva|gran selezione|barrique|rovere|affinamento/i.test(s)) { p.body=Math.min(1,p.body+.12); p.tannin=Math.min(1,p.tannin+.08); }
+  return p;
+}
+
+// === Profilo finale per singolo vino ===
+function profileFromWine(w:any): Profile {
+  const grapes = splitGrapes(w.uvaggio);
+  const hits: Profile[] = [];
+  for (const g of grapes) {
+    const key = norm(g);
+    const found = priors.get(key);
+    if (found) hits.push(found);
+  }
+  if (hits.length) {
+    const sum = hits.reduce((a,b)=>({ 
+      acid:a.acid+b.acid, tannin:a.tannin+b.tannin, body:a.body+b.body, sweet:a.sweet+b.sweet, bubbles:Math.max(a.bubbles,b.bubbles)
+    }), {acid:0,tannin:0,body:0,sweet:0,bubbles:0});
+    return {
+      acid: +(sum.acid / hits.length).toFixed(2),
+      tannin: +(sum.tannin / hits.length).toFixed(2),
+      body: +(sum.body / hits.length).toFixed(2),
+      sweet: +(sum.sweet / hits.length).toFixed(2),
+      bubbles: sum.bubbles > 0 ? 1 : 0
+    };
+  }
+  return fallbackByCategory(w.categoria, w.sottocategoria);
+}
+
+// === Parser piatto -> feature sintetiche ===
+type Dish = {
+  fat:number; spice:number; sweet:number; intensity:number;
+  protein: "pesce"|"carne_rossa"|"carne_bianca"|"salumi"|"formaggio"|"veg"|null;
+  cooking: "crudo"|"fritto"|"griglia"|"brasato"|"bollito"|null;
+  acid_hint:boolean;
+};
+
+function parseDish(text:string): Dish {
+  const s = (text||"").toLowerCase();
+  const dish: Dish = { fat:0.3, spice:0, sweet:0, intensity:0.4, protein:null, cooking:null, acid_hint:false };
+
+  if (/crudo|tartare|carpaccio/.test(s)) dish.cooking="crudo", dish.intensity=.3;
+  if (/fritt|impanat/.test(s)) dish.cooking="fritto", dish.fat=.7, dish.intensity=Math.max(dish.intensity,.5);
+  if (/griglia|brace|arrosto/.test(s)) dish.cooking="griglia", dish.intensity=.6;
+  if (/brasat|stracotto|stufato/.test(s)) dish.cooking="brasato", dish.intensity=.8, dish.fat=Math.max(dish.fat,.6);
+  if (/bollit/.test(s)) dish.cooking="bollito", dish.intensity=Math.max(dish.intensity,.45);
+  if (/limone|agrodolce|aceto|capperi|citric|yuzu/.test(s)) dish.acid_hint=true;
+  if (/piccant|’nduja|nduja|peperoncino|curry|speziat/.test(s)) dish.spice=.6;
+  if (/dolce|dessert|tiramisu|cheesecake|torta|pasticc|gelato|sorbetto/.test(s)) dish.sweet=.8, dish.intensity=.6;
+
+  if (/pesce|tonno|salmone|gamber|calamari|cozze|vongole|polpo|scampi|branzino|orata|spigola/.test(s)) dish.protein="pesce";
+  else if (/manzo|bovino|fiorentina|tagliata|agnello|cervo|capriolo|cacciagione/.test(s)) dish.protein="carne_rossa", dish.intensity=.8;
+  else if (/maiale|porchetta|salsiccia|pollo|tacchino|coniglio|anatra|oca/.test(s)) dish.protein="carne_bianca", dish.intensity=Math.max(dish.intensity,.5);
+  else if (/salume|prosciutto|speck|salami|mortadella|culatello|bresaola/.test(s)) dish.protein="salumi", dish.intensity=.6, dish.fat=.6;
+  else if (/formagg|parmigiano|pecorino|gorgonzola|caprino|blu|erborinat/.test(s)) dish.protein="formaggio", dish.intensity=.7, dish.fat=.6;
+  else dish.protein = dish.protein ?? "veg";
+
+  if (/burro|panna|carbonara|cacio e pepe|alla gricia|quattro formaggi/.test(s)) dish.fat=Math.max(dish.fat,.6);
+  if (/pomodoro|rag[ùu]/.test(s)) dish.intensity=Math.max(dish.intensity,.55);
+
+  return dish;
+}
+
+// === Punteggio di coerenza profilo-vino -> piatto ===
+
+function matchScore(p:Profile, d:Dish): number {
+  let sc = 0;
+  // Grassezza → acidità/bollicine
+  sc += (d.fat * (p.acid*1.1 + p.bubbles*1.2));
+  // Pesce/crudo → acidità ↑, tannino ↓
+  if (d.protein==="pesce" || d.cooking==="crudo") sc += (p.acid*1.2) - (p.tannin*0.8);
+  // Fritto → bollicine/acido
+  if (d.cooking==="fritto") sc += (p.bubbles*1.3 + p.acid*0.8);
+  // Carne rossa/brasato → corpo/tannino
+  if (d.protein==="carne_rossa" || d.cooking==="brasato") sc += (p.tannin*1.2 + p.body*1.0);
+  // Piccante → un filo di dolcezza e tannino basso
+  sc += (d.spice>0 ? (p.sweet*1.0 - p.tannin*0.8 - p.body*0.4) : 0);
+  // Dessert → richiede dolcezza
+  sc += (d.sweet>0 ? (p.sweet*1.5) : 0);
+  // Nota acida nel piatto → premia acidità
+  if (d.acid_hint) sc += p.acid*0.8;
+  // Intensità: matching con il "body"
+  sc += (1 - Math.abs(d.intensity - p.body))*0.6;
+  return sc;
+}
+
+// === Generatore motivazioni sintetiche (multilingua) ===
+function buildMotivation(L: any, p: Profile, d: Dish): string {
+  const parts: string[] = [];
+
+  // regole principali (max 2 frasi brevi)
+  if (d.cooking === "fritto" || d.fat >= .6) {
+    if (p.bubbles >= .9) parts.push("Bollicine e acidità sgrassano la frittura");
+    else if (p.acid >= .6) parts.push("Acidità incisiva per sgrassare il piatto");
+  }
+  if (d.protein === "pesce" || d.cooking === "crudo") {
+    if (p.tannin <= .2) parts.push("Tannino basso adatto al pesce/crudo");
+    if (p.acid >= .6) parts.push("Freschezza che valorizza l’ittico");
+  }
+  if (d.protein === "carne_rossa" || d.cooking === "brasato") {
+    if (p.tannin >= .6 || p.body >= .6) parts.push("Struttura e tannino reggono cotture lunghe/carne rossa");
+  }
+  if (d.spice > 0) {
+    if (p.sweet >= .1 && p.tannin <= .5) parts.push("Leggera dolcezza e tannino contenuto smorzano il piccante");
+    else if (p.tannin <= .3) parts.push("Profilo morbido adatto al piccante");
+  }
+  if (d.sweet > 0) {
+    if (p.sweet >= .6) parts.push("Dolcezza del vino in equilibrio col dessert");
+  }
+  // intensità ↔ body
+  const bodyGap = Math.abs(d.intensity - p.body);
+  if (bodyGap <= .2) parts.push("Intensità in linea con il piatto");
+  else if (p.body > d.intensity) parts.push("Corpo sufficiente a bilanciare la ricchezza");
+  else parts.push("Profilo snello per non coprire il piatto");
+
+  // compatta e limita a max 2 frasi
+  const sentence = parts.slice(0, 2).join(". ") + ".";
+  if (L?.name === "English") return sentence
+    .replace("Bollicine", "Bubbles")
+    .replace("acidità", "acidity")
+    .replace("frittura", "fried food")
+    .replace("ittico", "seafood"); // traduzione rapida; in step successivo possiamo raffinarla per tutte le lingue
+  return sentence;
+}
 
     const infoRes = await fetch(`${supabaseUrl}/rest/v1/ristoranti?id=eq.${ristorante_id}&select=sommelier_range,sommelier_boost_multi`, { headers });
     const [info] = await infoRes.json();
@@ -165,120 +326,65 @@ recentLog.forEach(r => {
         headers: corsHeaders,
       });
     }
+    
+    const viniConProfilo = viniFiltrati.map(w => {
+  const prof = profileFromWine(w);
+  return { ...w, __profile: prof };
+});
 
-const vinoList = viniFiltrati.map(w => {
-  const isBoost = boostNorm.has(norm(w.nome));
-  const prezzi = [
-    w.prezzo ? `bottiglia: ${w.prezzo}` : null,
-    w.prezzo_bicchiere ? `calice: ${w.prezzo_bicchiere}` : null,
-    w.prezzo_025 ? `1/4lt: ${w.prezzo_025}` : null,
-    w.prezzo_0375 ? `0,375lt: ${w.prezzo_0375}` : null,
-    w.prezzo_05 ? `1/2lt: ${w.prezzo_05}` : null,
-    w.prezzo_15 ? `1,5lt: ${w.prezzo_15}` : null,
-    w.prezzo_3l ? `3lt: ${w.prezzo_3l}` : null,
-  ].filter(Boolean).join(" • ");
+// === Ordina per coerenza col piatto, mantenendo i tuoi filtri esistenti ===
+const dish = parseDish(piatto);
 
-  return `- ${w.nome}${isBoost ? " ⭐" : ""} (${w.tipo || "tipo non specificato"}, ${w.categoria}, ${w.sottocategoria}, ${w.uvaggio || "uvaggio non specificato"}) [${prezzi || "prezzi non indicati"}]`;
-}).join("\n");
+// Se vuoi dare un piccolo vantaggio ai boost solo se coerenti, usa una soglia:
+const BOOST_THRESHOLD = 0.55;
 
-const prompt = `Sei un sommelier professionale che lavora all’interno di un ristorante. Il cliente ha ordinato il seguente pasto:
+const rankedByMatch = viniConProfilo
+  .map(w => {
+    const m = matchScore(w.__profile, dish);
+    // bonus boost SOLO se supera soglia di coerenza (evita consigli stonati)
+    const bonus = (Array.isArray(boost) && boostNorm.has(norm(w.nome)) && m >= BOOST_THRESHOLD) ? 0.15 : 0;
+    return { ...w, __match: m + bonus };
+  })
+  .sort((a,b) => b.__match - a.__match);
 
-"${piatto}"
+// === Prendi i primi N vini più coerenti e genera motivazioni oneste ===
+const take = Math.max(min, 1);
+const topN = rankedByMatch.slice(0, Math.min(Math.max(max, take), rankedByMatch.length));
 
-Il ristorante dispone di questi vini in carta:
-${vinoList}
+const lines: string[] = [];
+for (const w of topN) {
+  const grape = (w.uvaggio && w.uvaggio.trim()) ? w.uvaggio.trim() : "N.D.";
+  const motive = buildMotivation(L, w.__profile, dish);
+  lines.push(`- ${w.nome}
+${L.GRAPE}: ${grape}
+${L.MOTIVE}: ${motive}`);
+}
 
-Il tuo compito è consigliare **da ${min} a ${max} vini**, presenti nella lista sopra, che possano accompagnare bene tutto il pasto. Preferisci vini versatili e coerenti.
+// Log come prima (per analisi/varietà/boost)
+const viniSuggeriti = topN.map(w => w.nome);
+const boostInclusi = viniSuggeriti.some(nome => boostNorm.has(norm(nome)));
 
-❗ I vini **marcati con ⭐ sono priorità per il ristorante**: se almeno uno di essi è coerente col piatto, **devi includerlo tra i consigliati**.  
-❗ Non consigliare sempre gli stessi vini. Cerca varietà e equilibrio nelle scelte.
+await fetch(`${supabaseUrl}/rest/v1/consigliati_log`, {
+  method: "POST",
+  headers: {
+    apikey: supabaseKey,
+    Authorization: `Bearer ${supabaseKey}`,
+    "Content-Type": "application/json",
+    Prefer: "return=minimal"
+  },
+  body: JSON.stringify({
+    ristorante_id,
+    piatto,
+    vini: viniSuggeriti,
+    boost_inclusi: boostInclusi
+  })
+});
 
-${prezzo_massimo ? `❗ Consiglia solo vini con prezzo massimo €${prezzo_massimo}.` : ""}
-${Array.isArray(colori) && colori.length < 4 ? `✅ Filtra per categoria: includi solo vini ${colori.join(", ")}` : ""}
+// Risposta nel formato identico a prima (campo 'suggestion')
+return new Response(JSON.stringify({ suggestion: lines.join("\n\n") }), {
+  headers: corsHeaders,
+});
 
-Rispondi **solo in ${L.name}** (anche la motivazione). Non usare altre lingue.
-Usa ESATTAMENTE questo formato (senza altre righe o caratteri):
-
-- NOME DEL VINO (solo nome, senza prezzi)
-${L.GRAPE}: ...
-${L.MOTIVE}: ... (massimo 2 frasi, tecniche)
-
-Esempio:
-- Chianti Classico DOCG
-${L.GRAPE}: Sangiovese
-${L.MOTIVE}: Tannini levigati e buona acidità...
-
-⛔ Non inventare vini. Consiglia solo tra quelli elencati sopra.  
-Se non ci sono abbinamenti perfetti, suggerisci comunque quelli più adatti.  
-Non aggiungere altro testo oltre il formato richiesto.`;
-
-    const openaiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!openaiKey) {
-      return new Response(JSON.stringify({ error: "Chiave OpenAI mancante" }), {
-        status: 500,
-        headers: corsHeaders,
-      });
-    }
-
-    const completion = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${openaiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7
-      })
-    });
-
-    if (!completion.ok) {
-      const errText = await completion.text();
-      return new Response(JSON.stringify({ error: "Errore OpenAI", detail: errText }), {
-        status: 500,
-        headers: corsHeaders,
-      });
-    }
-
-    const json = await completion.json();
-    const reply = json.choices?.[0]?.message?.content;
-
-// 🔍 Estrai i nomi dei vini consigliati (prima riga di ogni blocco, senza dipendere da €)
-const viniSuggeriti = (reply || "")
-  .split(/^- /m)              // separa i blocchi che iniziano con "- "
-  .map(b => b.trim())
-  .filter(Boolean)
-  .map(b => b.split("\n")[0]  // prendi solo la prima riga del blocco
-    .split(/€|EUR|CHF|\$|£|¥/)[0] // taglia eventuali prezzi se l'AI li avesse messi
-    .replace(/^[-•]\s*/, "")
-    .trim()
-  )
-  .filter(Boolean);
-
-    // 🔴 Verifica se almeno un boost è stato incluso
-    const boostInclusi = viniSuggeriti.some(nome => boostNorm.has(norm(nome)));
-
-    // 💾 Salva log del suggerimento
-    await fetch(`${supabaseUrl}/rest/v1/consigliati_log`, {
-      method: "POST",
-      headers: {
-        apikey: supabaseKey,
-        Authorization: `Bearer ${supabaseKey}`,
-        "Content-Type": "application/json",
-        Prefer: "return=minimal"
-      },
-      body: JSON.stringify({
-        ristorante_id,
-        piatto,
-        vini: viniSuggeriti,
-        boost_inclusi: boostInclusi
-      })
-    });
-
-    return new Response(JSON.stringify({ suggestion: reply }), {
-      headers: corsHeaders,
-    });
 
   } catch (err) {
     console.error("❌ Errore imprevisto:", err);
