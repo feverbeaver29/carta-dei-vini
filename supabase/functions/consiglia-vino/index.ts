@@ -38,9 +38,9 @@ const LANGS = {
 };
 
 function filtraEVotiVini({
-  vini, boost = [], prezzo_massimo = null, colori = [], recenti = {}, usageStats = {}
+  vini, boost = [], prezzo_massimo = null, colori = [], recenti = { byWine:{}, bySub:{} }
 }: {
-  vini: any[]; boost?: string[]; prezzo_massimo?: number|null; colori?: string[]; recenti?: Record<string, number>; usageStats?: any;
+  vini: any[]; boost?: string[]; prezzo_massimo?: number|null; colori?: string[]; recenti?: { byWine:Record<string,number>, bySub:Record<string,number> };
 }) {
   if (!Array.isArray(vini)) return [];
 
@@ -54,37 +54,42 @@ function filtraEVotiVini({
     .map(v => {
       let score = 0;
       const nomeN = norm(v.nome);
-      const isBoost = boost.includes(nomeN);  // <<— boost è già normalizzato
+      const isBoost = boost.includes(nomeN);
 
-      if (isBoost) score += 8; // piccolo vantaggio, non distorce
+      // 1) boost leggero (verrà ripreso anche dopo nella parte match)
+      if (isBoost) score += 6;
 
-      // filtro categorie richieste
+      // 2) filtro categorie richieste
       if (Array.isArray(colori) && colori.length > 0) {
         const cat = (v.categoria || "").toLowerCase();
         const match = colori.some(c => cat.includes(c.toLowerCase()));
         if (!match) return null; // escludi
-        score += 15;
+        score += 10; // meno dominante di prima
       }
 
-      // anti-ripetizione recente (solo se non boost)
+      // 3) anti-ripetizione forte (solo se non boost)
       if (!isBoost) {
-        const penalitaRecenti = recenti[nomeN] || 0;
-        score -= penalitaRecenti * 15;
-        if (!recenti[nomeN]) score += 10; // bonus novità
+        const pSub = norm(String(v.sottocategoria || ""));
+        const timesWine = recenti.byWine[nomeN] || 0;
+        const timesSub  = recenti.bySub[`${pSub}:${nomeN}`] || 0;
+        score -= timesWine * 18;  // ↑
+        score -= timesSub  * 12;  // penalità locale per stessa sottocategoria
+        if (!timesWine && !timesSub) score += 8; // bonus novità
       }
 
-      // bonus se disponibile al calice
-      if (v.prezzo_bicchiere) score += 8;
+      // 4) bonus formato “al calice”
+      if (v.prezzo_bicchiere) score += 6;
 
-      // euristica produttore (per diversificazione)
+      // 5) traccia produttore + uvaggio normalizzato (per diversificazione in pick finale)
       v.__producer = (v.nome || "").split(/\s+/)[0].toLowerCase();
+      v.__uvaggioN = norm(v.uvaggio || "");
 
       return { ...v, score };
     })
     .filter(Boolean)
     .sort((a, b) => b.score - a.score);
 
-  // diversificazione: max 2 vini per produttore
+  // diversificazione di base: max 2 vini per produttore già qui
   const seenProd = new Map<string, number>();
   const diversified: any[] = [];
   for (const w of ranked) {
@@ -93,7 +98,7 @@ function filtraEVotiVini({
       diversified.push(w);
       seenProd.set(w.__producer, c + 1);
     }
-    if (diversified.length >= 20) break;
+    if (diversified.length >= 40) break; // teniamo un pool più ampio per la fase MMR
   }
   return diversified;
 }
@@ -127,6 +132,25 @@ for (const r of grapeProfiles) {
   for (const syn of (r.synonyms || [])) {
     priors.set(norm(syn), { acid:r.acid, tannin:r.tannin, body:r.body, sweet:r.sweet, bubbles:r.bubbles });
   }
+}
+
+const toVec = (p: Profile) => [p.acid, p.tannin, p.body, p.sweet, p.bubbles];
+
+function cosSim(a:number[], b:number[]){
+  const dot = a.reduce((s,ai,i)=>s+ai*b[i],0);
+  const na = Math.sqrt(a.reduce((s,ai)=>s+ai*ai,0));
+  const nb = Math.sqrt(b.reduce((s,bi)=>s+bi*bi,0));
+  return na && nb ? dot/(na*nb) : 0;
+}
+
+// etichetta di stile: utile per forzare varietà negli N finali
+function styleOf(p: Profile): "sparkling"|"crisp_white"|"full_white"|"rosato"|"light_red"|"structured_red"{
+  if (p.bubbles >= .9) return "sparkling";
+  if (p.tannin <= .15 && p.acid >= .6 && p.body <= .55) return "crisp_white";
+  if (p.tannin <= .25 && p.body  > .55) return "full_white";
+  if (p.tannin <= .35 && p.body <= .55 && p.acid >= .5) return "rosato";
+  if (p.tannin <= .5  && p.body <= .6)  return "light_red";
+  return "structured_red";
 }
 
 // === Fallback per categoria/sottocategoria ===
@@ -252,7 +276,7 @@ if (d.protein==="carne_rossa" || d.cooking==="brasato" || d.cooking==="griglia")
   sc -= p.bubbles * 0.4;
 }
   // Pesce/crudo → acidità ↑, tannino ↓
-  if (d.protein==="pesce" || d.cooking==="crudo") sc += (p.acid*1.2) - (p.tannin*0.8);
+  if (d.protein==="pesce" || d.cooking==="crudo") sc += (p.acid*1.35) - (p.tannin*1.0);
   // Fritto → bollicine/acido
   if (d.cooking==="fritto") sc += (p.bubbles*1.3 + p.acid*0.8);
   // Carne rossa/brasato → corpo/tannino
@@ -268,8 +292,9 @@ if (d.protein === "formaggio") {
 }
 // NEW: piatti “veg” non fritti → preferisci bianchi/rosati fermi ben acidi
 if (d.protein === "veg" && d.cooking !== "fritto") {
-  sc += p.acid * 0.3;
-  sc -= p.bubbles * 0.2;
+  sc += p.acid * 0.45;
+  sc -= Math.max(0, p.tannin - 0.25) * 0.6;
+  sc -= p.bubbles * 0.15;
 }
 
 // NEW: carne bianca alla griglia → corpo medio, poco tannino, bollicine non prioritarie
@@ -324,6 +349,15 @@ function buildMotivation(L: any, p: Profile, d: Dish): string {
     .replace("frittura", "fried food")
     .replace("ittico", "seafood"); // traduzione rapida; in step successivo possiamo raffinarla per tutte le lingue
   return sentence;
+  // in coda, prima del return finale
+if (parts.length <= 1){
+  const extras = [
+    "Equilibrio gusto–vino centrato",
+    "Profilo aromatico in armonia col piatto",
+    "Finale pulito che invoglia il boccone successivo"
+  ];
+  parts.push(extras[Math.floor(Math.random()*extras.length)]);
+}
 }
 
 // === IA: estrai feature dal/i piatto/i in JSON (robusta) ===
@@ -469,13 +503,17 @@ try {
   recentLog = [];
 }
 
-// 🔁 Calcola la frequenza dei vini (non boost) negli ultimi suggerimenti
-const frequenzaRecenti: Record<string, number> = {};
+// 🔁 Frequenza per vino e per (categoria+sottocategoria) negli ultimi suggerimenti (non boost)
+const freqByWine: Record<string, number> = {};
+const freqBySub:  Record<string, number> = {};
+
 recentLog.forEach(r => {
+  const sotto = norm(String(r.sottocategoria || "")); // nel log salviamo sotto, più avanti
   (r.vini || []).forEach((nome: string) => {
     const n = norm(nome);
     if (!boostNorm.has(n)) {
-      frequenzaRecenti[n] = (frequenzaRecenti[n] || 0) + 1;
+      freqByWine[n] = (freqByWine[n] || 0) + 1;
+      if (sotto) freqBySub[`${sotto}:${n}`] = (freqBySub[`${sotto}:${n}`] || 0) + 1;
     }
   });
 });
@@ -486,7 +524,7 @@ recentLog.forEach(r => {
       boost: Array.from(boostNorm),  // <— normalizzati
       prezzo_massimo: prezzo_massimo ? parseInt(prezzo_massimo) : null,
       colori,
-      recenti: frequenzaRecenti,
+      recenti: { byWine: freqByWine, bySub: freqBySub },  // ⬅️
     });
 
     if (viniFiltrati.length === 0) {
@@ -513,8 +551,10 @@ try {
 }
 console.log("Dish features (combined):", dish);
 
-// === Ordina per coerenza col piatto + integra lo score "filtri/varietà" ===
-const BOOST_THRESHOLD = 0.55;
+// === Ordina per coerenza col piatto + integra lo score "filtri/varietà" + rotazione boost ===
+const BOOST_THRESHOLD = 0.52;
+const EPSILON = 0.20;          // 20% di esplorazione controllata
+const LAMBDA_MMR = 0.72;       // tradeoff qualità vs diversità
 
 // normalizza lo score di filtraEVotiVini in [0..1]
 const scores = viniConProfilo.map(w => w.score ?? 0);
@@ -522,33 +562,103 @@ const minS = Math.min(...scores);
 const maxS = Math.max(...scores);
 const denom = (maxS - minS) || 1;
 
-const rankedByMatch = viniConProfilo
-  .map(w => {
-    const m = matchScore(w.__profile, dish);
-    const boostOk = boostNorm.has(norm(w.nome)) && m >= BOOST_THRESHOLD;
-    const bonus = boostOk ? 0.15 : 0;
+// calcola punteggi grezzi
+let prelim = viniConProfilo.map(w => {
+  const m = matchScore(w.__profile, dish);
+  const sNorm = ((w.score ?? 0) - minS) / denom;
 
-    const sNorm = ((w.score ?? 0) - minS) / denom;
-    const final = (m + bonus) * 0.8 + sNorm * 0.2;
+  // rotazione boost: se boostato ma “troppo chiamato” → dimezza bonus
+  const nomeN = norm(w.nome);
+  const calls = (freqByWine?.[nomeN] || 0);
+  const boosted = boostNorm.has(nomeN) && m >= BOOST_THRESHOLD;
+  const boostBonus = boosted ? (calls >= 2 ? 0.07 : 0.14) : 0;
 
-    return { ...w, __match: m, __final: final };
-  })
-  .sort((a,b) => b.__final - a.__final);
+  // piccola esplorazione (jitter) solo nel ramo exploitation
+  const jitter = (Math.random() - 0.5) * 0.04; // ±0.02
 
-// === Diversità di stile: limita bollicine salvo quando hanno senso
+  const final = (m * 0.72 + sNorm * 0.18 + boostBonus) + jitter;
+
+  return { ...w, __match: m, __sNorm: sNorm, __final_pre: final, __style: styleOf(w.__profile) };
+});
+
+// ε-greedy: 20% → rimescola top 24 e lascia alla MMR il compito di scegliere
+if (Math.random() < EPSILON) {
+  prelim = prelim
+    .sort((a,b) => b.__final_pre - a.__final_pre)
+    .slice(0, Math.min(24, prelim.length))
+    .sort(() => Math.random() - 0.5)
+    .concat(
+      prelim.sort((a,b) => b.__final_pre - a.__final_pre).slice(24)
+    );
+} else {
+  prelim.sort((a,b) => b.__final_pre - a.__final_pre);
+}
+
+// Maximal Marginal Relevance su profili e uvaggi
+const wanted = Math.min(Math.max(max, Math.max(min,1)), prelim.length);
+
+// cap per bollicine (come prima, ma più stretto di default)
 const bubblesCap = (dish.cooking === "fritto" || (dish.fat >= 0.6 && !["brasato","griglia"].includes(dish.cooking||"")))
   ? 2 : 1;
 
-const wanted = Math.min(Math.max(max, Math.max(min,1)), rankedByMatch.length);
-const picked:any[] = [];
+const picked: any[] = [];
 let bubblesUsed = 0;
 
-for (const w of rankedByMatch) {
-  const isBubbly = w.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(w.categoria || "");
-  if (isBubbly && bubblesUsed >= bubblesCap) continue;
-  picked.push(w);
+// per penalizzare stessa uva o profilo troppo simile
+function redundancyPenalty(cand:any, chosen:any[]){
+  if (!chosen.length) return 0;
+  const p = toVec(cand.__profile);
+  const sim = Math.max(...chosen.map(ch => cosSim(p, toVec(ch.__profile))));
+  let pen = sim; // 0..1
+
+  // se uvaggio identico o molto simile aggiungi penalità
+  const uv = cand.__uvaggioN;
+  if (uv) {
+    const same = chosen.some(ch => ch.__uvaggioN && (ch.__uvaggioN === uv || (uv.length>0 && ch.__uvaggioN.includes(uv))));
+    if (same) pen = Math.min(1, pen + 0.25);
+  }
+  // se stesso produttore, piccola penalità ulteriore (oltre al cap 2)
+  const sameProd = chosen.some(ch => ch.__producer === cand.__producer);
+  if (sameProd) pen = Math.min(1, pen + 0.10);
+
+  return pen; // 0..1
+}
+
+// MMR
+const pool = prelim.slice(0, Math.min(60, prelim.length));
+while (picked.length < wanted && pool.length){
+  // ricalcola punteggio MMR ad ogni iterazione
+  let bestIdx = 0;
+  let bestScore = -Infinity;
+  for (let i=0;i<pool.length;i++){
+    const w = pool[i];
+    const isBubbly = w.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(w.categoria || "");
+    if (isBubbly && bubblesUsed >= bubblesCap) continue;
+
+    const rel = w.__final_pre;                    // rilevanza
+    const red = redundancyPenalty(w, picked);     // 0..1 (similitudine)
+    const mmr = LAMBDA_MMR * rel - (1 - LAMBDA_MMR) * red;
+
+    if (mmr > bestScore){
+      bestScore = mmr;
+      bestIdx = i;
+    }
+  }
+  const chosen = pool.splice(bestIdx,1)[0];
+  if (!chosen) break;
+  const isBubbly = chosen.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(chosen.categoria || "");
   if (isBubbly) bubblesUsed++;
-  if (picked.length >= wanted) break;
+  picked.push(chosen);
+}
+
+// “varietà di stile” minima: prova ad assicurare almeno 2 stili diversi se possibile
+if (picked.length >= 3) {
+  const styles = new Set(picked.map(p => p.__style));
+  if (styles.size === 1) {
+    const firstStyle = picked[0].__style;
+    const alt = prelim.find(w => w.__style !== firstStyle && !picked.some(p => p.nome === w.nome));
+    if (alt) picked[picked.length-1] = alt;
+  }
 }
 
 const topN = picked;
@@ -582,8 +692,9 @@ await fetch(`${supabaseUrl}/rest/v1/consigliati_log`, {
   body: JSON.stringify({
     ristorante_id,
     piatto,
-    vini: viniSuggeriti,
-    boost_inclusi: boostInclusi
+    vini: topN.map(w => w.nome),
+    boost_inclusi: topN.some(w => boostNorm.has(norm(w.nome))),
+    sottocategoria: topN[0]?.sottocategoria || null
   })
 });
 
