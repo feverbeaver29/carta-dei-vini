@@ -199,45 +199,37 @@ function profileFromWine(w:any): Profile {
     const found = priors.get(key);
     if (found) hits.push(found);
   }
-  if (hits.length) {
-    const sum = hits.reduce((a,b)=>({ 
-      acid:a.acid+b.acid, tannin:a.tannin+b.tannin, body:a.body+b.body, sweet:a.sweet+b.sweet, bubbles:Math.max(a.bubbles,b.bubbles)
-    }), {acid:0,tannin:0,body:0,sweet:0,bubbles:0});
-    let base = hits.length
-  ? {
-      acid: +(sum.acid / hits.length).toFixed(2),
-      tannin: +(sum.tannin / hits.length).toFixed(2),
-      body: +(sum.body / hits.length).toFixed(2),
-      sweet: +(sum.sweet / hits.length).toFixed(2),
-      bubbles: sum.bubbles > 0 ? 1 : 0
+if (hits.length) {
+  const sum = hits.reduce((a,b)=>({ 
+    acid:a.acid+b.acid, tannin:a.tannin+b.tannin, body:a.body+b.body, sweet:a.sweet+b.sweet, bubbles:Math.max(a.bubbles,b.bubbles)
+  }), {acid:0,tannin:0,body:0,sweet:0,bubbles:0});
+
+  let base: Profile = {
+    acid: +(sum.acid / hits.length).toFixed(2),
+    tannin: +(sum.tannin / hits.length).toFixed(2),
+    body: +(sum.body / hits.length).toFixed(2),
+    sweet: +(sum.sweet / hits.length).toFixed(2),
+    bubbles: sum.bubbles > 0 ? 1 : 0
+  };
+
+  // (OPZ) prior denominazione
+  const denomBag = norm(`${w.denominazione || ""} ${w.sottocategoria || ""} ${w.categoria || ""}`);
+  for (const [k, delta] of appMap) {
+    if (k && denomBag.includes(k)) {
+      base = {
+        acid:    clamp01(base.acid   + delta.acid),
+        tannin:  clamp01(base.tannin + delta.tannin),
+        body:    clamp01(base.body   + delta.body),
+        sweet:   clamp01(base.sweet  + delta.sweet),
+        bubbles: Math.max(base.bubbles, delta.bubbles > 0 ? 1 : 0)
+      };
+      break;
     }
-  : fallbackByCategory(w.categoria, w.sottocategoria);
-
-// (OPZ) applica prior per denominazione se riconosciuta nel testo “denominazione + sottocategoria + categoria”
-const denomBag = norm(`${w.denominazione || ""} ${w.sottocategoria || ""} ${w.categoria || ""}`);
-for (const [k, delta] of appMap) {
-  if (k && denomBag.includes(k)) {
-    base = {
-      acid:    clamp01(base.acid   + delta.acid),
-      tannin:  clamp01(base.tannin + delta.tannin),
-      body:    clamp01(base.body   + delta.body),
-      sweet:   clamp01(base.sweet  + delta.sweet),
-      bubbles: Math.max(base.bubbles, delta.bubbles > 0 ? 1 : 0)
-    };
-    break; // applichiamo il primo match
   }
+  return base;
 }
-return base;
+return fallbackByCategory(w.categoria, w.sottocategoria);
 
-    return {
-      acid: +(sum.acid / hits.length).toFixed(2),
-      tannin: +(sum.tannin / hits.length).toFixed(2),
-      body: +(sum.body / hits.length).toFixed(2),
-      sweet: +(sum.sweet / hits.length).toFixed(2),
-      bubbles: sum.bubbles > 0 ? 1 : 0
-    };
-  }
-  return fallbackByCategory(w.categoria, w.sottocategoria);
 }
 
 // === Parser piatto -> feature sintetiche ===
@@ -619,7 +611,6 @@ console.log("Dish features (combined):", dish);
 
 // === Ordina per coerenza col piatto + integra lo score "filtri/varietà" + rotazione boost ===
 const BOOST_THRESHOLD = 0.52;
-const EPSILON = 0.20;          // 20% di esplorazione controllata
 const LAMBDA_MMR = 0.72;       // tradeoff qualità vs diversità
 
 // normalizza lo score di filtraEVotiVini in [0..1]
@@ -691,40 +682,59 @@ function redundancyPenalty(cand:any, chosen:any[]){
 }
 
 // MMR
-const pool = prelim.slice(0, Math.min(60, prelim.length));
+const pool = prelim.slice(0, Math.min(60, prelim.length)); // se vuoi più varietà, puoi portare 60 -> 80
 const capBySub = 2;                     // max 2 etichette per stessa sottocategoria
 const usedBySub = new Map<string, number>();
-while (picked.length < wanted && pool.length){
+
+while (picked.length < wanted && pool.length) {
   // ricalcola punteggio MMR ad ogni iterazione
-  let bestIdx = 0;
+  let bestIdx = -1;
   let bestScore = -Infinity;
-  for (let i=0;i<pool.length;i++){
-    const w = pool[i];
-    const isBubbly = w.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(w.categoria || "");
+
+  for (let i = 0; i < pool.length; i++) {
+    const cand = pool[i];
+    const isBubbly = cand.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(cand.categoria || "");
     if (isBubbly && bubblesUsed >= bubblesCap) continue;
 
-    const rel = w.__final_pre;                    // rilevanza
-    const red = redundancyPenalty(w, picked);     // 0..1 (similitudine)
+    const rel = cand.__final_pre;                 // rilevanza
+    const red = redundancyPenalty(cand, picked);  // 0..1 (similitudine)
     const mmr = LAMBDA_MMR * rel - (1 - LAMBDA_MMR) * red;
 
-    if (mmr > bestScore){
+    if (mmr > bestScore) {
       bestScore = mmr;
       bestIdx = i;
     }
   }
-  const subN = norm(String(w.sottocategoria || ""));
-if (subN) {
-  const used = usedBySub.get(subN) || 0;
-  if (used >= capBySub) continue;       // salta se abbiamo già preso abbastanza
-}
 
-  const chosen = pool.splice(bestIdx,1)[0];
+  if (bestIdx < 0) break; // nessun candidato valido
+
+  const candidate = pool[bestIdx];
+
+  // cap per sottocategoria sul candidato scelto
+  const subN = norm(String(candidate.sottocategoria || ""));
+  if (subN) {
+    const used = usedBySub.get(subN) || 0;
+    if (used >= capBySub) {
+      // scarta questo candidato e riprova
+      pool.splice(bestIdx, 1);
+      continue;
+    }
+  }
+
+  // prendi il candidato
+  const chosen = pool.splice(bestIdx, 1)[0];
   if (!chosen) break;
-  const isBubbly = chosen.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(chosen.categoria || "");
-  if (isBubbly) bubblesUsed++;
+
+  const isBubblyChosen = chosen.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(chosen.categoria || "");
+  if (isBubblyChosen) bubblesUsed++;
+
   picked.push(chosen);
+
+  // aggiorna contatore per sottocategoria
   const subChosen = norm(String(chosen.sottocategoria || ""));
-if (subChosen) usedBySub.set(subChosen, (usedBySub.get(subChosen) || 0) + 1);
+  if (subChosen) {
+    usedBySub.set(subChosen, (usedBySub.get(subChosen) || 0) + 1);
+  }
 }
 
 // “varietà di stile” minima: prova ad assicurare almeno 2 stili diversi se possibile
