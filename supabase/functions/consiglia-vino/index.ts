@@ -266,6 +266,18 @@ if (d.protein === "formaggio") {
   sc += p.acid * 0.2;
   sc -= Math.max(0, p.tannin - 0.5) * 0.3;
 }
+// NEW: piatti “veg” non fritti → preferisci bianchi/rosati fermi ben acidi
+if (d.protein === "veg" && d.cooking !== "fritto") {
+  sc += p.acid * 0.3;
+  sc -= p.bubbles * 0.2;
+}
+
+// NEW: carne bianca alla griglia → corpo medio, poco tannino, bollicine non prioritarie
+if (d.protein === "carne_bianca" && d.cooking === "griglia") {
+  sc += p.body * 0.4;
+  sc -= Math.max(0, p.tannin - 0.4) * 0.5;
+  sc -= p.bubbles * 0.2;
+}
   // Dessert → richiede dolcezza
   sc += (d.sweet>0 ? (p.sweet*1.5) : 0);
   // Nota acida nel piatto → premia acidità
@@ -501,17 +513,45 @@ try {
 }
 console.log("Dish features (combined):", dish);
 
-// Se vuoi dare un piccolo vantaggio ai boost solo se coerenti, usa una soglia:
+// === Ordina per coerenza col piatto + integra lo score "filtri/varietà" ===
 const BOOST_THRESHOLD = 0.55;
+
+// normalizza lo score di filtraEVotiVini in [0..1]
+const scores = viniConProfilo.map(w => w.score ?? 0);
+const minS = Math.min(...scores);
+const maxS = Math.max(...scores);
+const denom = (maxS - minS) || 1;
 
 const rankedByMatch = viniConProfilo
   .map(w => {
     const m = matchScore(w.__profile, dish);
-    // bonus boost SOLO se supera soglia di coerenza (evita consigli stonati)
-    const bonus = (Array.isArray(boost) && boostNorm.has(norm(w.nome)) && m >= BOOST_THRESHOLD) ? 0.15 : 0;
-    return { ...w, __match: m + bonus };
+    const boostOk = Array.isArray(boost) && boostNorm.has(norm(w.nome)) && m >= BOOST_THRESHOLD;
+    const bonus = boostOk ? 0.15 : 0;
+
+    // componente “varietà” (anti-repeat, calice, ecc.) normalizzata
+    const sNorm = ((w.score ?? 0) - minS) / denom;
+
+    // blend finale: diamo priorità al match, ma facciamo pesare il resto
+    const final = (m + bonus) * 0.8 + sNorm * 0.2;
+
+    return { ...w, __match: m, __final: final };
   })
-  .sort((a,b) => b.__match - a.__match);
+  .sort((a,b) => b.__final - a.__final);
+
+  // === Diversità di stile: limita bollicine salvo quando hanno senso
+const bubblesCap = (dish.cooking === "fritto" || (dish.fat >= 0.6 && dish.cooking !== "brasato" && dish.cooking !== "griglia")) ? 2 : 1;
+
+const picked:any[] = [];
+let bubblesUsed = 0;
+
+for (const w of rankedByMatch) {
+  const isBubbly = w.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(w.categoria || "");
+  if (isBubbly && bubblesUsed >= bubblesCap) continue;
+  picked.push(w);
+  if (isBubbly) bubblesUsed++;
+  if (picked.length >= Math.min(Math.max(max, Math.max(min,1)), rankedByMatch.length)) break;
+}
+const topN = picked;
 
 // === Prendi i primi N vini più coerenti e genera motivazioni oneste ===
 const take = Math.max(min, 1);
@@ -526,6 +566,13 @@ ${L.GRAPE}: ${grape}
 ${L.MOTIVE}: ${motive}`);
 }
 console.log("Top 5 by match:", rankedByMatch.slice(0,5).map(w => ({ nome:w.nome, match:+w.__match.toFixed(3), prof:w.__profile })));
+console.log("DEBUG blend:", rankedByMatch.slice(0,8).map(w => ({
+  nome: w.nome,
+  match: +w.__match.toFixed(3),
+  filterScore: w.score,
+  final: +w.__final.toFixed(3),
+  prof: w.__profile
+})));
 
 // Log come prima (per analisi/varietà/boost)
 const viniSuggeriti = topN.map(w => w.nome);
