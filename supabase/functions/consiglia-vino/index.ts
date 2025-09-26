@@ -124,6 +124,7 @@ serve(async (req) => {
 
     // === Carica mappa uvaggi -> profilo (SOTTO a headers) ===
 const gpRes = await fetch(`${supabaseUrl}/rest/v1/grape_profiles?select=display_name,grape_norm,acid,tannin,body,sweet,bubbles,synonyms`, { headers });
+if (!gpRes.ok) throw new Error(`grape_profiles ${gpRes.status}`);
 const grapeProfiles = await gpRes.json();
 
 type Profile = { acid:number; tannin:number; body:number; sweet:number; bubbles:number };
@@ -710,6 +711,37 @@ const pool = prelim.slice(0, Math.min(60, prelim.length)); // se vuoi più varie
 const capBySub = 2;                     // max 2 etichette per stessa sottocategoria
 const usedBySub = new Map<string, number>();
 
+function jaccard(a:Set<string>, b:Set<string>){
+  if (!a || !b || a.size === 0 || b.size === 0) return 0;
+  let inter = 0;
+  for (const x of a) if (b.has(x)) inter++;
+  const uni = a.size + b.size - inter;
+  return uni ? inter / uni : 0;
+}
+
+function redundancyPenalty(cand:any, chosen:any[]){
+  if (!chosen.length) return 0;
+
+  // similitudine profili
+  const p = toVec(cand.__profile);
+  const simP = Math.max(...chosen.map(ch => cosSim(p, toVec(ch.__profile))));
+
+  // similitudine uvaggi (Jaccard)
+  const uvSim = Math.max(...chosen.map(ch => jaccard(cand.__uvTokens, ch.__uvTokens)));
+
+  // base: max tra le due similitudini
+  let pen = Math.max(simP, uvSim * 0.85);
+
+  // uvaggio quasi identico => extra
+  if (uvSim >= 0.66) pen = Math.min(1, pen + 0.15);
+
+  // stesso produttore => piccola extra
+  const sameProd = chosen.some(ch => ch.__producer === cand.__producer);
+  if (sameProd) pen = Math.min(1, pen + 0.10);
+
+  return pen; // 0..1
+}
+
 while (picked.length < wanted && pool.length) {
   // ricalcola punteggio MMR ad ogni iterazione
   let bestIdx = -1;
@@ -739,7 +771,7 @@ while (picked.length < wanted && pool.length) {
   if (subN) {
     const used = usedBySub.get(subN) || 0;
     if (used >= capBySub) {
-      // scarta questo candidato e riprova
+      // scarta e riprova
       pool.splice(bestIdx, 1);
       continue;
     }
@@ -760,6 +792,9 @@ while (picked.length < wanted && pool.length) {
     usedBySub.set(subChosen, (usedBySub.get(subChosen) || 0) + 1);
   }
 }
+
+// 👉 DA QUI in poi lavoriamo SEMPRE su topN (derivato da picked)
+let topN = [...picked];
 
 // opzionale: garantisci 1 slot a un boost coerente se non presente
 const alreadyBoosted = topN.some(w => boostNorm.has(norm(w.nome)));
@@ -784,7 +819,6 @@ if (!alreadyBoosted) {
     // sostituisci l'ultimo (più debole) se abbiamo già raggiunto 'wanted'
     if (topN.length >= wanted) {
       const last = topN.pop();
-      // aggiorna contatori se rimpiazziamo un bubbly
       if (last) {
         const lastBub = last.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(last.categoria || "");
         if (lastBub) bubblesUsed = Math.max(0, bubblesUsed - 1);
@@ -794,8 +828,8 @@ if (!alreadyBoosted) {
     }
     topN.push(tryPick);
     if (tryPick.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(tryPick.categoria || "")) bubblesUsed++;
-    const subChosen = norm(String(tryPick.sottocategoria || ""));
-    if (subChosen) usedBySub.set(subChosen, (usedBySub.get(subChosen) || 0) + 1);
+    const subChosen2 = norm(String(tryPick.sottocategoria || ""));
+    if (subChosen2) usedBySub.set(subChosen2, (usedBySub.get(subChosen2) || 0) + 1);
   }
 }
 
@@ -818,22 +852,20 @@ if (topN.length < wanted && uniqCount < targetUniq) {
   if (candidate) {
     topN.push(candidate);
     if (candidate.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(candidate.categoria || "")) bubblesUsed++;
-    const subChosen = norm(String(candidate.sottocategoria || ""));
-    if (subChosen) usedBySub.set(subChosen, (usedBySub.get(subChosen) || 0) + 1);
+    const subChosen3 = norm(String(candidate.sottocategoria || ""));
+    if (subChosen3) usedBySub.set(subChosen3, (usedBySub.get(subChosen3) || 0) + 1);
   }
 }
 
 // “varietà di stile” minima: prova ad assicurare almeno 2 stili diversi se possibile
-if (picked.length >= 3) {
-  const styles = new Set(picked.map(p => p.__style));
+if (topN.length >= 3) {
+  const styles = new Set(topN.map(p => p.__style));
   if (styles.size === 1) {
-    const firstStyle = picked[0].__style;
-    const alt = prelim.find(w => w.__style !== firstStyle && !picked.some(p => p.nome === w.nome));
-    if (alt) picked[picked.length-1] = alt;
+    const firstStyle = topN[0].__style;
+    const alt = prelim.find(w => w.__style !== firstStyle && !topN.some(p => p.nome === w.nome));
+    if (alt) topN[topN.length-1] = alt;
   }
 }
-
-const topN = picked;
 
 // === Output finale + logging
 const lines: string[] = [];
