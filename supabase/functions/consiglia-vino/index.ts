@@ -282,57 +282,91 @@ function buildMotivation(L: any, p: Profile, d: Dish): string {
   return sentence;
 }
 
-// === IA: estrai feature dal/i piatto/i in JSON ===
-async function getDishFeatures(piattoRaw: string, openaiKey: string): Promise<Dish> {
-  const items = splitDishes(piattoRaw);
-  const prompt = `
-Sei un sommelier virtuale.
-Dato un elenco di piatti, restituisci SOLO un array JSON. Ogni elemento è un oggetto con:
-- protein: pesce | carne_rossa | carne_bianca | salumi | formaggio | veg | null
-- cooking: crudo | fritto | griglia | brasato | bollito | null
-- fat: numero tra 0 e 1
-- spice: numero tra 0 e 1
-- sweet: numero tra 0 e 1
-- intensity: numero tra 0 e 1
-- acid_hint: true/false
-
-Sii conciso e realista. Se ignoto, usa valori neutrali (fat 0.3, spice 0, sweet 0, intensity 0.4, protein null, cooking null, acid_hint false).
-Input: "${items.join(", ")}"
-Output:
-`.trim();
-
-  const resp = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${openaiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      temperature: 0.1,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: "Rispondi solo con JSON valido (un array JSON o un oggetto che contiene l'array)." },
-        { role: "user", content: prompt }
-      ]
-    })
-  });
-
-  if (!resp.ok) throw new Error("OpenAI dish features error: " + await resp.text());
-  const data = await resp.json();
-  let content = data.choices?.[0]?.message?.content || "[]";
-
-  // prova a parse-are un oggetto o un array
-  let arr: any;
-  try {
-    const parsed = JSON.parse(content);
-    arr = Array.isArray(parsed) ? parsed : (parsed.data || parsed.items || parsed.results || []);
-  } catch {
-    const m = content.match(/\[.*\]/s);
-    arr = m ? JSON.parse(m[0]) : [];
+// === IA: estrai feature dal/i piatto/i in JSON (robusta) ===
+async function getDishFeatures(piattoRaw: string, openaiKey: string | undefined): Promise<Dish> {
+  // 1) se la chiave manca → fallback immediato
+  if (!openaiKey) {
+    console.error("OpenAI key mancante: uso parseDish fallback");
+    return combineDishes(splitDishes(piattoRaw).map(parseDish));
   }
 
-  // normalizzazione robusta
+  const items = splitDishes(piattoRaw);
+
+  // 2) prompt con ESEMPIO e richiesta di SOLO array JSON
+  const userPrompt = `
+Analizza questi piatti e restituisci SOLO un ARRAY JSON (non testo attorno, niente spiegazioni), dove ogni elemento è un oggetto con le chiavi:
+- "protein": uno tra "pesce","carne_rossa","carne_bianca","salumi","formaggio","veg" oppure null
+- "cooking": uno tra "crudo","fritto","griglia","brasato","bollito" oppure null
+- "fat": numero tra 0 e 1
+- "spice": numero tra 0 e 1
+- "sweet": numero tra 0 e 1
+- "intensity": numero tra 0 e 1
+- "acid_hint": true/false
+
+Se non sei sicuro, usa valori neutrali: fat 0.3, spice 0, sweet 0, intensity 0.4, protein null, cooking null, acid_hint false.
+
+Esempio di OUTPUT valido per due piatti:
+[
+  { "protein":"carne_rossa","cooking":"brasato","fat":0.6,"spice":0.1,"sweet":0.0,"intensity":0.8,"acid_hint":false },
+  { "protein":"veg","cooking":null,"fat":0.3,"spice":0.0,"sweet":0.2,"intensity":0.4,"acid_hint":true }
+]
+
+Piatti: ${items.map(s => `"${s}"`).join(", ")}
+`.trim();
+
+  // 3) chiamata semplice (niente response_format) + logging difensivo
+  let resp: Response | null = null;
+  try {
+    resp = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${openaiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        // usa un modello disponibile: se vuoi cambiare, cambialo qui
+        model: "gpt-4o-mini",
+        temperature: 0.1,
+        max_tokens: 400,
+        messages: [
+          { role: "system", content: "Rispondi sempre e solo con un ARRAY JSON valido. Nessun testo prima o dopo." },
+          { role: "user", content: userPrompt }
+        ]
+      })
+    });
+  } catch (netErr) {
+    console.error("OpenAI fetch error (rete):", netErr);
+    return combineDishes(splitDishes(piattoRaw).map(parseDish));
+  }
+
+  if (!resp || !resp.ok) {
+    const errText = resp ? await resp.text() : "no response";
+    console.error("OpenAI non OK:", errText);
+    return combineDishes(splitDishes(piattoRaw).map(parseDish));
+  }
+
+  // 4) estrai contenuto e parsalo in modo robusto
+  const data = await resp.json();
+  const content: string = data?.choices?.[0]?.message?.content || "";
+  // log di debug utile per capire cosa risponde il modello
+  console.log("OpenAI raw content:", content.slice(0, 400));
+
+  let arr: any[] = [];
+  try {
+    // caso ideale: è già un array json
+    if (content.trim().startsWith("[")) {
+      arr = JSON.parse(content);
+    } else {
+      // prova a catturare il primo array con una regex
+      const m = content.match(/\[[\s\S]*\]/);
+      arr = m ? JSON.parse(m[0]) : [];
+    }
+  } catch (parseErr) {
+    console.error("Errore parsing JSON dal contenuto OpenAI:", parseErr);
+    arr = [];
+  }
+
+  // 5) normalizzazione output → Dish[]
   const toDish = (r:any): Dish => ({
     protein: (["pesce","carne_rossa","carne_bianca","salumi","formaggio","veg"].includes(r?.protein)) ? r.protein : null,
     cooking: (["crudo","fritto","griglia","brasato","bollito"].includes(r?.cooking)) ? r.cooking : null,
@@ -343,9 +377,10 @@ Output:
     acid_hint: !!r?.acid_hint
   });
 
-  const dishes: Dish[] = (arr || []).map(toDish);
+  const dishes: Dish[] = Array.isArray(arr) ? arr.map(toDish) : [];
   if (!dishes.length) {
-    return { fat:.3, spice:0, sweet:0, intensity:.4, protein:null, cooking:null, acid_hint:false };
+    // fallback “intelligente”: usa il parser semplice su ogni piatto e fai la media
+    return combineDishes(items.map(parseDish));
   }
   return combineDishes(dishes);
 }
@@ -426,11 +461,11 @@ recentLog.forEach(r => {
 const openaiKey = Deno.env.get("OPENAI_API_KEY");
 let dish: Dish;
 try {
-  dish = await getDishFeatures(piatto, openaiKey!);
+  dish = await getDishFeatures(piatto, openaiKey);
 } catch (e) {
-  // fallback: se l'IA fallisce, usa il parser semplice
-  dish = parseDish(piatto);
-  console.error("Dish features via OpenAI fallite, uso fallback parseDish:", e);
+  // fallback totale
+  dish = combineDishes(splitDishes(piatto).map(parseDish));
+  console.error("Dish features via OpenAI fallite (catch), uso fallback combine(parseDish):", e);
 }
 console.log("Dish features (combined):", dish);
 
