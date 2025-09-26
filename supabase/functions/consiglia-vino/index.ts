@@ -23,9 +23,12 @@ const norm = (s:string) => (s || "")
 }
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://www.winesfever.com", // oppure "*" se non usi credenziali
+  "Access-Control-Allow-Origin": "https://www.winesfever.com",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey, x-client-info",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Max-Age": "86400",
+  "Vary": "Origin",
+  "Content-Type": "application/json"
 };
 
 const LANGS = {
@@ -107,11 +110,11 @@ v.__uvTokens = new Set(splitGrapes(v.uvaggio || "").map(norm));
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: corsHeaders,
-      status: 200
-    });
-  }
+  return new Response(null, {
+    status: 200,
+    headers: corsHeaders,
+  });
+}
 
   try {
  const { vini, piatto, ristorante_id, prezzo_massimo, colori, lang } = await req.json();
@@ -711,36 +714,6 @@ const pool = prelim.slice(0, Math.min(60, prelim.length)); // se vuoi più varie
 const capBySub = 2;                     // max 2 etichette per stessa sottocategoria
 const usedBySub = new Map<string, number>();
 
-function jaccard(a:Set<string>, b:Set<string>){
-  if (!a || !b || a.size === 0 || b.size === 0) return 0;
-  let inter = 0;
-  for (const x of a) if (b.has(x)) inter++;
-  const uni = a.size + b.size - inter;
-  return uni ? inter / uni : 0;
-}
-
-function redundancyPenalty(cand:any, chosen:any[]){
-  if (!chosen.length) return 0;
-
-  // similitudine profili
-  const p = toVec(cand.__profile);
-  const simP = Math.max(...chosen.map(ch => cosSim(p, toVec(ch.__profile))));
-
-  // similitudine uvaggi (Jaccard)
-  const uvSim = Math.max(...chosen.map(ch => jaccard(cand.__uvTokens, ch.__uvTokens)));
-
-  // base: max tra le due similitudini
-  let pen = Math.max(simP, uvSim * 0.85);
-
-  // uvaggio quasi identico => extra
-  if (uvSim >= 0.66) pen = Math.min(1, pen + 0.15);
-
-  // stesso produttore => piccola extra
-  const sameProd = chosen.some(ch => ch.__producer === cand.__producer);
-  if (sameProd) pen = Math.min(1, pen + 0.10);
-
-  return pen; // 0..1
-}
 
 while (picked.length < wanted && pool.length) {
   // ricalcola punteggio MMR ad ogni iterazione
