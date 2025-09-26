@@ -312,7 +312,6 @@ if (d.protein === "carne_bianca" && d.cooking === "griglia") {
   return sc;
 }
 
-// === Generatore motivazioni sintetiche (multilingua) ===
 function buildMotivation(L: any, p: Profile, d: Dish): string {
   const parts: string[] = [];
 
@@ -341,23 +340,25 @@ function buildMotivation(L: any, p: Profile, d: Dish): string {
   else if (p.body > d.intensity) parts.push("Corpo sufficiente a bilanciare la ricchezza");
   else parts.push("Profilo snello per non coprire il piatto");
 
-  // compatta e limita a max 2 frasi
+  // extra se c'è una sola frase
+  if (parts.length <= 1) {
+    const extras = [
+      "Equilibrio gusto–vino centrato",
+      "Profilo aromatico in armonia col piatto",
+      "Finale pulito che invoglia il boccone successivo"
+    ];
+    parts.push(extras[Math.floor(Math.random()*extras.length)]);
+  }
+
   const sentence = parts.slice(0, 2).join(". ") + ".";
-  if (L?.name === "English") return sentence
-    .replace("Bollicine", "Bubbles")
-    .replace("acidità", "acidity")
-    .replace("frittura", "fried food")
-    .replace("ittico", "seafood"); // traduzione rapida; in step successivo possiamo raffinarla per tutte le lingue
+  if (L?.name === "English") {
+    return sentence
+      .replace("Bollicine", "Bubbles")
+      .replace("acidità", "acidity")
+      .replace("frittura", "fried food")
+      .replace("ittico", "seafood");
+  }
   return sentence;
-  // in coda, prima del return finale
-if (parts.length <= 1){
-  const extras = [
-    "Equilibrio gusto–vino centrato",
-    "Profilo aromatico in armonia col piatto",
-    "Finale pulito che invoglia il boccone successivo"
-  ];
-  parts.push(extras[Math.floor(Math.random()*extras.length)]);
-}
 }
 
 // === IA: estrai feature dal/i piatto/i in JSON (robusta) ===
@@ -673,10 +674,28 @@ ${L.GRAPE}: ${grape}
 ${L.MOTIVE}: ${motive}`);
 }
 
-console.log("Top 5 by match:", rankedByMatch.slice(0,5).map(w => ({ nome:w.nome, match:+w.__match.toFixed(3), prof:w.__profile })));
-console.log("DEBUG blend:", rankedByMatch.slice(0,8).map(w => ({
-  nome: w.nome, match: +w.__match.toFixed(3), filterScore: w.score, final: +w.__final.toFixed(3), prof: w.__profile
-})));
+// prime 5 dopo il pre-ranking (match + varietà + boost rotation)
+console.log("Top 5 (prelim):",
+  prelim.slice(0,5).map(w => ({
+    nome: w.nome,
+    match: +w.__match.toFixed(3),
+    sNorm: +w.__sNorm.toFixed(3),
+    final_pre: +w.__final_pre.toFixed(3),
+    prof: w.__profile
+  }))
+);
+
+// selezione finale (dopo MMR + cap bollicine + varietà di stile)
+console.log("DEBUG picked:",
+  topN.map(w => ({
+    nome: w.nome,
+    match: +w.__match.toFixed(3),
+    sNorm: +w.__sNorm.toFixed(3),
+    final_pre: +w.__final_pre.toFixed(3),
+    style: w.__style,
+    prof: w.__profile
+  }))
+);
 
 const viniSuggeriti = topN.map(w => w.nome);
 const boostInclusi = viniSuggeriti.some(nome => boostNorm.has(norm(nome)));
