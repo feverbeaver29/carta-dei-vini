@@ -98,7 +98,7 @@ function filtraEVotiVini({
       diversified.push(w);
       seenProd.set(w.__producer, c + 1);
     }
-    if (diversified.length >= 40) break; // teniamo un pool più ampio per la fase MMR
+    if (diversified.length >= 120) break;   // più ampio: lascia lavorare meglio la MMR
   }
   return diversified;
 }
@@ -133,6 +133,25 @@ for (const r of grapeProfiles) {
     priors.set(norm(syn), { acid:r.acid, tannin:r.tannin, body:r.body, sweet:r.sweet, bubbles:r.bubbles });
   }
 }
+
+// === (OPZ) Carica prior per denominazioni ===
+const apRes = await fetch(`${supabaseUrl}/rest/v1/appellation_priors?select=denom_norm,delta_acid,delta_tannin,delta_body,delta_sweet,delta_bubbles,synonyms`, { headers });
+const appellationPriors = apRes.ok ? await apRes.json() : [];
+const appMap = new Map<string, {acid:number,tannin:number,body:number,sweet:number,bubbles:number}>();
+for (const r of (appellationPriors || [])) {
+  const delta = {
+    acid:   Number(r.delta_acid   || 0),
+    tannin: Number(r.delta_tannin || 0),
+    body:   Number(r.delta_body   || 0),
+    sweet:  Number(r.delta_sweet  || 0),
+    bubbles:Number(r.delta_bubbles|| 0)
+  };
+  appMap.set(norm(r.denom_norm), delta);
+  (r.synonyms || []).forEach((s:string) => appMap.set(norm(s), delta));
+}
+
+const clamp01 = (x:number) => Math.max(0, Math.min(1, x));
+
 
 const toVec = (p: Profile) => [p.acid, p.tannin, p.body, p.sweet, p.bubbles];
 
@@ -184,6 +203,32 @@ function profileFromWine(w:any): Profile {
     const sum = hits.reduce((a,b)=>({ 
       acid:a.acid+b.acid, tannin:a.tannin+b.tannin, body:a.body+b.body, sweet:a.sweet+b.sweet, bubbles:Math.max(a.bubbles,b.bubbles)
     }), {acid:0,tannin:0,body:0,sweet:0,bubbles:0});
+    let base = hits.length
+  ? {
+      acid: +(sum.acid / hits.length).toFixed(2),
+      tannin: +(sum.tannin / hits.length).toFixed(2),
+      body: +(sum.body / hits.length).toFixed(2),
+      sweet: +(sum.sweet / hits.length).toFixed(2),
+      bubbles: sum.bubbles > 0 ? 1 : 0
+    }
+  : fallbackByCategory(w.categoria, w.sottocategoria);
+
+// (OPZ) applica prior per denominazione se riconosciuta nel testo “denominazione + sottocategoria + categoria”
+const denomBag = norm(`${w.denominazione || ""} ${w.sottocategoria || ""} ${w.categoria || ""}`);
+for (const [k, delta] of appMap) {
+  if (k && denomBag.includes(k)) {
+    base = {
+      acid:    clamp01(base.acid   + delta.acid),
+      tannin:  clamp01(base.tannin + delta.tannin),
+      body:    clamp01(base.body   + delta.body),
+      sweet:   clamp01(base.sweet  + delta.sweet),
+      bubbles: Math.max(base.bubbles, delta.bubbles > 0 ? 1 : 0)
+    };
+    break; // applichiamo il primo match
+  }
+}
+return base;
+
     return {
       acid: +(sum.acid / hits.length).toFixed(2),
       tannin: +(sum.tannin / hits.length).toFixed(2),
@@ -289,6 +334,13 @@ if (d.protein === "formaggio") {
   sc += p.body * 0.6;
   sc += p.acid * 0.2;
   sc -= Math.max(0, p.tannin - 0.5) * 0.3;
+}
+// NEW: salumi → rossi leggeri/rosati, acidità per sgrassare, evita bollicine e tannino alto
+if (d.protein === "salumi") {
+  sc += p.acid * 0.35;                                 // serve freschezza
+  sc += Math.max(0, 0.55 - p.tannin) * 0.4;            // premia tannino medio-basso
+  sc += Math.max(0, 0.60 - p.body) * 0.2;              // corpo non pesantissimo
+  sc -= p.bubbles * 0.40;                               // frizzanti non prioritari coi salumi
 }
 // NEW: piatti “veg” non fritti → preferisci bianchi/rosati fermi ben acidi
 if (d.protein === "veg" && d.cooking !== "fritto") {
@@ -519,6 +571,19 @@ recentLog.forEach(r => {
   });
 });
 
+// Valuta varietà recente (quanti vini unici negli ultimi 100 log?)
+const recentUnique = new Set<string>();
+recentLog.forEach(r => (r.vini || []).forEach((n:string) => recentUnique.add(norm(n))));
+const uniqCount = recentUnique.size;
+
+// ε dinamico: se pochi unici, aumenta esplorazione (max 0.5)
+const EPS_BASE = 0.20;
+const EPS_MAX  = 0.50;
+const targetUniq = 18; // vorremmo almeno 18 etichette diverse negli ultimi 100 record
+const lack = Math.max(0, targetUniq - uniqCount);   // quanta varietà manca
+const EPSILON = Math.min(EPS_MAX, EPS_BASE + lack * 0.02);  // +2pp per unità di “lack”
+
+
     // ✅ Filtra e valuta i vini
     const viniFiltrati = filtraEVotiVini({
       vini,
@@ -566,7 +631,7 @@ const denom = (maxS - minS) || 1;
 // calcola punteggi grezzi
 let prelim = viniConProfilo.map(w => {
   const m = matchScore(w.__profile, dish);
-  const sNorm = ((w.score ?? 0) - minS) / denom;
+  const sNorm = denom ? ((w.score ?? 0) - minS) / denom : 0.5; // se tutti uguali, metti 0.5
 
   // rotazione boost: se boostato ma “troppo chiamato” → dimezza bonus
   const nomeN = norm(w.nome);
@@ -627,6 +692,8 @@ function redundancyPenalty(cand:any, chosen:any[]){
 
 // MMR
 const pool = prelim.slice(0, Math.min(60, prelim.length));
+const capBySub = 2;                     // max 2 etichette per stessa sottocategoria
+const usedBySub = new Map<string, number>();
 while (picked.length < wanted && pool.length){
   // ricalcola punteggio MMR ad ogni iterazione
   let bestIdx = 0;
@@ -645,11 +712,19 @@ while (picked.length < wanted && pool.length){
       bestIdx = i;
     }
   }
+  const subN = norm(String(w.sottocategoria || ""));
+if (subN) {
+  const used = usedBySub.get(subN) || 0;
+  if (used >= capBySub) continue;       // salta se abbiamo già preso abbastanza
+}
+
   const chosen = pool.splice(bestIdx,1)[0];
   if (!chosen) break;
   const isBubbly = chosen.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(chosen.categoria || "");
   if (isBubbly) bubblesUsed++;
   picked.push(chosen);
+  const subChosen = norm(String(chosen.sottocategoria || ""));
+if (subChosen) usedBySub.set(subChosen, (usedBySub.get(subChosen) || 0) + 1);
 }
 
 // “varietà di stile” minima: prova ad assicurare almeno 2 stili diversi se possibile
