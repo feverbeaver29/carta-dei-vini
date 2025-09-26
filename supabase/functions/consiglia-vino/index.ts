@@ -23,8 +23,8 @@ const norm = (s:string) => (s || "")
 }
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey",
+  "Access-Control-Allow-Origin": "https://www.winesfever.com", // oppure "*" se non usi credenziali
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey, x-client-info",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
 };
 
@@ -112,7 +112,7 @@ serve(async (req) => {
  const normCode = (code === "gb" ? "en" : code);   // alias GB → EN
  const L = LANGS[normCode] || LANGS.it;
     const supabaseUrl = "https://ldunvbftxhbtuyabgxwh.supabase.co";
-    const supabaseKey = Deno.env.get("SERVICE_ROLE_KEY");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const headers = { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` };
 
     // === Carica mappa uvaggi -> profilo (SOTTO a headers) ===
@@ -525,22 +525,21 @@ const denom = (maxS - minS) || 1;
 const rankedByMatch = viniConProfilo
   .map(w => {
     const m = matchScore(w.__profile, dish);
-    const boostOk = Array.isArray(boost) && boostNorm.has(norm(w.nome)) && m >= BOOST_THRESHOLD;
+    const boostOk = boostNorm.has(norm(w.nome)) && m >= BOOST_THRESHOLD;
     const bonus = boostOk ? 0.15 : 0;
 
-    // componente “varietà” (anti-repeat, calice, ecc.) normalizzata
     const sNorm = ((w.score ?? 0) - minS) / denom;
-
-    // blend finale: diamo priorità al match, ma facciamo pesare il resto
     const final = (m + bonus) * 0.8 + sNorm * 0.2;
 
     return { ...w, __match: m, __final: final };
   })
   .sort((a,b) => b.__final - a.__final);
 
-  // === Diversità di stile: limita bollicine salvo quando hanno senso
-const bubblesCap = (dish.cooking === "fritto" || (dish.fat >= 0.6 && dish.cooking !== "brasato" && dish.cooking !== "griglia")) ? 2 : 1;
+// === Diversità di stile: limita bollicine salvo quando hanno senso
+const bubblesCap = (dish.cooking === "fritto" || (dish.fat >= 0.6 && !["brasato","griglia"].includes(dish.cooking||"")))
+  ? 2 : 1;
 
+const wanted = Math.min(Math.max(max, Math.max(min,1)), rankedByMatch.length);
 const picked:any[] = [];
 let bubblesUsed = 0;
 
@@ -549,14 +548,12 @@ for (const w of rankedByMatch) {
   if (isBubbly && bubblesUsed >= bubblesCap) continue;
   picked.push(w);
   if (isBubbly) bubblesUsed++;
-  if (picked.length >= Math.min(Math.max(max, Math.max(min,1)), rankedByMatch.length)) break;
+  if (picked.length >= wanted) break;
 }
+
 const topN = picked;
 
-// === Prendi i primi N vini più coerenti e genera motivazioni oneste ===
-const take = Math.max(min, 1);
-const topN = rankedByMatch.slice(0, Math.min(Math.max(max, take), rankedByMatch.length));
-
+// === Output finale + logging
 const lines: string[] = [];
 for (const w of topN) {
   const grape = (w.uvaggio && w.uvaggio.trim()) ? w.uvaggio.trim() : "N.D.";
@@ -565,16 +562,12 @@ for (const w of topN) {
 ${L.GRAPE}: ${grape}
 ${L.MOTIVE}: ${motive}`);
 }
+
 console.log("Top 5 by match:", rankedByMatch.slice(0,5).map(w => ({ nome:w.nome, match:+w.__match.toFixed(3), prof:w.__profile })));
 console.log("DEBUG blend:", rankedByMatch.slice(0,8).map(w => ({
-  nome: w.nome,
-  match: +w.__match.toFixed(3),
-  filterScore: w.score,
-  final: +w.__final.toFixed(3),
-  prof: w.__profile
+  nome: w.nome, match: +w.__match.toFixed(3), filterScore: w.score, final: +w.__final.toFixed(3), prof: w.__profile
 })));
 
-// Log come prima (per analisi/varietà/boost)
 const viniSuggeriti = topN.map(w => w.nome);
 const boostInclusi = viniSuggeriti.some(nome => boostNorm.has(norm(nome)));
 
