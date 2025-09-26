@@ -180,17 +180,39 @@ type Dish = {
 };
 
 function combineDishes(ds: Dish[]): Dish {
-  if (!ds.length) return { fat:.3, spice:0, sweet:0, intensity:.4, protein:null, cooking:null, acid_hint:false };
+  if (!ds.length) {
+    return { fat:.3, spice:0, sweet:0, intensity:.4, protein:null, cooking:null, acid_hint:false };
+  }
+
   const avg = (arr:number[]) => arr.reduce((a,b)=>a+b,0) / arr.length;
-  return {
-    protein: null,
-    cooking: null,
-    fat: +avg(ds.map(d=>d.fat)).toFixed(2),
-    spice: +avg(ds.map(d=>d.spice)).toFixed(2),
-    sweet: +avg(ds.map(d=>d.sweet)).toFixed(2),
-    intensity: +avg(ds.map(d=>d.intensity)).toFixed(2),
-    acid_hint: ds.some(d=>d.acid_hint)
+
+  // moda (valore più frequente) ignorando null
+  const mode = (arr:(string|null)[]) => {
+    const counts = new Map<string, number>();
+    for (const v of arr) {
+      if (!v) continue;
+      counts.set(v, (counts.get(v) || 0) + 1);
+    }
+    let best: string|null = null;
+    let bestN = 0;
+    for (const [k,n] of counts.entries()) {
+      if (n > bestN) { best = k; bestN = n; }
+    }
+    return best as any || null;
   };
+
+  // media per i continui
+  const fat       = +avg(ds.map(d=>d.fat)).toFixed(2);
+  const spice     = +avg(ds.map(d=>d.spice)).toFixed(2);
+  const sweet     = +avg(ds.map(d=>d.sweet)).toFixed(2);
+  const intensity = +avg(ds.map(d=>d.intensity)).toFixed(2);
+  const acid_hint = ds.some(d=>d.acid_hint);
+
+  // moda per le categoriche
+  const protein = mode(ds.map(d=>d.protein));
+  const cooking = mode(ds.map(d=>d.cooking));
+
+  return { fat, spice, sweet, intensity, acid_hint, protein, cooking };
 }
 
 function parseDish(text:string): Dish {
@@ -224,7 +246,11 @@ function parseDish(text:string): Dish {
 function matchScore(p:Profile, d:Dish): number {
   let sc = 0;
   // Grassezza → acidità/bollicine
-  sc += (d.fat * (p.acid*1.1 + p.bubbles*1.2));
+  sc += (d.fat * (p.acid*1.0 + p.bubbles*0.6));
+  // Bollicine poco adatte a cotture lunghe/carni importanti
+if (d.protein==="carne_rossa" || d.cooking==="brasato" || d.cooking==="griglia") {
+  sc -= p.bubbles * 0.4;
+}
   // Pesce/crudo → acidità ↑, tannino ↓
   if (d.protein==="pesce" || d.cooking==="crudo") sc += (p.acid*1.2) - (p.tannin*0.8);
   // Fritto → bollicine/acido
@@ -234,6 +260,12 @@ function matchScore(p:Profile, d:Dish): number {
   if (d.cooking==="brasato") sc -= p.bubbles * 0.6;
   // Piccante → un filo di dolcezza e tannino basso
   sc += (d.spice>0 ? (p.sweet*1.0 - p.tannin*0.8 - p.body*0.4) : 0);
+  // Formaggi/fondute → serve corpo, acidità ok ma tannino medio/basso
+if (d.protein === "formaggio") {
+  sc += p.body * 0.6;
+  sc += p.acid * 0.2;
+  sc -= Math.max(0, p.tannin - 0.5) * 0.3;
+}
   // Dessert → richiede dolcezza
   sc += (d.sweet>0 ? (p.sweet*1.5) : 0);
   // Nota acida nel piatto → premia acidità
