@@ -80,9 +80,11 @@ function filtraEVotiVini({
       // 4) bonus formato “al calice”
       if (v.prezzo_bicchiere) score += 6;
 
-      // 5) traccia produttore + uvaggio normalizzato (per diversificazione in pick finale)
-      v.__producer = (v.nome || "").split(/\s+/)[0].toLowerCase();
-      v.__uvaggioN = norm(v.uvaggio || "");
+      // 5) traccia produttore + uvaggio normalizzato (robusto)
+const producerRaw = String(v.nome || "").split("|")[0];   // parte prima del "|"
+v.__producer = norm(producerRaw);
+v.__uvaggioN = norm(v.uvaggio || "");
+v.__uvTokens = new Set(splitGrapes(v.uvaggio || "").map(norm));
 
       return { ...v, score };
     })
@@ -548,17 +550,27 @@ try {
   recentLog = [];
 }
 
-// 🔁 Frequenza per vino e per (categoria+sottocategoria) negli ultimi suggerimenti (non boost)
+// 🔁 Frequenza per vino/sottocategoria con decadimento temporale (half-life 48h)
 const freqByWine: Record<string, number> = {};
 const freqBySub:  Record<string, number> = {};
 
+const nowMs = Date.now();
+const HALF_LIFE_H = 48;
+const LAMBDA = Math.log(2) / (HALF_LIFE_H * 3600 * 1000);
+const decay = (ts:string) => {
+  const t = new Date(ts).getTime();
+  const dt = Math.max(0, nowMs - (isNaN(t) ? nowMs : t));
+  return Math.exp(-LAMBDA * dt);
+};
+
 recentLog.forEach(r => {
-  const sotto = norm(String(r.sottocategoria || "")); // nel log salviamo sotto, più avanti
+  const sotto = norm(String(r.sottocategoria || ""));
+  const w = decay(String(r.creato_il || ""));      // peso 0..1 (più recente = più alto)
   (r.vini || []).forEach((nome: string) => {
     const n = norm(nome);
     if (!boostNorm.has(n)) {
-      freqByWine[n] = (freqByWine[n] || 0) + 1;
-      if (sotto) freqBySub[`${sotto}:${n}`] = (freqBySub[`${sotto}:${n}`] || 0) + 1;
+      freqByWine[n] = (freqByWine[n] || 0) + w;
+      if (sotto) freqBySub[`${sotto}:${n}`] = (freqBySub[`${sotto}:${n}`] || 0) + w;
     }
   });
 });
@@ -628,7 +640,8 @@ let prelim = viniConProfilo.map(w => {
   const nomeN = norm(w.nome);
   const calls = (freqByWine?.[nomeN] || 0);
   const boosted = boostNorm.has(nomeN) && m >= BOOST_THRESHOLD;
-  const boostBonus = boosted ? (calls >= 2 ? 0.07 : 0.14) : 0;
+  // bonus base 0.16 che decade con le chiamate recenti (calls)
+const boostBonus = boosted ? 0.16 * Math.exp(-0.7 * calls) : 0;
 
   // piccola esplorazione (jitter) solo nel ramo exploitation
   const jitter = (Math.random() - 0.5) * 0.04; // ±0.02
@@ -661,20 +674,31 @@ const bubblesCap = (dish.cooking === "fritto" || (dish.fat >= 0.6 && !["brasato"
 const picked: any[] = [];
 let bubblesUsed = 0;
 
-// per penalizzare stessa uva o profilo troppo simile
+function jaccard(a:Set<string>, b:Set<string>){
+  if (!a || !b || a.size === 0 || b.size === 0) return 0;
+  let inter = 0;
+  for (const x of a) if (b.has(x)) inter++;
+  const uni = a.size + b.size - inter;
+  return uni ? inter / uni : 0;
+}
+
 function redundancyPenalty(cand:any, chosen:any[]){
   if (!chosen.length) return 0;
-  const p = toVec(cand.__profile);
-  const sim = Math.max(...chosen.map(ch => cosSim(p, toVec(ch.__profile))));
-  let pen = sim; // 0..1
 
-  // se uvaggio identico o molto simile aggiungi penalità
-  const uv = cand.__uvaggioN;
-  if (uv) {
-    const same = chosen.some(ch => ch.__uvaggioN && (ch.__uvaggioN === uv || (uv.length>0 && ch.__uvaggioN.includes(uv))));
-    if (same) pen = Math.min(1, pen + 0.25);
-  }
-  // se stesso produttore, piccola penalità ulteriore (oltre al cap 2)
+  // similitudine profili
+  const p = toVec(cand.__profile);
+  const simP = Math.max(...chosen.map(ch => cosSim(p, toVec(ch.__profile))));
+
+  // similitudine uvaggi (Jaccard)
+  const uvSim = Math.max(...chosen.map(ch => jaccard(cand.__uvTokens, ch.__uvTokens)));
+
+  // base: prendiamo il max tra le due similitudini
+  let pen = Math.max(simP, uvSim * 0.85);
+
+  // stesso uvaggio "quasi" identico => extra
+  if (uvSim >= 0.66) pen = Math.min(1, pen + 0.15);
+
+  // stesso produttore => piccola extra
   const sameProd = chosen.some(ch => ch.__producer === cand.__producer);
   if (sameProd) pen = Math.min(1, pen + 0.10);
 
@@ -734,6 +758,68 @@ while (picked.length < wanted && pool.length) {
   const subChosen = norm(String(chosen.sottocategoria || ""));
   if (subChosen) {
     usedBySub.set(subChosen, (usedBySub.get(subChosen) || 0) + 1);
+  }
+}
+
+// opzionale: garantisci 1 slot a un boost coerente se non presente
+const alreadyBoosted = topN.some(w => boostNorm.has(norm(w.nome)));
+if (!alreadyBoosted) {
+  const boostedPool = prelim.filter(w =>
+    boostNorm.has(norm(w.nome)) &&
+    w.__match >= BOOST_THRESHOLD &&
+    !topN.some(p => norm(p.nome) === norm(w.nome))
+  );
+
+  // scegli il migliore che non rompe i cap (bollicine/sottocategoria)
+  const tryPick = boostedPool.find(cand => {
+    const isBubbly = cand.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(cand.categoria || "");
+    if (isBubbly && bubblesUsed >= bubblesCap) return false;
+    const subN = norm(String(cand.sottocategoria || ""));
+    const used = usedBySub.get(subN) || 0;
+    if (subN && used >= capBySub) return false;
+    return true;
+  });
+
+  if (tryPick) {
+    // sostituisci l'ultimo (più debole) se abbiamo già raggiunto 'wanted'
+    if (topN.length >= wanted) {
+      const last = topN.pop();
+      // aggiorna contatori se rimpiazziamo un bubbly
+      if (last) {
+        const lastBub = last.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(last.categoria || "");
+        if (lastBub) bubblesUsed = Math.max(0, bubblesUsed - 1);
+        const lastSub = norm(String(last.sottocategoria || ""));
+        if (lastSub) usedBySub.set(lastSub, Math.max(0, (usedBySub.get(lastSub) || 1) - 1));
+      }
+    }
+    topN.push(tryPick);
+    if (tryPick.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(tryPick.categoria || "")) bubblesUsed++;
+    const subChosen = norm(String(tryPick.sottocategoria || ""));
+    if (subChosen) usedBySub.set(subChosen, (usedBySub.get(subChosen) || 0) + 1);
+  }
+}
+
+// opzionale: 1 exploration slot se varietà recente bassa
+if (topN.length < wanted && uniqCount < targetUniq) {
+  const already = new Set(topN.map(p => norm(p.nome)));
+  const exploration = prelim
+    .filter(w => !already.has(norm(w.nome)))
+    .sort((a,b) => (freqByWine[norm(a.nome)] || 0) - (freqByWine[norm(b.nome)] || 0)); // meno esposto prima
+
+  const candidate = exploration.find(cand => {
+    const isBubbly = cand.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(cand.categoria || "");
+    if (isBubbly && bubblesUsed >= bubblesCap) return false;
+    const subN = norm(String(cand.sottocategoria || ""));
+    const used = usedBySub.get(subN) || 0;
+    if (subN && used >= capBySub) return false;
+    return true;
+  });
+
+  if (candidate) {
+    topN.push(candidate);
+    if (candidate.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(candidate.categoria || "")) bubblesUsed++;
+    const subChosen = norm(String(candidate.sottocategoria || ""));
+    if (subChosen) usedBySub.set(subChosen, (usedBySub.get(subChosen) || 0) + 1);
   }
 }
 
