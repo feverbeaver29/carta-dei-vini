@@ -682,6 +682,10 @@ const mMin = Math.min(...mValsRaw);
 const mMax = Math.max(...mValsRaw);
 const mRange = (mMax - mMin) || 1;
 const mNorm = (m:number) => (m - mMin) / mRange;
+// --- Tier di aderenza (A: top, B: medio, C: resto)
+const TIER_A = 0.70;  // ottimo match
+const TIER_B = 0.55;  // buono
+const TIER_C = 0.40;  // accettabile
 
 function hardPenalty(p: Profile, d: Dish): number {
   let h = 0;
@@ -704,8 +708,6 @@ function percentile(arr:number[], p:number){
   return a[idx];
 }
 const matchNorms = mValsRaw.map(m => mNorm(m));
-const BOOST_PERC = 75;
-const BOOST_THRESHOLD = percentile(matchNorms, BOOST_PERC); // ~top 40% del pool
 
 // Seed RNG su ristorante+piatto (stabile nella richiesta)
 const seedStr = `${ristorante_id}|${norm(piatto)}|${new Date().toISOString().slice(0,16)}`; // minuto-cadence
@@ -725,10 +727,8 @@ let prelim = viniConProfilo.map(w => {
 
   const nomeN = norm(w.nome);
   const calls = (freqByWine?.[nomeN] || 0);
-  const boosted = boostNorm.has(nomeN) && mN >= BOOST_THRESHOLD;
-
-  const boostBonus = boosted ? 0.12 * Math.exp(-0.90 * calls) : 0; // stanca il boost 2x più rapido
-
+  const boosted = boostNorm.has(nomeN); // niente soglia: i boost entrano, guardrail dopo
+  const boostBonus = boosted ? 0.12 * Math.exp(-0.90 * calls) : 0;
   const hard = hardPenalty(w.__profile, dish);
 
   // jitter deterministico ±0.02
@@ -774,10 +774,62 @@ if (rng() < EPSILON) {
   prelim.sort((a,b) => b.__final_pre - a.__final_pre);
 }
 
-// Maximal Marginal Relevance su profili e uvaggi
+// === FAIR POOL + MMR: rotazione prima, poi diversificazione ===
 const wanted = Math.min(Math.max(max, Math.max(min,1)), prelim.length);
 
-// cap per bollicine
+// funzioni utili
+const expOf = (w:any) => (freqByWine[norm(w.nome)] || 0); // esposizione decrescente (con decay)
+function tierOf(w:any){
+  if (w.__mNorm >= TIER_A) return 'A';
+  if (w.__mNorm >= TIER_B) return 'B';
+  if (w.__mNorm >= TIER_C) return 'C';
+  return 'D';
+}
+
+// 1) scegli il tier più alto che abbia candidati
+const poolAll = prelim.slice(0, Math.min(120, prelim.length));
+const tiers = ['A','B','C','D'] as const;
+let activeTier:'A'|'B'|'C'|'D' = 'D';
+for (const t of tiers) {
+  if (poolAll.some(w => tierOf(w) === t)) { activeTier = t; break; }
+}
+
+// 2) dentro il tier attivo prendi SEMPRE i meno esposti (round-robin)
+//    se non basta a riempire, scendi di tier (A -> B -> C -> D)
+function buildFairQueue(): any[] {
+  const out: any[] = [];
+  let need = wanted;
+
+  for (const t of tiers) {
+    const candTier = poolAll.filter(w => tierOf(w) === t);
+    if (!candTier.length) continue;
+
+    // rotazione: trova esposizione minima nel tier
+    const minExp = Math.min(...candTier.map(expOf));
+    // prendi prima TUTTI i meno esposti, ordinati per qualità e un filo di jitter
+    const firstWave = candTier
+      .filter(w => Math.abs(expOf(w) - minExp) < 1e-9)
+      .sort((a,b) => (b.__final_pre - a.__final_pre) || (a.nome.localeCompare(b.nome)));
+
+    out.push(...firstWave);
+    if (out.length >= wanted) break;
+
+    // se serve, aggiungi la seconda ondata (exp successivo), e così via
+    const rest = candTier
+      .filter(w => Math.abs(expOf(w) - minExp) >= 1e-9)
+      .sort((a,b) => (expOf(a) - expOf(b)) || (b.__final_pre - a.__final_pre));
+
+    out.push(...rest);
+    if (out.length >= wanted) break;
+
+    // se ancora non basta, passerà al tier successivo
+  }
+  return out.slice(0, Math.min(80, out.length));
+}
+
+let pool = buildFairQueue();
+
+// cap per bollicine (guard-rail del piatto)
 const bubblesCap =
   (dish.cooking === "brasato" || (dish.protein === "carne_rossa" && dish.intensity >= 0.75))
     ? 0
@@ -795,50 +847,55 @@ function jaccard(a:Set<string>, b:Set<string>){
   const uni = a.size + b.size - inter;
   return uni ? inter / uni : 0;
 }
-
 function redundancyPenalty(cand:any, chosen:any[]){
   if (!chosen.length) return 0;
-
-  // similitudine profili
   const p = toVec(cand.__profile);
   const simP = Math.max(...chosen.map(ch => cosSim(p, toVec(ch.__profile))));
-
-  // similitudine uvaggi (Jaccard)
   const uvSim = Math.max(...chosen.map(ch => jaccard(cand.__uvTokens, ch.__uvTokens)));
-
-  // base: prendiamo il max tra le due similitudini
   let pen = Math.max(simP, uvSim * 0.85);
-
-  // stesso uvaggio "quasi" identico => extra
   if (uvSim >= 0.66) pen = Math.min(1, pen + 0.15);
-
-  // stesso produttore => piccola extra
   const sameProd = chosen.some(ch => ch.__producer === cand.__producer);
   if (sameProd) pen = Math.min(1, pen + 0.10);
-
   return pen; // 0..1
 }
 
-// MMR
-const pool = prelim.slice(0, Math.min(80, prelim.length));
-const capBySub = wanted >= 4 ? 2 : 1; // se suggerisci 2-3 vini, max 1 per sottocategoria
+// cap per sottocategoria/produttore
+const capBySub = wanted >= 4 ? 2 : 1;
 const usedBySub = new Map<string, number>();
 const usedByProd = new Map<string, number>();
-const capByProd = wanted >= 4 ? 2 : 1; // come per sottocategoria
+const capByProd = wanted >= 4 ? 2 : 1;
 
+const LAMBDA_MMR = 0.60; // più diversità
 
 while (picked.length < wanted && pool.length) {
-  // ricalcola punteggio MMR ad ogni iterazione
   let bestIdx = -1;
   let bestScore = -Infinity;
 
+  // ROUND-ROBIN HARD: considera prima i meno esposti tra quelli rimasti nel pool
+  const minExpPool = Math.min(...pool.map(expOf));
+
   for (let i = 0; i < pool.length; i++) {
     const cand = pool[i];
+
+    // vincolo round-robin: se è più esposto del minimo, salta (finché non esauriamo i minimi)
+    if (expOf(cand) - minExpPool > 1e-9) continue;
+
     const isBubbly = cand.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(cand.categoria || "");
     if (isBubbly && bubblesUsed >= bubblesCap) continue;
 
-    const rel = cand.__final_pre;                 // rilevanza
-    const red = redundancyPenalty(cand, picked);  // 0..1 (similitudine)
+    // cap per produttore/sottocategoria
+    const prodCand = norm(String(cand.__producer || ""));
+    const usedProd = usedByProd.get(prodCand) || 0;
+    if (usedProd >= capByProd) continue;
+
+    const subN = norm(String(cand.sottocategoria || ""));
+    if (subN) {
+      const used = usedBySub.get(subN) || 0;
+      if (used >= capBySub) continue;
+    }
+
+    const rel = cand.__final_pre;
+    const red = redundancyPenalty(cand, picked);  // 0..1
     const mmr = LAMBDA_MMR * rel - (1 - LAMBDA_MMR) * red;
 
     if (mmr > bestScore) {
@@ -847,30 +904,32 @@ while (picked.length < wanted && pool.length) {
     }
   }
 
-  if (bestIdx < 0) break; // nessun candidato valido
+  // se non ho trovato nessuno tra i "minExp", rilasso e considero tutto il pool
+  if (bestIdx < 0) {
+    for (let i = 0; i < pool.length; i++) {
+      const cand = pool[i];
+      const isBubbly = cand.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(cand.categoria || "");
+      if (isBubbly && bubblesUsed >= bubblesCap) continue;
 
-  const candidate = pool[bestIdx];
+      const prodCand = norm(String(cand.__producer || ""));
+      const usedProd = usedByProd.get(prodCand) || 0;
+      if (usedProd >= capByProd) continue;
 
-    // cap per produttore sul candidato corrente
-  const prodCand = norm(String(candidate.__producer || ""));
-  const usedProd = usedByProd.get(prodCand) || 0;
-  if (usedProd >= capByProd) {
-    pool.splice(bestIdx, 1);
-    continue;
-  }
+      const subN = norm(String(cand.sottocategoria || ""));
+      if (subN) {
+        const used = usedBySub.get(subN) || 0;
+        if (used >= capBySub) continue;
+      }
 
-  // cap per sottocategoria sul candidato scelto
-  const subN = norm(String(candidate.sottocategoria || ""));
-  if (subN) {
-    const used = usedBySub.get(subN) || 0;
-    if (used >= capBySub) {
-      // scarta e riprova
-      pool.splice(bestIdx, 1);
-      continue;
+      const rel = cand.__final_pre;
+      const red = redundancyPenalty(cand, picked);
+      const mmr = LAMBDA_MMR * rel - (1 - LAMBDA_MMR) * red;
+      if (mmr > bestScore) { bestScore = mmr; bestIdx = i; }
     }
   }
 
-  // prendi il candidato
+  if (bestIdx < 0) break;
+
   const chosen = pool.splice(bestIdx, 1)[0];
   if (!chosen) break;
 
@@ -879,63 +938,90 @@ while (picked.length < wanted && pool.length) {
 
   picked.push(chosen);
 
-    const prodChosen = norm(String(chosen.__producer || ""));
+  const prodChosen = norm(String(chosen.__producer || ""));
   if (prodChosen) usedByProd.set(prodChosen, (usedByProd.get(prodChosen) || 0) + 1);
 
-  // aggiorna contatore per sottocategoria
   const subChosen = norm(String(chosen.sottocategoria || ""));
-  if (subChosen) {
-    usedBySub.set(subChosen, (usedBySub.get(subChosen) || 0) + 1);
+  if (subChosen) usedBySub.set(subChosen, (usedBySub.get(subChosen) || 0) + 1);
+}
+
+// se non ho ancora riempito, completa con i migliori rimasti non usati (rispettando cap)
+if (picked.length < wanted) {
+  const already = new Set(picked.map(p => norm(p.nome)));
+  for (const cand of prelim) {
+    if (picked.length >= wanted) break;
+    if (already.has(norm(cand.nome))) continue;
+
+    const isBubbly = cand.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(cand.categoria || "");
+    if (isBubbly && bubblesUsed >= bubblesCap) continue;
+
+    const prod = norm(String(cand.__producer || ""));
+    const usedProd = usedByProd.get(prod) || 0;
+    if (usedProd >= capByProd) continue;
+
+    const subN = norm(String(cand.sottocategoria || ""));
+    if (subN) {
+      const used = usedBySub.get(subN) || 0;
+      if (used >= capBySub) continue;
+    }
+
+    picked.push(cand);
+    if (isBubbly) bubblesUsed++;
+    if (prod) usedByProd.set(prod, (usedByProd.get(prod) || 0) + 1);
+    if (subN) usedBySub.set(subN, (usedBySub.get(subN) || 0) + 1);
   }
 }
 
 // 👉 DA QUI in poi lavoriamo SEMPRE su topN (derivato da picked)
 let topN = [...picked];
 
-// === Slot boost controllati (garantiti se coerenti)
-const maxBoostSlots = 1;
-const alreadyBoostCount = topN.filter(w => boostNorm.has(norm(w.nome))).length;
+// === BOOST GARANTITI (1–2), scegliendo i meno esposti e con guard-rails minimi ===
+const maxBoostSlots = Math.min(2, wanted);
+const alreadyBoostCount = picked.filter(w => boostNorm.has(norm(w.nome))).length;
 
 if (alreadyBoostCount < maxBoostSlots) {
-  const boostedPool = prelim.filter(w =>
-    boostNorm.has(norm(w.nome)) &&
-    w.__mNorm >= BOOST_THRESHOLD &&
-    !topN.some(p => norm(p.nome) === norm(w.nome))
-  ).sort((a,b) => b.__final_pre - a.__final_pre);
+  const boostCands = prelim.filter(w => boostNorm.has(norm(w.nome)));
 
-  for (const cand of boostedPool) {
-    if (topN.length >= wanted && alreadyBoostCount >= maxBoostSlots) break;
+  // guard-rail minimi: niente bollicine su brasato/carne rossa intensa; evita tannino altissimo su pesce/crudo
+  function allowedBoost(w:any){
+    const p = w.__profile as Profile;
+    if (dish.cooking === "brasato" || (dish.protein === "carne_rossa" && dish.intensity >= 0.75)) {
+      if (p.bubbles >= 0.9) return false;
+    }
+    if ((dish.protein === "pesce" || dish.cooking === "crudo") && p.tannin >= 0.70) return false;
+    // match minimo “decente”
+    if (w.__mNorm < 0.45) return false;
+    return true;
+  }
 
+  const sortedBoost = boostCands
+    .filter(allowedBoost)
+    .sort((a,b) => (expOf(a) - expOf(b)) || (b.__final_pre - a.__final_pre)); // meno esposto prima
+
+  for (const cand of sortedBoost) {
+    if (picked.length >= wanted) break;
+    if (picked.some(p => norm(p.nome) === norm(cand.nome))) continue;
+
+    // rispetta cap bollicine/sottocategoria/produttore
     const isBubbly = cand.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(cand.categoria || "");
     if (isBubbly && bubblesUsed >= bubblesCap) continue;
 
-    const subN = norm(String(cand.sottocategoria || ""));
-    const used = usedBySub.get(subN) || 0;
-    if (subN && used >= capBySub) continue;
+    const prod = norm(String(cand.__producer || ""));
+    const usedProd = usedByProd.get(prod) || 0;
+    if (usedProd >= capByProd) continue;
 
-    if (topN.length >= wanted) {
-      // sostituisci il più debole non-boost
-      let idx = -1, bestLoss = Infinity;
-      for (let i=0;i<topN.length;i++){
-        if (boostNorm.has(norm(topN[i].nome))) continue; // non rimuovere un boost
-        const loss = topN[i].__final_pre;
-        if (loss < bestLoss) { bestLoss = loss; idx = i; }
-      }
-      if (idx >= 0) {
-        const removed = topN.splice(idx,1)[0];
-        const wasBub = removed.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(removed.categoria || "");
-        if (wasBub) bubblesUsed = Math.max(0, bubblesUsed - 1);
-        const subR = norm(String(removed.sottocategoria || ""));
-        if (subR) usedBySub.set(subR, Math.max(0, (usedBySub.get(subR) || 1) - 1));
-      } else {
-        continue; // non ho spazio
-      }
+    const subN = norm(String(cand.sottocategoria || ""));
+    if (subN) {
+      const used = usedBySub.get(subN) || 0;
+      if (used >= capBySub) continue;
     }
 
-    topN.push(cand);
+    picked.push(cand);
     if (isBubbly) bubblesUsed++;
+    if (prod) usedByProd.set(prod, (usedByProd.get(prod) || 0) + 1);
     if (subN) usedBySub.set(subN, (usedBySub.get(subN) || 0) + 1);
-    if (topN.filter(w => boostNorm.has(norm(w.nome))).length >= maxBoostSlots) break;
+
+    if (picked.filter(w => boostNorm.has(norm(w.nome))).length >= maxBoostSlots) break;
   }
 }
 
