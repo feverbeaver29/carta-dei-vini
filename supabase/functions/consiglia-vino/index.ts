@@ -198,10 +198,25 @@ function styleOf(
 ): "sparkling"|"crisp_white"|"full_white"|"rosato"|"light_red"|"structured_red" {
   const bag = `${meta?.categoria||""} ${meta?.denominazione||""} ${meta?.sottocategoria||""}`.toLowerCase();
   const isRosatoByText = /\bros[ée]\b|\brosato\b/.test(bag);
+  const isBiancoByText = /\bbianco\b/.test(bag);
+  const isRossoByText  = /\brosso\b/.test(bag);
 
-  if (p.bubbles >= .9) return "sparkling";
-  if (isRosatoByText) return "rosato";                 // rosato solo se lo dice il testo
+  if (p.bubbles >= .9 || /\b(spumante|metodo\s*classico|franciacorta|champagne|trentodoc|col\s*fondo|colfondo)\b/.test(bag)) {
+  return "sparkling";
+}
+  if (isRosatoByText) return "rosato";
 
+  // vincolo semantico forte: se è detto "bianco"/"rosso", scegli solo tra famiglie coerenti
+  if (isBiancoByText) {
+    if (p.body > .55) return "full_white";
+    return "crisp_white";
+  }
+  if (isRossoByText) {
+    if (p.tannin <= .5 && p.body <= .6) return "light_red";
+    return "structured_red";
+  }
+
+  // fallback profilo puro
   if (p.tannin <= .15 && p.acid >= .6 && p.body <= .55) return "crisp_white";
   if (p.tannin <= .25 && p.body  > .55)                 return "full_white";
   if (p.tannin <= .5  && p.body <= .6)                  return "light_red";
@@ -217,7 +232,7 @@ function fallbackByCategory(cat:string, sub:string): Profile {
   if (/rosso/.test(c))   p = { acid:.45, tannin:.55, body:.60, sweet:.00, bubbles:0 };
   if (/ros[ée]/.test(c)) p = { acid:.55, tannin:.15, body:.45, sweet:.00, bubbles:0 };
   if (/dolce|passito|vendemmia tardiva/i.test(c)) p.sweet = .7;
-  if (/spumante|metodo|franciacorta|champagne/i.test(c)) { p.bubbles=1; p.acid=Math.max(p.acid,.6); }
+  if (/spumante|metodo\s*classico|franciacorta|champagne/i.test(c)) { p.bubbles=1; p.acid=Math.max(p.acid,.6); }
   if (/pas dos[eé]|nature/.test(s)) p.sweet = 0.00;
   else if (/brut/.test(s))          p.sweet = Math.max(p.sweet, .05);
   else if (/extra ?dry/.test(s))    p.sweet = Math.max(p.sweet, .15);
@@ -282,9 +297,9 @@ if (matches.length) {
 // Forza il flag bollicine se categoria/denominazione lo indicano
 {
   const bag = `${w.denominazione||""} ${w.sottocategoria||""} ${w.categoria||""}`.toLowerCase();
-  if (/\b(spumante|metodo|classico|franciacorta|champagne|trentodoc|col\s*fondo|colfondo|pas\s*dos[ée]|dosaggio\s*zero)\b/.test(bag)) {
-    base = { ...base, bubbles: 1, acid: Math.max(base.acid, 0.6) };
-  }
+  if (/\b(spumante|metodo\s*classico|franciacorta|champagne|trentodoc|col\s*fondo|colfondo|pas\s*dos[ée]|dosaggio\s*zero)\b/.test(bag)) {
+  base = { ...base, bubbles: 1, acid: Math.max(base.acid, 0.6) };
+}
 }
 
   return base;
@@ -676,6 +691,16 @@ const EPSILON = Math.min(EPS_MAX, EPS_BASE + lack * 0.015);
   return { ...w, __profile: prof };
 });
 
+function mainGrapeOf(w:any){
+  // 1) token di uvaggio
+  const arr = Array.from(w.__uvTokens || []);
+  if (arr.length) return arr[0];  // il primo è spesso “principale”
+  // 2) fallback rapido su denominazione/categoria
+  const bag = `${w.denominazione||""} ${w.sottocategoria||""} ${w.categoria||""}`.toLowerCase();
+  const m = bag.match(/\b(barbera|nebbiolo|sangiovese|merlot|cabernet|syrah|pinot\s+nero|pinot\s+grigio|chardonnay|vermentino|greco|fiano|verdicchio|zibibbo|grillo|glera|sagrantino|aglianico|primitivo|nero d.?avola|corvina|trebbiano)\b/);
+  return m ? norm(m[0]) : "";
+}
+
 // === Estrai/deriva le feature del piatto ===
 const openaiKey = Deno.env.get("OPENAI_API_KEY");
 let dish: Dish;
@@ -713,20 +738,44 @@ function hardPenalty(p: Profile, d: Dish): number {
 const seedStr = `${ristorante_id}|${norm(piatto)}|${new Date().toISOString().slice(0,16)}`; // minuto-cadence
 const rng = mulberry32(hashStringToSeed(seedStr));
 
-// normalizza lo score in modo robusto (rank-based)
+// normalizza lo score in modo robusto (rank-based con gestione dei pari)
+// + blend con anti-esposizione recente (meno mostrati = punteggio più alto)
 const scores = viniConProfilo.map(w => Math.max(0, w.score ?? 0));
 const sortedScores = [...scores].sort((a,b)=>a-b);
-const rankPct = (x:number) => {
-  // primo indice dell'elemento in sortedScores
-  const i = sortedScores.indexOf(Math.max(0, x));
-  return sortedScores.length > 1 ? i / (sortedScores.length - 1) : 0.5;
-};
+
+function rankPctTies(x:number){
+  const v = Math.max(0, x);
+  // trova primo e ultimo indice del valore (pari)
+  let lo = 0, hi = sortedScores.length - 1, first = -1, last = -1;
+  while (lo <= hi) { const m = (lo+hi)>>1; if (sortedScores[m] >= v){ first=m; hi=m-1; } else lo=m+1; }
+  if (first < 0) first = sortedScores.indexOf(v);
+  lo = 0; hi = sortedScores.length-1;
+  while (lo <= hi) { const m = (lo+hi)>>1; if (sortedScores[m] <= v){ last=m; lo=m+1; } else hi=m-1; }
+  if (last < 0) last = sortedScores.lastIndexOf(v);
+  if (first < 0 || last < 0) return sortedScores.length > 1 ? 0.5 : 0.5;
+  const midRank = (first + last) / 2;
+  return sortedScores.length > 1 ? midRank / (sortedScores.length - 1) : 0.5;
+}
+// funzioni utili (serve PRIMA di calcolare exps/varietyScore)
+const expOf = (w:any) => (freqByWine[norm(w.nome)] || 0); // esposizione con decay
+
+// pre-calcolo anti-esposizione su [0..1] (più esposto → più vicino a 1, poi invertiamo)
+const exps = viniConProfilo.map(w => expOf(w));
+const minE = Math.min(...exps), maxE = Math.max(...exps);
+const expPct = (e:number) => (maxE - minE) > 0 ? (e - minE) / (maxE - minE) : 0;
+
+// mixer varietà: 70% rank, 30% (1 - exposure)
+function varietyScore(w:any){
+  const r = rankPctTies(w.score ?? 0);
+  const invExp = 1 - expPct(expOf(w));
+  return 0.7*r + 0.3*invExp;
+}
 
 let prelim = viniConProfilo.map(w => {
   const mRaw = matchScore(w.__profile, dish);
   const mN = mNorm(mRaw);
 
-  const sNorm = rankPct(w.score ?? 0);
+  const sNorm = varietyScore(w);
 
   const nomeN = norm(w.nome);
   const calls = (freqByWine?.[nomeN] || 0);
@@ -737,6 +786,17 @@ let prelim = viniConProfilo.map(w => {
   // jitter deterministico ±0.02
   const jitter = (rng() - 0.5) * 0.04;
 
+  // cooldown su iper-esposti (dentro-tier)
+// calcola una penalità continua 0..0.12 circa, più alta per i più esposti
+let cooldown = 0;
+{
+  const e = expOf(w); // esposizione decrescente (già con half-life)
+  // normalizza sull'intervallo degli exposure
+  const eN = expPct(e); // 0..1
+  // penalità curva: poca se bassa esposizione, forte se alta
+  cooldown = -0.12 * Math.pow(eN, 1.2);
+}
+
   // opzionale: leggero priceScore verso il "prezzo mediano"
   let priceScore = 0;
   try {
@@ -746,14 +806,14 @@ let prelim = viniConProfilo.map(w => {
   } catch { priceScore = 0; }
 
   const final =
-      W.quality * mN +
-      W.variety * sNorm +
-      W.boost   * boostBonus +
-      W.price   * priceScore +
-      W.feedback* 0 +     // placeholder per futuro Thompson Sampling
-      hard + jitter;
-
-  return { ...w, __match: mRaw, __mNorm: mN, __sNorm: sNorm, __final_pre: final, __style: styleOf(w.__profile, { categoria: w.categoria, denominazione: w.denominazione, sottocategoria: w.sottocategoria }) };
+    W.quality * mN +
+    W.variety * sNorm +
+    W.boost   * boostBonus +
+    W.price   * priceScore +
+    W.feedback* 0 +
+    hard + cooldown + jitter;
+const mainGrape = mainGrapeOf(w);
+return { ...w, __match: mRaw, __mNorm: mN, __sNorm: sNorm, __final_pre: final, __style: styleOf(w.__profile, { categoria:w.categoria, denominazione:w.denominazione, sottocategoria:w.sottocategoria }), __mainGrape: mainGrape };
 });
 
 // ε-greedy deterministico
@@ -766,7 +826,7 @@ function shuffleDet<T>(arr:T[], rnd:()=>number){
 }
 
 if (rng() < EPSILON) {
-  const sorted = prelim.sort((a,b) => b.__final_pre - a.__final_pre);
+  const sorted = [...prelim].sort((a,b) => b.__final_pre - a.__final_pre);
   const lockK = 12;                           // blocco qualità
   const bandK = Math.min(24, sorted.length);  // fascia esplorabile
   const head  = sorted.slice(0, lockK);
@@ -782,7 +842,6 @@ if (rng() < EPSILON) {
 const wanted = Math.min(Math.max(max, Math.max(min,1)), prelim.length);
 
 // funzioni utili
-const expOf = (w:any) => (freqByWine[norm(w.nome)] || 0); // esposizione decrescente (con decay)
 function tierOf(w:any){
   if (w.__mNorm >= TIER_A) return 'A';
   if (w.__mNorm >= TIER_B) return 'B';
@@ -851,8 +910,8 @@ function redundancyPenalty(cand:any, chosen:any[]){
   const p = toVec(cand.__profile);
   const simP = Math.max(...chosen.map(ch => cosSim(p, toVec(ch.__profile))));
   const uvSim = Math.max(...chosen.map(ch => jaccard(cand.__uvTokens, ch.__uvTokens)));
-  let pen = Math.max(simP, uvSim * 0.85);
-  if (uvSim >= 0.66) pen = Math.min(1, pen + 0.15);
+  let pen = Math.max(simP, uvSim * 1.0);     // uvaggio pesa un po' di più
+if (uvSim >= 0.66) pen = Math.min(1, pen + 0.25);  // surplus più deciso
   const sameProd = chosen.some(ch => ch.__producer === cand.__producer);
   if (sameProd) pen = Math.min(1, pen + 0.10);
   return pen; // 0..1
@@ -865,6 +924,10 @@ const usedByProd = new Map<string, number>();
 const capByProd = wanted >= 4 ? 2 : 1;
 
 const LAMBDA_MMR = 0.60; // più diversità
+
+// cap per vitigno principale: 1 se wanted<=3, altrimenti max 2
+const capByGrape = wanted <= 3 ? 1 : 2;
+const usedByGrape = new Map<string, number>();
 
 while (picked.length < wanted && pool.length) {
   let bestIdx = -1;
@@ -892,6 +955,12 @@ while (picked.length < wanted && pool.length) {
       const used = usedBySub.get(subN) || 0;
       if (used >= capBySub) continue;
     }
+    // --- CAP VITIGNO PRINCIPALE
+const gCand = String(cand.__mainGrape || "");
+if (gCand) {
+  const usedG = usedByGrape.get(gCand) || 0;
+  if (usedG >= capByGrape) continue;
+}
 
     const rel = cand.__final_pre;
     const red = redundancyPenalty(cand, picked);  // 0..1
@@ -919,6 +988,12 @@ while (picked.length < wanted && pool.length) {
         const used = usedBySub.get(subN) || 0;
         if (used >= capBySub) continue;
       }
+      // --- CAP VITIGNO PRINCIPALE
+const gCand = String(cand.__mainGrape || "");
+if (gCand) {
+  const usedG = usedByGrape.get(gCand) || 0;
+  if (usedG >= capByGrape) continue;
+}
 
       const rel = cand.__final_pre;
       const red = redundancyPenalty(cand, picked);
@@ -942,6 +1017,10 @@ while (picked.length < wanted && pool.length) {
 
   const subChosen = norm(String(chosen.sottocategoria || ""));
   if (subChosen) usedBySub.set(subChosen, (usedBySub.get(subChosen) || 0) + 1);
+
+  // --- INCREMENTO VITIGNO PRINCIPALE
+const gChosen = String(chosen.__mainGrape || "");
+if (gChosen) usedByGrape.set(gChosen, (usedByGrape.get(gChosen) || 0) + 1);
 }
 
 // se non ho ancora riempito, completa con i migliori rimasti non usati (rispettando cap)
@@ -963,11 +1042,16 @@ if (picked.length < wanted) {
       const used = usedBySub.get(subN) || 0;
       if (used >= capBySub) continue;
     }
+    // --- CAP VITIGNO PRINCIPALE
+const g = String(cand.__mainGrape || "");
+if (g && (usedByGrape.get(g) || 0) >= capByGrape) continue;
 
     picked.push(cand);
     if (isBubbly) bubblesUsed++;
     if (prod) usedByProd.set(prod, (usedByProd.get(prod) || 0) + 1);
     if (subN) usedBySub.set(subN, (usedBySub.get(subN) || 0) + 1);
+    // --- INCREMENTO VITIGNO PRINCIPALE
+    if (g) usedByGrape.set(g, (usedByGrape.get(g) || 0) + 1);
   }
 }
 
@@ -1011,12 +1095,16 @@ if (alreadyBoostCount < maxBoostSlots) {
       const used = usedBySub.get(subN) || 0;
       if (used >= capBySub) continue;
     }
+// --- CAP VITIGNO PRINCIPALE
+const g = String(cand.__mainGrape || "");
+if (g && (usedByGrape.get(g) || 0) >= capByGrape) continue;
 
     picked.push(cand);
     if (isBubbly) bubblesUsed++;
     if (prod) usedByProd.set(prod, (usedByProd.get(prod) || 0) + 1);
     if (subN) usedBySub.set(subN, (usedBySub.get(subN) || 0) + 1);
-
+    // --- INCREMENTO VITIGNO PRINCIPALE
+    if (g) usedByGrape.set(g, (usedByGrape.get(g) || 0) + 1);
     if (picked.filter(w => boostNorm.has(norm(w.nome))).length >= maxBoostSlots) break;
   }
 }
@@ -1036,6 +1124,9 @@ if (picked.length < wanted && uniqCount < targetUniq) {
     if (subN && used >= capBySub) return false;
     const prod = norm(String(cand.__producer || ""));
     if ((usedByProd.get(prod) || 0) >= capByProd) return false;
+    // --- CAP VITIGNO PRINCIPALE
+    const g = String(cand.__mainGrape || "");
+    if (g && (usedByGrape.get(g) || 0) >= capByGrape) return false;
     return true;
   });
 
@@ -1046,6 +1137,9 @@ if (picked.length < wanted && uniqCount < targetUniq) {
     if (subChosen3) usedBySub.set(subChosen3, (usedBySub.get(subChosen3) || 0) + 1);
     const prod3 = norm(String(candidate.__producer || ""));
     if (prod3) usedByProd.set(prod3, (usedByProd.get(prod3) || 0) + 1);
+    // --- INCREMENTO VITIGNO PRINCIPALE
+    const g = String(candidate.__mainGrape || "");
+    if (g) usedByGrape.set(g, (usedByGrape.get(g) || 0) + 1);
   }
 }
 
