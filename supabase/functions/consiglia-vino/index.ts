@@ -664,6 +664,15 @@ const EPSILON = Math.min(EPS_MAX, EPS_BASE + lack * 0.02);  // +2pp per unità d
   return { ...w, __profile: prof };
 });
 
+// === Estrai/deriva le feature del piatto ===
+const openaiKey = Deno.env.get("OPENAI_API_KEY");
+let dish: Dish;
+try {
+  dish = await getDishFeatures(piatto, openaiKey);
+} catch (_e) {
+  dish = combineDishes(splitDishes(piatto).map(parseDish));
+}
+
 // === Ordina per coerenza col piatto + integra lo score "filtri/varietà" + rotazione boost ===
 const LAMBDA_MMR = 0.72; // tradeoff qualità vs diversità
 
@@ -917,34 +926,6 @@ if (alreadyBoostCount < maxBoostSlots) {
   }
 }
 
-  // scegli il migliore che non rompe i cap (bollicine/sottocategoria)
-  const tryPick = boostedPool.find(cand => {
-    const isBubbly = cand.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(cand.categoria || "");
-    if (isBubbly && bubblesUsed >= bubblesCap) return false;
-    const subN = norm(String(cand.sottocategoria || ""));
-    const used = usedBySub.get(subN) || 0;
-    if (subN && used >= capBySub) return false;
-    return true;
-  });
-
-  if (tryPick) {
-    // sostituisci l'ultimo (più debole) se abbiamo già raggiunto 'wanted'
-    if (topN.length >= wanted) {
-      const last = topN.pop();
-      if (last) {
-        const lastBub = last.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(last.categoria || "");
-        if (lastBub) bubblesUsed = Math.max(0, bubblesUsed - 1);
-        const lastSub = norm(String(last.sottocategoria || ""));
-        if (lastSub) usedBySub.set(lastSub, Math.max(0, (usedBySub.get(lastSub) || 1) - 1));
-      }
-    }
-    topN.push(tryPick);
-    if (tryPick.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(tryPick.categoria || "")) bubblesUsed++;
-    const subChosen2 = norm(String(tryPick.sottocategoria || ""));
-    if (subChosen2) usedBySub.set(subChosen2, (usedBySub.get(subChosen2) || 0) + 1);
-  }
-}
-
 // opzionale: 1 exploration slot se varietà recente bassa
 if (topN.length < wanted && uniqCount < targetUniq) {
   const already = new Set(topN.map(p => norm(p.nome)));
@@ -1039,14 +1020,13 @@ return new Response(JSON.stringify({ suggestion: lines.join("\n\n") }), {
   headers: corsHeaders,
 });
 
-
-  } catch (err) {
-    console.error("❌ Errore imprevisto:", err);
-    return new Response(JSON.stringify({ error: "Errore interno", detail: err.message }), {
-      status: 500,
-      headers: corsHeaders,
-    });
-  }
+} catch (err) {
+  console.error("❌ Errore imprevisto:", err);
+  return new Response(JSON.stringify({ error: "Errore interno", detail: err.message }), {
+    status: 500,
+    headers: corsHeaders,
+  });
+}
 });
 
 
