@@ -14,13 +14,37 @@ const norm = (s:string) => (s || "")
     .filter(Boolean);
 }
 
-  function splitGrapes(uvaggio: string): string[] {
-  const raw = (uvaggio || "").toLowerCase();
+function splitGrapes(uvaggio: string): string[] {
+  const raw = (uvaggio || "").toLowerCase()
+    .replace(/\b(docg?|ig[pt])\b/g, " ")   // rimuovi sigle denom in caso finiscano nel campo uvaggio
+    .replace(/\bclassico\b/g, " ")
+    .replace(/\d+\s*%/g, " ");            // rimuovi percentuali
   return raw
-    .split(/[,;+\-\/&]|\b(?:e|con|blend)\b|·/g)
-    .map(s => s.replace(/\d+\s*%/g, "").trim())
+    .split(/[,;+\-\/&]|\b(?:e|con|blend|uvaggio|cépage|variet[aà])\b|·/g)
+    .map(s => s.trim())
     .filter(Boolean);
 }
+
+// === RNG deterministico per jitter/mescolamenti (debug-friendly) ===
+function hashStringToSeed(s: string): number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function mulberry32(seed: number) {
+  return function() {
+    let t = seed += 0x6D2B79F5;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// === Pesi componibili per il punteggio finale (facili da regolare) ===
+const W = { quality: 0.66, variety: 0.16, boost: 0.10, price: 0.05, feedback: 0.03 } as const;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://www.winesfever.com",
@@ -218,20 +242,38 @@ if (hits.length) {
     bubbles: sum.bubbles > 0 ? 1 : 0
   };
 
-  // (OPZ) prior denominazione
-  const denomBag = norm(`${w.denominazione || ""} ${w.sottocategoria || ""} ${w.categoria || ""}`);
-  for (const [k, delta] of appMap) {
-    if (k && denomBag.includes(k)) {
-      base = {
-        acid:    clamp01(base.acid   + delta.acid),
-        tannin:  clamp01(base.tannin + delta.tannin),
-        body:    clamp01(base.body   + delta.body),
-        sweet:   clamp01(base.sweet  + delta.sweet),
-        bubbles: Math.max(base.bubbles, delta.bubbles > 0 ? 1 : 0)
-      };
-      break;
-    }
+// (OPZ) prior denominazione — somma pesata per specificità
+const denomBag = norm(`${w.denominazione || ""} ${w.sottocategoria || ""} ${w.categoria || ""}`);
+
+const matches: Array<{w:number, d:Profile}> = [];
+for (const [k, delta] of appMap) {
+  if (k && denomBag.includes(k)) {
+    const spec =
+      /\bdocg\b/i.test(k) ? 1.0 :
+      /\bdoc\b/i.test(k)  ? 0.7 :
+      /\big[pt]\b/i.test(k) ? 0.4 : 0.2;  // macro o sinonimi generici
+    matches.push({ w: spec, d: delta as Profile });
   }
+}
+if (matches.length) {
+  const Wsum = matches.reduce((s,m)=>s+m.w,0) || 1;
+  const agg = matches.reduce((acc,m)=>({
+    acid:    acc.acid    + m.d.acid    * (m.w/Wsum),
+    tannin:  acc.tannin  + m.d.tannin  * (m.w/Wsum),
+    body:    acc.body    + m.d.body    * (m.w/Wsum),
+    sweet:   acc.sweet   + m.d.sweet   * (m.w/Wsum),
+    bubbles: Math.max(acc.bubbles, m.d.bubbles > 0 ? 1 : 0)
+  }), {acid:0,tannin:0,body:0,sweet:0,bubbles:0});
+
+  base = {
+    acid:    clamp01(base.acid   + agg.acid),
+    tannin:  clamp01(base.tannin + agg.tannin),
+    body:    clamp01(base.body   + agg.body),
+    sweet:   clamp01(base.sweet  + agg.sweet),
+    bubbles: Math.max(base.bubbles, agg.bubbles)
+  };
+}
+
   return base;
 }
 return fallbackByCategory(w.categoria, w.sottocategoria);
@@ -359,6 +401,15 @@ if (d.protein === "carne_bianca" && d.cooking === "griglia") {
   if (d.acid_hint) sc += p.acid*0.8;
   // Intensità: matching con il "body"
   sc += (1 - Math.abs(d.intensity - p.body))*0.6;
+
+  // hard cut leggero su abbinamenti sconsigliati (coerente coi guard-rails del final score)
+if (d.cooking === "brasato" || (d.protein === "carne_rossa" && d.intensity >= 0.75)) {
+  sc -= p.bubbles * 0.5;
+}
+if ((d.protein === "pesce" || d.cooking === "crudo") && p.tannin >= 0.65) {
+  sc -= 0.4 * (p.tannin - 0.65);
+}
+
   return sc;
 }
 
@@ -613,21 +664,43 @@ const EPSILON = Math.min(EPS_MAX, EPS_BASE + lack * 0.02);  // +2pp per unità d
   return { ...w, __profile: prof };
 });
 
-// === Ordina per coerenza col piatto, mantenendo i tuoi filtri esistenti ===
-const openaiKey = Deno.env.get("OPENAI_API_KEY");
-let dish: Dish;
-try {
-  dish = await getDishFeatures(piatto, openaiKey);
-} catch (e) {
-  // fallback totale
-  dish = combineDishes(splitDishes(piatto).map(parseDish));
-  console.error("Dish features via OpenAI fallite (catch), uso fallback combine(parseDish):", e);
-}
-console.log("Dish features (combined):", dish);
-
 // === Ordina per coerenza col piatto + integra lo score "filtri/varietà" + rotazione boost ===
-const BOOST_THRESHOLD = 0.52;
-const LAMBDA_MMR = 0.72;       // tradeoff qualità vs diversità
+const LAMBDA_MMR = 0.72; // tradeoff qualità vs diversità
+
+// Normalizzazione match su [0..1] + hard-penalty per mismatch grossi
+const mValsRaw = viniConProfilo.map(w => matchScore(w.__profile, dish));
+const mMin = Math.min(...mValsRaw);
+const mMax = Math.max(...mValsRaw);
+const mRange = (mMax - mMin) || 1;
+const mNorm = (m:number) => (m - mMin) / mRange;
+
+function hardPenalty(p: Profile, d: Dish): number {
+  let h = 0;
+  // bollicine su brasati/carne rossa intensa -> taglio netto
+  if (d.cooking === "brasato" || (d.protein === "carne_rossa" && d.intensity >= 0.75)) {
+    if (p.bubbles >= 0.9) h -= 0.25;
+  }
+  // tannino alto su pesce/crudo -> taglio
+  if ((d.protein === "pesce" || d.cooking === "crudo") && p.tannin >= 0.65) {
+    h -= 0.20;
+  }
+  return h;
+}
+
+// Soglia boost: percentile 60 del match normalizzato del pool, non valore fisso
+function percentile(arr:number[], p:number){
+  if (!arr.length) return 0;
+  const a = [...arr].sort((x,y)=>x-y);
+  const idx = Math.min(a.length-1, Math.max(0, Math.floor((p/100)*a.length)));
+  return a[idx];
+}
+const matchNorms = mValsRaw.map(m => mNorm(m));
+const BOOST_PERC = 60;
+const BOOST_THRESHOLD = percentile(matchNorms, BOOST_PERC); // ~top 40% del pool
+
+// Seed RNG su ristorante+piatto (stabile nella richiesta)
+const seedStr = `${ristorante_id}|${norm(piatto)}|${new Date().toISOString().slice(0,16)}`; // minuto-cadence
+const rng = mulberry32(hashStringToSeed(seedStr));
 
 // normalizza lo score di filtraEVotiVini in [0..1]
 const scores = viniConProfilo.map(w => w.score ?? 0);
@@ -635,35 +708,59 @@ const minS = Math.min(...scores);
 const maxS = Math.max(...scores);
 const denom = (maxS - minS) || 1;
 
-// calcola punteggi grezzi
 let prelim = viniConProfilo.map(w => {
-  const m = matchScore(w.__profile, dish);
-  const sNorm = denom ? ((w.score ?? 0) - minS) / denom : 0.5; // se tutti uguali, metti 0.5
+  const mRaw = matchScore(w.__profile, dish);
+  const mN = mNorm(mRaw);
 
-  // rotazione boost: se boostato ma “troppo chiamato” → dimezza bonus
+  const sNorm = denom ? ((w.score ?? 0) - minS) / denom : 0.5;
+
   const nomeN = norm(w.nome);
   const calls = (freqByWine?.[nomeN] || 0);
-  const boosted = boostNorm.has(nomeN) && m >= BOOST_THRESHOLD;
-  // bonus base 0.16 che decade con le chiamate recenti (calls)
-const boostBonus = boosted ? 0.16 * Math.exp(-0.7 * calls) : 0;
+  const boosted = boostNorm.has(nomeN) && mN >= BOOST_THRESHOLD;
 
-  // piccola esplorazione (jitter) solo nel ramo exploitation
-  const jitter = (Math.random() - 0.5) * 0.04; // ±0.02
+  const boostBonus = boosted ? 0.16 * Math.exp(-0.45 * calls) : 0;
 
-  const final = (m * 0.72 + sNorm * 0.18 + boostBonus) + jitter;
+  const hard = hardPenalty(w.__profile, dish);
 
-  return { ...w, __match: m, __sNorm: sNorm, __final_pre: final, __style: styleOf(w.__profile) };
+  // jitter deterministico ±0.02
+  const jitter = (rng() - 0.5) * 0.04;
+
+  // opzionale: leggero priceScore verso il "prezzo mediano"
+  let priceScore = 0;
+  try {
+    const num = parseFloat(String(w.prezzo || "").replace(/[^\d.,]/g, "").replace(",", ".")) || 0;
+    // TODO: normalizzare su mediana carta → per ora neutro
+    priceScore = 0; 
+  } catch { priceScore = 0; }
+
+  const final =
+      W.quality * mN +
+      W.variety * sNorm +
+      W.boost   * boostBonus +
+      W.price   * priceScore +
+      W.feedback* 0 +     // placeholder per futuro Thompson Sampling
+      hard + jitter;
+
+  return { ...w, __match: mRaw, __mNorm: mN, __sNorm: sNorm, __final_pre: final, __style: styleOf(w.__profile) };
 });
 
-// ε-greedy: 20% → rimescola top 24 e lascia alla MMR il compito di scegliere
-if (Math.random() < EPSILON) {
-  prelim = prelim
+// ε-greedy deterministico
+function shuffleDet<T>(arr:T[], rnd:()=>number){
+  for (let i=arr.length-1; i>0; i--){
+    const j = Math.floor(rnd()*(i+1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+if (rng() < EPSILON) {
+  const top = prelim
     .sort((a,b) => b.__final_pre - a.__final_pre)
-    .slice(0, Math.min(24, prelim.length))
-    .sort(() => Math.random() - 0.5)
-    .concat(
-      prelim.sort((a,b) => b.__final_pre - a.__final_pre).slice(24)
-    );
+    .slice(0, Math.min(24, prelim.length));
+  shuffleDet(top, rng);
+  prelim = top.concat(
+    prelim.sort((a,b) => b.__final_pre - a.__final_pre).slice(24)
+  );
 } else {
   prelim.sort((a,b) => b.__final_pre - a.__final_pre);
 }
@@ -671,9 +768,13 @@ if (Math.random() < EPSILON) {
 // Maximal Marginal Relevance su profili e uvaggi
 const wanted = Math.min(Math.max(max, Math.max(min,1)), prelim.length);
 
-// cap per bollicine (come prima, ma più stretto di default)
-const bubblesCap = (dish.cooking === "fritto" || (dish.fat >= 0.6 && !["brasato","griglia"].includes(dish.cooking||"")))
-  ? 2 : 1;
+// cap per bollicine
+const bubblesCap =
+  (dish.cooking === "brasato" || (dish.protein === "carne_rossa" && dish.intensity >= 0.75))
+    ? 0
+    : (dish.cooking === "fritto" || (dish.fat >= 0.6 && !["brasato","griglia"].includes(dish.cooking||"")))
+      ? 2
+      : 1;
 
 const picked: any[] = [];
 let bubblesUsed = 0;
@@ -710,7 +811,7 @@ function redundancyPenalty(cand:any, chosen:any[]){
 }
 
 // MMR
-const pool = prelim.slice(0, Math.min(60, prelim.length)); // se vuoi più varietà, puoi portare 60 -> 80
+const pool = prelim.slice(0, Math.min(80, prelim.length));
 const capBySub = 2;                     // max 2 etichette per stessa sottocategoria
 const usedBySub = new Map<string, number>();
 
@@ -769,14 +870,52 @@ while (picked.length < wanted && pool.length) {
 // 👉 DA QUI in poi lavoriamo SEMPRE su topN (derivato da picked)
 let topN = [...picked];
 
-// opzionale: garantisci 1 slot a un boost coerente se non presente
-const alreadyBoosted = topN.some(w => boostNorm.has(norm(w.nome)));
-if (!alreadyBoosted) {
+// === Slot boost controllati (garantiti se coerenti)
+const maxBoostSlots = wanted >= 4 ? 2 : 1;
+const alreadyBoostCount = topN.filter(w => boostNorm.has(norm(w.nome))).length;
+
+if (alreadyBoostCount < maxBoostSlots) {
   const boostedPool = prelim.filter(w =>
     boostNorm.has(norm(w.nome)) &&
-    w.__match >= BOOST_THRESHOLD &&
+    w.__mNorm >= BOOST_THRESHOLD &&
     !topN.some(p => norm(p.nome) === norm(w.nome))
-  );
+  ).sort((a,b) => b.__final_pre - a.__final_pre);
+
+  for (const cand of boostedPool) {
+    if (topN.length >= wanted && alreadyBoostCount >= maxBoostSlots) break;
+
+    const isBubbly = cand.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(cand.categoria || "");
+    if (isBubbly && bubblesUsed >= bubblesCap) continue;
+
+    const subN = norm(String(cand.sottocategoria || ""));
+    const used = usedBySub.get(subN) || 0;
+    if (subN && used >= capBySub) continue;
+
+    if (topN.length >= wanted) {
+      // sostituisci il più debole non-boost
+      let idx = -1, bestLoss = Infinity;
+      for (let i=0;i<topN.length;i++){
+        if (boostNorm.has(norm(topN[i].nome))) continue; // non rimuovere un boost
+        const loss = topN[i].__final_pre;
+        if (loss < bestLoss) { bestLoss = loss; idx = i; }
+      }
+      if (idx >= 0) {
+        const removed = topN.splice(idx,1)[0];
+        const wasBub = removed.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(removed.categoria || "");
+        if (wasBub) bubblesUsed = Math.max(0, bubblesUsed - 1);
+        const subR = norm(String(removed.sottocategoria || ""));
+        if (subR) usedBySub.set(subR, Math.max(0, (usedBySub.get(subR) || 1) - 1));
+      } else {
+        continue; // non ho spazio
+      }
+    }
+
+    topN.push(cand);
+    if (isBubbly) bubblesUsed++;
+    if (subN) usedBySub.set(subN, (usedBySub.get(subN) || 0) + 1);
+    if (topN.filter(w => boostNorm.has(norm(w.nome))).length >= maxBoostSlots) break;
+  }
+}
 
   // scegli il migliore che non rompe i cap (bollicine/sottocategoria)
   const tryPick = boostedPool.find(cand => {
@@ -855,10 +994,12 @@ console.log("Top 5 (prelim):",
   prelim.slice(0,5).map(w => ({
     nome: w.nome,
     match: +w.__match.toFixed(3),
+    mNorm: +w.__mNorm.toFixed(3),
     sNorm: +w.__sNorm.toFixed(3),
     final_pre: +w.__final_pre.toFixed(3),
     prof: w.__profile
-  }))
+  })),
+  { seed: seedStr, EPSILON }
 );
 
 // selezione finale (dopo MMR + cap bollicine + varietà di stile)
