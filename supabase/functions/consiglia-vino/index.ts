@@ -647,7 +647,7 @@ const EPSILON = Math.min(EPS_MAX, EPS_BASE + lack * 0.02);  // +2pp per unità d
     const viniFiltrati = filtraEVotiVini({
       vini,
       boost: Array.from(boostNorm),  // <— normalizzati
-      prezzo_massimo: prezzo_massimo ? parseInt(prezzo_massimo) : null,
+      prezzo_massimo: (prezzo_massimo ?? null) !== null ? Number(prezzo_massimo) : null,
       colori,
       recenti: { byWine: freqByWine, bySub: freqBySub },  // ⬅️
     });
@@ -673,9 +673,6 @@ try {
   dish = combineDishes(splitDishes(piatto).map(parseDish));
 }
 
-// === Ordina per coerenza col piatto + integra lo score "filtri/varietà" + rotazione boost ===
-const LAMBDA_MMR = 0.60; // tradeoff qualità vs diversità
-
 // Normalizzazione match su [0..1] + hard-penalty per mismatch grossi
 const mValsRaw = viniConProfilo.map(w => matchScore(w.__profile, dish));
 const mMin = Math.min(...mValsRaw);
@@ -699,15 +696,6 @@ function hardPenalty(p: Profile, d: Dish): number {
   }
   return h;
 }
-
-// Soglia boost: percentile 60 del match normalizzato del pool, non valore fisso
-function percentile(arr:number[], p:number){
-  if (!arr.length) return 0;
-  const a = [...arr].sort((x,y)=>x-y);
-  const idx = Math.min(a.length-1, Math.max(0, Math.floor((p/100)*a.length)));
-  return a[idx];
-}
-const matchNorms = mValsRaw.map(m => mNorm(m));
 
 // Seed RNG su ristorante+piatto (stabile nella richiesta)
 const seedStr = `${ristorante_id}|${norm(piatto)}|${new Date().toISOString().slice(0,16)}`; // minuto-cadence
@@ -789,16 +777,11 @@ function tierOf(w:any){
 // 1) scegli il tier più alto che abbia candidati
 const poolAll = prelim.slice(0, Math.min(120, prelim.length));
 const tiers = ['A','B','C','D'] as const;
-let activeTier:'A'|'B'|'C'|'D' = 'D';
-for (const t of tiers) {
-  if (poolAll.some(w => tierOf(w) === t)) { activeTier = t; break; }
-}
 
 // 2) dentro il tier attivo prendi SEMPRE i meno esposti (round-robin)
 //    se non basta a riempire, scendi di tier (A -> B -> C -> D)
 function buildFairQueue(): any[] {
   const out: any[] = [];
-  let need = wanted;
 
   for (const t of tiers) {
     const candTier = poolAll.filter(w => tierOf(w) === t);
@@ -972,9 +955,6 @@ if (picked.length < wanted) {
   }
 }
 
-// 👉 DA QUI in poi lavoriamo SEMPRE su topN (derivato da picked)
-let topN = [...picked];
-
 // === BOOST GARANTITI (1–2), scegliendo i meno esposti e con guard-rails minimi ===
 const maxBoostSlots = Math.min(2, wanted);
 const alreadyBoostCount = picked.filter(w => boostNorm.has(norm(w.nome))).length;
@@ -1026,8 +1006,8 @@ if (alreadyBoostCount < maxBoostSlots) {
 }
 
 // opzionale: 1 exploration slot se varietà recente bassa
-if (topN.length < wanted && uniqCount < targetUniq) {
-  const already = new Set(topN.map(p => norm(p.nome)));
+if (picked.length < wanted && uniqCount < targetUniq) {
+  const already = new Set(picked.map(p => norm(p.nome)));
   const exploration = prelim
     .filter(w => !already.has(norm(w.nome)))
     .sort((a,b) => (freqByWine[norm(a.nome)] || 0) - (freqByWine[norm(b.nome)] || 0)); // meno esposto prima
@@ -1038,17 +1018,23 @@ if (topN.length < wanted && uniqCount < targetUniq) {
     const subN = norm(String(cand.sottocategoria || ""));
     const used = usedBySub.get(subN) || 0;
     if (subN && used >= capBySub) return false;
+    const prod = norm(String(cand.__producer || ""));
+    if ((usedByProd.get(prod) || 0) >= capByProd) return false;
     return true;
   });
 
   if (candidate) {
-    topN.push(candidate);
+    picked.push(candidate);
     if (candidate.__profile.bubbles >= 0.9 || /spumante|franciacorta|champagne/i.test(candidate.categoria || "")) bubblesUsed++;
     const subChosen3 = norm(String(candidate.sottocategoria || ""));
     if (subChosen3) usedBySub.set(subChosen3, (usedBySub.get(subChosen3) || 0) + 1);
+    const prod3 = norm(String(candidate.__producer || ""));
+    if (prod3) usedByProd.set(prod3, (usedByProd.get(prod3) || 0) + 1);
   }
 }
 
+// 👉 DA QUI in poi lavoriamo SEMPRE su topN (derivato da picked)
+let topN = [...picked];
 // “varietà di stile” minima: prova ad assicurare almeno 2 stili diversi se possibile
 if (topN.length >= 3) {
   const styles = new Set(topN.map(p => p.__style));
