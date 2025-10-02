@@ -44,7 +44,7 @@ function mulberry32(seed: number) {
 }
 
 // === Pesi componibili per il punteggio finale (facili da regolare) ===
-const W = { quality: 0.78, variety: 0.08, boost: 0.06, price: 0.05, feedback: 0.03 } as const;
+const W = { quality: 0.76, variety: 0.12, boost: 0.06, price: 0.05, feedback: 0.01 } as const;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://www.winesfever.com",
@@ -192,13 +192,19 @@ function cosSim(a:number[], b:number[]){
   return na && nb ? dot/(na*nb) : 0;
 }
 
-// etichetta di stile: utile per forzare varietà negli N finali
-function styleOf(p: Profile): "sparkling"|"crisp_white"|"full_white"|"rosato"|"light_red"|"structured_red"{
+function styleOf(
+  p: Profile,
+  meta?: { categoria?: string; denominazione?: string; sottocategoria?: string }
+): "sparkling"|"crisp_white"|"full_white"|"rosato"|"light_red"|"structured_red" {
+  const bag = `${meta?.categoria||""} ${meta?.denominazione||""} ${meta?.sottocategoria||""}`.toLowerCase();
+  const isRosatoByText = /\bros[ée]\b|\brosato\b/.test(bag);
+
   if (p.bubbles >= .9) return "sparkling";
+  if (isRosatoByText) return "rosato";                 // rosato solo se lo dice il testo
+
   if (p.tannin <= .15 && p.acid >= .6 && p.body <= .55) return "crisp_white";
-  if (p.tannin <= .25 && p.body  > .55) return "full_white";
-  if (p.tannin <= .35 && p.body <= .55 && p.acid >= .5) return "rosato";
-  if (p.tannin <= .5  && p.body <= .6)  return "light_red";
+  if (p.tannin <= .25 && p.body  > .55)                 return "full_white";
+  if (p.tannin <= .5  && p.body <= .6)                  return "light_red";
   return "structured_red";
 }
 
@@ -272,6 +278,13 @@ if (matches.length) {
     sweet:   clamp01(base.sweet  + agg.sweet),
     bubbles: Math.max(base.bubbles, agg.bubbles)
   };
+}
+// Forza il flag bollicine se categoria/denominazione lo indicano
+{
+  const bag = `${w.denominazione||""} ${w.sottocategoria||""} ${w.categoria||""}`.toLowerCase();
+  if (/\b(spumante|metodo|classico|franciacorta|champagne|trentodoc|col\s*fondo|colfondo|pas\s*dos[ée]|dosaggio\s*zero)\b/.test(bag)) {
+    base = { ...base, bubbles: 1, acid: Math.max(base.acid, 0.6) };
+  }
 }
 
   return base;
@@ -635,12 +648,11 @@ const recentUnique = new Set<string>();
 recentLog.forEach(r => (r.vini || []).forEach((n:string) => recentUnique.add(norm(n))));
 const uniqCount = recentUnique.size;
 
-// ε dinamico: se pochi unici, aumenta esplorazione (max 0.5)
-const EPS_BASE = 0.20;
-const EPS_MAX  = 0.50;
-const targetUniq = 18; // vorremmo almeno 18 etichette diverse negli ultimi 100 record
-const lack = Math.max(0, targetUniq - uniqCount);   // quanta varietà manca
-const EPSILON = Math.min(EPS_MAX, EPS_BASE + lack * 0.02);  // +2pp per unità di “lack”
+const EPS_BASE = 0.18;
+const EPS_MAX  = 0.35;     // cap più basso
+const targetUniq = 18;
+const lack = Math.max(0, targetUniq - uniqCount);
+const EPSILON = Math.min(EPS_MAX, EPS_BASE + lack * 0.015);
 
 
     // ✅ Filtra e valuta i vini
@@ -701,17 +713,20 @@ function hardPenalty(p: Profile, d: Dish): number {
 const seedStr = `${ristorante_id}|${norm(piatto)}|${new Date().toISOString().slice(0,16)}`; // minuto-cadence
 const rng = mulberry32(hashStringToSeed(seedStr));
 
-// normalizza lo score di filtraEVotiVini in [0..1]
-const scores = viniConProfilo.map(w => w.score ?? 0);
-const minS = Math.min(...scores);
-const maxS = Math.max(...scores);
-const denom = (maxS - minS) || 1;
+// normalizza lo score in modo robusto (rank-based)
+const scores = viniConProfilo.map(w => Math.max(0, w.score ?? 0));
+const sortedScores = [...scores].sort((a,b)=>a-b);
+const rankPct = (x:number) => {
+  // primo indice dell'elemento in sortedScores
+  const i = sortedScores.indexOf(Math.max(0, x));
+  return sortedScores.length > 1 ? i / (sortedScores.length - 1) : 0.5;
+};
 
 let prelim = viniConProfilo.map(w => {
   const mRaw = matchScore(w.__profile, dish);
   const mN = mNorm(mRaw);
 
-  const sNorm = denom ? ((w.score ?? 0) - minS) / denom : 0.5;
+  const sNorm = rankPct(w.score ?? 0);
 
   const nomeN = norm(w.nome);
   const calls = (freqByWine?.[nomeN] || 0);
@@ -738,7 +753,7 @@ let prelim = viniConProfilo.map(w => {
       W.feedback* 0 +     // placeholder per futuro Thompson Sampling
       hard + jitter;
 
-  return { ...w, __match: mRaw, __mNorm: mN, __sNorm: sNorm, __final_pre: final, __style: styleOf(w.__profile) };
+  return { ...w, __match: mRaw, __mNorm: mN, __sNorm: sNorm, __final_pre: final, __style: styleOf(w.__profile, { categoria: w.categoria, denominazione: w.denominazione, sottocategoria: w.sottocategoria }) };
 });
 
 // ε-greedy deterministico
@@ -751,13 +766,14 @@ function shuffleDet<T>(arr:T[], rnd:()=>number){
 }
 
 if (rng() < EPSILON) {
-  const top = prelim
-    .sort((a,b) => b.__final_pre - a.__final_pre)
-    .slice(0, Math.min(24, prelim.length));
-  shuffleDet(top, rng);
-  prelim = top.concat(
-    prelim.sort((a,b) => b.__final_pre - a.__final_pre).slice(24)
-  );
+  const sorted = prelim.sort((a,b) => b.__final_pre - a.__final_pre);
+  const lockK = 12;                           // blocco qualità
+  const bandK = Math.min(24, sorted.length);  // fascia esplorabile
+  const head  = sorted.slice(0, lockK);
+  const band  = sorted.slice(lockK, bandK);
+  const tail  = sorted.slice(bandK);
+  shuffleDet(band, rng);                      // esplora solo 13–24
+  prelim = head.concat(band, tail);
 } else {
   prelim.sort((a,b) => b.__final_pre - a.__final_pre);
 }
