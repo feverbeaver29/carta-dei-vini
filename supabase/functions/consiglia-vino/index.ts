@@ -44,7 +44,7 @@ function mulberry32(seed: number) {
 }
 
 // === Pesi componibili per il punteggio finale (facili da regolare) ===
-const W = { quality: 0.66, variety: 0.16, boost: 0.10, price: 0.05, feedback: 0.03 } as const;
+const W = { quality: 0.78, variety: 0.08, boost: 0.06, price: 0.05, feedback: 0.03 } as const;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://www.winesfever.com",
@@ -674,7 +674,7 @@ try {
 }
 
 // === Ordina per coerenza col piatto + integra lo score "filtri/varietà" + rotazione boost ===
-const LAMBDA_MMR = 0.72; // tradeoff qualità vs diversità
+const LAMBDA_MMR = 0.60; // tradeoff qualità vs diversità
 
 // Normalizzazione match su [0..1] + hard-penalty per mismatch grossi
 const mValsRaw = viniConProfilo.map(w => matchScore(w.__profile, dish));
@@ -704,7 +704,7 @@ function percentile(arr:number[], p:number){
   return a[idx];
 }
 const matchNorms = mValsRaw.map(m => mNorm(m));
-const BOOST_PERC = 60;
+const BOOST_PERC = 75;
 const BOOST_THRESHOLD = percentile(matchNorms, BOOST_PERC); // ~top 40% del pool
 
 // Seed RNG su ristorante+piatto (stabile nella richiesta)
@@ -727,7 +727,7 @@ let prelim = viniConProfilo.map(w => {
   const calls = (freqByWine?.[nomeN] || 0);
   const boosted = boostNorm.has(nomeN) && mN >= BOOST_THRESHOLD;
 
-  const boostBonus = boosted ? 0.16 * Math.exp(-0.45 * calls) : 0;
+  const boostBonus = boosted ? 0.12 * Math.exp(-0.90 * calls) : 0; // stanca il boost 2x più rapido
 
   const hard = hardPenalty(w.__profile, dish);
 
@@ -821,8 +821,10 @@ function redundancyPenalty(cand:any, chosen:any[]){
 
 // MMR
 const pool = prelim.slice(0, Math.min(80, prelim.length));
-const capBySub = 2;                     // max 2 etichette per stessa sottocategoria
+const capBySub = wanted >= 4 ? 2 : 1; // se suggerisci 2-3 vini, max 1 per sottocategoria
 const usedBySub = new Map<string, number>();
+const usedByProd = new Map<string, number>();
+const capByProd = wanted >= 4 ? 2 : 1; // come per sottocategoria
 
 
 while (picked.length < wanted && pool.length) {
@@ -849,6 +851,14 @@ while (picked.length < wanted && pool.length) {
 
   const candidate = pool[bestIdx];
 
+    // cap per produttore sul candidato corrente
+  const prodCand = norm(String(candidate.__producer || ""));
+  const usedProd = usedByProd.get(prodCand) || 0;
+  if (usedProd >= capByProd) {
+    pool.splice(bestIdx, 1);
+    continue;
+  }
+
   // cap per sottocategoria sul candidato scelto
   const subN = norm(String(candidate.sottocategoria || ""));
   if (subN) {
@@ -869,6 +879,9 @@ while (picked.length < wanted && pool.length) {
 
   picked.push(chosen);
 
+    const prodChosen = norm(String(chosen.__producer || ""));
+  if (prodChosen) usedByProd.set(prodChosen, (usedByProd.get(prodChosen) || 0) + 1);
+
   // aggiorna contatore per sottocategoria
   const subChosen = norm(String(chosen.sottocategoria || ""));
   if (subChosen) {
@@ -880,7 +893,7 @@ while (picked.length < wanted && pool.length) {
 let topN = [...picked];
 
 // === Slot boost controllati (garantiti se coerenti)
-const maxBoostSlots = wanted >= 4 ? 2 : 1;
+const maxBoostSlots = 1;
 const alreadyBoostCount = topN.filter(w => boostNorm.has(norm(w.nome))).length;
 
 if (alreadyBoostCount < maxBoostSlots) {
