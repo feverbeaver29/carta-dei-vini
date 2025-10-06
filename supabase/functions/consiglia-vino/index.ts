@@ -30,6 +30,20 @@ const LANGS = {
   zh: { name: "中文",       GRAPE: "葡萄品种",  MOTIVE: "理由" }
 } as const;
 
+const ICONS = {
+  boosted: "⭐",     // vino spinto dal ristorante
+  top: "👍",         // miglior match tecnico
+  discovery: "✨",   // proposta “nuova/diversa”
+  style: {
+    sparkling: "🥂",
+    crisp_white: "🍋",
+    full_white: "🧈",
+    rosato: "🌸",
+    light_red: "🍒",
+    structured_red: "🟤"
+  }
+};
+
 /** =========================
  *  DOMAIN
  *  ========================= */
@@ -297,29 +311,64 @@ function matchScore(p:Profile, d:Dish): number {
   return sc;
 }
 
-function buildMotivation(L:any, p:Profile, d:Dish): string {
-  const out:string[] = [];
-  if (d.cooking==="fritto" || d.fat>=.6) {
-    if (p.bubbles>=.9) out.push("Bollicine e acidità sgrassano la frittura");
-    else if (p.acid>=.6) out.push("Acidità incisiva per sgrassare il piatto");
-  }
-  if (d.protein==="pesce" || d.cooking==="crudo") {
-    if (p.tannin<=.2) out.push("Tannino basso adatto al pesce/crudo");
-    if (p.acid>=.6) out.push("Freschezza che valorizza l’ittico");
-  }
+function wordCount(s:string){ return (s.trim().match(/\S+/g)||[]).length; }
+function trimToWords(s:string, max:number){
+  const words = (s.trim().match(/\S+/g)||[]).slice(0,max);
+  return words.join(" ");
+}
+function buildMotivation(_:any, p:Profile, d:Dish): string {
+  const lines:string[] = [];
+
+  // tono “sommelier”: scegli 1–2 idee centrali
+  // 1) struttura / tannino / corpo
   if (d.protein==="carne_rossa" || d.cooking==="brasato") {
-    if (p.tannin>=.6 || p.body>=.6) out.push("Struttura e tannino reggono cotture lunghe/carne rossa");
+    lines.push("Tannino maturo e corpo sostengono la succulenza e la lunga cottura");
+  } else if (d.protein==="carne_bianca") {
+    if (p.tannin<=.6) lines.push("Tessitura gentile e centro bocca equilibrato senza coprire la delicatezza");
+  } else if (d.protein==="pesce" || d.cooking==="crudo") {
+    if (p.tannin<=.25) lines.push("Tannino lieve e freschezza valorizzano l’ittico senza interferenze");
+  } else if (d.protein==="formaggio") {
+    lines.push("Struttura e sapidità tengono testa alla maturazione del formaggio");
+  } else if (d.protein==="salumi") {
+    lines.push("Acidità e slancio puliscono il palato tra un assaggio e l’altro");
+  } else {
+    lines.push("Freschezza e misura lasciano spazio ai sapori del piatto");
+  }
+
+  // 2) grasso/fritto, piccante, dolce, acidità del piatto
+  if (d.cooking==="fritto" || d.fat>=.6) {
+    if (p.bubbles>=.9) lines.push("Bollicina fine e acidità sgrassano con precisione");
+    else if (p.acid>=.6) lines.push("Acidità tesa ripulisce e invita al sorso");
   }
   if (d.spice>0) {
-    if (p.sweet>=.1 && p.tannin<=.5) out.push("Leggera dolcezza e tannino contenuto smorzano il piccante");
-    else if (p.tannin<=.3) out.push("Profilo morbido adatto al piccante");
+    if (p.sweet>=.1 && p.tannin<=.5) lines.push("Leggera dolcezza e tannino misurato addolciscono il piccante");
+    else lines.push("Profilo morbido accompagna senza accentuare il piccante");
   }
-  if (d.sweet>0 && p.sweet>=.6) out.push("Dolcezza del vino in equilibrio col dessert");
-  const gap=Math.abs(d.intensity-p.body);
-  if (gap<=.2) out.push("Intensità in linea con il piatto");
-  else if (p.body>d.intensity) out.push("Corpo sufficiente a bilanciare la ricchezza");
-  else out.push("Profilo snello per non coprire il piatto");
-  return (out.slice(0,2).join(". ") + ".");
+  if (d.sweet>0 && p.sweet>=.6) lines.push("Dolcezza del vino resta in equilibrio con il dessert");
+  if (d.acid_hint) lines.push("Taglio fresco dialoga con la componente acida del piatto");
+
+  // 3) intensità / corpo
+  const gap=Math.abs(d.intensity - p.body);
+  if (gap<=.2) lines.push("Intensità allineata: armonia bocca-piatto");
+  else if (p.body>d.intensity) lines.push("Corpo superiore bilancia la ricchezza del boccone");
+  else lines.push("Profilo snello mantiene il piatto protagonista");
+
+  // seleziona 1–2 frasi e compatta <= 20 parole
+  const pool = lines.filter(Boolean);
+  // piccola randomizzazione controllata
+  const pick = (n:number) => {
+    const copy = [...pool];
+    const chosen:string[] = [];
+    for (let i=0; i<n && copy.length; i++){
+      const idx = Math.floor(rng()*copy.length);
+      chosen.push(copy.splice(idx,1)[0]);
+    }
+    return chosen;
+  };
+
+  const take = pick(2).join(". ");
+  const finalLine = trimToWords(take.replace(/\s+/g," ").replace(/\.\s*$/,""), 20);
+  return finalLine.endsWith(".") ? finalLine : finalLine + ".";
 }
 
 /** =========================
@@ -581,13 +630,38 @@ serve(async (req) => {
       const cooldownPenalty = coolSet.has(w.nomeN) ? -0.30 : 0;
       // jitter giornaliero stabile
       const jitter = (rng() - 0.5) * 0.02;
-
-      const scoreRaw = blended + exposurePenalty + cooldownPenalty + jitter;
-      return { ...w, __q: q, __baseScore: clamp01(scoreRaw) };
+      
+      const isBoosted = boostSet.has(w.nomeN);
+      const scoreRaw = blended + exposurePenalty + cooldownPenalty + jitter
+               + (isBoosted ? 0.10 : 0); // 👈 piccolo boost stabile
     });
 
     // pool ordinato (qualità + esplorazione)
     const sorted = baseList.sort((a,b)=>b.__baseScore - a.__baseScore);
+
+    // 👉 Inserimento hard di 1 vino BOOST in testa (se esiste)
+const boostCandsAll = sorted.filter(w => boostSet.has(w.nomeN));
+function hardAllowedBoost(w:any){
+  const p = w.__profile as Profile;
+  const bubbly = p.bubbles>=0.9 || /\b(spumante|franciacorta|champagne|trentodoc)\b/i.test(String(w.categoria||""));
+  if ((dish.cooking==="brasato" || (dish.protein==="carne_rossa" && dish.intensity>=0.75)) && bubbly) return false;
+  if ((dish.protein==="pesce" || dish.cooking==="crudo") && p.tannin>=0.80) return false;
+  return true; // nient’altro: lo vogliamo davvero in lista
+}
+const bestBoost = boostCandsAll.find(hardAllowedBoost) || boostCandsAll[0];
+if (bestBoost) {
+  // metti il boost davanti, ignorando cap/cooldown
+  const already = new Set(chosen.map(w=>w.nomeN));
+  if (!already.has(bestBoost.nomeN)) {
+    chosen.unshift(bestBoost);
+    usedByProd.set(bestBoost.__producer, (usedByProd.get(bestBoost.__producer)||0)+1);
+    const sub = norm(String(bestBoost.sottocategoria||""));
+    if (sub) usedBySub.set(sub, (usedBySub.get(sub)||0)+1);
+    const arrUv = Array.from(bestBoost.__uvTokens||[]);
+    const g = arrUv.length ? arrUv[0] : "";
+    if (g) usedByGrape.set(g, (usedByGrape.get(g)||0)+1);
+  }
+}
 
     // priorità assoluta: includi 1–2 vini “mai visti” se esistono
     const neverSeen = sorted.filter(w => (expByWine[w.nomeN] || 0) === 0).slice(0, Math.min(2, wanted));
@@ -629,7 +703,7 @@ serve(async (req) => {
     }
 
     // BOOST GUARANTITO (1 slot hard; 2 se wanted>=5)
-    const boostSlots = Math.min(wanted>=5?2:1, wanted);
+    const boostSlots = Math.min(wanted>=4?2:1, wanted);
     const alreadyBoostCount = chosen.filter(w => boostSet.has(norm(w.nome))).length;
     if (alreadyBoostCount < boostSlots) {
       const boostCands = sorted.filter(w => boostSet.has(norm(w.nome)));
@@ -774,6 +848,13 @@ if (!adventurous) {
 // compone l’ordine finale: classics + adventurous (se esiste)
 // e tronca a 'target'
 let finalChosen = [...classics];
+// identifica top2 per pollice 👍
+const topByScore = [...finalChosen].sort((a,b)=>b.__baseScore - a.__baseScore).slice(0,2);
+const topSet = new Set(topByScore.map(w=>w.nomeN));
+// identifica "discovery": il primo non-top con uvaggio/profile diverso
+const discovery = finalChosen.find(w => !topSet.has(w.nomeN)) || null;
+const isDiscovery = (w:any) => discovery && w.nomeN===discovery.nomeN;
+
 if (adventurous && !finalChosen.some(w=>w.nomeN===adventurous.nomeN)) finalChosen.push(adventurous);
 if (finalChosen.length < target) {
   // riempi con altri buoni candidati diversi finché arrivi a target
@@ -832,18 +913,22 @@ if (finalChosen.length < target) {
       })
     });
 
-    // response compatibile
-    // etichette: 2 classici + 1 azzardato (se presente)
-    const Lbl = L;
-    const tagged = out.map((w, i) => {
-      const tag = (i === 0 || i === 1) ? "Classico" : (i === 2 ? "Azzardato" : "Alternativa");
-      return `- [${tag}] ${w.nome}
-    ${Lbl.GRAPE}: ${w.grape}
-    ${Lbl.MOTIVE}: ${w.motive}`;
-    });
-    const lines = tagged;
+const Lbl = L;
+const rows = out.map((w) => {
+  const isBoost = boostSet.has(norm(w.nome));
+  const parts = [
+    isBoost ? ICONS.boosted : "",
+    topSet.has(w.nomeN) ? ICONS.top : (isDiscovery(w) ? ICONS.discovery : ""),
+    ICONS.style[w.__style as keyof typeof ICONS.style] || ""
+  ].filter(Boolean);
 
-    return new Response(JSON.stringify({ suggestion: lines.join("\n\n") }), { headers: corsHeaders });
+  const prefix = parts.join(" ");
+  return `- ${prefix} ${w.nome}
+  ${Lbl.GRAPE}: ${w.grape}
+  ${Lbl.MOTIVE}: ${w.motive}`;
+});
+
+return new Response(JSON.stringify({ suggestion: rows.join("\n\n") }), { headers: corsHeaders });
 
   } catch (err:any) {
     console.error("❌ Errore imprevisto:", err);
