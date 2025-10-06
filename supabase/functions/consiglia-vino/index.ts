@@ -376,11 +376,16 @@ function mmrScore(cand:any, chosen:any[], lambda=0.6){
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS")
-    return new Response(null, { status: 200, headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+  return new Response(null, { status: 204, headers: corsHeaders });
+}
 
   try {
     const { vini, piatto, ristorante_id, prezzo_massimo, colori, lang } = await req.json();
+    const coloriNorm: Colore[] = Array.isArray(colori) && colori.length
+      ? colori.map((c: string) => coloreFromCat(String(c || ""), String(c || "")))
+      : [];
+    const coloriSet = new Set(coloriNorm);
     const code = String(lang || "it").toLowerCase();
     const L = LANGS[code === "gb" ? "en" : code] || LANGS.it;
 
@@ -436,7 +441,6 @@ serve(async (req) => {
     const dish = await getDishFeatures(piatto, Deno.env.get("OPENAI_API_KEY"));
 
     // normalizza vini, colore hard, filtri prezzo & colori richiesti
-    const coloriReq = Array.isArray(colori) && colori.length ? colori.map(c=>norm(c)) : [];
     const wines0 = vini
       .filter(v => v?.visibile !== false)
       .map(v => {
@@ -449,7 +453,7 @@ serve(async (req) => {
         return { ...v, prezzoNum, colore, nomeN, __producer, __uvTokens };
       })
       .filter(v => !prezzo_massimo || v.prezzoNum <= Number(prezzo_massimo))
-      .filter(v => coloriReq.length ? coloriReq.some(c => v.colore.includes(c)) : true);
+        .filter(v => coloriSet.size ? coloriSet.has(v.colore) : true);
 
     if (!wines0.length)
       return new Response(JSON.stringify({ error:"Nessun vino filtrato compatibile." }), { status:400, headers:corsHeaders });
