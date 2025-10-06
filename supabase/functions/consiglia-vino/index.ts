@@ -140,7 +140,7 @@ function inferColorFromGrapes(uvaggio:string): Colore {
 function parseDishFallback(text:string): Dish {
   const s = (text||"").toLowerCase();
   const dish: Dish = { fat:0.3, spice:0, sweet:0, intensity:0.4, protein:null, cooking:null, acid_hint:false };
-
+  if (/forno|al forno|arrosto|in crosta/.test(s)) {dish.cooking = dish.cooking ?? "griglia"; dish.intensity = Math.max(dish.intensity, .55);}
   if (/crudo|tartare|carpaccio/.test(s)) dish.cooking="crudo", dish.intensity=.3;
   if (/fritt|impanat/.test(s)) dish.cooking="fritto", dish.fat=.7, dish.intensity=Math.max(dish.intensity,.5);
   if (/griglia|brace|arrosto/.test(s)) dish.cooking="griglia", dish.intensity=.6;
@@ -276,10 +276,16 @@ function matchScore(p:Profile, d:Dish): number {
   if (d.protein==="veg" && d.cooking!=="fritto") {
     sc += p.acid*0.45 - Math.max(0,p.tannin-0.25)*0.6 - p.bubbles*0.15;
   }
+  if (d.protein==="veg" && d.intensity>=.55) {
+  sc += Math.max(0.1, 0.35 - Math.max(0,p.tannin-0.55)*0.4) + p.body*0.2;
+}
   // carni bianche alla griglia
   if (d.protein==="carne_bianca" && d.cooking==="griglia") {
     sc += p.body*0.4 - Math.max(0,p.tannin-0.4)*0.5 - p.bubbles*0.2;
   }
+  if (d.protein==="carne_bianca" && (d.cooking==="griglia" || /forno|arrosto/.test((d as any).__raw||""))) {
+  sc += p.body*0.35 - Math.max(0,p.tannin-0.5)*0.6 - p.bubbles*0.15;
+}
   // dessert
   if (d.sweet>0) sc += (p.sweet*1.5);
   // accenno acido nel piatto → premia acidità
@@ -453,7 +459,7 @@ serve(async (req) => {
     const coloriNorm: Colore[] = Array.isArray(colori) && colori.length
   ? colori.map((c: string) => coloreFromLabel(String(c || "")))
   : [];
-    const coloriSet = new Set(coloriNorm);
+    const coloriSet = new Set(coloriNorm.filter(c => c !== "altro"));
     const code = String(lang || "it").toLowerCase();
     const L = LANGS[code === "gb" ? "en" : code] || LANGS.it;
 
