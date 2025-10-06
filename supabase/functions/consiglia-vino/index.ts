@@ -145,7 +145,10 @@ function parseDishFallback(text:string): Dish {
   else dish.protein = dish.protein ?? "veg";
 
   if (/burro|panna|carbonara|cacio e pepe|alla gricia|quattro formaggi/.test(s)) dish.fat=Math.max(dish.fat,.6);
-  if (/pomodoro|rag[ùu]/.test(s)) dish.intensity=Math.max(dish.intensity,.55);
+  if (/pomodoro|rag[ùu]/.test(s)) {
+  dish.intensity = Math.max(dish.intensity, .55);
+  dish.acid_hint = true; // 👈 pomodoro = accenno acido
+}
 
   return dish;
 }
@@ -228,19 +231,49 @@ Piatti: ${items.map(s=>`"${s}"`).join(", ")}
  *  ========================= */
 function matchScore(p:Profile, d:Dish): number {
   let sc = 0;
-  sc += (d.fat * (p.acid*1.0 + p.bubbles*0.6)); // sgrassare
-  if (d.protein==="pesce" || d.cooking==="crudo") sc += (p.acid*1.35) - (p.tannin*1.0);
+  // sgrassare
+  sc += (d.fat * (p.acid*1.0 + p.bubbles*0.6));
+  // pesce/crudo: più acidità, meno tannino
+  if (d.protein==="pesce" || d.cooking==="crudo") {
+    sc += (p.acid*1.35) - (p.tannin*1.0);
+    // 👇 pesce + acidità (es. pomodoro/capperi) non fritto → favorisci bianchi fermi, meno bollicine
+    if (d.acid_hint && d.cooking!=="fritto") {
+      sc += p.acid * 0.25;    // boost per bianchi “crisp”
+      sc -= p.bubbles * 0.35; // penalità bollicine in salsa acida non fritta
+    }
+  }
+  // fritto: ok bollicine + acidità
   if (d.cooking==="fritto") sc += (p.bubbles*1.3 + p.acid*0.8);
-  if (d.protein==="carne_rossa" || d.cooking==="brasato") sc += (p.tannin*1.5 + p.body*1.2) - (p.bubbles*0.6);
+  // brasato/carne rossa: bump più deciso su tannino+corpo
+  if (d.protein==="carne_rossa" || d.cooking==="brasato") {
+    sc += (p.tannin*1.8 + p.body*1.35) - (p.bubbles*0.8); // ↑ pesi
+    if (p.tannin >= 0.6 && p.body >= 0.6) sc += 0.15;      // bonus soglia
+  }
+  // piccante: dolcezza aiuta, tannino no
   if (d.spice>0) sc += (p.sweet*1.0 - p.tannin*0.8 - p.body*0.4);
-  if (d.protein==="formaggio") { sc += p.body*0.6 + p.acid*0.2 - Math.max(0, p.tannin-0.5)*0.3; }
-  if (d.protein==="salumi") { sc += p.acid*0.35 + Math.max(0,0.55-p.tannin)*0.4 + Math.max(0,0.60-p.body)*0.2 - p.bubbles*0.40; }
-  if (d.protein==="veg" && d.cooking!=="fritto") { sc += p.acid*0.45 - Math.max(0,p.tannin-0.25)*0.6 - p.bubbles*0.15; }
-  if (d.protein==="carne_bianca" && d.cooking==="griglia") { sc += p.body*0.4 - Math.max(0,p.tannin-0.4)*0.5 - p.bubbles*0.2; }
+  // formaggi
+  if (d.protein==="formaggio") {
+    sc += p.body*0.6 + p.acid*0.2 - Math.max(0, p.tannin-0.5)*0.3;
+  }
+  // salumi
+  if (d.protein==="salumi") {
+    sc += p.acid*0.35 + Math.max(0,0.55-p.tannin)*0.4 + Math.max(0,0.60-p.body)*0.2 - p.bubbles*0.40;
+  }
+  // veg non fritto
+  if (d.protein==="veg" && d.cooking!=="fritto") {
+    sc += p.acid*0.45 - Math.max(0,p.tannin-0.25)*0.6 - p.bubbles*0.15;
+  }
+  // carni bianche alla griglia
+  if (d.protein==="carne_bianca" && d.cooking==="griglia") {
+    sc += p.body*0.4 - Math.max(0,p.tannin-0.4)*0.5 - p.bubbles*0.2;
+  }
+  // dessert
   if (d.sweet>0) sc += (p.sweet*1.5);
+  // accenno acido nel piatto → premia acidità
   if (d.acid_hint) sc += p.acid*0.8;
+  // allineamento intensità
   sc += (1 - Math.abs(d.intensity - p.body))*0.6;
-  // hard cuts
+  // hard cuts: no tannino alto su pesce/crudo
   if ((d.protein==="pesce" || d.cooking==="crudo") && p.tannin >= 0.65) sc -= 0.4*(p.tannin - 0.65);
   return sc;
 }
@@ -542,7 +575,7 @@ serve(async (req) => {
     const neverSeen = sorted.filter(w => (expByWine[w.nomeN] || 0) === 0).slice(0, Math.min(2, wanted));
 
     // caps per diversità
-    const capByProd = wanted >= 4 ? 2 : 1;
+    const capByProd = 1;
     // sottocategoria fissa ad 1 per forte varietà (evita due “Etna Rosso DOC” insieme)
     const capBySub  = 1;
     // uva: stringi quando poche proposte, allarga quando sono molte
@@ -651,6 +684,33 @@ serve(async (req) => {
       if (grape) usedByGrape.set(grape, (usedByGrape.get(grape)||0)+1);
     }
     
+    // Forza in lista 1 bianco fermo “crisp” se pesce + acidità e non fritto
+if ((dish.protein==="pesce" || dish.cooking==="crudo") && dish.acid_hint && dish.cooking!=="fritto") {
+  const crispCandidate = [...sorted].find(w =>
+    w.colore==="bianco" &&
+    w.__profile.bubbles < 0.5 &&
+    w.__profile.tannin <= 0.25 &&
+    w.__profile.acid >= 0.6
+  );
+  if (crispCandidate && !chosen.some(c => c.nomeN===crispCandidate.nomeN)) {
+    // rispetta i cap prima di inserirlo
+    const prod = crispCandidate.__producer;
+    const sub  = norm(String(crispCandidate.sottocategoria||""));
+    const arrUv = Array.from(crispCandidate.__uvTokens||[]);
+    const grape = arrUv.length ? arrUv[0] : "";
+    const canInsert =
+      (usedByProd.get(prod)||0) < (/*capByProd*/ 1) &&
+      (!sub || (usedBySub.get(sub)||0) < 1) &&
+      (!grape || (usedByGrape.get(grape)||0) < (wanted <= 3 ? 1 : 2));
+    if (canInsert) {
+      chosen.unshift(crispCandidate);
+      usedByProd.set(prod, (usedByProd.get(prod)||0)+1);
+      if (sub) usedBySub.set(sub, (usedBySub.get(sub)||0)+1);
+      if (grape) usedByGrape.set(grape, (usedByGrape.get(grape)||0)+1);
+    }
+  }
+}
+
 // 🎯 Riformula il set finale: 2 classici (migliori) + 1 azzardato (novità/diversità)
 // garantisci almeno 3 proposte quando possibile
 const target = Math.min(Math.max(wanted, 3), wines.length);
