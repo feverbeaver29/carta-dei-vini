@@ -331,7 +331,7 @@ function profileFromWine(w:any, priors: {grape:PriorMap, app:Map<string,Profile>
   }
 
   // denominazione → delte pesate (docg>doc>igt)
-  cconst bag = norm(`${w.sottocategoria||""} ${w.categoria||""} ${w.nome||""}`);
+  const bag = norm(`${w.sottocategoria||""} ${w.categoria||""} ${w.nome||""}`);
   const matches: Array<{w:number, d:Profile}> = [];
   for (const [k, delta] of priors.app) {
     if (k && bag.includes(k)) {
