@@ -99,6 +99,28 @@ function coloreFromCat(catRaw:string, subRaw:string): Colore {
   return "altro";
 }
 
+// ====== Fallback colore da uvaggio quando categoria/sottocategoria non bastano ======
+const WHITE_GRAPES = new Set([
+  "chardonnay","sauvignon","sauvignon blanc","pinot grigio","pinot bianco","vermentino",
+  "glera","greco","fiano","verdicchio","trebbiano","garganega","ribolla","zibibbo","moscato",
+  "grillo","gewurztraminer","traminer","catarratto","arvernenga","cortese","passerina","pecorino",
+  "falanghina","inzolia","malvasia","vernaccia","timorasso"
+]);
+const RED_GRAPES = new Set([
+  "sangiovese","nebbiolo","barbera","montepulciano","aglianico","primitivo","negroamaro","syrah",
+  "cabernet","cabernet sauvignon","cabernet franc","merlot","pinot nero","corvina","corvinone",
+  "ronninella","refosco","sagrantino","nero d avola","nero d’avola","teroldego","lagrein","frappato",
+  "dolcetto","grignolino"
+]);
+function inferColorFromGrapes(uvaggio:string): Colore {
+  const toks = splitGrapes(uvaggio).map(norm);
+  const hasWhite = toks.some(t => WHITE_GRAPES.has(t));
+  const hasRed   = toks.some(t => RED_GRAPES.has(t));
+  if (hasWhite && !hasRed) return "bianco";
+  if (hasRed   && !hasWhite) return "rosso";
+  return "altro";
+}
+
 /** =========================
  *  DISH PARSER (fallback + IA robusta)
  *  ========================= */
@@ -418,6 +440,18 @@ serve(async (req) => {
       const recentRes = await fetch(`${supabaseUrl}/rest/v1/consigliati_log?ristorante_id=eq.${ristorante_id}&order=creato_il.desc&limit=300`, { headers });
       if (recentRes.ok) recentLog = await recentRes.json();
     } catch {}
+    // ⏳ Cooldown: evita di riproporre vini visti molto di recente (ultimi ~40 suggerimenti)
+    const COOL_N = 40;
+    const coolList:string[] = [];
+    for (const r of recentLog) {
+      for (const nome of (r.vini||[])) {
+        const n = norm(nome);
+        if (!coolList.includes(n)) coolList.push(n);
+        if (coolList.length >= COOL_N) break;
+      }
+      if (coolList.length >= COOL_N) break;
+    }
+    const coolSet = new Set(coolList);
     const nowMs = Date.now(), HALF_LIFE_H=48, LAMBDA_DECAY = Math.log(2) / (HALF_LIFE_H*3600*1000);
     const decay = (ts:string) => { const t = new Date(ts).getTime(); const dt = Math.max(0, nowMs - (isNaN(t)?nowMs:t)); return Math.exp(-LAMBDA_DECAY*dt); };
 
@@ -445,7 +479,12 @@ serve(async (req) => {
       .filter(v => v?.visibile !== false)
       .map(v => {
         const prezzoNum = parseFloat(String(v.prezzo||"").replace(/[^\d.,]/g,"").replace(",", ".")) || 0;
-        const colore = coloreFromCat(String(v.categoria||""), String(v.sottocategoria||""));
+        // usa anche denominazione; se resta “altro”, prova a inferire dal vitigno
+        let colore = coloreFromCat(String(v.categoria||""), String(`${v.sottocategoria||""} ${v.denominazione||""}`));
+        if (colore === "altro") {
+          const byGrape = inferColorFromGrapes(String(v.uvaggio||""));
+          if (byGrape !== "altro") colore = byGrape;
+        }
         const nomeN = norm(v.nome);
         const producerRaw = String(v.nome||"").split("|")[0];
         const __producer = norm(producerRaw);
@@ -477,11 +516,13 @@ serve(async (req) => {
       const q = mNorm(matchScore(w.__profile, dish));
       const views = expByWine[w.nomeN] || 0;
       const ucb = q + C * Math.sqrt(Math.log(totalViews + Math.E) / (views + 1));
-      // bonus “meno esposti nel tier”
+      // meno esposti = meglio
       const exposurePenalty = -0.10 * Math.pow((views / (totalViews||1)), 0.7);
-      // leggero jitter stabile
+      // se appena consigliato, piccola penalità per ruotare
+      const cooldownPenalty = coolSet.has(w.nomeN) ? -0.15 : 0;
+      // jitter giornaliero stabile
       const jitter = (rng() - 0.5) * 0.02;
-      return { ...w, __q:q, __baseScore: clamp01(ucb + exposurePenalty + jitter) };
+      return { ...w, __q:q, __baseScore: clamp01(ucb + exposurePenalty + cooldownPenalty + jitter) };
     });
 
     // pool ordinato (qualità + esplorazione)
@@ -597,23 +638,80 @@ serve(async (req) => {
       if (sub) usedBySub.set(sub, (usedBySub.get(sub)||0)+1);
       if (grape) usedByGrape.set(grape, (usedByGrape.get(grape)||0)+1);
     }
+    
+// 🎯 Riformula il set finale: 2 classici (migliori) + 1 azzardato (novità/diversità)
+// garantisci almeno 3 proposte quando possibile
+const target = Math.max(wanted, 3);
+
+// ordina i selezionati per punteggio base (classici) e prendi i migliori 2
+const classics = [...chosen].sort((a,b)=>b.__baseScore - a.__baseScore).slice(0, Math.min(2, chosen.length));
+
+// scegli 1 “azzardato” dal pool rimanente (non nei classics)
+const classicsSet = new Set(classics.map(w=>w.nomeN));
+const advPool = [...pool, ...chosen.filter(w=>!classicsSet.has(w.nomeN))]; // prova prima dal non scelto, poi dal resto
+let adventurous: any | null = null;
+let bestAdvScore = -Infinity;
+
+for (const cand of advPool) {
+  if (classicsSet.has(cand.nomeN)) continue;
+  // evita ripetizioni ravvicinate se possibile
+  if (coolSet.has(cand.nomeN)) continue;
+
+  const views = expByWine[cand.nomeN] || 0;
+  const simToClassics = classics.length
+    ? Math.max(...classics.map(ch => Math.max(
+        cosSim(toVec(cand.__profile), toVec(ch.__profile)),
+        jaccard(cand.__uvTokens, ch.__uvTokens)
+      )))
+    : 0;
+  // richiedi qualità minima decente
+  const quality = cand.__q ?? 0;
+  if (quality < 0.35) continue;
+
+  // punteggia come NOVITÀ: bassa similarità, bassa esposizione, buon punteggio base
+  const advScore = (1 - simToClassics) * 0.6 + (1 / (1 + views)) * 0.3 + (cand.__baseScore) * 0.1 + (rng()-0.5)*0.01;
+  if (advScore > bestAdvScore) { bestAdvScore = advScore; adventurous = cand; }
+}
+
+// se non trovato nulla di “nuovo”, ripiega sul migliore non-classic del pool
+if (!adventurous) {
+  adventurous = pool.find(w => !classicsSet.has(w.nomeN)) || chosen.find(w => !classicsSet.has(w.nomeN)) || null;
+}
+
+// compone l’ordine finale: classics + adventurous (se esiste)
+// e tronca a 'target'
+let finalChosen = [...classics];
+if (adventurous && !finalChosen.some(w=>w.nomeN===adventurous.nomeN)) finalChosen.push(adventurous);
+if (finalChosen.length < target) {
+  // riempi con altri buoni candidati diversi finché arrivi a target
+  const filler = [...pool, ...chosen].filter(w => !finalChosen.some(x=>x.nomeN===w.nomeN))
+    .sort((a,b)=>b.__baseScore - a.__baseScore)
+    .slice(0, Math.max(0, target - finalChosen.length));
+  finalChosen = finalChosen.concat(filler);
+}
 
     // stile (solo per varietà visiva, NON per colore)
-    function styleOf(p:Profile, meta?:{categoria?:string; denominazione?:string; sottocategoria?:string}):
+    function styleOf(colore:Colore, p:Profile):
       "sparkling"|"crisp_white"|"full_white"|"rosato"|"light_red"|"structured_red" {
-      if (p.bubbles>=.9) return "sparkling";
-      // ricavo dalla durezza del profilo, ma non cambio colore
-      if (p.tannin<=.15 && p.acid>=.6 && p.body<=.55) return "crisp_white";
-      if (p.tannin<=.25 && p.body > .55) return "full_white";
-      if (p.tannin<=.5  && p.body<=.6)  return "light_red";
-      return "structured_red";
+      if (colore === "spumante" || p.bubbles>=.9) return "sparkling";
+      if (colore === "rosato") return "rosato";
+      if (colore === "bianco") {
+        return (p.body > .55 || p.sweet>0.15) ? "full_white" : "crisp_white";
+      }
+      // rosso o altro
+      return (p.tannin<=.5 && p.body<=.6) ? "light_red" : "structured_red";
     }
 
-    const out = chosen.map(w => {
-      const grape = (w.uvaggio && w.uvaggio.trim()) ? w.uvaggio.trim() : "N.D.";
-      const motive = buildMotivation(L, w.__profile, dish);
-      return { ...w, __style: styleOf(w.__profile, { categoria:w.categoria, denominazione:w.denominazione, sottocategoria:w.sottocategoria }), grape, motive };
-    });
+    const out = finalChosen.map(w => {
+  const grape = (w.uvaggio && w.uvaggio.trim()) ? w.uvaggio.trim() : "N.D.";
+  const motive = buildMotivation(L, w.__profile, dish);
+  return {
+    ...w,
+    __style: styleOf(w.colore, w.__profile),
+    grape,
+    motive
+  };
+});
 
     // logging sintetico
     console.log("PICKED",
@@ -635,10 +733,16 @@ serve(async (req) => {
     });
 
     // response compatibile
+    // etichette: 2 classici + 1 azzardato (se presente)
     const Lbl = L;
-    const lines = out.map(w => `- ${w.nome}
-${Lbl.GRAPE}: ${w.grape}
-${Lbl.MOTIVE}: ${w.motive}`);
+    const tagged = out.map((w, i) => {
+      const tag = (i === 0 || i === 1) ? "Classico" : (i === 2 ? "Azzardato" : "Alternativa");
+      return `- [${tag}] ${w.nome}
+    ${Lbl.GRAPE}: ${w.grape}
+    ${Lbl.MOTIVE}: ${w.motive}`;
+    });
+    const lines = tagged;
+
     return new Response(JSON.stringify({ suggestion: lines.join("\n\n") }), { headers: corsHeaders });
 
   } catch (err:any) {
