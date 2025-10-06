@@ -81,21 +81,34 @@ function cosSim(a:number[], b:number[]){
 }
 
 /** =========================
- *  HARD COLOR PARSER (NO MORE MISLABELS)
+ *  COLOR PARSER ROBUSTO (usa SOLO wines.categoria)
  *  ========================= */
-function coloreFromCat(catRaw:string, subRaw:string): Colore {
-  const bag = `${catRaw||""} ${subRaw||""}`.toLowerCase();
-  if (/\b(spumante|metodo\s*classico|franciacorta|champagne|trentodoc|col\s*fondo|colfondo|bollicine|brut|pas dos[ée]|dosaggio\s*zero|extra\s*dry)\b/.test(bag))
-    return "spumante";
-  if (/\b(dolce|passito|vendemmia\s*tardiva|late\s*harvest|sauternes|vin\s*santo)\b/.test(bag))
-    return "dolce";
-  if (/\bros[ée]|\brosato\b/.test(bag))
-    return "rosato";
-  if (/\bbianco\b/.test(bag))
-    return "bianco";
-  if (/\brosso\b/.test(bag))
-    return "rosso";
-  // fallback “altro” (usiamo profilo ma non cambiamo il colore altrove)
+function coloreFromLabel(labelRaw: string): Colore {
+  const s = norm(labelRaw); // minuscole, rimozione accenti/diacritici, spazi normalizzati
+
+  // PRECEDENZA: spumante → dolce → rosato → bianco → rosso
+  // SPUMANTE / BOLLICINE
+  if (
+    /\b(spumante|bollicine|metodo classico|classique|champagne|franciacorta|trentodoc|saten|satèn|prosecco|col fondo|colfondo|extra\s*dry|brut|pas do[sz]e|dosaggio zero)\b/.test(s)
+  ) return "spumante";
+  // DOLCI
+  if (
+    /\b(dolce|passito|vendemmia tardiva|late harvest|sauternes|vin santo|zibibbo passito|moscato passito)\b/.test(s)
+  ) return "dolce";
+  // ROSATO / ROSÉ / RAMATO
+  // senza ramato:
+if (/\b(rosato|rose|ros[eè]|vino rosato|vini rosati|cerasuolo)\b/.test(s)) return "rosato";
+  // BIANCO (plurali/sinonimi/lingue)
+  if (
+    /\b(bianco|bianchi|vino bianco|vini bianchi|white|blanc)\b/.test(s)
+  ) return "bianco";
+  // e subito dopo, prima del rosso:
+if (/\bramato\b/.test(s)) return "bianco";
+  // ROSSO (plurali/sinonimi/lingue)
+  if (
+    /\b(rosso|rossi|vino rosso|vini rossi|red|rouge)\b/.test(s)
+  ) return "rosso";
+  // fallback
   return "altro";
 }
 
@@ -513,11 +526,10 @@ serve(async (req) => {
       .map(v => {
         const prezzoNum = parseFloat(String(v.prezzo||"").replace(/[^\d.,]/g,"").replace(",", ".")) || 0;
         // usa anche denominazione; se resta “altro”, prova a inferire dal vitigno
-        let colore = coloreFromCat(
-          String(v.categoria || ""),
-          String(`${v.sottocategoria || ""} ${v.nome || ""}`)
-        );
-        // Se ancora “altro”, prova dal vitigno; se match sia bianchi che rossi, preferisci il bianco quando i tannini sono bassi
+        // 1) colore dalla CATEGORIA (wines.categoria) in modo robusto
+        let colore = coloreFromLabel(String(v.categoria || ""));
+
+        // 2) fallback dall'UVAGGIO se la categoria è troppo generica/vuota
         if (colore === "altro") {
           const byGrape = inferColorFromGrapes(String(v.uvaggio || ""));
           if (byGrape !== "altro") colore = byGrape;
@@ -790,9 +802,16 @@ if (finalChosen.length < target) {
 
     // logging sintetico
     console.log("PICKED",
-      out.map(x => ({ nome:x.nome, q:+x.__q?.toFixed(3), base:+x.__baseScore?.toFixed(3), style:x.__style, prof:x.__profile })),
-      { seed:`${ristorante_id}|${norm(piatto)}|${day}` }
-    );
+  out.map(x => ({
+    nome:x.nome,
+    colore:x.colore,               // 👈 aggiungi questo
+    q:+x.__q?.toFixed(3),
+    base:+x.__baseScore?.toFixed(3),
+    style:x.__style,
+    prof:x.__profile
+  })),
+  { seed:`${ristorante_id}|${norm(piatto)}|${day}` }
+);
 
     // persist log
     await fetch(`${supabaseUrl}/rest/v1/consigliati_log`, {
