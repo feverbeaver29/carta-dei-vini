@@ -451,8 +451,8 @@ serve(async (req) => {
   try {
     const { vini, piatto, ristorante_id, prezzo_massimo, colori, lang } = await req.json();
     const coloriNorm: Colore[] = Array.isArray(colori) && colori.length
-      ? colori.map((c: string) => coloreFromCat(String(c || ""), String(c || "")))
-      : [];
+  ? colori.map((c: string) => coloreFromLabel(String(c || "")))
+  : [];
     const coloriSet = new Set(coloriNorm);
     const code = String(lang || "it").toLowerCase();
     const L = LANGS[code === "gb" ? "en" : code] || LANGS.it;
