@@ -316,7 +316,7 @@ function trimToWords(s:string, max:number){
   const words = (s.trim().match(/\S+/g)||[]).slice(0,max);
   return words.join(" ");
 }
-function buildMotivation(_:any, p:Profile, d:Dish): string {
+function buildMotivation(_:any, p:Profile, d:Dish, rand:()=>number): string {
   const lines:string[] = [];
 
   // tono “sommelier”: scegli 1–2 idee centrali
@@ -360,12 +360,12 @@ function buildMotivation(_:any, p:Profile, d:Dish): string {
     const copy = [...pool];
     const chosen:string[] = [];
     for (let i=0; i<n && copy.length; i++){
-      const idx = Math.floor(rng()*copy.length);
+      const idx = Math.floor(rand()*copy.length); // 👈 usa rand(), non rng()
       chosen.push(copy.splice(idx,1)[0]);
     }
     return chosen;
   };
-
+  
   const take = pick(2).join(". ");
   const finalLine = trimToWords(take.replace(/\s+/g," ").replace(/\.\s*$/,""), 20);
   return finalLine.endsWith(".") ? finalLine : finalLine + ".";
@@ -618,50 +618,24 @@ serve(async (req) => {
     const totalViews = Object.values(expByWine).reduce((a,b)=>a+b,0) || 1;
     const C = 0.30; // spinta esplorativa (puoi 0.25–0.40)
     const baseList = wines.map(w => {
-      const q = mNorm(matchScore(w.__profile, dish));             // 0..1
-      const views = expByWine[w.nomeN] || 0;
-      const explore = C * Math.sqrt(Math.log(totalViews + Math.E) / (views + 1));
-      // Headroom: non arrivare subito a 1 con q+explore
-      const blended = 0.82 * q + 0.18 * explore;
+    const q = mNorm(matchScore(w.__profile, dish));             // 0..1
+    const views = expByWine[w.nomeN] || 0;
+    const explore = C * Math.sqrt(Math.log(totalViews + Math.E) / (views + 1));
+    const blended = 0.82 * q + 0.18 * explore;
 
-      // meno esposti = meglio
-      const exposurePenalty = -0.10 * Math.pow((views / (totalViews || 1)), 0.7);
-      // penalità più forte sui vini appena proposti
-      const cooldownPenalty = coolSet.has(w.nomeN) ? -0.30 : 0;
-      // jitter giornaliero stabile
-      const jitter = (rng() - 0.5) * 0.02;
-      
-      const isBoosted = boostSet.has(w.nomeN);
-      const scoreRaw = blended + exposurePenalty + cooldownPenalty + jitter
-               + (isBoosted ? 0.10 : 0); // 👈 piccolo boost stabile
-    });
+    const exposurePenalty = -0.10 * Math.pow((views / (totalViews || 1)), 0.7);
+    const cooldownPenalty = coolSet.has(w.nomeN) ? -0.30 : 0;
+    const jitter = (rng() - 0.5) * 0.02;
+
+    const isBoosted = boostSet.has(w.nomeN); // 👈 usa sempre nomeN normalizzato
+    const scoreRaw = blended + exposurePenalty + cooldownPenalty + jitter
+                  + (isBoosted ? 0.10 : 0);
+
+    return { ...w, __q: q, __baseScore: clamp01(scoreRaw) }; // 👈 RETURN!
+  });
 
     // pool ordinato (qualità + esplorazione)
     const sorted = baseList.sort((a,b)=>b.__baseScore - a.__baseScore);
-
-    // 👉 Inserimento hard di 1 vino BOOST in testa (se esiste)
-const boostCandsAll = sorted.filter(w => boostSet.has(w.nomeN));
-function hardAllowedBoost(w:any){
-  const p = w.__profile as Profile;
-  const bubbly = p.bubbles>=0.9 || /\b(spumante|franciacorta|champagne|trentodoc)\b/i.test(String(w.categoria||""));
-  if ((dish.cooking==="brasato" || (dish.protein==="carne_rossa" && dish.intensity>=0.75)) && bubbly) return false;
-  if ((dish.protein==="pesce" || dish.cooking==="crudo") && p.tannin>=0.80) return false;
-  return true; // nient’altro: lo vogliamo davvero in lista
-}
-const bestBoost = boostCandsAll.find(hardAllowedBoost) || boostCandsAll[0];
-if (bestBoost) {
-  // metti il boost davanti, ignorando cap/cooldown
-  const already = new Set(chosen.map(w=>w.nomeN));
-  if (!already.has(bestBoost.nomeN)) {
-    chosen.unshift(bestBoost);
-    usedByProd.set(bestBoost.__producer, (usedByProd.get(bestBoost.__producer)||0)+1);
-    const sub = norm(String(bestBoost.sottocategoria||""));
-    if (sub) usedBySub.set(sub, (usedBySub.get(sub)||0)+1);
-    const arrUv = Array.from(bestBoost.__uvTokens||[]);
-    const g = arrUv.length ? arrUv[0] : "";
-    if (g) usedByGrape.set(g, (usedByGrape.get(g)||0)+1);
-  }
-}
 
     // priorità assoluta: includi 1–2 vini “mai visti” se esistono
     const neverSeen = sorted.filter(w => (expByWine[w.nomeN] || 0) === 0).slice(0, Math.min(2, wanted));
@@ -677,6 +651,30 @@ if (bestBoost) {
     const usedBySub  = new Map<string,number>();
     const usedByGrape = new Map<string,number>();
     const chosen:any[] = [];
+
+        // 👉 Inserimento hard di 1 vino BOOST in testa (se esiste)
+    const boostCandsAll = sorted.filter(w => boostSet.has(w.nomeN));
+    function hardAllowedBoost(w:any){
+      const p = w.__profile as Profile;
+      const bubbly = p.bubbles>=0.9 || /\b(spumante|franciacorta|champagne|trentodoc)\b/i.test(String(w.categoria||""));
+      if ((dish.cooking==="brasato" || (dish.protein==="carne_rossa" && dish.intensity>=0.75)) && bubbly) return false;
+      if ((dish.protein==="pesce" || dish.cooking==="crudo") && p.tannin>=0.80) return false;
+      return true; // nient’altro: lo vogliamo davvero in lista
+    }
+    const bestBoost = boostCandsAll.find(hardAllowedBoost) || boostCandsAll[0];
+    if (bestBoost) {
+      // metti il boost davanti, ignorando cap/cooldown
+      const already = new Set(chosen.map(w=>w.nomeN));
+      if (!already.has(bestBoost.nomeN)) {
+        chosen.unshift(bestBoost);
+        usedByProd.set(bestBoost.__producer, (usedByProd.get(bestBoost.__producer)||0)+1);
+        const sub = norm(String(bestBoost.sottocategoria||""));
+        if (sub) usedBySub.set(sub, (usedBySub.get(sub)||0)+1);
+        const arrUv = Array.from(bestBoost.__uvTokens||[]);
+        const g = arrUv.length ? arrUv[0] : "";
+        if (g) usedByGrape.set(g, (usedByGrape.get(g)||0)+1);
+      }
+    }
 
     // helper per vitigno “principale” (prima token uvaggio, poi fallback su denom)
     function mainGrapeOf(w:any){
@@ -704,9 +702,9 @@ if (bestBoost) {
 
     // BOOST GUARANTITO (1 slot hard; 2 se wanted>=5)
     const boostSlots = Math.min(wanted>=4?2:1, wanted);
-    const alreadyBoostCount = chosen.filter(w => boostSet.has(norm(w.nome))).length;
+    const alreadyBoostCount = chosen.filter(w => boostSet.has(w.nomeN)).length;
     if (alreadyBoostCount < boostSlots) {
-      const boostCands = sorted.filter(w => boostSet.has(norm(w.nome)));
+      const boostCands = sorted.filter(w => boostSet.has(w.nomeN));
       // guard-rails: no bollicine su brasato/carne rossa intensa; evita tannino altissimo su pesce/crudo
       function allowedBoost(w:any){
         const p = w.__profile as Profile;
@@ -878,7 +876,7 @@ if (finalChosen.length < target) {
 
     const out = finalChosen.map(w => {
   const grape = (w.uvaggio && w.uvaggio.trim()) ? w.uvaggio.trim() : "N.D.";
-  const motive = buildMotivation(L, w.__profile, dish);
+  const motive = buildMotivation(L, w.__profile, dish, rng); // 👈 aggiungi rng qui
   return {
     ...w,
     __style: styleOf(w.colore, w.__profile),
@@ -908,14 +906,14 @@ if (finalChosen.length < target) {
         ristorante_id,
         piatto,
         vini: out.map(w => w.nome),
-        boost_inclusi: out.some(w => boostSet.has(norm(w.nome))),
+        boost_inclusi: out.some(w => boostSet.has(w.nomeN)), // 👈 PRIMA usavi norm(w.nome)
         sottocategoria: out[0]?.sottocategoria || null
       })
     });
 
 const Lbl = L;
 const rows = out.map((w) => {
-  const isBoost = boostSet.has(norm(w.nome));
+   const isBoost = boostSet.has(w.nomeN);
   const parts = [
     isBoost ? ICONS.boosted : "",
     topSet.has(w.nomeN) ? ICONS.top : (isDiscovery(w) ? ICONS.discovery : ""),
