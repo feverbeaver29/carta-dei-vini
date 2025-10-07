@@ -35,14 +35,14 @@ const ICONS = {
   top: "👍",         // miglior match tecnico
   discovery: "✨",   // proposta “nuova/diversa”
   style: {
-    sparkling: "/sparkling.png",
-    crisp_white: "/lightwhite.png",
-    full_white: "/fullwhite.png",
-    rosato: "/rose.png",
-    light_red: "/lightred.png",
-    structured_red: "/fullred.png"
+    sparkling: "🥂",
+    crisp_white: "🍋",
+    full_white: "🧈",
+    rosato: "🌸",
+    light_red: "🍒",
+    structured_red: "🟤"
   }
-} as const;
+};
 
 /** =========================
  *  DOMAIN
@@ -913,15 +913,11 @@ if (finalChosen.length < target) {
 
 const Lbl = L;
 const rows = out.map((w) => {
-  const isBoost = boostSet.has(w.nomeN);
-
-  const styleUrl = ICONS.style[w.__style as keyof typeof ICONS.style];
-  const styleMd  = styleUrl ? `![${w.__style}](${styleUrl})` : "";
-
+   const isBoost = boostSet.has(w.nomeN);
   const parts = [
     isBoost ? ICONS.boosted : "",
     topSet.has(w.nomeN) ? ICONS.top : (isDiscovery(w) ? ICONS.discovery : ""),
-    styleMd
+    ICONS.style[w.__style as keyof typeof ICONS.style] || ""
   ].filter(Boolean);
 
   const prefix = parts.join(" ");
