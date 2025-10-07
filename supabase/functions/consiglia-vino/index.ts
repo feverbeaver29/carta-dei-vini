@@ -35,14 +35,14 @@ const ICONS = {
   top: "👍",         // miglior match tecnico
   discovery: "✨",   // proposta “nuova/diversa”
   style: {
-    sparkling: "🥂",
-    crisp_white: "🍋",
-    full_white: "🧈",
-    rosato: "🌸",
-    light_red: "🍒",
-    structured_red: "🟤"
+    sparkling: "/sparkling.png",
+    crisp_white: "/lightwhite.png",
+    full_white: "/fullwhite.png",
+    rosato: "/rose.png",
+    light_red: "/lightred.png",
+    structured_red: "/fullred.png"
   }
-};
+} as const;
 
 /** =========================
  *  DOMAIN
@@ -913,11 +913,15 @@ if (finalChosen.length < target) {
 
 const Lbl = L;
 const rows = out.map((w) => {
-   const isBoost = boostSet.has(w.nomeN);
+  const isBoost = boostSet.has(w.nomeN);
+
+  const styleUrl = ICONS.style[w.__style as keyof typeof ICONS.style];
+  const styleMd  = styleUrl ? `![${w.__style}](${styleUrl})` : "";
+
   const parts = [
     isBoost ? ICONS.boosted : "",
     topSet.has(w.nomeN) ? ICONS.top : (isDiscovery(w) ? ICONS.discovery : ""),
-    ICONS.style[w.__style as keyof typeof ICONS.style] || ""
+    styleMd
   ].filter(Boolean);
 
   const prefix = parts.join(" ");
@@ -933,6 +937,3 @@ return new Response(JSON.stringify({ suggestion: rows.join("\n\n") }), { headers
     return new Response(JSON.stringify({ error:"Errore interno", detail: err?.message }), { status:500, headers:corsHeaders });
   }
 });
-
-
-
