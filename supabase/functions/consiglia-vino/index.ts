@@ -35,12 +35,12 @@ const ICONS = {
   top: "👍",         // miglior match tecnico
   discovery: "✨",   // proposta “nuova/diversa”
   style: {
-    sparkling: "🥂",
-    crisp_white: "🍋",
-    full_white: "🧈",
-    rosato: "🌸",
-    light_red: "🍒",
-    structured_red: "🟤"
+    sparkling: "https://ldunvbftxhbtuyabgxwh.supabase.co/storage/v1/object/public/logoswine/sparkling.png",
+    crisp_white: "https://ldunvbftxhbtuyabgxwh.supabase.co/storage/v1/object/public/logoswine/lightwhite.png",
+    full_white: "https://ldunvbftxhbtuyabgxwh.supabase.co/storage/v1/object/public/logoswine/fullwhite.png",
+    rosato: "https://ldunvbftxhbtuyabgxwh.supabase.co/storage/v1/object/public/logoswine/rose.png",
+    light_red: "https://ldunvbftxhbtuyabgxwh.supabase.co/storage/v1/object/public/logoswine/lightred.png",
+    structured_red: "https://ldunvbftxhbtuyabgxwh.supabase.co/storage/v1/object/public/logoswine/fullred.png"
   }
 };
 
@@ -913,20 +913,26 @@ if (finalChosen.length < target) {
 
 const Lbl = L;
 const rows = out.map((w) => {
-   const isBoost = boostSet.has(w.nomeN);
+  const isBoost = boostSet.has(w.nomeN);
+  const styleUrl = ICONS.style[w.__style as keyof typeof ICONS.style];
+  const styleHtml = styleUrl
+    ? `<img src="${styleUrl}" alt="${w.__style}" style="height:1em;vertical-align:-0.15em;">`
+    : "";
+
   const parts = [
     isBoost ? ICONS.boosted : "",
     topSet.has(w.nomeN) ? ICONS.top : (isDiscovery(w) ? ICONS.discovery : ""),
-    ICONS.style[w.__style as keyof typeof ICONS.style] || ""
+    styleHtml
   ].filter(Boolean);
 
   const prefix = parts.join(" ");
-  return `- ${prefix} ${w.nome}
-  ${Lbl.GRAPE}: ${w.grape}
+  return `- ${prefix} ${w.nome}<br>
+  ${Lbl.GRAPE}: ${w.grape}<br>
   ${Lbl.MOTIVE}: ${w.motive}`;
 });
 
-return new Response(JSON.stringify({ suggestion: rows.join("\n\n") }), { headers: corsHeaders });
+// e restituisci HTML esplicito
+return new Response(JSON.stringify({ suggestion_html: rows.join("<br><br>") }), { headers: corsHeaders });
 
   } catch (err:any) {
     console.error("❌ Errore imprevisto:", err);
