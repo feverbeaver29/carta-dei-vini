@@ -232,30 +232,6 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
 .vino-chips.muted span{ background:#fafafa; color:#666; }
 .vino-toggle{ margin-top:8px; font-size:.9em; border:none; background:transparent; color:var(--accent-color,#b00); cursor:pointer; }
 
-/* — Sommelier card tweaks — */
-.sommelier-card .vino-header{
-  display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;
-}
-.sommelier-card .vino-title{ font-weight:600; font-size:1em; display:flex; align-items:center; gap:8px; }
-.sommelier-card .header-right{ margin-left:auto; text-align:right; }
-.sommelier-card .header-right .price-row{ margin:0; }
-
-/* Badge colore accanto al titolo */
-.badge-colore{
-  font-size:.75em; font-weight:800; padding:2px 8px; border-radius:999px;
-  border:1px solid var(--accent-color); color:var(--accent-color); background:transparent;
-  text-transform:uppercase; letter-spacing:.3px;
-}
-
-/* Box motivazione con bordo laterale accent */
-.motive-box{
-  margin-top:10px; font-size:0.95em; padding:10px 12px;
-  border-left:4px solid var(--accent-color);
-  background:rgba(0,0,0,.03);
-  border-radius:8px;
-}
-.motive-box strong{ margin-right:6px; }
-
 /* =========================
    RESPONSIVE
 ========================= */
@@ -848,15 +824,6 @@ if (from && to) {
 }
 }
 
-function colorLabelFromWine(w){
-  if (!w) return null;
-  const s = (String(w.categoria||"") + " " + String(w.sottocategoria||"") + " " + String(w.uvaggio||"")).toLowerCase();
-  if (/\brosat|ros[eè]|\bramato\b/.test(s)) return "Rosato";
-  if (/\bbianc|white|blanc\b/.test(s))      return "Bianco";
-  if (/\bross|red|rouge\b/.test(s))         return "Rosso";
-  return null;
-}
-
 window.suggestWine = async function () {
     if (RESTAURANT_ID === "fc28c874-b195-4660-9c78-c58d8dc3c092") {
     const suggestion = document.getElementById('wineSuggestion');
@@ -940,16 +907,7 @@ const motVal = stripLabelPrefix(motRiga, [
 ]);
 
   // prendo SOLO il nome del vino dalla prima riga (ignoro eventuale €... scritto dall'AI)
-  // 1) prendo solo la parte prima di eventuali prezzi
-const rawTitle   = (titleLine.split(/€|EUR|CHF|\$|£|¥/)[0] || "");
-
-// 2) tolgo eventuali "-"/"•" iniziali
-const noBullet   = rawTitle.replace(/^[\s\-•]+/u, "");
-
-// 3) 🔑 tolgo TUTTO ciò che non è lettera/numero all'inizio (emoji, pollici, pallini, ecc.)
-const nomeVino   = noBullet.replace(/^[^\p{L}\p{N}]+/u, "").trim();
-// Estrai le emoji iniziali per usarle, se vuoi, come badge separati (non nel titolo)
-const prefixEmojis = (rawTitle.match(/^[^\p{L}\p{N}]+/u)?.[0] || "").trim();
+  const nomeVino = (titleLine.split(/€|EUR|CHF|\$|£|¥/)[0] || "").replace(/^[-•]\s*/, "").trim();
   if (!nomeVino) return '';
 
   // cerco lo stesso vino nella carta per recuperare TUTTI i prezzi
@@ -978,30 +936,14 @@ const prefixEmojis = (rawTitle.match(/^[^\p{L}\p{N}]+/u)?.[0] || "").trim();
   }
 
   return `
-  <div class="sommelier-card" style="background:${responseBg}; border:1px solid ${vignetteColor}; border-radius:12px; padding:15px; margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.06); color:${textColor};">
-    <div class="vino-header">
-      <div class="vino-title">
-        <div>${nomeVino}</div>
-        ${
-          (function(){
-            const lbl = colorLabelFromWine(wFound);
-            return lbl ? `<span class="badge-colore">${lbl}</span>` : "";
-          })()
-        }
+    <div class="sommelier-card" style="background:${responseBg}; border:1px solid ${vignetteColor}; border-radius:12px; padding:15px; margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.06); color:${textColor};">
+      <div class="vino-header" style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap;">
+        <div style="font-weight:600; font-size:1em; flex:1;">${nomeVino}</div>
       </div>
-      <div class="header-right">
-        ${prezziHtml || ""}
-      </div>
-    </div>
-
-    ${uvVal ? `<div style="font-size:0.9em; color:#666; margin-top:6px;">${translations[currentLang].grape}: ${uvVal}</div>` : ""}
-
-    ${
-      motVal
-        ? `<div class="motive-box"><strong>${translations[currentLang].motive}:</strong> ${motVal}</div>`
-        : ""
-    }
-  </div>`;
+      ${prezziHtml}
+      ${uvVal ? `<div style="font-size:0.9em; color:#666; margin-top:4px;">${translations[currentLang].grape}: ${uvVal}</div>` : ""}
+      ${motVal ? `<div style="margin-top:10px; font-size:0.95em;"><strong>${translations[currentLang].motive}:</strong> ${motVal}</div>` : ""}
+    </div>`;
 }).join('');
 
 
