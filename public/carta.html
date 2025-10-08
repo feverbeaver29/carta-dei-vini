@@ -882,21 +882,24 @@ try {
 
 const data = await response.json();
 
+// Palette: definite una volta e valide in tutti i rami
+const pc = window.paletteColors || {};
+const responseBg        = pc.cardBackground || "#ffffff";
+const vignetteColor     = pc.borderColor    || "#cccccc";
+const textColor         = pc.textColor      || "#000000";
+const shadow            = pc.boxShadow      || "0 2px 6px rgba(0,0,0,0.15)";
+const vignetteTextColor = textColor;
+
 // Se la funzione restituisce HTML pronto, usalo così com’è
 let cardsHtml = "";
 if (data.suggestion_html) {
   cardsHtml = data.suggestion_html;
 } else {
-  // fallback: vecchio formato testuale "suggestion"
-  const reply = data.suggestion || "";
-  const rawBlocks = reply.split(/^- /m).map(b => b.trim()).filter(Boolean);
+// fallback: vecchio formato testuale "suggestion"
+const reply = data.suggestion || "";
+const rawBlocks = reply.split(/^- /m).map(b => b.trim()).filter(Boolean);
+// Niente palette qui: usiamo quelle HOISTED definite sopra
 
-  const popupBg      = window.paletteColors?.background    || "#ffffff";
-  const responseBg   = window.paletteColors?.cardBackground || "#ffffff";
-  const vignetteColor= window.paletteColors?.borderColor    || "#cccccc";
-  const textColor    = window.paletteColors?.textColor      || "#000000";
-  const vignetteTextColor = textColor;
-  const shadow       = window.paletteColors?.boxShadow      || "0 2px 6px rgba(0,0,0,0.15)";
   // (se non lo usi, elimina pure) const prezzoColor = getContrastingTextColor(responseBg);
 
   cardsHtml = rawBlocks.map(block => {
