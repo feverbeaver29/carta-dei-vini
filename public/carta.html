@@ -880,75 +880,72 @@ try {
   });
 
 
-const data = await response.json();
+    const data = await response.json();
+    const reply = data.suggestion || "";
+    const rawBlocks = reply.split(/^- /m).map(b => b.trim()).filter(Boolean);
 
-// Palette: definite una volta e valide in tutti i rami
-const pc = window.paletteColors || {};
-const responseBg        = pc.cardBackground || "#ffffff";
-const vignetteColor     = pc.borderColor    || "#cccccc";
-const textColor         = pc.textColor      || "#000000";
-const shadow            = pc.boxShadow      || "0 2px 6px rgba(0,0,0,0.15)";
+const popupBg      = window.paletteColors?.background    || "#ffffff";
+const responseBg   = window.paletteColors?.cardBackground || "#ffffff";
+const vignetteColor= window.paletteColors?.borderColor    || "#cccccc";
+const textColor    = window.paletteColors?.textColor      || "#000000";
 const vignetteTextColor = textColor;
+const shadow       = window.paletteColors?.boxShadow      || "0 2px 6px rgba(0,0,0,0.15)";
+const prezzoColor = getContrastingTextColor(responseBg);
 
-// Se la funzione restituisce HTML pronto, usalo così com’è
-let cardsHtml = "";
-if (data.suggestion_html) {
-  cardsHtml = data.suggestion_html;
-} else {
-// fallback: vecchio formato testuale "suggestion"
-const reply = data.suggestion || "";
-const rawBlocks = reply.split(/^- /m).map(b => b.trim()).filter(Boolean);
-// Niente palette qui: usiamo quelle HOISTED definite sopra
+let cardsHtml = rawBlocks.map(block => {
+  const lines = block.split(/\n/).map(l => l.trim()).filter(Boolean);
+  const titleLine = lines[0] || "";
+const uvRiga = lines[1] || "";
+const motRiga = lines.slice(2).join(" ");
 
-  // (se non lo usi, elimina pure) const prezzoColor = getContrastingTextColor(responseBg);
+const uvVal = stripLabelPrefix(uvRiga, [
+  "uvaggio","grape","grape variety","cepages","cépages","variedad de uva","rebsorte","uva","葡萄品种"
+]);
 
-  cardsHtml = rawBlocks.map(block => {
-    const lines = block.split(/\n/).map(l => l.trim()).filter(Boolean);
-    const titleLine = lines[0] || "";
-    const uvRiga = lines[1] || "";
-    const motRiga = lines.slice(2).join(" ");
+const motVal = stripLabelPrefix(motRiga, [
+  "motivazione","rationale","justification","begrundung","begründung","motivacion","motivación","理由"
+]);
 
-    const uvVal = stripLabelPrefix(uvRiga, [
-      "uvaggio","grape","grape variety","cepages","cépages","variedad de uva","rebsorte","uva","葡萄品种"
-    ]);
-    const motVal = stripLabelPrefix(motRiga, [
-      "motivazione","rationale","justification","begrundung","begründung","motivacion","motivación","理由"
-    ]);
+  // prendo SOLO il nome del vino dalla prima riga (ignoro eventuale €... scritto dall'AI)
+  const nomeVino = (titleLine.split(/€|EUR|CHF|\$|£|¥/)[0] || "").replace(/^[-•]\s*/, "").trim();
+  if (!nomeVino) return '';
 
-    const nomeVino = (titleLine.split(/€|EUR|CHF|\$|£|¥/)[0] || "").replace(/^[-•]\s*/, "").trim();
-    if (!nomeVino) return '';
+  // cerco lo stesso vino nella carta per recuperare TUTTI i prezzi
+  const norm = s => (s || "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim();
+  let wFound = wines.find(w => norm(w.nome) === norm(nomeVino));
+  if (!wFound) {
+    // fallback "soft": include/è incluso
+    wFound = wines.find(w => norm(w.nome).includes(norm(nomeVino)) || norm(nomeVino).includes(norm(w.nome)));
+  }
 
-    const norm = s => (s || "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim();
-    let wFound = wines.find(w => norm(w.nome) === norm(nomeVino)) 
-              || wines.find(w => norm(w.nome).includes(norm(nomeVino)) || norm(nomeVino).includes(norm(w.nome)));
-
-    let prezziHtml = "";
-    if (wFound) {
-      prezziHtml = buildPriceHTML(wFound);
-    } else {
-      const prezzoGrezz = (titleLine.match(/€\s*\d[\d.,]*/) || [])[0];
-      if (prezzoGrezz) {
-        prezziHtml = `
-          <div class="price-row">
-            <span class="price-chip">
-              <img class="icon" src="bottleico.png" onerror="this.onerror=null;this.src='bottleicon.png';" alt="bottiglia">
-              ${prezzoGrezz}
-            </span>
-          </div>`;
-      }
+  // compongo la riga prezzi: se non trovo il vino, faccio almeno la bottiglia letta dalla riga
+  let prezziHtml = "";
+  if (wFound) {
+    prezziHtml = buildPriceHTML(wFound);
+  } else {
+    const prezzoGrezz = (titleLine.match(/€\s*\d[\d.,]*/) || [])[0];
+    if (prezzoGrezz) {
+      prezziHtml = `
+        <div class="price-row">
+          <span class="price-chip">
+            <img class="icon" src="bottleico.png" onerror="this.onerror=null;this.src='bottleicon.png';" alt="bottiglia">
+            ${prezzoGrezz}
+          </span>
+        </div>`;
     }
+  }
 
-    return `
-      <div class="sommelier-card" style="background:${responseBg}; border:1px solid ${vignetteColor}; border-radius:12px; padding:15px; margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.06); color:${textColor};">
-        <div class="vino-header" style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap;">
-          <div style="font-weight:600; font-size:1em; flex:1;">${nomeVino}</div>
-        </div>
-        ${prezziHtml}
-        ${uvVal ? `<div style="font-size:0.9em; color:#666; margin-top:4px;">${translations[currentLang].grape}: ${uvVal}</div>` : ""}
-        ${motVal ? `<div style="margin-top:10px; font-size:0.95em;"><strong>${translations[currentLang].motive}:</strong> ${motVal}</div>` : ""}
-      </div>`;
-  }).join('');
-}
+  return `
+    <div class="sommelier-card" style="background:${responseBg}; border:1px solid ${vignetteColor}; border-radius:12px; padding:15px; margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.06); color:${textColor};">
+      <div class="vino-header" style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap;">
+        <div style="font-weight:600; font-size:1em; flex:1;">${nomeVino}</div>
+      </div>
+      ${prezziHtml}
+      ${uvVal ? `<div style="font-size:0.9em; color:#666; margin-top:4px;">${translations[currentLang].grape}: ${uvVal}</div>` : ""}
+      ${motVal ? `<div style="margin-top:10px; font-size:0.95em;"><strong>${translations[currentLang].motive}:</strong> ${motVal}</div>` : ""}
+    </div>`;
+}).join('');
+
 
     if (!cardsHtml || cardsHtml.trim() === "") {
       suggestion.innerHTML = `
