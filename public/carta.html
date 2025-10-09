@@ -249,7 +249,7 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
 
 /* badge cluster (⭐/👍/✨) in alto a sinistra — più vicino al titolo */
 .sommelier-card .badge-stack{
-  position:absolute; top:6px; left:8px;
+  position:absolute; top:4px; left:8px;
   display:flex; gap:4px; font-size:1rem; line-height:1;
 }
 
@@ -266,7 +266,7 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
   display:flex;
   align-items:flex-start;
   flex-wrap:wrap;
-  padding-top:22px;          /* ← era 32px */
+  padding-top:18px;          /* ← era 32px */
   padding-left:10px;
   padding-right:10px;
 }
@@ -961,30 +961,58 @@ const vignetteTextColor = textColor;
 const shadow       = window.paletteColors?.boxShadow      || "0 2px 6px rgba(0,0,0,0.15)";
 const prezzoColor = getContrastingTextColor(responseBg);
 
-function colorInfoFromCategoria(catRaw){
-  const s = (catRaw||"").toLowerCase();
+// ---------- COLORE: usa categoria + sottocategoria + nome + denominazione; fallback da uvaggio ----------
+function colorInfoFromWine(w) {
+  const bag = `${w?.categoria||""} ${w?.sottocategoria||""} ${w?.denominazione||""} ${w?.nome||""}`.toLowerCase();
 
-  // Bollicine (azzurro)
-  if (/\b(spumante|bollicine|franciacorta|champagne|trentodoc|prosecco|metodo classico|col.?fondo)\b/.test(s))
+  // 1) parole chiave dirette
+  // Bollicine
+  if (/\b(spumante|bollicine|metodo classico|franciacorta|champagne|trentodoc|prosecco|col.?fondo|saten|satèn|extra\s*dry|brut|pas do[sz]e|dosaggio zero)\b/.test(bag)) {
     return { label: "Bollicine", hex: "#8EC9FF" };
-
-  // Rosato / Ramato → etichetta "Rosa" (rosa)
-  if (/\b(rosato|ros[eé]|rose|ramato|cerasuolo)\b/.test(s))
+  }
+  // Rosato / Ramato → "Rosa"
+  if (/\b(rosato|ros[eé]|rose|ramato|cerasuolo)\b/.test(bag)) {
     return { label: "Rosa", hex: "#FF7FB3" };
-
-  // Bianco (giallo)
-  if (/\b(bianco|white|blanc)\b/.test(s))
+  }
+  // Bianco
+  if (/\b(bianco|bianchi|white|blanc)\b/.test(bag)) {
     return { label: "Bianco", hex: "#FFD24D" };
-
-  // Rosso (rosso)
-  if (/\b(rosso|red|rouge)\b/.test(s))
+  }
+  // Rosso
+  if (/\b(rosso|rossi|red|rouge)\b/.test(bag)) {
     return { label: "Rosso", hex: "#E04B4B" };
-
-  // Dolce/passito (arancione)
-  if (/\b(dolce|passito|vendemmia tardiva|late harvest|vin santo|sauternes|moscato passito)\b/.test(s))
+  }
+  // Dolce / Passito
+  if (/\b(dolce|passito|vendemmia tardiva|late harvest|vin santo|sauternes|moscato passito)\b/.test(bag)) {
     return { label: "Dolce", hex: "#FFA94D" };
+  }
 
-  // fallback neutro
+  // 2) Fallback da UVAGGIO (bianco/rosso “probabile”)
+  const WHITE = new Set([
+    "chardonnay","sauvignon","sauvignon blanc","pinot grigio","pinot bianco","vermentino",
+    "glera","greco","fiano","verdicchio","trebbiano","garganega","ribolla","zibibbo","moscato",
+    "grillo","gewurztraminer","traminer","catarratto","cortese","passerina","pecorino",
+    "falanghina","inzolia","malvasia","vernaccia","timorasso","arvine","arneis"
+  ]);
+  const RED = new Set([
+    "sangiovese","nebbiolo","barbera","montepulciano","aglianico","primitivo","negroamaro","syrah",
+    "cabernet","cabernet sauvignon","cabernet franc","merlot","pinot nero","corvina","corvinone",
+    "rondinella","refosco","sagrantino","nero d avola","nero d’avola","teroldego","lagrein",
+    "frappato","dolcetto","grignolino","pelaverga","uva di troia","magliocco"
+  ]);
+  const uv = String(w?.uvaggio||"").toLowerCase()
+    .replace(/\b(docg?|ig[pt])\b/g," ")
+    .replace(/\d+\s*%/g," ")
+    .split(/[,;+\/&]|(?:\b(?:e|con|blend|uvaggio|cépage|variet[aà])\b)/g)
+    .map(s=>s.trim()).filter(Boolean);
+
+  const hasWhite = uv.some(t => WHITE.has(t));
+  const hasRed   = uv.some(t => RED.has(t));
+
+  if (hasWhite && !hasRed) return { label: "Bianco", hex: "#FFD24D" };
+  if (hasRed   && !hasWhite) return { label: "Rosso",  hex: "#E04B4B" };
+
+  // 3) Neutro (non riconosciuto)
   return { label: "Vino", hex: "#DDDDDD" };
 }
 
@@ -1015,11 +1043,11 @@ let cardsHtml = rawBlocks.map(block => {
   let wFound = wines.find(w => normalize(w.nome) === normalize(nomeVino))
          || wines.find(w => normalize(w.nome).includes(normalize(nomeVino)) || normalize(nomeVino).includes(normalize(w.nome)));
   let prezziHtml = "";
-  let colorInfo = {label:"Vino", hex:"#ddd"};
-  if (wFound) {
-    prezziHtml = buildPriceHTML(wFound);
-    colorInfo = colorInfoFromCategoria(wFound.categoria || "");
-  } else {
+let colorInfo = {label:"Vino", hex:"#ddd"};
+if (wFound) {
+  prezziHtml = buildPriceHTML(wFound);
+  colorInfo = colorInfoFromWine(wFound);   // ← usa la nuova funzione
+} else {
     const prezzoGrezz = (titleLine.match(/€\s*\d[\d.,]*/) || [])[0];
     if (prezzoGrezz) {
       prezziHtml = `
