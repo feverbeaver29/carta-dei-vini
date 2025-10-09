@@ -246,17 +246,23 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
 .sommelier-card .motive{ margin-top:8px; font-size:.95em; }
 .sommelier-card .price-row{ margin:4px 0 0; gap:10px; } /* titolo-prezzo più vicini */
 
-/* —— separator zig-zag per la motivazione —— */
-.sommelier-card { position: relative; }
+/* —— motivazione in box con bordino sinistro —— */
 .sommelier-card .motive-wrap{ margin-top:10px; }
-.sommelier-card .zigzag{
-  height:8px;
-  margin:6px 0 8px 0;
-  --zz: rgba(0,0,0,.12);                 /* colore del dente */
-  background:
-    linear-gradient(135deg,var(--zz) 25%, transparent 25%) 0 0/12px 8px repeat-x,
-    linear-gradient(225deg,var(--zz) 25%, transparent 25%) 6px 0/12px 8px repeat-x;
+.sommelier-card .motive-box{
+  background: color-mix(in srgb, var(--bg-default, #fff9f4) 65%, #ffffff);
+  border: 1px solid rgba(0,0,0,.08);
+  border-left: 6px solid var(--accent-color, #b00);
+  border-radius: 10px;
+  padding: 10px 12px;
+  line-height: 1.35;
 }
+.sommelier-card .motive-box .label{
+  font-weight: 800;
+  margin-right: .25em;
+}
+/* rimuovi completamente lo zig-zag */
+.sommelier-card .zigzag{ display:none !important; }
+
 /* badge cluster (boosted/top/discovery) in alto a sinistra */
 .sommelier-card .badge-stack{
   position:absolute; top:8px; left:10px;
@@ -275,6 +281,23 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
 .sommelier-card .vino-header{
   padding-right: 84px;           /* spazio “virtuale” per la pill a dx */
 }
+/* badge cluster (boosted/top/discovery) in alto a sinistra */
+.sommelier-card .badge-stack{
+  position:absolute; top:8px; left:10px;
+  display:flex; gap:6px; font-size:.95em; line-height:1;
+}
+
+/* pill colore in alto a destra */
+.sommelier-card .color-pill{
+  position:absolute; top:8px; right:10px;
+  font-size:.75em; font-weight:800;
+  padding:4px 10px; border-radius:999px;
+  border:1px solid rgba(0,0,0,.12); line-height:1;
+}
+
+/* titolo sotto i badge, a tutta larghezza */
+.sommelier-card .vino-header{ padding-right:84px; }  /* spazio per la pill */
+.sommelier-card .titolo{ font-weight:700; font-size:1em; }
 /* =========================
    RESPONSIVE
 ========================= */
@@ -1008,7 +1031,7 @@ let cardsHtml = rawBlocks.map(block => {
       ${uvVal ? `<div class="meta">${translations[currentLang].grape}: ${uvVal}</div>` : ""}
       ${motVal ? `
         <div class="motive-wrap">
-          <div class="zigzag"></div>
+          <div class="motive-box"></div>
           <div class="motive"><strong>${translations[currentLang].motive}:</strong> ${motVal}</div>
         </div>` : ""}
     </div>`;
