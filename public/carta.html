@@ -232,72 +232,65 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
 .vino-chips.muted span{ background:#fafafa; color:#666; }
 .vino-toggle{ margin-top:8px; font-size:.9em; border:none; background:transparent; color:var(--accent-color,#b00); cursor:pointer; }
 
-/* — Sommelier: lista a zig-zag e pill colore — */
-.somm-list .sommelier-card{ max-width: 540px; }
-.somm-list .sommelier-card:nth-child(even){ margin-left:auto; }  /* alterna destra/sinistra */
-.sommelier-card .vino-header{ display:flex; align-items:baseline; gap:8px; }
-.sommelier-card .color-pill{
-  margin-left:auto; font-size:.75em; font-weight:800;
-  padding:4px 10px; border-radius:999px; border:1px solid rgba(0,0,0,.12);
-  line-height:1;
-}
-.sommelier-card .titolo{ font-weight:700; font-size:1em; }
-.sommelier-card .meta{ margin-top:4px; font-size:.9em; color:#666; }
-.sommelier-card .motive{ margin-top:8px; font-size:.95em; }
-.sommelier-card .price-row{ margin:4px 0 0; gap:10px; } /* titolo-prezzo più vicini */
+/* — Sommelier (card zig-zag + badge/pill fissi agli angoli) — */
+.somm-list .sommelier-card{ max-width:540px; }
+.somm-list .sommelier-card:nth-child(even){ margin-left:auto; } /* zig-zag dx/sx */
 
-/* —— motivazione in box con bordino sinistro —— */
-.sommelier-card .motive-wrap{ margin-top:10px; }
-.sommelier-card .motive-box{
-  background: color-mix(in srgb, var(--bg-default, #fff9f4) 65%, #ffffff);
-  border: 1px solid rgba(0,0,0,.08);
-  border-left: 6px solid var(--accent-color, #b00);
-  border-radius: 10px;
-  padding: 10px 12px;
-  line-height: 1.35;
+/* contenitore card */
+.sommelier-card{
+  position: relative;           /* NECESSARIO: àncora per gli elementi assoluti */
+  background:#fff;
+  border:1px solid var(--card-border, rgba(0,0,0,.12));
+  border-radius:12px;
+  padding:14px 12px;
+  margin:8px 0;
+  box-shadow:0 2px 6px rgba(0,0,0,.06);
 }
-.sommelier-card .motive-box .label{
-  font-weight: 800;
-  margin-right: .25em;
-}
-/* rimuovi completamente lo zig-zag */
-.sommelier-card .zigzag{ display:none !important; }
 
-/* badge cluster (boosted/top/discovery) in alto a sinistra */
+/* badge cluster (⭐/👍/✨) in alto a sinistra */
 .sommelier-card .badge-stack{
   position:absolute; top:8px; left:10px;
-  display:flex; gap:6px; font-size:.95em; line-height:1;
+  display:flex; gap:6px; font-size:1rem; line-height:1;
 }
 
 /* pill del colore in alto a destra */
 .sommelier-card .color-pill{
   position:absolute; top:8px; right:10px;
-  font-size:.75em; font-weight:800;
+  font-size:.75em; font-weight:800; line-height:1;
   padding:4px 10px; border-radius:999px;
-  border:1px solid rgba(0,0,0,.12); line-height:1;
+  border:1px solid rgba(0,0,0,.12);
 }
 
-/* header più pulito, niente pill a fianco del titolo */
+/* header: il nome sta SOTTO i badge, a tutta riga */
 .sommelier-card .vino-header{
-  padding-right: 84px;           /* spazio “virtuale” per la pill a dx */
+  display:block;
+  padding:26px 88px 4px 42px;   /* spazio per pill (dx) e badge (sx) */
 }
-/* badge cluster (boosted/top/discovery) in alto a sinistra */
-.sommelier-card .badge-stack{
-  position:absolute; top:8px; left:10px;
-  display:flex; gap:6px; font-size:.95em; line-height:1;
-}
-
-/* pill colore in alto a destra */
-.sommelier-card .color-pill{
-  position:absolute; top:8px; right:10px;
-  font-size:.75em; font-weight:800;
-  padding:4px 10px; border-radius:999px;
-  border:1px solid rgba(0,0,0,.12); line-height:1;
+.sommelier-card .titolo{
+  display:block;
+  font-weight:700; font-size:1em;
+  white-space:normal; word-break:break-word; line-height:1.25;
 }
 
-/* titolo sotto i badge, a tutta larghezza */
-.sommelier-card .vino-header{ padding-right:84px; }  /* spazio per la pill */
-.sommelier-card .titolo{ font-weight:700; font-size:1em; }
+/* riga prezzi/uvaggio */
+.sommelier-card .meta{ margin-top:4px; font-size:.9em; color:#666; }
+.sommelier-card .price-row{ margin:4px 0 0; gap:10px; }
+
+/* motivazione: riquadro con bordo sinistro colorato */
+.sommelier-card .motive-wrap{ margin-top:10px; }
+.sommelier-card .motive-box{
+  background: color-mix(in srgb, var(--bg-default, #fff9f4) 65%, #ffffff);
+  border:1px solid rgba(0,0,0,.08);
+  border-left:6px solid var(--accent-color, #b00);
+  border-radius:10px;
+  padding:10px 12px;
+  line-height:1.35;
+}
+.sommelier-card .motive-box .label{ font-weight:800; margin-right:.25em; }
+
+/* elimina qualsiasi “zig zag” vecchio residuo */
+.sommelier-card .zigzag{ display:none !important; }
+
 /* =========================
    RESPONSIVE
 ========================= */
@@ -1030,10 +1023,12 @@ let cardsHtml = rawBlocks.map(block => {
       ${prezziHtml}
       ${uvVal ? `<div class="meta">${translations[currentLang].grape}: ${uvVal}</div>` : ""}
       ${motVal ? `
-        <div class="motive-wrap">
-          <div class="motive-box"></div>
-          <div class="motive"><strong>${translations[currentLang].motive}:</strong> ${motVal}</div>
-        </div>` : ""}
+  <div class="motive-wrap">
+    <div class="motive-box">
+      <span class="label">${translations[currentLang].motive}:</span> ${motVal}
+    </div>
+  </div>` : ""}
+
     </div>`;
 }).join('');
 
