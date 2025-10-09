@@ -262,14 +262,24 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
 }
 
 /* header: il nome sta SOTTO i badge, a tutta riga */
+/* header: il nome sta SOTTO i badge, a tutta riga */
 .sommelier-card .vino-header{
-  display:block;
-  padding:26px 88px 4px 42px;   /* spazio per pill (dx) e badge (sx) */
+  display:flex;
+  align-items:flex-start;
+  flex-wrap:wrap;
+  padding-top:32px;        /* spazio verticale sotto badge/pill */
+  padding-left:10px;       /* spazio da sinistra */
+  padding-right:10px;      /* spazio da destra */
 }
+
 .sommelier-card .titolo{
-  display:block;
-  font-weight:700; font-size:1em;
-  white-space:normal; word-break:break-word; line-height:1.25;
+  flex:1 1 100%;           /* prende tutta la larghezza disponibile */
+  font-weight:700;
+  font-size:1em;
+  white-space:normal;
+  word-break:break-word;
+  line-height:1.25;
+  text-align:left;         /* forza l’allineamento */
 }
 
 /* riga prezzi/uvaggio */
