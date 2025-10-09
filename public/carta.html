@@ -955,7 +955,11 @@ let cardsHtml = rawBlocks.map(block => {
   const isBoosted   = /⭐/.test(titleLine);
   const isTop       = /👍/.test(titleLine);
   const isDiscovery = /✨/.test(titleLine);
-  const nomeVino = titleLine.replace(/[⭐👍✨]/g, "").replace(/^[-•]\s*/, "").trim();
+  // rimuove qualsiasi emoji (anche quelle “di stile” come 🍋) dal titolo mostrato
+  const nomeVino = titleLine
+    .replace(/\p{Extended_Pictographic}/gu, "") // via tutte le emoji
+    .replace(/^[-•]\s*/, "")
+    .trim();
 
   const uvVal  = stripLabelPrefix(uvRiga, [
     "uvaggio","grape","grape variety","cepages","cépages","variedad de uva","rebsorte","uva","葡萄品种"
@@ -965,8 +969,8 @@ let cardsHtml = rawBlocks.map(block => {
   ]);
 
   // prezzi + colore
-  let wFound = wines.find(w => norm(w.nome) === norm(nomeVino))
-           || wines.find(w => norm(w.nome).includes(norm(nomeVino)) || norm(nomeVino).includes(norm(w.nome)));
+  let wFound = wines.find(w => normalize(w.nome) === normalize(nomeVino))
+         || wines.find(w => normalize(w.nome).includes(normalize(nomeVino)) || normalize(nomeVino).includes(normalize(w.nome)));
   let prezziHtml = "";
   let colorInfo = {label:"Vino", hex:"#ddd"};
   if (wFound) {
