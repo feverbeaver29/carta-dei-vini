@@ -246,6 +246,35 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
 .sommelier-card .motive{ margin-top:8px; font-size:.95em; }
 .sommelier-card .price-row{ margin:4px 0 0; gap:10px; } /* titolo-prezzo più vicini */
 
+/* —— separator zig-zag per la motivazione —— */
+.sommelier-card { position: relative; }
+.sommelier-card .motive-wrap{ margin-top:10px; }
+.sommelier-card .zigzag{
+  height:8px;
+  margin:6px 0 8px 0;
+  --zz: rgba(0,0,0,.12);                 /* colore del dente */
+  background:
+    linear-gradient(135deg,var(--zz) 25%, transparent 25%) 0 0/12px 8px repeat-x,
+    linear-gradient(225deg,var(--zz) 25%, transparent 25%) 6px 0/12px 8px repeat-x;
+}
+/* badge cluster (boosted/top/discovery) in alto a sinistra */
+.sommelier-card .badge-stack{
+  position:absolute; top:8px; left:10px;
+  display:flex; gap:6px; font-size:.95em; line-height:1;
+}
+
+/* pill del colore in alto a destra */
+.sommelier-card .color-pill{
+  position:absolute; top:8px; right:10px;
+  font-size:.75em; font-weight:800;
+  padding:4px 10px; border-radius:999px;
+  border:1px solid rgba(0,0,0,.12); line-height:1;
+}
+
+/* header più pulito, niente pill a fianco del titolo */
+.sommelier-card .vino-header{
+  padding-right: 84px;           /* spazio “virtuale” per la pill a dx */
+}
 /* =========================
    RESPONSIVE
 ========================= */
@@ -922,22 +951,22 @@ let cardsHtml = rawBlocks.map(block => {
   const uvRiga = lines[1] || "";
   const motRiga = lines.slice(2).join(" ");
 
-  const uvVal = stripLabelPrefix(uvRiga, [
+  // ✨ estrai badge dal titolo e pulisci il nome
+  const isBoosted   = /⭐/.test(titleLine);
+  const isTop       = /👍/.test(titleLine);
+  const isDiscovery = /✨/.test(titleLine);
+  const nomeVino = titleLine.replace(/[⭐👍✨]/g, "").replace(/^[-•]\s*/, "").trim();
+
+  const uvVal  = stripLabelPrefix(uvRiga, [
     "uvaggio","grape","grape variety","cepages","cépages","variedad de uva","rebsorte","uva","葡萄品种"
   ]);
   const motVal = stripLabelPrefix(motRiga, [
     "motivazione","rationale","justification","begrundung","begründung","motivacion","motivación","理由"
   ]);
 
-  // Nome vino “pulito”
-  const nomeVino = (titleLine.split(/€|EUR|CHF|\$|£|¥/)[0] || "").replace(/^[-•]\s*/, "").trim();
-  if (!nomeVino) return '';
-
-  // Cerca il vino in carta per prezzi e categoria
-  const norm = s => (s || "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim();
+  // prezzi + colore
   let wFound = wines.find(w => norm(w.nome) === norm(nomeVino))
-          || wines.find(w => norm(w.nome).includes(norm(nomeVino)) || norm(nomeVino).includes(norm(w.nome)));
-
+           || wines.find(w => norm(w.nome).includes(norm(nomeVino)) || norm(nomeVino).includes(norm(w.nome)));
   let prezziHtml = "";
   let colorInfo = {label:"Vino", hex:"#ddd"};
   if (wFound) {
@@ -956,17 +985,31 @@ let cardsHtml = rawBlocks.map(block => {
     }
   }
 
+  // cluster badge (in alto a sx)
+  const badgeStack = `
+    <div class="badge-stack">
+      ${isBoosted   ? "⭐" : ""}
+      ${isTop       ? "👍" : ""}
+      ${isDiscovery ? "✨" : ""}
+    </div>`;
+
   return `
-    <div class="sommelier-card" style="background:${responseBg}; border:1px solid ${vignetteColor}; border-radius:12px; padding:12px; margin:8px 0; box-shadow:0 2px 6px rgba(0,0,0,0.06); color:${textColor};">
+    <div class="sommelier-card" style="background:${responseBg}; border:1px solid ${vignetteColor}; border-radius:12px; padding:14px 12px; margin:8px 0; box-shadow:0 2px 6px rgba(0,0,0,0.06); color:${textColor};">
+      ${badgeStack}
+      <span class="color-pill" style="background:${colorInfo.hex}; color:${getContrastingTextColor(colorInfo.hex)};">${colorInfo.label}</span>
       <div class="vino-header">
         <div class="titolo">${nomeVino}</div>
-        <span class="color-pill" style="background:${colorInfo.hex}; color:${getContrastingTextColor(colorInfo.hex)};">${colorInfo.label}</span>
       </div>
       ${prezziHtml}
       ${uvVal ? `<div class="meta">${translations[currentLang].grape}: ${uvVal}</div>` : ""}
-      ${motVal ? `<div class="motive"><strong>${translations[currentLang].motive}:</strong> ${motVal}</div>` : ""}
+      ${motVal ? `
+        <div class="motive-wrap">
+          <div class="zigzag"></div>
+          <div class="motive"><strong>${translations[currentLang].motive}:</strong> ${motVal}</div>
+        </div>` : ""}
     </div>`;
 }).join('');
+
 
     if (!cardsHtml || cardsHtml.trim() === "") {
       suggestion.innerHTML = `
