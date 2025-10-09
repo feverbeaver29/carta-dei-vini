@@ -232,6 +232,20 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
 .vino-chips.muted span{ background:#fafafa; color:#666; }
 .vino-toggle{ margin-top:8px; font-size:.9em; border:none; background:transparent; color:var(--accent-color,#b00); cursor:pointer; }
 
+/* — Sommelier: lista a zig-zag e pill colore — */
+.somm-list .sommelier-card{ max-width: 540px; }
+.somm-list .sommelier-card:nth-child(even){ margin-left:auto; }  /* alterna destra/sinistra */
+.sommelier-card .vino-header{ display:flex; align-items:baseline; gap:8px; }
+.sommelier-card .color-pill{
+  margin-left:auto; font-size:.75em; font-weight:800;
+  padding:4px 10px; border-radius:999px; border:1px solid rgba(0,0,0,.12);
+  line-height:1;
+}
+.sommelier-card .titolo{ font-weight:700; font-size:1em; }
+.sommelier-card .meta{ margin-top:4px; font-size:.9em; color:#666; }
+.sommelier-card .motive{ margin-top:8px; font-size:.95em; }
+.sommelier-card .price-row{ margin:4px 0 0; gap:10px; } /* titolo-prezzo più vicini */
+
 /* =========================
    RESPONSIVE
 ========================= */
@@ -248,7 +262,7 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
   #restaurantName{ font-size:1em; gap:6px; }
   #sommelierPopup{ padding:20px 16px; width:95vw; border-radius:12px; }
   .sommelier-card{ font-size:.95em; }
-  .vino-header{ flex-direction:column; align-items:flex-start; }
+  .sommelier-card .vino-header{ flex-direction:column; align-items:flex-start; }
   #sommelierPopup input{ font-size:1em; max-width:100%; box-sizing:border-box; }
   nav{ padding:.3em .6em; height:auto !important; }
   #restaurantLogo{ max-height:120px; }
@@ -892,36 +906,43 @@ const vignetteTextColor = textColor;
 const shadow       = window.paletteColors?.boxShadow      || "0 2px 6px rgba(0,0,0,0.15)";
 const prezzoColor = getContrastingTextColor(responseBg);
 
+function colorInfoFromCategoria(catRaw){
+  const s = (catRaw||"").toLowerCase();
+  if (/\b(spumante|bollicine|franciacorta|champagne|trentodoc|prosecco)\b/.test(s)) return {label:"Bollicine", hex:"#7fb3ff"};
+  if (/\b(rosato|rosé|rose|ramato|cerasuolo)\b/.test(s))                                return {label:"Rosato",   hex:"#ff7fb3"};
+  if (/\b(bianco|white|blanc)\b/.test(s))                                               return {label:"Bianco",   hex:"#f6d76b"};
+  if (/\b(rosso|red|rouge)\b/.test(s))                                                  return {label:"Rosso",    hex:"#b04a4a"};
+  if (/\b(dolce|passito|vendemmia tardiva|late harvest|vin santo|sauternes)\b/.test(s)) return {label:"Dolce",    hex:"#b37acc"};
+  return {label:"Vino", hex:"#ddd"};
+}
+
 let cardsHtml = rawBlocks.map(block => {
   const lines = block.split(/\n/).map(l => l.trim()).filter(Boolean);
   const titleLine = lines[0] || "";
-const uvRiga = lines[1] || "";
-const motRiga = lines.slice(2).join(" ");
+  const uvRiga = lines[1] || "";
+  const motRiga = lines.slice(2).join(" ");
 
-const uvVal = stripLabelPrefix(uvRiga, [
-  "uvaggio","grape","grape variety","cepages","cépages","variedad de uva","rebsorte","uva","葡萄品种"
-]);
+  const uvVal = stripLabelPrefix(uvRiga, [
+    "uvaggio","grape","grape variety","cepages","cépages","variedad de uva","rebsorte","uva","葡萄品种"
+  ]);
+  const motVal = stripLabelPrefix(motRiga, [
+    "motivazione","rationale","justification","begrundung","begründung","motivacion","motivación","理由"
+  ]);
 
-const motVal = stripLabelPrefix(motRiga, [
-  "motivazione","rationale","justification","begrundung","begründung","motivacion","motivación","理由"
-]);
-
-  // prendo SOLO il nome del vino dalla prima riga (ignoro eventuale €... scritto dall'AI)
+  // Nome vino “pulito”
   const nomeVino = (titleLine.split(/€|EUR|CHF|\$|£|¥/)[0] || "").replace(/^[-•]\s*/, "").trim();
   if (!nomeVino) return '';
 
-  // cerco lo stesso vino nella carta per recuperare TUTTI i prezzi
+  // Cerca il vino in carta per prezzi e categoria
   const norm = s => (s || "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim();
-  let wFound = wines.find(w => norm(w.nome) === norm(nomeVino));
-  if (!wFound) {
-    // fallback "soft": include/è incluso
-    wFound = wines.find(w => norm(w.nome).includes(norm(nomeVino)) || norm(nomeVino).includes(norm(w.nome)));
-  }
+  let wFound = wines.find(w => norm(w.nome) === norm(nomeVino))
+          || wines.find(w => norm(w.nome).includes(norm(nomeVino)) || norm(nomeVino).includes(norm(w.nome)));
 
-  // compongo la riga prezzi: se non trovo il vino, faccio almeno la bottiglia letta dalla riga
   let prezziHtml = "";
+  let colorInfo = {label:"Vino", hex:"#ddd"};
   if (wFound) {
     prezziHtml = buildPriceHTML(wFound);
+    colorInfo = colorInfoFromCategoria(wFound.categoria || "");
   } else {
     const prezzoGrezz = (titleLine.match(/€\s*\d[\d.,]*/) || [])[0];
     if (prezzoGrezz) {
@@ -936,16 +957,16 @@ const motVal = stripLabelPrefix(motRiga, [
   }
 
   return `
-    <div class="sommelier-card" style="background:${responseBg}; border:1px solid ${vignetteColor}; border-radius:12px; padding:15px; margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.06); color:${textColor};">
-      <div class="vino-header" style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap;">
-        <div style="font-weight:600; font-size:1em; flex:1;">${nomeVino}</div>
+    <div class="sommelier-card" style="background:${responseBg}; border:1px solid ${vignetteColor}; border-radius:12px; padding:12px; margin:8px 0; box-shadow:0 2px 6px rgba(0,0,0,0.06); color:${textColor};">
+      <div class="vino-header">
+        <div class="titolo">${nomeVino}</div>
+        <span class="color-pill" style="background:${colorInfo.hex}; color:${getContrastingTextColor(colorInfo.hex)};">${colorInfo.label}</span>
       </div>
       ${prezziHtml}
-      ${uvVal ? `<div style="font-size:0.9em; color:#666; margin-top:4px;">${translations[currentLang].grape}: ${uvVal}</div>` : ""}
-      ${motVal ? `<div style="margin-top:10px; font-size:0.95em;"><strong>${translations[currentLang].motive}:</strong> ${motVal}</div>` : ""}
+      ${uvVal ? `<div class="meta">${translations[currentLang].grape}: ${uvVal}</div>` : ""}
+      ${motVal ? `<div class="motive"><strong>${translations[currentLang].motive}:</strong> ${motVal}</div>` : ""}
     </div>`;
 }).join('');
-
 
     if (!cardsHtml || cardsHtml.trim() === "") {
       suggestion.innerHTML = `
@@ -957,16 +978,16 @@ const motVal = stripLabelPrefix(motRiga, [
     const storico = mostraStoricoNelSommelier();
 
 suggestion.innerHTML = `
-  <div class="sommelier-fadein" style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px;">
+  <div class="sommelier-fadein" style="display:flex; align-items:flex-start; gap:12px; margin-bottom:20px;">
     <img id="sommelierAvatar"
-        src="${ristoranteSommelierURL || 'sommelier.png'}"
-        alt="Sommelier"
-        style="width:64px; height:64px; border-radius:50%; object-fit:cover; box-shadow:0 0 6px rgba(0,0,0,0.1);">
+         src="${ristoranteSommelierURL || 'sommelier.png'}"
+         alt="Sommelier"
+         style="width:64px; height:64px; border-radius:50%; object-fit:cover; box-shadow:0 0 6px rgba(0,0,0,0.1);">
 
     <div style="position: relative; background: ${responseBg}; border: 1px solid ${vignetteColor}; border-radius:16px; padding:16px 18px; max-width:80%; box-shadow: ${shadow}; color: ${textColor};">
       <div style="position: absolute; top: 20px; left: -10px; width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-right: 10px solid ${vignetteColor};"></div>
       <strong style="color:${vignetteTextColor}; font-size: 1em;">${translations[currentLang].sommelierTitle}</strong>
-      <div style="margin-top: 8px;">${cardsHtml}</div>
+      <div class="somm-list" style="margin-top:8px;">${cardsHtml}</div>
       ${storico}
       <div style="text-align:right; font-size:0.85em; color:${vignetteTextColor}; margin-top:8px;">${translations[currentLang].sommelierFooter}</div>
     </div>
