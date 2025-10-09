@@ -247,39 +247,39 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
   box-shadow:0 2px 6px rgba(0,0,0,.06);
 }
 
-/* badge cluster (⭐/👍/✨) in alto a sinistra */
+/* badge cluster (⭐/👍/✨) in alto a sinistra — più vicino al titolo */
 .sommelier-card .badge-stack{
-  position:absolute; top:8px; left:10px;
-  display:flex; gap:6px; font-size:1rem; line-height:1;
+  position:absolute; top:6px; left:8px;
+  display:flex; gap:4px; font-size:1rem; line-height:1;
 }
 
-/* pill del colore in alto a destra */
+/* pill del colore in alto a destra — stessa altezza dei badge */
 .sommelier-card .color-pill{
-  position:absolute; top:8px; right:10px;
-  font-size:.75em; font-weight:800; line-height:1;
-  padding:4px 10px; border-radius:999px;
+  position:absolute; top:6px; right:8px;
+  font-size:.78em; font-weight:800; line-height:1;
+  padding:3px 10px; border-radius:999px;
   border:1px solid rgba(0,0,0,.12);
 }
 
-/* header: il nome sta SOTTO i badge, a tutta riga */
-/* header: il nome sta SOTTO i badge, a tutta riga */
+/* header: riduco il padding-top così il nome “sale” sotto i badge */
 .sommelier-card .vino-header{
   display:flex;
   align-items:flex-start;
   flex-wrap:wrap;
-  padding-top:32px;        /* spazio verticale sotto badge/pill */
-  padding-left:10px;       /* spazio da sinistra */
-  padding-right:10px;      /* spazio da destra */
+  padding-top:22px;          /* ← era 32px */
+  padding-left:10px;
+  padding-right:10px;
 }
 
 .sommelier-card .titolo{
-  flex:1 1 100%;           /* prende tutta la larghezza disponibile */
+  flex:1 1 100%;
   font-weight:700;
   font-size:1em;
   white-space:normal;
   word-break:break-word;
-  line-height:1.25;
-  text-align:left;         /* forza l’allineamento */
+  line-height:1.22;
+  text-align:left;
+  margin-top:2px;            /* leggerissimo avvicinamento */
 }
 
 /* riga prezzi/uvaggio */
@@ -963,12 +963,29 @@ const prezzoColor = getContrastingTextColor(responseBg);
 
 function colorInfoFromCategoria(catRaw){
   const s = (catRaw||"").toLowerCase();
-  if (/\b(spumante|bollicine|franciacorta|champagne|trentodoc|prosecco)\b/.test(s)) return {label:"Bollicine", hex:"#7fb3ff"};
-  if (/\b(rosato|rosé|rose|ramato|cerasuolo)\b/.test(s))                                return {label:"Rosato",   hex:"#ff7fb3"};
-  if (/\b(bianco|white|blanc)\b/.test(s))                                               return {label:"Bianco",   hex:"#f6d76b"};
-  if (/\b(rosso|red|rouge)\b/.test(s))                                                  return {label:"Rosso",    hex:"#b04a4a"};
-  if (/\b(dolce|passito|vendemmia tardiva|late harvest|vin santo|sauternes)\b/.test(s)) return {label:"Dolce",    hex:"#b37acc"};
-  return {label:"Vino", hex:"#ddd"};
+
+  // Bollicine (azzurro)
+  if (/\b(spumante|bollicine|franciacorta|champagne|trentodoc|prosecco|metodo classico|col.?fondo)\b/.test(s))
+    return { label: "Bollicine", hex: "#8EC9FF" };
+
+  // Rosato / Ramato → etichetta "Rosa" (rosa)
+  if (/\b(rosato|ros[eé]|rose|ramato|cerasuolo)\b/.test(s))
+    return { label: "Rosa", hex: "#FF7FB3" };
+
+  // Bianco (giallo)
+  if (/\b(bianco|white|blanc)\b/.test(s))
+    return { label: "Bianco", hex: "#FFD24D" };
+
+  // Rosso (rosso)
+  if (/\b(rosso|red|rouge)\b/.test(s))
+    return { label: "Rosso", hex: "#E04B4B" };
+
+  // Dolce/passito (arancione)
+  if (/\b(dolce|passito|vendemmia tardiva|late harvest|vin santo|sauternes|moscato passito)\b/.test(s))
+    return { label: "Dolce", hex: "#FFA94D" };
+
+  // fallback neutro
+  return { label: "Vino", hex: "#DDDDDD" };
 }
 
 let cardsHtml = rawBlocks.map(block => {
