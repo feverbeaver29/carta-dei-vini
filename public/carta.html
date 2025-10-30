@@ -1537,6 +1537,48 @@ applyPalette(window.ristorantePalette);
   history.pushState({ view: "wines", subcategory: subcat, category: currentCategory }, "");
 }
 
+function showWinesForCategory(category) {
+  setHelperByKey('helperClickWine');
+  currentView = 'wines';
+  currentCategory = category;
+  window.currentSubcategory = null;     // ← importante: nessuna sottocategoria attiva
+
+  const wineList = document.getElementById('wine-list');
+  if (wineList) wineList.style.display = 'block';
+  wineList.innerHTML = '';
+
+  // rispetta i filtri formati (bottiglia, calice, ecc.)
+  const { ids, map } = getCheckedFormats();
+  const allInCat = wines.filter(w => normalize(w.categoria) === normalize(category));
+  const filtered = winesMatchFormats(allInCat, ids, map);
+
+  filtered.forEach(w => {
+    const card = document.createElement('div');
+    card.className = 'wine-card';
+    const annata = w.annata ? ` (${w.annata})` : '';
+    const nomePulito = (w.nome || '').trim();
+    const t = translations[currentLang];
+    card.innerHTML = `
+      <strong>${nomePulito}${annata}</strong>
+      ${buildPriceHTML(w)}
+      ${w.uvaggio ? `<small>${t.grape}: ${w.uvaggio}</small>` : ""}`;
+    wineList.appendChild(card);
+    card.onclick = () => { mostraPopupDescrizione(w); };
+  });
+
+  // nascondi liste non pertinenti
+  const subcatList = document.getElementById('subcategory-list');
+  if (subcatList) subcatList.style.display = 'none';
+  const catList = document.getElementById('category-list');
+  if (catList) catList.style.display = 'none';
+
+  // stato cronologia: “wines” senza subcategory
+  history.pushState({ view: "wines", category, subcategory: null }, "");
+
+  // riapplica palette
+  applyPalette(window.ristorantePalette);
+}
+
 async function loadWineData() {
   if (!RESTAURANT_ID) return;
   if (!ristorante) {
@@ -1984,6 +2026,11 @@ window.showCategories = async function (categories) {
   });
 
   let orderedKeys = Array.from(seen.keys());
+    // ✅ Se non esiste ALCUNA sottocategoria non-vuota, salta la vista sottocategorie
+  if (orderedKeys.length === 0) {
+    showWinesForCategory(category);
+    return;
+  }
 
   if (categoriaOrder.length) {
     const seenKeys = Array.from(seen.keys());
@@ -2217,9 +2264,13 @@ window.addEventListener("popstate", (event) => {
     goToCategories();
   } else if (state.view === "subcategory") {
     showSubcategories(state.category);
-  } else if (state.view === "wines") {
+    } else if (state.view === "wines") {
     currentCategory = state.category;
-    showWinesBySubcategory(state.subcategory);
+    if (state.subcategory) {
+      showWinesBySubcategory(state.subcategory);
+    } else {
+      showWinesForCategory(state.category);   // ✅ categoria “flat”
+    }
   }
 
   setTimeout(() => window._manualNavigation = false, 100);
@@ -2552,27 +2603,50 @@ ordered.forEach(async (cat) => {
     });
 } else if (currentView === 'wines') {
   const wineList = document.getElementById("wine-list");
-  if (!wineList || !window.currentSubcategory) return;
+  if (!wineList) return;
 
   wineList.innerHTML = "";
-  const inSub = wines.filter(w =>
-    normalize(w.categoria) === normalize(currentCategory) &&
-    normalize(w.sottocategoria) === normalize(window.currentSubcategory)
-  );
-  const filtered = winesMatchFormats(inSub, ids, map);
-  filtered.forEach(w => {
-    const card = document.createElement("div");
-    card.className = "wine-card";
-    const annata = w.annata ? ` (${w.annata})` : "";
-    const nomePulito = (w.nome || "").trim();
-    const t = translations[currentLang];
-    card.innerHTML = `
-      <strong>${nomePulito}${annata}</strong>
-      ${buildPriceHTML(w)}
-      ${w.uvaggio ? `<small>${t.grape}: ${w.uvaggio}</small>` : ""}`;
-    card.onclick = () => mostraPopupDescrizione(w);
-    wineList.appendChild(card);
-  });
+
+  // Se ho una sottocategoria attiva → comportamento attuale
+  if (window.currentSubcategory) {
+    const inSub = wines.filter(w =>
+      normalize(w.categoria) === normalize(currentCategory) &&
+      normalize(w.sottocategoria) === normalize(window.currentSubcategory)
+    );
+    const filtered = winesMatchFormats(inSub, ids, map);
+    filtered.forEach(w => {
+      const card = document.createElement("div");
+      card.className = "wine-card";
+      const annata = w.annata ? ` (${w.annata})` : "";
+      const nomePulito = (w.nome || "").trim();
+      const t = translations[currentLang];
+      card.innerHTML = `
+        <strong>${nomePulito}${annata}</strong>
+        ${buildPriceHTML(w)}
+        ${w.uvaggio ? `<small>${t.grape}: ${w.uvaggio}</small>` : ""}`;
+      card.onclick = () => mostraPopupDescrizione(w);
+      wineList.appendChild(card);
+    });
+  } else {
+    // ✅ Nessuna sottocategoria attiva → filtra solo per categoria
+    const inCat = wines.filter(w =>
+      normalize(w.categoria) === normalize(currentCategory)
+    );
+    const filtered = winesMatchFormats(inCat, ids, map);
+    filtered.forEach(w => {
+      const card = document.createElement("div");
+      card.className = "wine-card";
+      const annata = w.annata ? ` (${w.annata})` : "";
+      const nomePulito = (w.nome || "").trim();
+      const t = translations[currentLang];
+      card.innerHTML = `
+        <strong>${nomePulito}${annata}</strong>
+        ${buildPriceHTML(w)}
+        ${w.uvaggio ? `<small>${t.grape}: ${w.uvaggio}</small>` : ""}`;
+      card.onclick = () => mostraPopupDescrizione(w);
+      wineList.appendChild(card);
+    });
+  }
 }
 
 }
