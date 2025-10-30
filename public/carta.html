@@ -2026,11 +2026,6 @@ window.showCategories = async function (categories) {
   });
 
   let orderedKeys = Array.from(seen.keys());
-    // ✅ Se non esiste ALCUNA sottocategoria non-vuota, salta la vista sottocategorie
-  if (orderedKeys.length === 0) {
-    showWinesForCategory(category);
-    return;
-  }
 
   if (categoriaOrder.length) {
     const seenKeys = Array.from(seen.keys());
@@ -2103,6 +2098,11 @@ window.showSubcategories = function (category) {
   });
 
   let orderedKeys = Array.from(seen.keys());
+    // 👉 Nessuna sottocategoria? Vai direttamente alla lista dei vini della categoria
+  if (orderedKeys.length === 0) {
+    showWinesForCategory(category);
+    return;
+  }
 
   const order = Object.entries(sottocategoriaOrderMap).find(
     ([key]) => normalize(key) === normalize(category)
@@ -2594,6 +2594,11 @@ ordered.forEach(async (cat) => {
     }
     const container = document.getElementById('subcategory-list');
     container.innerHTML = '';
+      // 👉 Se i filtri azzerano le sottocategorie visibili, mostra direttamente i vini della categoria
+  if (ordered.length === 0) {
+    showWinesForCategory(currentCategory);
+    return;
+  }
     ordered.forEach(sub => {
       const div = document.createElement('div');
       div.className = 'subcategory';
