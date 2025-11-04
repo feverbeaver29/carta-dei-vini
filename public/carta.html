@@ -81,28 +81,51 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
   display:grid;
   grid-template-columns: 1fr auto 1fr; /* sinistra | centro | destra */
   align-items:center;
-  padding:0 12px;
+  padding:8px 12px;                   /* 👈 più respiro */
   z-index:980;
   box-shadow:0 -2px 8px rgba(0,0,0,.15);
 }
 
 .bottom-btn{
-  flex:0 0 auto;
-  height:42px; width:56px;
-  border:none; border-radius:10px; background:transparent;
+  height:44px; min-width:44px;
+  padding:0 10px;
+  border:none; border-radius:12px;
+  background: rgba(255,255,255,0.06);          /* ghost */
   color: var(--bottom-bar-foreground, #fff);
-  display:flex; align-items:center; justify-content:center;
-  font-size:.9em; font-weight:700;
+  display:flex; align-items:center; gap:8px; justify-content:center;
+  font-weight:700;
+  transition: transform .12s ease, background .2s ease, box-shadow .2s ease;
 }
-.bottom-btn img{
-  width:30px; height:30px; display:block;
-  filter: brightness(100%) contrast(100%);
-}
+.bottom-btn:hover{ transform: translateY(-1px); }
+.bottom-btn img{ width:24px; height:24px; display:block; }
+
 .bottom-btn.active{
-  background: rgba(255,255,255,0.16);
-  box-shadow: 0 0 0 2px rgba(255,255,255,0.28) inset, 0 2px 8px rgba(0,0,0,0.15);
-  border-radius: 12px;
+  background: rgba(255,255,255,0.18);
+  outline: 2px solid rgba(255,255,255,0.28);
+  box-shadow: 0 4px 14px rgba(0,0,0,.18);
 }
+
+/* Gruppo formati come "segment control" */
+#formatBtnGroup{
+  justify-self:end;
+  display:flex;
+  gap:4px;                                /* 👈 ravvicinati */
+  padding:4px;
+  background: rgba(255,255,255,0.10);
+  border-radius:14px;
+  backdrop-filter: blur(6px);
+}
+#formatBtnGroup .bottom-btn{
+  width:44px; height:44px;
+  padding:0;
+  border-radius:10px;
+  background: transparent;                /* fantasma dentro il group */
+}
+#formatBtnGroup .bottom-btn.active{
+  background: rgba(255,255,255,0.22);
+  outline: 2px solid rgba(255,255,255,0.30);
+}
+
 
 /* =========================
    BOTTONE SOMMELIER (pulito)
@@ -2106,6 +2129,7 @@ if (isSommelierOn) {
   history.replaceState({ view: "categories" }, "");
 
 applyPalette(window.ristorantePalette);
+_afterDomGlassHook?.();
 })();
 
 
@@ -2334,49 +2358,60 @@ function setupFilterUI() {
   const optionsContainer = document.getElementById("filterOptions");
   const t = translations[currentLang] || translations.it;  // ← AGGIUNGI QUESTA RIGA
 
-  // Trova i formati disponibili nei vini
-  const formatsMap = {
-    bottle: { label: t.formatBottle || "Bottiglia", key: "prezzo" },
-    glass:  { label: t.formatGlass  || "Bicchiere", key: "prezzo_bicchiere" },
-    quarter: { label: "1/4 lt", key: "prezzo_025" },
-    half: { label: "1/2 lt", key: "prezzo_05" },
-    threequart: { label: "0,375 lt", key: "prezzo_0375" },
-    onehalf: { label: "1,5 lt", key: "prezzo_15" },
-    three: { label: "3 lt", key: "prezzo_3l" }
-  };
+// Trova i formati disponibili nei vini
+const formatsMapUI = {                    // ← solo formati "bottiglia"
+  bottle:    { label: t.formatBottle || "Bottiglia", key: "prezzo" },
+  quarter:   { label: "1/4 lt",       key: "prezzo_025" },
+  threequart:{ label: "0,375 lt",     key: "prezzo_0375" },
+  half:      { label: "1/2 lt",       key: "prezzo_05" },
+  onehalf:   { label: "1,5 lt",       key: "prezzo_15" },
+  three:     { label: "3 lt",         key: "prezzo_3l" }
+};
 
-  const availableFormats = {};
-  wines.forEach(w => {
-    for (const [id, f] of Object.entries(formatsMap)) {
-      if (w[f.key]) availableFormats[id] = f;
-    }
-  });
-
-  // Popola le checkbox
-  optionsContainer.innerHTML = "";
-  for (const [id, f] of Object.entries(availableFormats)) {
-    const label = document.createElement("label");
-    label.style.display = "flex";
-    label.style.alignItems = "center";
-    label.style.gap = "6px";
-    label.style.marginBottom = "6px";
-
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.value = id;
-    cb.checked = true;
-    cb.onchange = applyFilters;
-
-    label.appendChild(cb);
-    label.appendChild(document.createTextNode(f.label));
-    optionsContainer.appendChild(label);
+const availableFormats = {};
+wines.forEach(w => {
+  for (const [id, f] of Object.entries(formatsMapUI)) {
+    if (w[f.key]) availableFormats[id] = f;
   }
+});
 
-  btn.onclick = () => {
-    menu.style.display = (menu.style.display === "none") ? "block" : "none";
-  };
+// Popola le checkbox (tutte NON spuntate di default)
+optionsContainer.innerHTML = "";
+for (const [id, f] of Object.entries(availableFormats)) {
+  const label = document.createElement("label");
+  label.style.display = "flex";
+  label.style.alignItems = "center";
+  label.style.gap = "6px";
+  label.style.marginBottom = "6px";
 
-  applyFilters();
+  const cb = document.createElement("input");
+  cb.type = "checkbox";
+  cb.value = id;
+  cb.checked = false;               // 👈 default: nessun filtro
+  cb.onchange = applyFilters;
+
+  label.appendChild(cb);
+  label.appendChild(document.createTextNode(f.label));
+  optionsContainer.appendChild(label);
+}
+
+// ✅ checkbox "glass" nascosta per il quick filter (non visibile nel menu)
+let hidden = document.getElementById("glassHiddenCb");
+if (!hidden) {
+  hidden = document.createElement("input");
+  hidden.type = "checkbox";
+  hidden.value = "glass";
+  hidden.id = "glassHiddenCb";
+  hidden.style.display = "none";
+  hidden.checked = false;
+  optionsContainer.appendChild(hidden);
+}
+
+btn.onclick = () => {
+  menu.style.display = (menu.style.display === "none") ? "block" : "none";
+};
+
+applyFilters();
 }
 
 // Quick-filter: mostra solo i vini al bicchiere
@@ -2384,22 +2419,18 @@ function quickFilterGlass() {
   const container = document.getElementById("filterOptions");
   if (!container) return;
 
-  const checks = container.querySelectorAll('input[type="checkbox"]');
-  let found = false;
-  checks.forEach(cb => {
-    if (cb.value === "glass") { cb.checked = true; found = true; }
-    else { cb.checked = false; }
+  // deseleziona tutti i formati visibili
+  container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    if (cb.id !== "glassHiddenCb") cb.checked = false;
   });
 
-  if (found) {
-    applyFilters();
-    updateFormatActiveState()
-    closeFilterMenu();
-  } else {
-    // Nessun vino al bicchiere disponibile → apri popup formati così il cliente sceglie altro
-    const menu = document.getElementById("filterMenu");
-    if (menu) menu.style.display = "block";
-  }
+  // attiva SOLO la checkbox nascosta "glass"
+  const hidden = document.getElementById("glassHiddenCb");
+  if (hidden) hidden.checked = true;
+
+  applyFilters();
+  updateFormatActiveState();
+  closeFilterMenu();
 }
 
 // collega il bottone
