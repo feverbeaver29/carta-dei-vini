@@ -147,15 +147,6 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
   100%{ box-shadow:0 0 0 16px rgba(0,0,0,0), 0 10px 24px rgba(0,0,0,.18); }
 }
 
-/* Tooltip */
-#tooltipSommelier{
-  position:fixed; display:none; z-index:900; pointer-events:none;
-  background:#fff; border:1px solid #ccc; border-radius:12px; padding:10px 14px;
-  box-shadow:0 2px 8px rgba(0,0,0,.1); font-size:.9em; max-width:calc(100vw - 40px); text-align:center;
-}
-#tooltipSommelier .tip-content{ animation: tipFade 2.2s ease both; will-change: transform, opacity; }
-@keyframes tipFade{ 0%{opacity:0; transform:translateY(10px);} 20%,80%{opacity:1; transform:translateY(0);} 100%{opacity:0; transform:translateY(-8px);} }
-
 /* Popover posizionati sopra la bar */
 #searchPopover{ bottom: calc(var(--bottom-bar-height) + 22px) !important; }
 #filterMenu{    bottom: calc(var(--bottom-bar-height) + 14px) !important; }
@@ -377,7 +368,6 @@ const translations = {
     alreadyAsked: "Hai già chiesto per:",
     sommelierFooter: "Il tuo Sommelier Virtuale 🍷",
     sommelierTitleBox: "Dimmi cosa mangerai e ti suggerirò il vino perfetto!",
-    sommelierTooltip: "Non sai che vino scegliere? Lascia fare al Sommelier 🍷",
     anyPrice: "Indifferente",   // it
     motive:   "Motivazione",
     sommelierBtn: "Sommelier",
@@ -414,7 +404,6 @@ const translations = {
     alreadyAsked: "You already asked for:",
     sommelierFooter: "Your Virtual Sommelier 🍷",
     sommelierTitleBox: "Tell me what you'll eat and I'll suggest the perfect wine!",
-    sommelierTooltip: "Don't know which wine to choose? Let the Sommelier decide 🍷",
     anyPrice: "Any",
     motive:   "Rationale",
     sommelierBtn: "Sommelier",
@@ -451,7 +440,6 @@ const translations = {
     alreadyAsked: "Vous avez déjà demandé pour :",
     sommelierFooter: "Votre Sommelier Virtuel 🍷",
     sommelierTitleBox: "Dites-moi ce que vous mangez et je vous suggère le vin idéal !",
-    sommelierTooltip: "Vous ne savez pas quel vin choisir ? Laissez faire le Sommelier 🍷",
     anyPrice: "Sans préférence",
     motive:   "Justification",
     sommelierBtn: "Sommelier",
@@ -487,7 +475,6 @@ sommelierBtnBadge: "Nouveauté",
     alreadyAsked: "Du hast bereits gefragt nach:",
     sommelierFooter: "Dein virtueller Sommelier 🍷",
     sommelierTitleBox: "Sag mir, was du isst, und ich empfehle dir den perfekten Wein!",
-    sommelierTooltip: "Sie wissen nicht, welchen Wein Sie wählen sollen? Überlassen Sie es dem Sommelier 🍷",
     anyPrice: "Beliebig",
     motive:   "Begründung",
     sommelierBtn: "Sommelier",
@@ -523,7 +510,6 @@ sommelierBtnBadge: "Neu",
     alreadyAsked: "Ya preguntaste por:",
     sommelierFooter: "Tu Sumiller Virtual 🍷",
     sommelierTitleBox: "Dime qué comerás y te sugiero el vino perfecto",
-    sommelierTooltip: "¿No sabes qué vino elegir? Déjaselo al Sumiller 🍷",
     anyPrice: "Cualquiera",
     motive:   "Motivación",
     sommelierBtn: "Sumiller",
@@ -559,7 +545,6 @@ sommelierBtnBadge: "Novedad",
     alreadyAsked: "你已经查询过：",
     sommelierFooter: "您的虚拟侍酒师 🍷",
     sommelierTitleBox: "告诉我你要吃什么，我会推荐最适合的酒！",
-    sommelierTooltip: "不知道选哪款酒？交给侍酒师吧 🍷",
     anyPrice: "不限",
     motive:   "理由",
     sommelierBtn: "侍酒师",
@@ -761,11 +746,6 @@ const sendBtn = document.getElementById("sendFoodBtn");
 if (sendBtn && translations[currentLang].sendButton) {
   sendBtn.textContent = translations[currentLang].sendButton;
 }
-const tooltip = document.getElementById("tooltipSommelier");
-if (tooltip && translations[currentLang].sommelierTooltip) {
-  const inner = tooltip.querySelector(".tip-content") || tooltip;
-  inner.textContent = translations[currentLang].sommelierTooltip;
-}
 
 const priceAnyOpt = document.querySelector('#priceFilter option[value=""]');
 if (priceAnyOpt) priceAnyOpt.textContent = t.anyPrice;
@@ -839,7 +819,6 @@ if (input) {
 if (inputEl) inputEl.focus();
   history.pushState({ sommelier: true }, '', '#sommelier');
   sommelierAperto = true;
-  document.getElementById('tooltipSommelier')?.style.setProperty('display','none','important');
 }
 
 function closeSommelierPopup() {
@@ -1669,19 +1648,11 @@ btn.innerHTML = `
     setTimeout(() => btn.classList.remove("wiggle"), 950);
   }, 10000);
 
-  // Tooltip: creazione e ciclo
-const tooltip = document.createElement("div");
-tooltip.id = "tooltipSommelier";
-tooltip.innerHTML = `<div class="tip-content">${translations[currentLang].sommelierTooltip}</div>`;
-document.body.appendChild(tooltip);
-
   // Pulse solo se mai cliccato
   if (!localStorage.getItem("sommelier_seen")) {
     btn.classList.add("pulse");
   }
 
-  // Avvio ciclo tooltip “rotante”
-  startSommelierTooltipCycle();
 
     const overlay = document.createElement("div");
     overlay.id = "sommelierOverlay";
@@ -1745,61 +1716,6 @@ document.body.appendChild(tooltip);
 }
 
 window.closeSommelierPopup = closeSommelierPopup;
-
-    // ——— Tooltip Sommelier: frasi e ciclo ———
-function getSommelierTips() {
-  const t = translations[currentLang];
-  // tutte prese dal dizionario (quindi già tradotte)
-  return [
-    t.sommelierTooltip,   // es: "Non sai che vino scegliere? ..."
-    t.sommelierTitleBox,  // es: "Dimmi cosa mangerai ..."
-    t.searchLabel         // es: "Ricerca piatti per abbinamento"
-  ];
-}
-
-function showTooltipOnceAnimated() {
-  const tip = document.getElementById("tooltipSommelier");
-  const btn = document.getElementById("sommelierBtn");
-  if (!tip || !btn) return;
-
-  const inner = tip.querySelector(".tip-content") || tip;
-  const tips = getSommelierTips();
-  const idx = (window._sommTipIndex = ((window._sommTipIndex || 0) + 1) % tips.length);
-  inner.textContent = tips[idx];
-
-  // posiziona sopra il bottone (usa la tua se già esiste)
-  if (typeof positionTooltipOverButton === "function") {
-    // posiziona (e riposiziona dopo reflow/raf)
-    positionTooltipOverButton();
-    requestAnimationFrame(() => positionTooltipOverButton());
-    setTimeout(() => positionTooltipOverButton(), 120);
-  } else {
-    // fallback leggero
-    const r = btn.getBoundingClientRect();
-    tip.style.left = (r.left + r.width/2) + "px";
-    tip.style.top  = (r.top - 12) + "px";
-    tip.style.transform = "translate(-50%, -100%)";
-  }
-
-  tip.style.display = "block";
-
-  // anima e nascondi al termine
-  inner.style.animation = "none"; void inner.offsetHeight;
-  inner.style.animation = "tipFade 2.2s ease both";
-  inner.addEventListener("animationend", () => { tip.style.display = "none"; }, { once: true });
-}
-
-function startSommelierTooltipCycle() {
-  stopSommelierTooltipCycle();
-  showTooltipOnceAnimated();                       // mostra subito
-  window._sommTipTimer = setInterval(showTooltipOnceAnimated, 9000); // poi ogni 9s
-}
-
-function stopSommelierTooltipCycle() {
-  clearInterval(window._sommTipTimer);
-  const tip = document.getElementById("tooltipSommelier");
-  if (tip) tip.style.display = "none";
-}
 
   async function aggiornaCategorieSommelier() {
   const dropdown = document.getElementById("wineTypeDropdown");
@@ -2389,42 +2305,6 @@ function mostraPopupDescrizione(vino) {
     if (descEl) descEl.textContent = "Errore durante il recupero della descrizione.";
   });
 }
-
-function positionTooltipOverButton() {
-  const tip = document.getElementById("tooltipSommelier");
-  const btn = document.getElementById("sommelierBtn");
-  if (!tip || !btn) return;
-
-  // renderizza offscreen per calcolare dimensioni
-  tip.style.visibility = "hidden";
-  tip.style.display = "block";
-  const tipRect = tip.getBoundingClientRect();
-
-  const b = btn.getBoundingClientRect();
-  const margin = 10; // distanza dal bottone
-  let left = b.left + (b.width / 2) - (tipRect.width / 2);
-  let top  = b.top - margin - tipRect.height;
-
-  // clamp entro viewport
-  const minX = 8;
-  const maxX = window.innerWidth - tipRect.width - 8;
-  left = Math.max(minX, Math.min(maxX, left));
-  top  = Math.max(8, top);
-
-  tip.style.left = `${left}px`;
-  tip.style.top  = `${top}px`;
-  tip.style.visibility = "visible";
-}
-
-// se l’utente ridimensiona / ruota, riposiziona SOLO se visibile
-window.addEventListener("resize", () => {
-  const tip = document.getElementById("tooltipSommelier");
-  if (tip && tip.style.display === "block") positionTooltipOverButton();
-});
-window.addEventListener("scroll", () => {
-  const tip = document.getElementById("tooltipSommelier");
-  if (tip && tip.style.display === "block") positionTooltipOverButton();
-});
 
 function setupFilterUI() {
   const btn = document.getElementById("filterBtn");
