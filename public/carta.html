@@ -1372,10 +1372,16 @@ if (bb) {
   document.documentElement.style.setProperty('--bottom-bar-foreground', fg);
 }
 
-const filterBtn = document.getElementById("filterBtn");
-if (filterBtn) {
-  filterBtn.style.backgroundColor = primary;
-  filterBtn.style.borderColor = primary;
+const bottleBtn = document.getElementById("bottleBtn");
+if (bottleBtn) {
+  bottleBtn.style.backgroundColor = primary;
+  bottleBtn.style.borderColor = primary;
+}
+
+const glassBtn = document.getElementById("glassBtn");
+if (glassBtn) {
+  glassBtn.style.backgroundColor = primary;
+  glassBtn.style.borderColor = primary;
 }
 
 const searchBtn = document.getElementById("searchBtn");
@@ -2307,7 +2313,7 @@ function mostraPopupDescrizione(vino) {
 }
 
 function setupFilterUI() {
-  const btn = document.getElementById("filterBtn");
+  const btn = document.getElementById("bottleBtn");
   const menu = document.getElementById("filterMenu");
   const optionsContainer = document.getElementById("filterOptions");
   const t = translations[currentLang] || translations.it;  // ← AGGIUNGI QUESTA RIGA
@@ -2356,6 +2362,35 @@ function setupFilterUI() {
 
   applyFilters();
 }
+
+// Quick-filter: mostra solo i vini al bicchiere
+function quickFilterGlass() {
+  const container = document.getElementById("filterOptions");
+  if (!container) return;
+
+  const checks = container.querySelectorAll('input[type="checkbox"]');
+  let found = false;
+  checks.forEach(cb => {
+    if (cb.value === "glass") { cb.checked = true; found = true; }
+    else { cb.checked = false; }
+  });
+
+  if (found) {
+    applyFilters();
+    closeFilterMenu();
+  } else {
+    // Nessun vino al bicchiere disponibile → apri popup formati così il cliente sceglie altro
+    const menu = document.getElementById("filterMenu");
+    if (menu) menu.style.display = "block";
+  }
+}
+
+// collega il bottone
+const _afterDomGlassHook = () => {
+  const glassBtn = document.getElementById("glassBtn");
+  if (glassBtn) glassBtn.onclick = quickFilterGlass;
+};
+
 function refreshFilterOptionsPreservingState() {
   const optionsContainer = document.getElementById("filterOptions");
   if (!optionsContainer) return;
@@ -2543,7 +2578,7 @@ function closeFilterMenu(){
 
 document.addEventListener('click', (e) => {
   const menu = document.getElementById('filterMenu');
-  const btn  = document.getElementById('filterBtn');
+  const btn  = document.getElementById('bottleBtn');
   if (!menu || !btn) return;
 
   if (
@@ -2699,9 +2734,14 @@ if (rn) {
     <span>Home</span>
   </button>
 
-  <button id="filterBtn" class="bottom-btn" aria-label="Filtra">
-    <img src="iconfilter.png" alt="" aria-hidden="true">
-    <span class="translate-label" data-key="filterLabel">Filtra</span>
+  <button id="bottleBtn" class="bottom-btn" aria-label="Bottiglia">
+    <img src="bottleico.png" alt="" aria-hidden="true">
+    <span class="translate-label" data-key="formatBottle">Bottiglia</span>
+  </button>
+
+  <button id="glassBtn" class="bottom-btn" aria-label="Bicchiere">
+    <img src="glassico.png" alt="" aria-hidden="true">
+    <span class="translate-label" data-key="formatGlass">Bicchiere</span>
   </button>
 </div>
 
