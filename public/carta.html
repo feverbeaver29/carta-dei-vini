@@ -2387,7 +2387,7 @@ for (const [id, f] of Object.entries(availableFormats)) {
   const cb = document.createElement("input");
   cb.type = "checkbox";
   cb.value = id;
-  cb.checked = false;               // 👈 default: nessun filtro
+  cb.checked = true;               // 👈 default: nessun filtro
   cb.onchange = applyFilters;
 
   label.appendChild(cb);
