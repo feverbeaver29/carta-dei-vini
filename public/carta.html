@@ -128,11 +128,6 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
 #sommelierBtn .somm-text{ display:flex; flex-direction:column; line-height:1.05; max-width: none;white-space: normal;flex: 1 1 auto; }
 #sommelierBtn .somm-title{ font-weight:800; letter-spacing:.2px;font-size: 0.95em; }
 #sommelierBtn .somm-sub{ font-size: 0.82em; opacity: .95; font-weight:600; margin-top:2px; }
-#sommelierBtn .somm-badge{
-  flex:0 0 auto; margin-left: auto; font-size:.75em; font-weight:800; flex: 0 0 auto;
-  background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.45);
-  padding:4px 8px; border-radius:999px; text-transform:uppercase;
-}
 
 /* — Effetti */
 #sommelierBtn.glow{ box-shadow:0 14px 28px rgba(0,0,0,.2), 0 0 0 6px rgba(255,255,255,.35) inset, 0 0 24px rgba(255,60,120,.35); }
@@ -1372,9 +1367,18 @@ case "black-white":
 
 const sommelierBtn = document.getElementById("sommelierBtn");
 if (sommelierBtn && window.showSommelier === true) {
-  sommelierBtn.style.backgroundColor = primary;
+  // gradient “acceso” ma in palette: dal colore primario a una versione più chiara
+  sommelierBtn.style.background = `linear-gradient(90deg, ${primary}, color-mix(in srgb, ${primary} 70%, white))`;
   sommelierBtn.style.borderColor = primary;
+
+  // testo leggibile sopra qualunque palette
+  const fg = getContrastingTextColor(primary);
+  sommelierBtn.style.color = fg;
+  // forza anche il testo interno
+  const t = sommelierBtn.querySelector(".somm-text");
+  if (t) t.style.color = fg;
 }
+
 const nav = document.querySelector("nav");
 if (nav) {
   nav.style.backgroundColor = typeof navbarColor !== "undefined" ? navbarColor : background;
@@ -1644,13 +1648,10 @@ async function creaUIBaseSommelier() {
   btn.id = "sommelierBtn";
   btn.setAttribute("aria-label", translations[currentLang].sommelierBtn || "Sommelier");
 btn.innerHTML = `
-  <img src="${ristoranteSommelierURL || 'sommelier.png'}" alt=""
-       onerror="this.onerror=null;this.src='${(ristorante?.sommelier_gender||'uomo')==='donna'?'sommelier_femmina.png':'sommelier.png'}'"/>
   <div class="somm-text">
     <span class="somm-title translate-label" data-key="sommelierBtnTitle">${translations[currentLang].sommelierBtnTitle}</span>
     <span class="somm-sub translate-label" data-key="sommelierBtnSub">${translations[currentLang].sommelierBtnSub}</span>
   </div>
-  <span class="somm-badge translate-label" data-key="sommelierBtnBadge">${translations[currentLang].sommelierBtnBadge}</span>
 `;
   document.body.appendChild(btn);
 
