@@ -2444,11 +2444,12 @@ function quickFilterGlass() {
   updateFormatActiveState();
   closeFilterMenu();
 
-  // 🔹 Mostra banner “solo al calice”
+  // 🔹 Mostra doppia riga nel banner
   const helper = document.getElementById("helperBanner");
   if (helper) {
-    helper.textContent = translations[currentLang].helperGlassMode || "🍷 Stai visualizzando solo i vini al calice";
-    helper.style.color = "#b00";
+    const mainLine = translations[currentLang].helperChooseCategory || "Scegli una categoria!";
+    const subLine  = translations[currentLang].helperGlassMode || "🍷 Stai visualizzando solo i vini al calice";
+    helper.innerHTML = `${mainLine}<br><span style="color:#b00;font-weight:600;">${subLine}</span>`;
   }
 
   // 🔹 Attiva effetto visivo sul bottone bicchiere
@@ -2663,13 +2664,14 @@ function updateFormatActiveState(){
   if (checked.length === 1 && checked[0] === 'glass') {
     glassBtn?.classList.add('active', 'glass-mode');
     if (helper) {
-      helper.textContent = translations[currentLang].helperGlassMode || "🍷 Stai visualizzando solo i vini al calice";
-      helper.style.color = "#b00";
+      const mainLine = translations[currentLang].helperChooseCategory || "Scegli una categoria!";
+      const subLine  = translations[currentLang].helperGlassMode || "🍷 Stai visualizzando solo i vini al calice";
+      helper.innerHTML = `${mainLine}<br><span style="color:#b00;font-weight:600;">${subLine}</span>`;
     }
   } else if (checked.length > 0) {
     bottleBtn?.classList.add('active');
     if (helper) {
-      helper.textContent = translations[currentLang].helperChooseCategory;
+      helper.innerHTML = translations[currentLang].helperChooseCategory || "Scegli una categoria!";
       helper.style.color = "inherit";
     }
   }
