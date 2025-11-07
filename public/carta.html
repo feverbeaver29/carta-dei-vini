@@ -125,7 +125,13 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
   background: rgba(255,255,255,0.22);
   outline: 2px solid rgba(255,255,255,0.30);
 }
-
+/* Effetto visivo “Glass Mode” quando il filtro al calice è attivo */
+.bottom-btn.glass-mode {
+  background: linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0.15));
+  box-shadow: 0 0 15px rgba(255,255,255,0.6), inset 0 0 10px rgba(255,255,255,0.3);
+  transform: scale(1.05);
+  transition: all 0.25s ease;
+}
 
 /* =========================
    BOTTONE SOMMELIER (pulito)
@@ -423,6 +429,7 @@ const translations = {
     sommelierBtnTitle: "Consiglio del Sommelier",
     sommelierBtnSub:   "Scrivi il piatto, troviamo il vino",
     sommelierBtnBadge: "Novità",
+    helperGlassMode: "🍷 Stai visualizzando solo i vini al calice",
   },
   en: {
     wineList: "Wine List",
@@ -459,6 +466,7 @@ const translations = {
     sommelierBtnTitle: "Sommelier’s Advice",
     sommelierBtnSub:   "Type the dish, we’ll find the wine",
     sommelierBtnBadge: "New",
+    helperGlassMode: "🍷 You are viewing only wines by the glass",
   },
   fr: {
     wineList: "Carte des Vins",
@@ -494,6 +502,7 @@ const translations = {
       sommelierBtnTitle: "Conseil du Sommelier",
 sommelierBtnSub:   "Écrivez le plat, nous trouvons le vin",
 sommelierBtnBadge: "Nouveauté",
+helperGlassMode: "🍷 Vous voyez uniquement les vins au verre",
   },
   de: {
     wineList: "Weinkarte",
@@ -529,6 +538,7 @@ sommelierBtnBadge: "Nouveauté",
     sommelierBtnTitle: "Empfehlung des Sommeliers",
 sommelierBtnSub:   "Schreibe das Gericht, wir finden den Wein",
 sommelierBtnBadge: "Neu",
+helperGlassMode: "🍷 Sie sehen nur Weine im Glas",
   },
   es: {
     wineList: "Carta de Vinos",
@@ -564,6 +574,7 @@ sommelierBtnBadge: "Neu",
     sommelierBtnTitle: "Consejo del Sumiller",
 sommelierBtnSub:   "Escribe el plato, encontramos el vino",
 sommelierBtnBadge: "Novedad",
+helperGlassMode: "🍷 Estás viendo solo los vinos por copa",
   },
   zh: {
     wineList: "酒单",
@@ -599,6 +610,7 @@ sommelierBtnBadge: "Novedad",
     sommelierBtnTitle: "侍酒师推荐",
 sommelierBtnSub:   "输入菜品，我们来找酒",
 sommelierBtnBadge: "新品",
+helperGlassMode: "🍷 您正在查看仅按杯供应的葡萄酒",
   }
 };
 
@@ -2431,6 +2443,23 @@ function quickFilterGlass() {
   applyFilters();
   updateFormatActiveState();
   closeFilterMenu();
+
+  // 🔹 Mostra banner “solo al calice”
+  const helper = document.getElementById("helperBanner");
+  if (helper) {
+    helper.textContent = translations[currentLang].helperGlassMode || "🍷 Stai visualizzando solo i vini al calice";
+    helper.style.color = "#b00";
+  }
+
+  // 🔹 Attiva effetto visivo sul bottone bicchiere
+  const glassBtn = document.getElementById("glassBtn");
+  const bottleBtn = document.getElementById("bottleBtn");
+  if (glassBtn) {
+    glassBtn.classList.add("active", "glass-mode");
+  }
+  if (bottleBtn) {
+    bottleBtn.classList.remove("active", "glass-mode");
+  }
 }
 
 // collega il bottone
@@ -2623,16 +2652,26 @@ updateFormatActiveState()
 function updateFormatActiveState(){
   const bottleBtn = document.getElementById('bottleBtn');
   const glassBtn  = document.getElementById('glassBtn');
-  bottleBtn?.classList.remove('active');
-  glassBtn?.classList.remove('active');
+  bottleBtn?.classList.remove('active', 'glass-mode');
+  glassBtn?.classList.remove('active', 'glass-mode');
 
   const checks = document.querySelectorAll('#filterOptions input[type="checkbox"]');
   const checked = Array.from(checks).filter(cb => cb.checked).map(cb => cb.value);
 
+  const helper = document.getElementById("helperBanner");
+
   if (checked.length === 1 && checked[0] === 'glass') {
-    glassBtn?.classList.add('active');
+    glassBtn?.classList.add('active', 'glass-mode');
+    if (helper) {
+      helper.textContent = translations[currentLang].helperGlassMode || "🍷 Stai visualizzando solo i vini al calice";
+      helper.style.color = "#b00";
+    }
   } else if (checked.length > 0) {
     bottleBtn?.classList.add('active');
+    if (helper) {
+      helper.textContent = translations[currentLang].helperChooseCategory;
+      helper.style.color = "inherit";
+    }
   }
 }
 
