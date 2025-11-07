@@ -614,15 +614,29 @@ helperGlassMode: "🍷 您正在查看仅按杯供应的葡萄酒",
   }
 };
 
+function isGlassOnly(){
+  const checks = document.querySelectorAll('#filterOptions input[type="checkbox"]');
+  const checked = Array.from(checks).filter(cb => cb.checked).map(cb => cb.value);
+  return (checked.length === 1 && checked[0] === 'glass');
+}
+
 function setHelper(text){
   const el = document.getElementById('helperBanner');
-  if (el) el.textContent = text;
+  if (!el) return;
+  const t = translations[currentLang];
+  if (isGlassOnly()){
+    const sub = t?.helperGlassMode || "🍷 Stai visualizzando solo i vini al calice";
+    // entrambe NERE (niente colore rosso)
+    el.innerHTML = `${text}<br><span>${sub}</span>`;
+  } else {
+    el.textContent = text;
+  }
 }
 
 function setHelperByKey(key){
   const t = translations[currentLang];
-  if (!t || !t[key]) return;
-  setHelper(t[key]);
+  const main = (t && t[key]) ? t[key] : key;
+  setHelper(main);
 }
 
 async function setHelperCategoryName(category){
@@ -2659,23 +2673,17 @@ function updateFormatActiveState(){
   const checks = document.querySelectorAll('#filterOptions input[type="checkbox"]');
   const checked = Array.from(checks).filter(cb => cb.checked).map(cb => cb.value);
 
-  const helper = document.getElementById("helperBanner");
-
   if (checked.length === 1 && checked[0] === 'glass') {
     glassBtn?.classList.add('active', 'glass-mode');
-    if (helper) {
-      const mainLine = translations[currentLang].helperChooseCategory || "Scegli una categoria!";
-      const subLine  = translations[currentLang].helperGlassMode || "🍷 Stai visualizzando solo i vini al calice";
-      helper.innerHTML = `${mainLine}<br><span style="color:#b00;font-weight:600;">${subLine}</span>`;
-    }
   } else if (checked.length > 0) {
     bottleBtn?.classList.add('active');
-    if (helper) {
-      helper.innerHTML = translations[currentLang].helperChooseCategory || "Scegli una categoria!";
-      helper.style.color = "inherit";
-    }
   }
+
+  // banner sempre coerente con la vista corrente,
+  // ma aggiunge sotto la riga "al calice" se glass è attivo
+  setHelperByKey('helperChooseCategory');
 }
+
 
 function closeFilterMenu(){ 
   const m = document.getElementById('filterMenu');
