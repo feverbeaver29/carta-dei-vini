@@ -744,31 +744,35 @@ window.paletteColors = {
 function changeLanguage() {
   const langSelector = document.getElementById("langSelector");
   currentLang = langSelector.value;
-
-  // fallback sicuro
-  if (!translations[currentLang]) {
-    currentLang = "en";
-    langSelector.value = "en";
-  }
+  if (!translations[currentLang]) { currentLang = "en"; langSelector.value = "en"; }
 
   applyTranslations();
   refreshFilterOptionsPreservingState();
-// aggiorna solo la vista corrente (senza doppioni)
-if (currentView === 'categories') {
-  showCategories();
-} else if (currentView === 'subcategory') {
-  showSubcategories(currentCategory);
-} else if (currentView === 'wines') {
-  showWinesBySubcategory(window.currentSubcategory);
-}
 
-// sommelier UI come già fai
-if (window.showSommelier === true) {
-  setupSommelierUI();
-} else {
-  document.getElementById("sommelierBtn")?.remove();
-  document.getElementById("tooltipSommelier")?.remove();
-}
+  // 👇 evita nuovi pushState durante la sola traduzione/rerender
+  const prev = window._manualNavigation;
+  window._manualNavigation = true;
+
+  if (currentView === 'categories') {
+    showCategories();
+  } else if (currentView === 'subcategory') {
+    showSubcategories(currentCategory);
+  } else if (currentView === 'wines') {
+    if (window.currentSubcategory) {
+      showWinesBySubcategory(window.currentSubcategory);
+    } else {
+      showWinesForCategory(currentCategory);
+    }
+  }
+
+  window._manualNavigation = prev;
+
+  if (window.showSommelier === true) {
+    setupSommelierUI();
+  } else {
+    document.getElementById("sommelierBtn")?.remove();
+    document.getElementById("tooltipSommelier")?.remove();
+  }
 }
   window.changeLanguage = changeLanguage;
 
@@ -1588,7 +1592,9 @@ applyPalette(window.ristorantePalette);
   const subcatList = document.getElementById('subcategory-list');
   if (subcatList) subcatList.style.display = 'none';
   wineList.style.display = 'block';
+  if (!window._manualNavigation) {
   history.pushState({ view: "wines", subcategory: subcat, category: currentCategory }, "");
+}
 }
 
 function showWinesForCategory(category) {
@@ -1627,7 +1633,9 @@ function showWinesForCategory(category) {
   if (catList) catList.style.display = 'none';
 
   // stato cronologia: “wines” senza subcategory
+  if (!window._manualNavigation) {
   history.pushState({ view: "wines", category, subcategory: null }, "");
+}
 
   // riapplica palette
   applyPalette(window.ristorantePalette);
