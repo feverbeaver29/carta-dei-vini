@@ -1998,19 +1998,18 @@ function sortByOrder(array, orderArray) {
 // override showCategories and showSubcategories to apply order
 const originalShowCategories = window.showCategories;
 const originalShowSubcategories = window.showSubcategories;
+let _catRenderToken = 0;
 
-window.showCategories = async function (categories) {
+window.showCategories = async function () {
   setHelperByKey('helperChooseCategory');
 
-    // ⭐️ prendi i formati selezionati e filtra i vini
+  // 👉 1) calcolo l’elenco categorie dai vini filtrati (come prima)
   const { ids, map } = getCheckedFormats();
-  const filtered = winesMatchFormats(wines, ids, map); // ⭐️
+  const filtered = winesMatchFormats(wines, ids, map);
   const seen = new Map();
   filtered.forEach(w => {
     const key = normalize(w.categoria);
-    if (key && !seen.has(key)) {
-      seen.set(key, w.categoria);
-    }
+    if (key && !seen.has(key)) seen.set(key, w.categoria);
   });
 
   let orderedKeys = Array.from(seen.keys());
@@ -2023,49 +2022,55 @@ window.showCategories = async function (categories) {
         return seenKeys.find(k => normalize(k) === normalized);
       })
       .filter(Boolean);
-
-    if (customOrder.length > 0) {
-      orderedKeys = customOrder;
-    }
+    if (customOrder.length > 0) orderedKeys = customOrder;
   }
 
-const container = document.getElementById('category-list');
-if (!container) return; // 🔒 Se non esiste, esci subito
+  // 👉 2) token di render per annullare render precedenti
+  const myToken = ++_catRenderToken;
 
-container.style.display = 'block';
-container.innerHTML = '';
+  const container = document.getElementById('category-list');
+  if (!container) return;
+  container.style.display = 'block';
+  container.innerHTML = ''; // svuota SUBITO
 
-  for (const key of orderedKeys) {
-    const display = seen.get(key);
+  // 👉 3) preparo TUTTI i testi (tradotti) prima, poi renderizzo una sola volta
+  const items = await Promise.all(orderedKeys.map(async (key) => {
+    let display = seen.get(key);
+    if (currentLang !== "it") {
+      try {
+        const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-categoria", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: display, targetLang: currentLang })
+        });
+        const data = await res.json();
+        display = (data.text?.trim()) || display;
+      } catch (_) {}
+    }
+    return { key, display };
+  }));
+
+  // 👉 4) se nel frattempo è partito un altro render, mi fermo
+  if (myToken !== _catRenderToken) return;
+
+  // 👉 5) dedup per sicurezza (es. due categorie diverse -> stessa traduzione)
+  const already = new Set();
+  const frag = document.createDocumentFragment();
+  for (const { key, display } of items) {
+    const label = display;
+    const dedupKey = normalize(label);
+    if (already.has(dedupKey)) continue;
+    already.add(dedupKey);
+
     const div = document.createElement('div');
     div.className = 'category';
-div.textContent = display;
-
-try {
-if (currentLang !== "it") {
-  try {
-    const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-categoria", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: display, targetLang: currentLang })
-    });
-    const data = await res.json();
-    const translated = data.text?.trim() || display;
-    div.textContent = translated;
-  } catch (e) {
-    console.error("Errore GPT categorie:", e);
-    div.textContent = display;
+    div.textContent = label;
+    div.onclick = () => showSubcategories(key);
+    frag.appendChild(div);
   }
-}
-} catch (e) {
-  console.error("Errore GPT categorie:", e);
-}
 
-div.onclick = () => showSubcategories(key); // ✅ SEMPRE fuori
-container.appendChild(div);                 // ✅ SEMPRE fuori
-
-  }
-applyPalette(window.ristorantePalette);
+  container.appendChild(frag);
+  applyPalette(window.ristorantePalette);
 };
 
 window.showSubcategories = function (category) {
@@ -2151,7 +2156,6 @@ if (isSommelierOn) {
   window.paletteOverrideLive = isCustom;
   window.ristorantePalette = ristorante.palette_color;
 
-  showCategories();
   history.replaceState({ view: "categories" }, "");
 
 applyPalette(window.ristorantePalette);
