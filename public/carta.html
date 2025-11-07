@@ -753,13 +753,13 @@ function changeLanguage() {
 
   applyTranslations();
   refreshFilterOptionsPreservingState();
-// aggiorna solo la vista corrente
+// aggiorna solo la vista corrente (senza doppioni)
 if (currentView === 'categories') {
-  applyFilters();                       // ricostruisce categorie coi filtri attivi
+  showCategories();
 } else if (currentView === 'subcategory') {
-  showSubcategories(currentCategory);   // ricostruisce le sottocategorie correnti
+  showSubcategories(currentCategory);
 } else if (currentView === 'wines') {
-  showWinesBySubcategory(window.currentSubcategory); // ricostruisce i vini correnti
+  showWinesBySubcategory(window.currentSubcategory);
 }
 
 // sommelier UI come già fai
@@ -2550,8 +2550,6 @@ function refreshFilterOptionsPreservingState() {
   hidden.checked = wasGlassOn === true;   // se era attivo prima del cambio lingua, resta attivo
   optionsContainer.appendChild(hidden);
 
-  // aggiorna UI in base allo stato
-  applyFilters();
   updateFormatActiveState();
 }
 
@@ -2580,6 +2578,12 @@ function winesMatchFormats(list, ids, map) {
 }
 
 function applyFilters() {
+    // 👉 Se siamo sulla vista categorie, delega sempre a showCategories
+  if (currentView === 'categories') {
+    showCategories();
+    updateFormatActiveState();
+    return;
+  }
   const { ids, map } = getCheckedFormats();
   // 1) ricava i vini che hanno almeno uno dei formati scelti
   const filteredWines = winesMatchFormats(wines, ids, map);
