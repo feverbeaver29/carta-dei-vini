@@ -2492,25 +2492,26 @@ function refreshFilterOptionsPreservingState() {
   const optionsContainer = document.getElementById("filterOptions");
   if (!optionsContainer) return;
 
-  // Ricorda quali erano spuntate
-  const checked = new Set(
+  // Ricorda cosa era selezionato PRIMA di ricostruire
+  const prevChecked = new Set(
     Array.from(optionsContainer.querySelectorAll("input[type='checkbox']:checked"))
          .map(cb => cb.value)
   );
+  const wasGlassOn = prevChecked.has('glass');
 
-  // Ricostruisci con le label tradotte (copiando la logica di setupFilterUI)
-  const t = translations[currentLang];
+  // ---- Ricostruzione (SOLO formati bottiglia) ----
+  const t = translations[currentLang] || translations.it;
   const formatsMap = {
-    bottle: { label: t.formatBottle || "Bottiglia", key: "prezzo" },
-    glass:  { label: t.formatGlass  || "Bicchiere", key: "prezzo_bicchiere" },
-    quarter:    { label: "1/4 lt",   key: "prezzo_025" },
-    half:       { label: "1/2 lt",   key: "prezzo_05" },
-    threequart: { label: "0,375 lt", key: "prezzo_0375" },
-    onehalf:    { label: "1,5 lt",   key: "prezzo_15" },
-    three:      { label: "3 lt",     key: "prezzo_3l" }
+    bottle:     { label: t.formatBottle || "Bottiglia", key: "prezzo" },
+    quarter:    { label: "1/4 lt",      key: "prezzo_025" },
+    threequart: { label: "0,375 lt",    key: "prezzo_0375" },
+    half:       { label: "1/2 lt",      key: "prezzo_05" },
+    onehalf:    { label: "1,5 lt",      key: "prezzo_15" },
+    three:      { label: "3 lt",        key: "prezzo_3l" }
+    // 👆 NIENTE 'glass' qui dentro
   };
 
-  // Limita ai formati effettivamente presenti nei vini (stessa logica di setup)
+  // Limita ai formati effettivamente presenti nei vini
   const availableFormats = {};
   wines.forEach(w => {
     for (const [id, f] of Object.entries(formatsMap)) {
@@ -2521,25 +2522,37 @@ function refreshFilterOptionsPreservingState() {
   optionsContainer.innerHTML = "";
   for (const [id, f] of Object.entries(availableFormats)) {
     const label = document.createElement("label");
-    label.style.display = "flex";
-    label.style.alignItems = "center";
-    label.style.gap = "6px";
-    label.style.marginBottom = "6px";
+    label.style.cssText = "display:flex;align-items:center;gap:6px;margin-bottom:6px;";
 
     const cb = document.createElement("input");
     cb.type = "checkbox";
     cb.value = id;
-    cb.checked = checked.size ? checked.has(id) : true;
+    // se avevo roba selezionata, ripristino; altrimenti default=spento
+    cb.checked = prevChecked.size ? prevChecked.has(id) : false;
     cb.onchange = () => {
-  const hidden = document.getElementById("glassHiddenCb");
-  if (hidden) hidden.checked = false;
-  applyFilters();
-};
+      // se tocco un formato bottiglia, spengo la nascosta 'glass'
+      const hidden = document.getElementById("glassHiddenCb");
+      if (hidden) hidden.checked = false;
+      applyFilters();
+    };
 
     label.appendChild(cb);
     label.appendChild(document.createTextNode(f.label));
     optionsContainer.appendChild(label);
   }
+
+  // 🔒 ricreo SEMPRE la checkbox NASCOSTA 'glass' e ripristino lo stato precedente
+  let hidden = document.createElement("input");
+  hidden.type = "checkbox";
+  hidden.value = "glass";
+  hidden.id = "glassHiddenCb";
+  hidden.style.display = "none";
+  hidden.checked = wasGlassOn === true;   // se era attivo prima del cambio lingua, resta attivo
+  optionsContainer.appendChild(hidden);
+
+  // aggiorna UI in base allo stato
+  applyFilters();
+  updateFormatActiveState();
 }
 
 function getCheckedFormats() {
