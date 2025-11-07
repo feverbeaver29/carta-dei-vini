@@ -2414,7 +2414,12 @@ for (const [id, f] of Object.entries(availableFormats)) {
   cb.type = "checkbox";
   cb.value = id;
   cb.checked = true;               // 👈 default: nessun filtro
-  cb.onchange = applyFilters;
+  cb.onchange = () => {
+  // se l’utente tocca un formato “bottiglia”, disattiva il bicchiere nascosto
+  const hidden = document.getElementById("glassHiddenCb");
+  if (hidden) hidden.checked = false;
+  applyFilters();
+};
 
   label.appendChild(cb);
   label.appendChild(document.createTextNode(f.label));
@@ -2525,7 +2530,11 @@ function refreshFilterOptionsPreservingState() {
     cb.type = "checkbox";
     cb.value = id;
     cb.checked = checked.size ? checked.has(id) : true;
-    cb.onchange = applyFilters;
+    cb.onchange = () => {
+  const hidden = document.getElementById("glassHiddenCb");
+  if (hidden) hidden.checked = false;
+  applyFilters();
+};
 
     label.appendChild(cb);
     label.appendChild(document.createTextNode(f.label));
@@ -2534,7 +2543,12 @@ function refreshFilterOptionsPreservingState() {
 }
 
 function getCheckedFormats() {
-  const ids = Array.from(document.querySelectorAll("#filterOptions input:checked")).map(cb => cb.value);
+  const all = Array.from(document.querySelectorAll("#filterOptions input:checked")).map(cb => cb.value);
+  // se c’è almeno un formato bottiglia, escludi ‘glass’
+  const ids = all.includes('glass') && all.some(v => v !== 'glass')
+    ? all.filter(v => v !== 'glass')
+    : all;
+
   const map = {
     bottle: "prezzo",
     glass: "prezzo_bicchiere",
