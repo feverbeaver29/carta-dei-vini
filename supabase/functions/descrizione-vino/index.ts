@@ -1,6 +1,9 @@
 // deno-lint-ignore-file no-explicit-any
 import { serve } from "https://deno.land/std/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import OpenAI from "https://deno.land/x/openai@v4.26.0/mod.ts";
+
+const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
 
 // ---------- Supabase ----------
 const supabase = createClient(
@@ -253,6 +256,80 @@ function pickPairings(color: "rosso"|"bianco"|"rosato", p: Profile) {
   return base.slice(0,3);
 }
 
+// Genera Mini-Card con GPT usando SOLO i tuoi dati come base.
+// Output obbligatori: hook, palate, notes[3], pairings[3]
+async function gptComposeMiniCard(input: {
+  nome: string; annata?: string; uvaggio?: string; categoria?: string; sottocategoria?: string;
+  color: "rosso"|"bianco"|"rosato";
+  profile: { acid:number; tannin:number; body:number; sweet:number; bubbles:number };
+  allowedNotes: string[]; allowedPairings: string[];
+  seedNotes: string[]; // note di partenza dai vitigni
+  styleSeed: number;   // per dare micro-variazione controllata
+}) {
+  const styleVariants = [
+    "limpido e succoso", "teso e sapido", "agile e fragrante", "materico e profondo",
+    "croccante e agrumato", "avvolgente e speziato", "fine e floreale", "sapido e scorrevole"
+  ];
+  const styleHint = styleVariants[input.styleSeed % styleVariants.length];
+
+  const system = `Sei un sommelier. Scrivi una mini-card in italiano, concisa e professionale.
+Regole:
+- Formato: 1 riga Hook (<=110 char) + 1 riga Palato (<=120 char) + 3 chip Note (<=2 parole) + 3 chip Abbinamenti (categorie).
+- Usa SOLO questi vocabolari: NOTE = ${input.allowedNotes.join(", ")}. ABBINAMENTI = ${input.allowedPairings.join(", ")}.
+- Niente invenzioni su legno/affinamenti/annate se non forniti. Niente elenchi di territori non menzionati.
+- Tieni conto del profilo: acidità ${input.profile.acid}/100, tannino ${input.profile.tannin}/100, corpo ${input.profile.body}/100, bollicina ${input.profile.bubbles}/100.
+- Preferisci termini corretti e asciutti. Evita aggettivi ripetuti.`;
+
+  const user = {
+    vino: {
+      nome: input.nome,
+      annata: input.annata || null,
+      uvaggio: input.uvaggio || null,
+      categoria: input.categoria || null,
+      sottocategoria: input.sottocategoria || null,
+      colore: input.color,
+      profilo: input.profile,
+      note_seed: input.seedNotes,
+      stile_suggerito: styleHint
+    }
+  };
+
+  const res = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    temperature: 0.4,         // un filo di variazione
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: JSON.stringify({
+          RICHIESTA: "Restituisci SOLO JSON con: {hook, palate, notes:[3], pairings:[3]}",
+          DATI: user
+        })
+      }
+    ],
+    max_tokens: 240
+  });
+
+  let out: any = {};
+  try { out = JSON.parse(res.choices?.[0]?.message?.content || "{}"); } catch {}
+  if (!out || !out.hook || !out.palate) return null;
+
+  // Sanitizzazione finale: rispetto vocabolari e lunghezze
+  const cap = (s: string, n: number) => s.length <= n ? s : (s.slice(0, n-1).replace(/\s+\S*$/, "") + "…");
+  const allowN = new Set(input.allowedNotes.map(s=>s.toLowerCase()));
+  const allowP = new Set(input.allowedPairings.map(s=>s.toLowerCase()));
+  const notes = (Array.isArray(out.notes)? out.notes: [])
+    .map((x:any)=> String(x||"").toLowerCase()).filter((x:string)=>allowN.has(x)).slice(0,3);
+  const pair  = (Array.isArray(out.pairings)? out.pairings: [])
+    .map((x:any)=> String(x||"").toLowerCase()).filter((x:string)=>allowP.has(x)).slice(0,3);
+
+  return {
+    hook: cap(String(out.hook||""), 110),
+    palate: cap(String(out.palate||""), 120),
+    notes,
+    pairings: pair
+  };
+}
+
 // ---------- Main ----------
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -324,12 +401,43 @@ serve(async (req) => {
       const key = (g.matchedAs || g.name || "").toLowerCase();
       if (GRAPE_NOTE_HINTS[key]) grapeHintsRaw.push(...GRAPE_NOTE_HINTS[key]);
     }
-    const notes = pickNotes(color, grapeHintsRaw);
+    // ❶ note seed (già calcolate come prima)
+const notesSeed = pickNotes(color, grapeHintsRaw);
 
-    // 5) Hook & Palato + Pairings
-    const hook = buildHook(notes, color, profile.bubbles);
-    const palate = buildPalate(profile, color);
-    const pairings = pickPairings(color, profile);
+// ❷ micro-variazione stabile per etichetta (fingerprint -> numero)
+function hashToInt(s: string){ let h=0; for (let i=0;i<s.length;i++){ h = (h*31 + s.charCodeAt(i))|0; } return Math.abs(h); }
+const styleSeed = hashToInt(fingerprintName(nome) + (annata || "")); // varia per etichetta/annata
+
+// ❸ chiedi a GPT la mini-card, guidata dai tuoi dati
+let gptCard = null;
+try {
+  gptCard = await gptComposeMiniCard({
+    nome, annata, uvaggio, categoria, sottocategoria,
+    color,
+    profile,
+    allowedNotes: ALLOWED_NOTES[color] as unknown as string[],
+    allowedPairings: ALLOWED_PAIRINGS[color] as unknown as string[],
+    seedNotes: notesSeed,
+    styleSeed
+  });
+} catch (e) {
+  // silenzioso: andremo in fallback deterministico
+}
+
+// ❹ se GPT ok, usa quelle; altrimenti fallback alle tue frasi deterministic
+let notes = notesSeed;
+let hook  = buildHook(notes, color, profile.bubbles);
+let palate= buildPalate(profile, color);
+let pairings = pickPairings(color, profile);
+
+if (gptCard) {
+  // se GPT ha restituito chip validi, usali (altrimenti tieni i seed)
+  if (gptCard.notes?.length === 3) notes = gptCard.notes.map((x:string)=> x.charAt(0).toUpperCase()+x.slice(1));
+  if (gptCard.pairings?.length === 3) pairings = gptCard.pairings.map((x:string)=> x.charAt(0).toUpperCase()+x.slice(1));
+  hook   = gptCard.hook || hook;
+  palate = gptCard.palate || palate;
+}
+
     const descrizione = `${hook} ${palate}`.trim();
 
     const mini_card = {
