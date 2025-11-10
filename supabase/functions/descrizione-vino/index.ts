@@ -9,7 +9,7 @@ const supabase = createClient(
 
 const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY") });
 
-const ALLOWED_ORIGIN = "https://www.winesfever.com"; // oppure "*"
+const ALLOWED_ORIGIN = "https://www.winesfever.com";
 
 const CORS = {
   "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
@@ -30,72 +30,22 @@ function fingerprintName(nome: string): string {
   ]);
 
   const base = nome
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // via accenti
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/["“”'’(),.;:]/g, " ")
     .replace(/&/g, " e ")
-    .replace(/\b(19|20)\d{2}\b/g, " "); // via anni es. 2019
+    .replace(/\b(19|20)\d{2}\b/g, " ");
 
   const tokens = base
     .split(/[^a-z0-9]+/g)
     .filter(Boolean)
     .filter(w => !stop.has(w));
 
-  tokens.sort(); // ordine alfabetico => ordine-agnostico
+  tokens.sort();
   return tokens.join("-");
 }
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    // 204: nessun body, headers CORS completi
-    return new Response(null, { status: 204, headers: CORS });
-  }
-
-  try {
-    const body = await req.json();
-    const { nome, annata, uvaggio, categoria, sottocategoria, ristorante_id } = body || {};
-
-    if (!nome) {
-      return new Response(JSON.stringify({ error: "Parametro 'nome' mancante" }), { status: 400, headers: CORS });
-    }
-
-    const fp = fingerprintName(nome);
-
-    // 1) Cerca GLOBALMENTE per fingerprint (riuso tra ristoranti)
-    const { data: exGlobal, error: selErr } = await supabase
-      .from("descrizioni_vini")
-      .select("descrizione, scheda")
-      .eq("fingerprint", fp)
-      .maybeSingle();
-
-    if (selErr) console.warn("Selezione fingerprint errore:", selErr);
-
-if (exGlobal?.descrizione) {
-  return new Response(JSON.stringify({
-    descrizione: exGlobal.descrizione,
-    scheda: exGlobal.scheda || null
-  }), { status: 200, headers: CORS });
-}
-
-    // 2) (retrocompatibilità) prova il vecchio match per ristorante/nome/annata/uvaggio
-    let q = supabase
-      .from("descrizioni_vini")
-      .select("descrizione, scheda")
-      .eq("nome", nome);
-
-    if (ristorante_id) q = q.eq("ristorante_id", ristorante_id);
-    if (annata) q = q.eq("annata", annata); else q = q.is("annata", null);
-    if (uvaggio) q = q.eq("uvaggio", uvaggio); else q = q.is("uvaggio", null);
-
-const { data: exOld } = await q.maybeSingle();
-if (exOld?.descrizione) {
-  await supabase.from("descrizioni_vini").update({ fingerprint: fp }).eq("nome", nome).maybeSingle();
-  return new Response(JSON.stringify({
-    descrizione: exOld.descrizione,
-    scheda: exOld.scheda || null
-  }), { status: 200, headers: CORS });
-}
-// --- deduci colore di base e utility
+// --- colore di base
 function guessColor(meta: { nome?: string; categoria?: string; uvaggio?: string; sottocategoria?: string; }): "rosso"|"bianco"|"rosato" {
   const T = (s:string)=> (s||"").toLowerCase();
   const all = [meta.nome, meta.categoria, meta.sottocategoria, meta.uvaggio].map(T).join(" ");
@@ -104,7 +54,7 @@ function guessColor(meta: { nome?: string; categoria?: string; uvaggio?: string;
   return "rosso";
 }
 
-// --- “guide” per note e abbinamenti (estendibile in futuro o spostabile su tabella Supabase)
+// --- guide (vocabolari consentiti + baseline)
 type Guides = { allowedNotes: string[]; allowedPairings: string[]; baseline?: { body:number; sweetness:number; acidity:number; notes?:string[]; pairings?:string[]; summary?:string } };
 
 function buildGuides(meta: { nome: string; uvaggio?: string; categoria?: string; sottocategoria?: string }): Guides {
@@ -112,7 +62,6 @@ function buildGuides(meta: { nome: string; uvaggio?: string; categoria?: string;
   const uv = (meta.uvaggio||"").toLowerCase();
   const denom = (meta.nome + " " + (meta.categoria||"") + " " + (meta.sottocategoria||"")).toLowerCase();
 
-  // default per colore
   const baseByColor: Record<"rosso"|"bianco"|"rosato", Guides> = {
     rosso: {
       allowedNotes: ["ciliegia","amarena","prugna","mora","ribes nero","violetta","rosa secca","pepe nero","cannella","chiodo di garofano","liquirizia","tabacco","cuoio","terroso","balsamico","erbe mediterranee"],
@@ -130,7 +79,6 @@ function buildGuides(meta: { nome: string; uvaggio?: string; categoria?: string;
 
   let g: Guides = JSON.parse(JSON.stringify(baseByColor[color]));
 
-  // baseline per vitigno/denominazione note (puoi ampliare)
   if (/sangiovese/.test(uv) || /chianti classico/.test(denom)) {
     g.baseline = {
       body: 60, sweetness: 5, acidity: 70,
@@ -138,44 +86,39 @@ function buildGuides(meta: { nome: string; uvaggio?: string; categoria?: string;
       pairings: ["carni rosse","primi al ragù","formaggi stagionati"],
       summary: "Sangiovese teso e succoso: frutto rosso, slancio acido e trama sapida."
     };
-    // raffina il vocabolario per questo caso
     g.allowedNotes = ["ciliegia","amarena","prugna","viola","violetta","rosa secca","pepe nero","cannella","chiodo di garofano","erbe mediterranee","balsamico","terroso"];
   }
 
   return g;
 }
 
-// --- post-filtro per rendere coerente la scheda con le guide
+// --- raffinatore
 function refineWithGuides(s:any, guides:Guides, color:"rosso"|"bianco"|"rosato"){
   const clamp = (n:any)=> Math.max(0, Math.min(100, Number(n)||0));
 
-  // applica baseline se presente (senza sovrascrivere valori plausibili già messi)
   if (guides.baseline){
     s.profile = s.profile || {};
     s.profile.body = clamp(s.profile.body ?? guides.baseline.body);
     s.profile.sweetness = clamp(s.profile.sweetness ?? guides.baseline.sweetness);
     s.profile.acidity = clamp(s.profile.acidity ?? guides.baseline.acidity);
     if (!s.summary && guides.baseline.summary) s.summary = guides.baseline.summary;
-    if ((!s.notes || !s.notes.length) && guides.baseline.notes) s.notes = guides.baseline.notes.map(label=>({label}));
+    if ((!s.notes || !s.notes.length) && guides.baseline.notes) s.notes = guides.baseline.notes.map((label:string)=>({label}));
     if ((!s.pairings || !s.pairings.length) && guides.baseline.pairings) s.pairings = guides.baseline.pairings.slice();
   }
 
-  // NOTE: tieni solo quelle nel dizionario consentito; completa fino a 3
   const allow = guides.allowedNotes.map(x=>x.toLowerCase());
   let notes = (Array.isArray(s.notes)? s.notes: []).map((n:any)=> (typeof n==="string"? n : (n?.label||"")).toLowerCase());
   notes = notes.filter(n => allow.includes(n));
   for (const n of allow){ if (notes.length>=3) break; if (!notes.includes(n)) notes.push(n); }
-  s.notes = notes.slice(0,3).map(x=>({label: x.charAt(0).toUpperCase()+x.slice(1)}));
+  s.notes = notes.slice(0,3).map((x:string)=>({label: x.charAt(0).toUpperCase()+x.slice(1)}));
 
-  // PAIRINGS: per i rossi elimina pesce; scegli 3 dal vocabolario
   const allowP = guides.allowedPairings.map(x=>x.toLowerCase());
   let pair = (Array.isArray(s.pairings)? s.pairings: []).map((p:any)=> (typeof p==="string"? p : (p?.label||"")).toLowerCase());
-  if (color==="rosso") pair = pair.filter(p => !/pesce/i.test(p));
-  pair = pair.filter(p=> allowP.includes(p));
+  if (color==="rosso") pair = pair.filter((p:string) => !/pesce/i.test(p));
+  pair = pair.filter((p:string)=> allowP.includes(p));
   for (const p of allowP){ if (pair.length>=3) break; if (!pair.includes(p)) pair.push(p); }
-  s.pairings = pair.slice(0,3).map(x=> x.charAt(0).toUpperCase()+x.slice(1));
+  s.pairings = pair.slice(0,3).map((x:string)=> x.charAt(0).toUpperCase()+x.slice(1));
 
-  // clamp finale
   s.profile = s.profile || {};
   s.profile.body = clamp(s.profile.body);
   s.profile.sweetness = clamp(s.profile.sweetness);
@@ -185,127 +128,167 @@ function refineWithGuides(s:any, guides:Guides, color:"rosso"|"bianco"|"rosato")
   return s;
 }
 
-// 3) Genera scheda + descrizione con OpenAI (JSON + testo)
-const color = guessColor({ nome, uvaggio, categoria, sottocategoria });
-const guides = buildGuides({ nome, uvaggio, categoria, sottocategoria });
+// --- builder deterministico di “hook + palato”
+function buildHookAndPalate(s: any, color: "rosso"|"bianco"|"rosato") {
+  const toLow = (a:any)=> (Array.isArray(a)? a:[]).map((x:any)=> (typeof x==="string"? x : (x?.label||""))).filter(Boolean).map((x:string)=>x.toLowerCase());
+  const core = toLow(s?.style?.aroma_core);
+  const chipNotes = toLow(s?.notes);
+  const aroma = (core.length ? core : chipNotes).slice(0,2).join(" e ");
 
-const jsonPrompt = {
-  role: "user",
-  content: `Genera SOLO un JSON (nessun testo fuori JSON) con questo schema:
-{
- "summary": "max 140 caratteri, tono professionale e credibile",
- "profile": { "body": 0-100, "sweetness": 0-100, "acidity": 0-100 },
- "notes": [{"label": "una o due parole"}],   // esattamente 3 voci
- "pairings": ["...", "...", "..."]           // esattamente 3 voci
+  const hook = aroma
+    ? `Profuma di ${aroma}${color!=="bianco" && !/pepe|spezi/.test(aroma) ? " con un tocco speziato" : ""}.`
+    : (color==="bianco" ? "Profuma di frutta e fiori bianchi." : color==="rosato" ? "Profuma di frutta rossa e fiori." : "Profumi di frutto e spezia.");
+
+  const bodyMap: Record<string,string> = { leggero:"corpo leggero", medio:"corpo medio", pieno:"corpo pieno" };
+  const acidMap: Record<string,string> = { bassa:"acidità morbida", media:"acidità equilibrata", alta:"acidità vivace" };
+  const tanMap:  Record<string,string> = { assente:"", fine:"tannino fine", presente:"tannino presente" };
+
+  const structure = (s?.style?.structure||"").toLowerCase();
+  const acidity   = (s?.style?.acidity||"").toLowerCase();
+  const tannin    = (s?.style?.tannin||"").toLowerCase();
+
+  const bodyTxt = bodyMap[structure] || "corpo medio";
+  const acidTxt = acidMap[acidity]   || (color==="bianco" ? "acidità vivace" : "acidità equilibrata");
+  let tanTxt    = tanMap[tannin]     || (color==="rosso" ? "tannino fine" : "");
+  tanTxt = tanTxt ? `, ${tanTxt}` : "";
+
+  const palate = `${bodyTxt}, ${acidTxt}${tanTxt}: beva scorrevole e pulita.`;
+  return { hook, palate };
 }
 
-Istruzioni:
-- Colore vino: ${color}.
-- Scegli le 3 "notes" SOLO dalla lista consentita (senza crearne di nuove): ${guides.allowedNotes.join(", ")}.
-- Scegli i 3 "pairings" SOLO da: ${guides.allowedPairings.join(", ")}.
-- Usa termini specifici (es. "ciliegia", "mora", "pepe nero") quando sono nella lista.
-- Se i dati sono scarsi, resta coerente con color, vitigno e denominazione.
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: CORS });
+  }
 
-Dati disponibili:
-Nome: ${nome}
-${annata ? "Annata: " + annata : ""}
-Uvaggio: ${uvaggio || "non specificato"}
-Categoria: ${categoria || "non specificata"}
-Sottocategoria: ${sottocategoria || "non specificata"}`
-};
+  try {
+    const body = await req.json();
+    const { nome, annata, uvaggio, categoria, sottocategoria, ristorante_id } = body || {};
 
-const descPrompt = {
-  role: "user",
-  content: `Scrivi un paragrafo tecnico, sobrio ed elegante in italiano (max 320 caratteri).
-- Non usare titoli, grassetti, elenchi o markdown.
-- Non ripetere il nome del vino.
-- 3 micro-frasi: 1) stile generale; 2) sensazioni al palato (struttura, acidità/tannino, equilibrio); 3) abbinamenti in categorie (es. carni alla griglia, primi di pesce, formaggi stagionati).
-- Evita formule generiche (“elegante e complesso”, “tannini morbidi”).
+    if (!nome) {
+      return new Response(JSON.stringify({ error: "Parametro 'nome' mancante" }), { status: 400, headers: CORS });
+    }
+
+    const fp = fingerprintName(nome);
+
+    // 1) cache globale per fingerprint
+    const { data: exGlobal } = await supabase
+      .from("descrizioni_vini")
+      .select("descrizione, scheda")
+      .eq("fingerprint", fp)
+      .maybeSingle();
+
+    if (exGlobal?.descrizione) {
+      return new Response(JSON.stringify({
+        descrizione: exGlobal.descrizione,
+        scheda: exGlobal.scheda || null
+      }), { status: 200, headers: CORS });
+    }
+
+    // 2) retrocompatibilità: ristorante/nome/annata/uvaggio
+    let q = supabase
+      .from("descrizioni_vini")
+      .select("descrizione, scheda")
+      .eq("nome", nome);
+
+    if (ristorante_id) q = q.eq("ristorante_id", ristorante_id);
+    if (annata) q = q.eq("annata", annata); else q = q.is("annata", null);
+    if (uvaggio) q = q.eq("uvaggio", uvaggio); else q = q.is("uvaggio", null);
+
+    const { data: exOld } = await q.maybeSingle();
+    if (exOld?.descrizione) {
+      await supabase.from("descrizioni_vini").update({ fingerprint: fp }).eq("nome", nome).maybeSingle();
+      return new Response(JSON.stringify({
+        descrizione: exOld.descrizione,
+        scheda: exOld.scheda || null
+      }), { status: 200, headers: CORS });
+    }
+
+    // 3) genera scheda strutturata (solo JSON) + testo deterministico
+    const color = guessColor({ nome, uvaggio, categoria, sottocategoria });
+    const guides = buildGuides({ nome, uvaggio, categoria, sottocategoria });
+
+    const jsonPrompt = {
+      role: "user",
+      content: `Restituisci SOLO un JSON con questo schema (nessun testo fuori JSON):
+{
+  "style": {
+    "aroma_core": ["..",".."],        // 1-2 parole ciascuna, SOLO da: ${guides.allowedNotes.join(", ")}
+    "structure": "leggero|medio|pieno",
+    "acidity": "bassa|media|alta",
+    "tannin": "assente|fine|presente" // per bianchi/rosati preferisci "assente" o "fine"
+  },
+  "notes": [{"label":".."},{"label":".."},{"label":".."}],  // 3 esatte, SOLO dalla lista consentita
+  "pairings": ["..","..",".."]                              // 3 esatti, SOLO dalla lista consentita
+}
+Regole:
+- Colore dedotto: ${color}.
+- Usa SOLO i termini consentiti per "notes" e "pairings".
+- Non inventare legno, regioni o dettagli non presenti.
+- Se i dati scarseggiano, resta coerente con colore/vitigno.
+
 Dati:
 Nome: ${nome}
 ${annata ? "Annata: " + annata : ""}
 Uvaggio: ${uvaggio || "non specificato"}
 Categoria: ${categoria || "non specificata"}
 Sottocategoria: ${sottocategoria || "non specificata"}`
-};
+    };
 
-// 👉 modelli: se hai "gpt-4o-mini" usalo (ottimo+costo basso). Altrimenti tieni 3.5.
-const model = "gpt-4o-mini"; // fallback: "gpt-3.5-turbo"
+    const model = "gpt-4o-mini";
+    const sheet = await openai.chat.completions.create({
+      model,
+      messages: [jsonPrompt],
+      temperature: 0.15,
+      max_tokens: 280,
+      response_format: { type: "json_object" }
+    });
 
-// prima la scheda JSON
-const sheet = await openai.chat.completions.create({
-  model,
-  messages: [jsonPrompt],
-  temperature: 0.2,                 // meno “creativo” per il JSON
-  max_tokens: 300,
-  response_format: { type: "json_object" }
-});
+    let scheda: any = {};
+    try {
+      const raw = sheet.choices[0].message?.content ?? "{}";
+      const cleaned = raw.replace(/^\s*```(?:json)?\s*|\s*```\s*$/g, "");
+      scheda = JSON.parse(cleaned);
+    } catch (e) {
+      console.warn("JSON parse fallito, uso scheda vuota:", e);
+      scheda = {};
+    }
 
+    // profilo numerico base se mancante (verrà rifinito da guides)
+    const clamp = (n: any) => Math.max(0, Math.min(100, Number(n) || 0));
+    scheda.profile = scheda.profile || {};
+    // numeri neutri: saranno corretti dal baseline delle guide
+    scheda.profile.body = clamp(scheda.profile.body ?? 50);
+    scheda.profile.sweetness = clamp(scheda.profile.sweetness ?? 5);
+    scheda.profile.acidity = clamp(scheda.profile.acidity ?? (color==="bianco" ? 65 : 55));
+    scheda.notes = Array.isArray(scheda.notes) ? scheda.notes.slice(0,3) : [];
+    scheda.pairings = Array.isArray(scheda.pairings) ? scheda.pairings.slice(0,3) : [];
 
-let scheda: any = {};
-try {
-  const raw = sheet.choices[0].message?.content ?? "{}";
-  console.log("JSON scheda grezzo:", raw.slice(0,200));
-  const cleaned = raw.replace(/^\s*```(?:json)?\s*|\s*```\s*$/g, ""); // via code fences
-  scheda = JSON.parse(cleaned);
-} catch (e) {
-  console.warn("JSON parse fallito, uso scheda vuota:", e);
-}
+    // rifinitura con whitelist/baseline
+    scheda = refineWithGuides(scheda, guides, color);
 
-// harden minimi
-const clamp = (n: any) => Math.max(0, Math.min(100, Number(n) || 0));
-scheda.profile = scheda.profile || {};
-scheda.profile.body = clamp(scheda.profile.body);
-scheda.profile.sweetness = clamp(scheda.profile.sweetness);
-scheda.profile.acidity = clamp(scheda.profile.acidity);
-scheda.notes = Array.isArray(scheda.notes) ? scheda.notes.slice(0,3) : [];
-scheda.pairings = Array.isArray(scheda.pairings) ? scheda.pairings.slice(0,3) : [];
-scheda.summary = (scheda.summary || "").slice(0,160);
+    // 2 frasi deterministiche (hook + palato)
+    const { hook, palate } = buildHookAndPalate(scheda, color);
+    const descrizionePulita = `${hook} ${palate}`.trim();
 
-// 👇 APPLICA SEMPRE IL RAFFINATORE (anche se il JSON era vuoto)
-scheda = refineWithGuides(scheda, guides, color);
+    // salva
+    const { error: upErr } = await supabase
+      .from("descrizioni_vini")
+      .upsert(
+        {
+          fingerprint: fp,
+          nome,
+          annata: annata || null,
+          uvaggio: uvaggio || null,
+          ristorante_id: ristorante_id || null,
+          descrizione: descrizionePulita,
+          scheda: { ...scheda, summary: descrizionePulita } // metto il testo anche in summary della scheda
+        },
+        { onConflict: "fingerprint", ignoreDuplicates: false }
+      );
+    if (upErr) console.error("❌ Errore salvataggio descrizione/scheda:", upErr);
 
-// poi il testo tecnico
-const completion = await openai.chat.completions.create({
-  model,
-  messages: [descPrompt],
-  temperature: 0.6,
-  max_tokens: 350
-});
-const descrizione = completion.choices[0].message?.content?.trim() ?? "";
-// pulizia: niente markdown/grassetti, niente bullet, compatta spazi
-const stripMd = (s: string) =>
-  s.replace(/\*\*/g, "")
-   .replace(/(^|\s)[\-•]\s+/g, "$1")
-   .replace(/\s+/g, " ")
-   .trim();
-
-// evita che il testo inizi ripetendo il nome
-const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-const nomeRe = new RegExp("^\\s*" + esc(nome) + "\\s*[:\\-–—]?\\s*", "i");
-
-let descrizionePulita = stripMd(descrizione).replace(nomeRe, "");
-
-// 4) UPSERT: salviamo sia 'descrizione' sia 'scheda'
-const { error: upErr } = await supabase
-  .from("descrizioni_vini")
-  .upsert(
-    {
-      fingerprint: fp,
-      nome,
-      annata: annata || null,
-      uvaggio: uvaggio || null,
-      ristorante_id: ristorante_id || null,
-      descrizione: descrizionePulita,
-      scheda
-    },
-    { onConflict: "fingerprint", ignoreDuplicates: false }
-  );
-
-if (upErr) console.error("❌ Errore salvataggio descrizione/scheda:", upErr);
-
-return new Response(JSON.stringify({ descrizione: descrizionePulita, scheda }), { status: 200, headers: CORS });
-
+    return new Response(JSON.stringify({ descrizione: descrizionePulita, scheda: { ...scheda, summary: descrizionePulita } }), { status: 200, headers: CORS });
 
   } catch (err: any) {
     console.error("Errore interno:", err);
@@ -315,4 +298,5 @@ return new Response(JSON.stringify({ descrizione: descrizionePulita, scheda }), 
     });
   }
 });
+
 

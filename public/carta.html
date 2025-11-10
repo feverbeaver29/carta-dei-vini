@@ -263,6 +263,10 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
 .vino-chips.muted span{ background:#fafafa; color:#666; }
 .vino-toggle{ margin-top:8px; font-size:.9em; border:none; background:transparent; color:var(--accent-color,#b00); cursor:pointer; }
 
+.vino-section { margin-top: 8px; }
+.vino-section-title { font-weight: 700; font-size: .9em; margin-bottom: 6px; opacity: .9; }
+.vino-chips .chip { background:#f6f6f6; border-radius:999px; padding:6px 10px; font-size:.9em; }
+
 /* — Sommelier (card zig-zag + badge/pill fissi agli angoli) — */
 .somm-list .sommelier-card{ max-width:540px; }
 .somm-list .sommelier-card:nth-child(even){ margin-left:auto; } /* zig-zag dx/sx */
@@ -749,7 +753,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_API_KEY);
 // 🔴 Disattiva/attiva la descrizione vino dalla UI
-const DESCRIZIONE_VINO_ABILITATA = false; // ← metti true per riattivare
+const DESCRIZIONE_VINO_ABILITATA = true; // ← metti true per riattivare
 
 // --- URL parsing: supporta sia ?slug=... sia /:slug e /:slug.cartadeivini ---
 const urlParams = new URLSearchParams(window.location.search);
@@ -2363,27 +2367,39 @@ function renderSchedaInto(el, vinoNome, scheda, descrizione, lang){
       <div class="bar"><span>Morbido</span><div class="track"><i class="knob" style="left:${clamp(scheda?.profile?.acidity)}%"></i></div><span>Acido</span></div>
     </div>`;
 
-  const chips = (arr, muted=false) =>
-    `<div class="vino-chips ${muted?'muted':''}">` +
-    (arr||[]).map(n => `<span>${typeof n==="string"? n : (n?.label||"")}</span>`).join("") +
-    `</div>`;
+  const chips = (arr, icon="") =>
+    (arr||[]).map(n => {
+      const label = typeof n==="string" ? n : (n?.label || "");
+      return `<span class="chip">${icon ? icon + " " : ""}${label}</span>`;
+    }).join("");
 
   const summary = (scheda?.summary||"").toString();
   const pair = Array.isArray(scheda?.pairings) ? scheda.pairings : [];
   const notes = Array.isArray(scheda?.notes) ? scheda.notes : [];
 
-el.innerHTML = `
-  <div class="vino-card">
-    ${summary ? `<p class="summary">${summary}</p>` : ""}
-    ${bars}
-    ${notes.length ? chips(notes,false) : ""}
-    ${pair.length ? chips(pair,true) : ""}
-    <button class="vino-toggle" id="vToggleBtn">Mostra dettagli</button>
-    <p id="vFullDesc" style="display:none; margin-top:6px;">${descrizione||""}</p>
-  </div>
-`;
+  el.innerHTML = `
+    <div class="vino-card">
+      ${summary ? `<p class="summary">${summary}</p>` : ""}
 
-  // toggle descrizione
+      ${bars}
+
+      ${notes.length ? `
+        <div class="vino-section">
+          <div class="vino-section-title">✨ Note</div>
+          <div class="vino-chips">${chips(notes)}</div>
+        </div>` : ""}
+
+      ${pair.length ? `
+        <div class="vino-section">
+          <div class="vino-section-title">🍽️ Abbinamenti</div>
+          <div class="vino-chips">${chips(pair)}</div>
+        </div>` : ""}
+
+      <button class="vino-toggle" id="vToggleBtn">Mostra dettagli</button>
+      <p id="vFullDesc" style="display:none; margin-top:6px;">${descrizione||""}</p>
+    </div>
+  `;
+
   const btn = el.querySelector('#vToggleBtn');
   const p   = el.querySelector('#vFullDesc');
   btn.onclick = () => {
@@ -2392,6 +2408,7 @@ el.innerHTML = `
     btn.textContent = show ? 'Nascondi dettagli' : 'Mostra dettagli';
   };
 }
+
 function mostraPopupDescrizione(vino) {
   // Crea sempre l'overlay con gli elementi usati dopo
   const overlay = document.createElement("div");
