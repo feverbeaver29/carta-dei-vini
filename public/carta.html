@@ -2409,6 +2409,40 @@ function renderSchedaInto(el, vinoNome, scheda, descrizione, lang){
   };
 }
 
+function renderMiniCardInto(el, vinoNome, mini, lang){
+  if (!el) return;
+  const safe = (s)=> (s||"").toString();
+
+  const noteChips = (mini?.notes||[]).map(n => {
+    const emoji = mini?.emojis?.notes?.[n] || "";
+    return `<span class="chip">${emoji ? (emoji + " ") : ""}${n}</span>`;
+  }).join("");
+
+  const pairChips = (mini?.pairings||[]).map(p => {
+    const emoji = mini?.emojis?.pairings?.[p] || "";
+    return `<span class="chip">${emoji ? (emoji + " ") : ""}${p}</span>`;
+  }).join("");
+
+  el.innerHTML = `
+    <div class="vino-card">
+      <p class="summary" style="margin-bottom:6px;"><strong>${safe(mini?.hook)}</strong></p>
+      <p class="summary" style="margin-top:0;">${safe(mini?.palate)}</p>
+
+      ${mini?.notes?.length ? `
+        <div class="vino-section">
+          <div class="vino-section-title">✨ Note</div>
+          <div class="vino-chips">${noteChips}</div>
+        </div>` : ""}
+
+      ${mini?.pairings?.length ? `
+        <div class="vino-section">
+          <div class="vino-section-title">🍽️ Abbinamenti</div>
+          <div class="vino-chips">${pairChips}</div>
+        </div>` : ""}
+    </div>
+  `;
+}
+
 function mostraPopupDescrizione(vino) {
   // Crea sempre l'overlay con gli elementi usati dopo
   const overlay = document.createElement("div");
@@ -2457,7 +2491,7 @@ function mostraPopupDescrizione(vino) {
   })
   .then(async data => {
     let descr = data.descrizione || translations[currentLang].noDescription || "Nessuna descrizione trovata.";
-    const scheda = data.scheda || null;
+    const card = data.mini_card || data.scheda || null; // compat: accetto mini_card o scheda
 
     if (currentLang !== "it" && descr && descr !== "Nessuna descrizione trovata.") {
       try {
@@ -2471,12 +2505,13 @@ function mostraPopupDescrizione(vino) {
       } catch(e){}
     }
 
-    if (wrapEl && scheda) {
-      if (descEl) descEl.textContent = "";
-      renderSchedaInto(wrapEl, vino.nome + (vino.annata ? ` (${vino.annata})`:""), scheda, descr, currentLang);
-    } else {
-      if (descEl) descEl.textContent = descr;
-    }
+    if (wrapEl && card) {
+  if (descEl) descEl.textContent = "";
+  // 👉 USA LA MINI-CARD (2 righe + chip)
+  renderMiniCardInto(wrapEl, vino.nome + (vino.annata ? ` (${vino.annata})`:""), card, currentLang);
+} else {
+  if (descEl) descEl.textContent = descr;
+}
   })
   .catch(err => {
     console.error("[descrizione-vino]", err);

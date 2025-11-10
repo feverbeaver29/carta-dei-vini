@@ -53,7 +53,7 @@ function norm(s?: string) {
     .trim();
 }
 
-// ---------- Vocabolari ammessi (chip) ----------
+// ---------- Vocabolari ammessi ----------
 const ALLOWED_NOTES = {
   rosso: ["ciliegia","amarena","prugna","mora","ribes nero","violetta","rosa secca","pepe nero","cannella","chiodo di garofano","liquirizia","tabacco","cuoio","terroso","balsamico","erbe mediterranee"],
   bianco:["agrumi","limone","pompelmo","frutta gialla","pesca","pera","mela","fiori bianchi","erbe","minerale"],
@@ -62,7 +62,7 @@ const ALLOWED_NOTES = {
 
 const ALLOWED_PAIRINGS = {
   rosso: ["primi al ragù","carni rosse","formaggi stagionati","selvaggina","brasati"],
-  bianco:["antipasti di pesce","primi di pesce","carni bianche","formaggi freschi","fritti"],
+  bianco:["antipasti di pesce","primi di pesce","carni bianche","formaggi freschi","fritture"],
   rosato:["salumi","fritture","cucina mediterranea","carni bianche","formaggi freschi"]
 } as const;
 
@@ -82,9 +82,8 @@ const EMOJI = {
   ])
 };
 
-// Note tipiche per vitigno (sintetiche, prese dal vocabolario ammesso per evitare invenzioni)
+// Note sintetiche per vitigno
 const GRAPE_NOTE_HINTS: Record<string, string[]> = {
-  // chiavi in lowercase (grape_norm / synonyms)
   "sangiovese": ["ciliegia","violetta","pepe nero"],
   "nebbiolo": ["rosa secca","ciliegia","liquirizia"],
   "barbera": ["ciliegia","prugna","erbe"],
@@ -92,8 +91,8 @@ const GRAPE_NOTE_HINTS: Record<string, string[]> = {
   "cabernet sauvignon": ["ribes nero","pepe nero","liquirizia"],
   "syrah": ["mora","pepe nero","violetta"],
   "aglianico": ["prugna","terroso","liquirizia"],
-  "primitivo": ["prugna","amarena","spezie"], // "spezie" sarà mappata su pepe/cannella
-  "nerodavola": ["amarena","erbe mediterranee","spezie"],
+  "primitivo": ["prugna","amarena","pepe nero"],
+  "nerodavola": ["amarena","erbe mediterranee","pepe nero"],
   "vermentino": ["agrumi","erbe","minerale"],
   "chardonnay": ["frutta gialla","mela","fiori bianchi"],
   "sauvignon": ["agrumi","erbe","fiori bianchi"],
@@ -112,16 +111,14 @@ function guessColor(meta: { nome?: string; categoria?: string; sottocategoria?: 
   if (/\brosat[oi]\b|ros[eé]\b|cerasuol[oa]\b/.test(all)) return "rosato";
   if (/\bbianc[oi]\b|blanc[s]?\b|metodo\s+classico|spumante|brut|pas\s+dos[èe]|extra\s+brut|dosaggio\s+zero|blanc\s*de\s*blancs/.test(all)) return "bianco";
   if (/\bross[oi]\b/.test(all)) return "rosso";
-  // fallback: se cita vitigni “bianchi”
   if (/\bchardonnay|vermentino|fiano|greco|garganega|friulano|verdicchio|sauvignon|pinot\s+bianco\b/.test(all)) return "bianco";
   return "rosso";
 }
 
-// ---------- Parsing uvaggio (percentuali opzionali) ----------
+// ---------- Parsing uvaggio ----------
 type GrapePart = { name: string; pct: number };
 function parseUvaggio(uvaggio?: string): GrapePart[] {
   const s = uvaggio || "";
-  // esempi: "Sangiovese 90%, Canaiolo 10%" | "Sangiovese, Canaiolo" | "100% Sangiovese"
   const parts = s.split(/[,;+/]| e |\&/i).map(x=>x.trim()).filter(Boolean);
   const out: GrapePart[] = [];
   let totalPct = 0;
@@ -142,33 +139,32 @@ function parseUvaggio(uvaggio?: string): GrapePart[] {
     const eq = Math.round(100 / out.length);
     return out.map(g => ({ ...g, pct: eq }));
   }
-  // normalizza a 100
   const sum = out.reduce((a,b)=>a+b.pct,0) || 100;
   return out.map(g => ({ ...g, pct: Math.round(100 * g.pct / sum) }));
 }
 
-// ---------- Lookup: grape_profiles / appellation_priors ----------
+// ---------- Lookup ----------
 async function fetchGrapeRow(name: string) {
   const key = norm(name).replace(/\s+/g," ");
-  let q = supabase.from("grape_profiles").select("*").eq("grape_norm", key).maybeSingle();
-  let { data, error } = await q;
+  let { data } = await supabase
+    .from("grape_profiles")
+    .select("*")
+    .eq("grape_norm", key)
+    .maybeSingle();
+
   if (!data) {
-    // prova via synonyms @> key (array-contains)
-    const { data: bySyn } = await supabase
+    const bySyn = await supabase
       .from("grape_profiles")
       .select("*")
       .contains("synonyms", [key])
       .maybeSingle();
-    data = bySyn || null;
+    data = bySyn.data || null;
   }
-  if (!data && error) console.warn("grape lookup error", error);
   return data;
 }
 
 async function fetchAppellationDenom(candidates: string[]) {
-  // candidates già normalizzati
   for (const c of candidates) {
-    // match diretto su denom_norm
     let { data } = await supabase
       .from("appellation_priors")
       .select("*")
@@ -176,7 +172,6 @@ async function fetchAppellationDenom(candidates: string[]) {
       .maybeSingle();
     if (data) return data;
 
-    // match via synonyms array
     const bySyn = await supabase
       .from("appellation_priors")
       .select("*")
@@ -206,14 +201,13 @@ function mergeWeighted(profiles: {p:Profile, w:number}[]): Profile {
   };
 }
 
-// ---------- Testi (hook/palato) ----------
+// ---------- Testi (Sommelier Mini-Card) ----------
 function pickNotes(color: "rosso"|"bianco"|"rosato", grapeHints: string[]): string[] {
   const allow = new Set(ALLOWED_NOTES[color]);
   const cleaned = grapeHints
     .map(n => n.toLowerCase().replace("spezie","pepe nero"))
     .filter(n => allow.has(n));
   const uniq = Array.from(new Set(cleaned));
-  // riempi fino a 3 con vocabolario colore
   const fill = ALLOWED_NOTES[color].filter(n => !uniq.includes(n));
   return uniq.concat(fill).slice(0,3);
 }
@@ -232,7 +226,6 @@ function capLen(s: string, max: number) {
 }
 
 function buildHook(aromas: string[], color: "rosso"|"bianco"|"rosato", bubbles: number) {
-  // es. "Limpido e succoso, profuma di ciliegia e violetta con un tocco speziato."
   const two = aromas.slice(0,2).join(" e ");
   const fr = two ? `Profuma di ${two}` : (color==="bianco" ? "Profuma di frutta e fiori bianchi" : color==="rosato" ? "Profuma di frutta rossa e fiori" : "Profumi di frutto e spezia");
   const eff = bubbles > 20 ? " e una bolla fine" : "";
@@ -247,12 +240,9 @@ function buildPalate(p: Profile, color: "rosso"|"bianco"|"rosato") {
   return capLen(`${chunks}: ${coda}.`, 120);
 }
 
-// ---------- Pairing logico ----------
 function pickPairings(color: "rosso"|"bianco"|"rosato", p: Profile) {
   const base = [...ALLOWED_PAIRINGS[color]];
-  // micro-logiche
   if (color !== "rosso" && (p.bubbles > 30 || p.acid > 65)) {
-    // privilegia fritti/pesce
     const priority = ["fritture","antipasti di pesce","primi di pesce"];
     return Array.from(new Set(priority.concat(base))).slice(0,3);
   }
@@ -284,8 +274,9 @@ serve(async (req) => {
       .select("descrizione, scheda")
       .eq("fingerprint", fp)
       .maybeSingle();
-    if (cached?.descrizione) {
-      return new Response(JSON.stringify({ descrizione: cached.descrizione, mini_card: cached.scheda || null }), { status: 200, headers: CORS });
+    if (cached?.descrizione && cached?.scheda) {
+      // compat: restituisco sia mini_card che scheda (uguali)
+      return new Response(JSON.stringify({ descrizione: cached.descrizione, mini_card: cached.scheda, scheda: cached.scheda }), { status: 200, headers: CORS });
     }
 
     // 1) colore
@@ -313,12 +304,9 @@ serve(async (req) => {
     }
     const profileFromGrapes = grapeProfiles.length ? mergeWeighted(grapeProfiles.map(x=>({p:x.p, w:x.w||1}))) : { ...emptyProfile, acid: color==="bianco" ? 62 : 55 };
 
-    // 3) prior da denominazione (usa nome/categoria/sottocategoria come candidati)
-    const denomCandidates = Array.from(new Set([
-      norm(nome), norm(categoria), norm(sottocategoria)
-    ].filter(Boolean)));
+    // 3) prior da denominazione
+    const denomCandidates = Array.from(new Set([ norm(nome), norm(categoria), norm(sottocategoria) ].filter(Boolean)));
     const denomRow = await fetchAppellationDenom(denomCandidates);
-
     let profile: Profile = { ...profileFromGrapes };
     if (denomRow) {
       profile = {
@@ -335,22 +323,20 @@ serve(async (req) => {
     for (const g of grapeProfiles) {
       const key = (g.matchedAs || g.name || "").toLowerCase();
       if (GRAPE_NOTE_HINTS[key]) grapeHintsRaw.push(...GRAPE_NOTE_HINTS[key]);
-      // normalizza "spezie" → pepe/cannella a scelta
     }
     const notes = pickNotes(color, grapeHintsRaw);
-    // 5) Hook & Palato
+
+    // 5) Hook & Palato + Pairings
     const hook = buildHook(notes, color, profile.bubbles);
     const palate = buildPalate(profile, color);
-    // 6) Pairings
     const pairings = pickPairings(color, profile);
-
     const descrizione = `${hook} ${palate}`.trim();
 
     const mini_card = {
-      hook,
-      palate,
-      notes,
-      pairings,
+      hook,                         // 1 riga
+      palate,                       // 1 riga
+      notes,                        // 3 chip (≤2 parole)
+      pairings,                     // 3 chip (categorie)
       emojis: {
         notes: Object.fromEntries(notes.map(n=>[n, EMOJI.notes.get(n) || ""])),
         pairings: Object.fromEntries(pairings.map(p=>[p, EMOJI.pair.get(p) || ""]))
@@ -363,7 +349,7 @@ serve(async (req) => {
       }
     };
 
-    // 7) salva (cache per fingerprint + retro-compat) 
+    // 6) salva cache
     await supabase.from("descrizioni_vini").upsert({
       fingerprint: fp,
       nome,
@@ -371,10 +357,11 @@ serve(async (req) => {
       uvaggio: uvaggio || null,
       ristorante_id: ristorante_id || null,
       descrizione,
-      scheda: mini_card
+      scheda: mini_card                 // compat: salvo come "scheda"
     }, { onConflict: "fingerprint", ignoreDuplicates: false });
 
-    return new Response(JSON.stringify({ descrizione, mini_card }), { status: 200, headers: CORS });
+    // 7) risposta (compat)
+    return new Response(JSON.stringify({ descrizione, mini_card, scheda: mini_card }), { status: 200, headers: CORS });
 
   } catch (err: any) {
     console.error("Errore interno:", err);
