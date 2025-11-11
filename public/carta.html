@@ -753,7 +753,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_API_KEY);
 // 🔴 Disattiva/attiva la descrizione vino dalla UI
-const DESCRIZIONE_VINO_ABILITATA = true; // ← metti true per riattivare
+const DESCRIZIONE_VINO_ABILITATA = false; // ← metti true per riattivare
 
 // --- URL parsing: supporta sia ?slug=... sia /:slug e /:slug.cartadeivini ---
 const urlParams = new URLSearchParams(window.location.search);
