@@ -681,7 +681,10 @@ const denomRow = await fetchAppellationDenom(denomCandidates);
 const color = (denomRow?.default_color as ("rosso"|"bianco"|"rosato") | undefined) 
   ?? guessColor({ nome, categoria, sottocategoria, uvaggio });
 
-// 3) profilo da uvaggio
+// 3) profilo da uvaggio (aggiungi queste due righe)
+const parts = parseUvaggio(uvaggio);
+const grapeProfiles: {p:Profile, w:number, name:string, matchedAs:string, raw:GrapeRow}[] = [];
+
 for (const g of parts) {
   const row = await fetchGrapeRow(g.name) as GrapeRow | null;
   if (row) {
@@ -756,11 +759,12 @@ const { notesSeed, pairSeed } = buildSeeds(
   allowedNotes,
   allowedPairings
 );
+// NOTE: cap a 2 parole
 const notesSeedCapped = notesSeed.map(t => capChipWords(t));
-const pairSeedCapped  = pairSeed.map(t => capChipWords(t));
-// Normalizzazione finale chip (erbe mediterranee -> erbe, gestione agrumi vs specifici)
-const notesSeedNorm = normalizeAndCapNotes(notesSeedCapped, 3);
-const pairSeedNorm  = normalizePairs(pairSeedCapped, 3);
+const notesSeedNorm   = normalizeAndCapNotes(notesSeedCapped, 3);
+
+// PAIRINGS: NIENTE cap
+const pairSeedNorm    = normalizePairs(pairSeed, 3);
 
 // 7) Hints & template dal DB
 const denomStyleHints = toArray(denomRow?.style_hints).map(sanitizeToken);
