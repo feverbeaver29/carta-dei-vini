@@ -24,7 +24,18 @@ const CORS = {
 const ENGINE_VERSION = 2;
 
 // ---------- Utils ----------
-const clamp01 = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
+const clamp100 = (n: number) => Math.max(0, Math.min(100, n)); // NIENTE Math.round!
+
+const to100 = (v?: number|null) => {
+  if (v == null || Number.isNaN(v)) return undefined;
+  // Se il valore sembra in scala 0–1, portalo a 0–100
+  return v <= 1.2 ? v * 100 : v;
+};
+const deltaTo100 = (v?: number|null) => {
+  if (v == null || Number.isNaN(v)) return 0;
+  // Delta anch’esso in 0–1 nel DB ⇒ porta a 0–100
+  return v <= 1.2 ? v * 100 : v;
+};
 
 function fingerprintName(nome: string): string {
   if (!nome) return "";
@@ -134,7 +145,8 @@ function sanitizeToken(x: string): string {
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/\s+/g, " ")
-    .replace(/\bspezie\b/, " pepe nero") // allinea "spezie" al tuo vocabolario
+    .replace(/\bspezie\b/gi, "pepe nero")
+    .replace(/[\/|]+/g, " ")
     .trim();
 }
 
@@ -422,20 +434,20 @@ async function fetchAppellationDenom(candidates: string[]) {
 type Profile = { acid:number; tannin:number; body:number; sweet:number; bubbles:number };
 const emptyProfile: Profile = { acid:50, tannin:50, body:50, sweet:5, bubbles:0 };
 
+// mergeWeighted: lavora già in 0–100, ma togli gli arrotondamenti
 function mergeWeighted(profiles: {p:Profile, w:number}[]): Profile {
   let A=0, T=0, B=0, S=0, U=0, W=0;
-  for (const {p,w} of profiles) {
-    A += p.acid * w; T += p.tannin * w; B += p.body * w; S += p.sweet * w; U += p.bubbles * w; W += w;
-  }
+  for (const {p,w} of profiles) { A+=p.acid*w; T+=p.tannin*w; B+=p.body*w; S+=p.sweet*w; U+=p.bubbles*w; W+=w; }
   if (!W) return { ...emptyProfile };
   return {
-    acid: clamp01(A/W),
-    tannin: clamp01(T/W),
-    body: clamp01(B/W),
-    sweet: clamp01(S/W),
-    bubbles: clamp01(U/W),
+    acid: clamp100(A/W),
+    tannin: clamp100(T/W),
+    body: clamp100(B/W),
+    sweet: clamp100(S/W),
+    bubbles: clamp100(U/W),
   };
 }
+
 
 // ---------- Testi (Sommelier Mini-Card) ----------
 function pickNotes(color: "rosso"|"bianco"|"rosato", grapeHints: string[]): string[] {
@@ -646,8 +658,9 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Parametro 'nome' mancante" }), { status: 400, headers: CORS });
     }
 
-    const fp = `${fingerprintName(nome)}::v${ENGINE_VERSION}`;
-
+    const uvFP = norm(uvaggio || "");
+const yearFP = (annata ? String(annata) : "").trim();
+const fp = `${fingerprintName(nome)}::${uvFP}::${yearFP || "nv"}::v${ENGINE_VERSION}`;
 
     // 0) cache per fingerprint
     const { data: cached } = await supabase
@@ -668,19 +681,17 @@ const denomRow = await fetchAppellationDenom(denomCandidates);
 const color = (denomRow?.default_color as ("rosso"|"bianco"|"rosato") | undefined) 
   ?? guessColor({ nome, categoria, sottocategoria, uvaggio });
 
-// 3) profilo da uvaggio (media pesata), ora con color definitivo
-const parts = parseUvaggio(uvaggio);
-const grapeProfiles: {p:Profile, w:number, name:string, matchedAs:string, raw:GrapeRow}[] = [];
+// 3) profilo da uvaggio
 for (const g of parts) {
   const row = await fetchGrapeRow(g.name) as GrapeRow | null;
   if (row) {
     grapeProfiles.push({
       p: {
-        acid: row.acid ?? 50,
-        tannin: row.tannin ?? (color==="rosso"?55:10),
-        body: row.body ?? 50,
-        sweet: row.sweet ?? 5,
-        bubbles: row.bubbles ?? 0
+        acid: to100(row.acid) ?? 50,
+        tannin: to100(row.tannin) ?? (color==="rosso"?55:10),
+        body: to100(row.body) ?? 50,
+        sweet: to100(row.sweet) ?? 5,
+        bubbles: to100(row.bubbles) ?? 0
       },
       w: g.pct || 0,
       name: row.display_name || g.name,
@@ -690,6 +701,7 @@ for (const g of parts) {
   }
 }
 
+
 const profileFromGrapes = grapeProfiles.length 
   ? mergeWeighted(grapeProfiles.map(x=>({p:x.p, w:x.w||1}))) 
   : { ...emptyProfile, acid: color==="bianco" ? 62 : 55 };
@@ -698,13 +710,14 @@ const profileFromGrapes = grapeProfiles.length
 let profile: Profile = { ...profileFromGrapes };
 if (denomRow) {
   profile = {
-    acid: clamp01(profile.acid + (denomRow.delta_acid ?? 0)),
-    tannin: clamp01(profile.tannin + (denomRow.delta_tannin ?? 0)),
-    body: clamp01(profile.body + (denomRow.delta_body ?? 0)),
-    sweet: clamp01(profile.sweet + (denomRow.delta_sweet ?? 0)),
-    bubbles: clamp01(profile.bubbles + (denomRow.delta_bubbles ?? 0)),
+    acid: clamp100(profile.acid + deltaTo100(denomRow.delta_acid)),
+    tannin: clamp100(profile.tannin + deltaTo100(denomRow.delta_tannin)),
+    body: clamp100(profile.body + deltaTo100(denomRow.delta_body)),
+    sweet: clamp100(profile.sweet + deltaTo100(denomRow.delta_sweet)),
+    bubbles: clamp100(profile.bubbles + deltaTo100(denomRow.delta_bubbles)),
   };
 }
+
 // 5) vocabolari dinamici (denominazione + vitigni) → allowed lists
 const baseAllowedNotes = ALLOWED_NOTES[color] as unknown as string[];
 const baseAllowedPairs = ALLOWED_PAIRINGS[color] as unknown as string[];
@@ -831,6 +844,7 @@ debug: {
     weight: g.w,
     tasting_notes: toArray(g.raw?.tasting_notes),
     pairings: toArray(g.raw?.pairings),
+    profile_scale: "0-100",
   })),
   style_hints_all: styleHintsAll,
   terroir_tags_all: terroirTagsAll,
