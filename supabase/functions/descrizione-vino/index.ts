@@ -229,19 +229,32 @@ serve(async (req) => {
     // 6) PROFILO STRUTTURALE (acid/tannin/body/sweet/bubbles) combinando uva + delta denominazione
 
     // media pesata (se abbiamo %)
-    function avgProp(prop: "acid" | "tannin" | "body" | "sweet" | "bubbles"): number | null {
-      let sum = 0;
-      let w = 0;
-      for (const g of grapesDetailed) {
-        const p = g.profile?.[prop];
-        if (p == null) continue;
-        const weight = g.percent ?? 100 / grapesDetailed.length || 1;
-        sum += p * weight;
-        w += weight;
-      }
-      if (!w) return null;
-      return sum / w;
+function avgProp(prop: "acid" | "tannin" | "body" | "sweet" | "bubbles"): number | null {
+  let sum = 0;
+  let w = 0;
+  for (const g of grapesDetailed) {
+    const p = g.profile?.[prop];
+    if (p == null) continue;
+
+    // PRIMA (che dava errore)
+    // const weight = g.percent ?? 100 / grapesDetailed.length || 1;
+
+    // DOPO: versione “pulita”
+    let weight: number;
+    if (g.percent != null) {
+      weight = g.percent;
+    } else if (grapesDetailed.length > 0) {
+      weight = 100 / grapesDetailed.length;
+    } else {
+      weight = 1;
     }
+
+    sum += p * weight;
+    w += weight;
+  }
+  if (!w) return null;
+  return sum / w;
+}
 
     let acidBase = avgProp("acid");
     let tanninBase = avgProp("tannin");
