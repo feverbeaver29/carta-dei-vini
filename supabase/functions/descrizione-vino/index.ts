@@ -3,6 +3,12 @@ import { serve } from "https://deno.land/std/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import OpenAI from "https://deno.land/x/openai@v4.24.1/mod.ts";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "https://www.winesfever.com", // oppure "*" se vuoi
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 // Usa la SERVICE_ROLE per poter leggere tutte le tabelle
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -98,6 +104,17 @@ function livello(val: number | null | undefined): string {
 // =============== MAIN ===============
 
 serve(async (req) => {
+  // CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response("ok", {
+      status: 200,
+      headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json",
+    },
+  }
+);
+  }
   try {
     const { nome, annata, uvaggio, categoria, sottocategoria, ristorante_id } =
       await req.json();
@@ -105,8 +122,12 @@ serve(async (req) => {
     if (!nome) {
       return new Response(
         JSON.stringify({ ok: false, error: "Manca il nome del vino" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+        { status: 400, headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json",
+    },
+  }
+);
     }
 
     // seed per rendere ogni vino un po' diverso ma stabile
@@ -137,8 +158,12 @@ serve(async (req) => {
     if (!allGrapes || !allAppl) {
       return new Response(
         JSON.stringify({ ok: false, error: "Impossibile caricare profili uve/denominazioni" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
+        { status: 500, headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json",
+    },
+  }
+);
     }
 
     // 3) PARSE UVAGGIO → lista di vitigni
@@ -390,15 +415,25 @@ Non restituire altro testo fuori dal JSON.
         descrizione: descrizioneCompleta,
         mini_card
       }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
+        {
+    status: 200,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json",
+    },
+  }
+);
 
   } catch (err) {
     console.error("descrizione-vino error", err);
     return new Response(
       JSON.stringify({ ok: false, error: String(err) }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+      { status: 500, headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json",
+    },
+  }
+);
   }
 });
 
