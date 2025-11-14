@@ -136,6 +136,46 @@ function livello(val: number | null | undefined): string {
   return "medio";
 }
 
+// piccole traduzioni da livello tecnico -> frase più "umana"
+function descrCorpo(l: string): string {
+  switch (l) {
+    case "alto":
+    case "medio-alto":
+      return "struttura importante e avvolgente";
+    case "basso":
+    case "medio-basso":
+      return "corpo snello e scorrevole";
+    default:
+      return "corpo medio e ben bilanciato";
+  }
+}
+
+function descrAcidita(l: string): string {
+  switch (l) {
+    case "alto":
+    case "medio-alto":
+      return "freschezza vivace";
+    case "basso":
+    case "medio-basso":
+      return "sensazione più morbida che fresca";
+    default:
+      return "equilibrio tra freschezza e morbidezza";
+  }
+}
+
+function descrTannino(l: string): string {
+  switch (l) {
+    case "alto":
+    case "medio-alto":
+      return "tannino fitto e deciso";
+    case "basso":
+    case "medio-basso":
+      return "tannino morbido e poco incisivo";
+    default:
+      return "tannino presente ma ben integrato";
+  }
+}
+
 // =============== MAIN ===============
 
 serve(async (req) => {
@@ -460,26 +500,34 @@ const context = {
   abbinamenti_scelti: pairingsChosen,
 };
 
-    // fallback descrizione “template” se GPT dovesse fallire
-const denomLabel =
-  app?.denom_norm || wine.sottocategoria || wine.categoria || "";
+// fallback descrizione “template” se GPT dovesse fallire
+const mainNote = notesChosen[0] || null;
+const secondNote = notesChosen[1] || null;
+
+// colore in forma "umane"
+let coloreDescr = "";
+const catNorm = norm(defaultColor);
+if (catNorm.includes("rosso")) coloreDescr = "rosso rubino";
+else if (catNorm.includes("bianco")) coloreDescr = "giallo paglierino";
+else if (catNorm.includes("rosa")) coloreDescr = "rosa cerasuolo";
+else coloreDescr = defaultColor || "vino";
+
+const corpoDescr = descrCorpo(struttura.corpo);
+const acidDescr = descrAcidita(struttura.acidita);
+const tannDescr = descrTannino(struttura.tannino);
 
 const fallbackHook = clampChars(
-  `${wine.nome}${wine.annata ? ` (${wine.annata})` : ""}${
-    denomLabel ? ` · ${denomLabel}` : ""
-  }: ${defaultColor.toLowerCase()} ${struttura.corpo} con tannino ${
-    struttura.tannino
-  } e acidità ${struttura.acidita}.`,
+  `${coloreDescr} dal profilo ${
+    mainNote ? `centrato su ${mainNote}${secondNote ? " e " + secondNote : ""}` : "fruttato e armonico"
+  }.`,
   120,
 );
 
 const fallbackPalate = clampChars(
-  notesChosen.length
-    ? `Profilo al naso su ${notesChosen.join(
-        ", ",
-      )}; al palato equilibrio tra struttura e freschezza, adatto a tavola.`
-    : `Profilo equilibrato tra struttura e freschezza, pensato per accompagnare piatti della cucina locale.`,
-  200,
+  `${corpoDescr}, ${acidDescr} e ${tannDescr}; il sorso è ${
+    secondNote ? "succoso e continuo, con richiami alle note percepite al naso." : "equilibrato e di buona bevibilità."
+  }`,
+  220,
 );
 
     // 8) CHIAMATA GPT: genera hook + palate (2–3 frasi)
@@ -489,31 +537,36 @@ const fallbackPalate = clampChars(
 
     try {
 const system = `
-Sei un sommelier digitale.
+Sei un sommelier digitale e scrivi brevi descrizioni di degustazione in italiano.
+
 Il CONTEXT contiene:
-- informazioni sul vino e sulla denominazione;
-- "grape_tasting_notes" e "appellation_typical_notes" (aromi e profumi);
-- "grape_pairings" e "appellation_pairings" (abbinamenti consigliati);
-- "grape_style_hints", "appellation_style_hints" e "denominazione_palate_template" (stile e struttura);
-- "struttura" (acidità, tannino, corpo, dolcezza, bollicina);
-- "notes_scelte" e "abbinamenti_scelti" (sintesi da mostrare nella mini card).
+- informazioni su vitigni, denominazioni e struttura (acidità, tannino, corpo, ecc.);
+- "grape_tasting_notes" e "appellation_typical_notes" con aromi e profumi;
+- "notes_scelte" = 2–3 aromi chiave da mettere in evidenza;
+- "abbinamenti_scelti" verrà mostrato separatamente nella carta.
 
-Regole:
-- Usa SOLO parole prese da questi array per aromi, descrittori e abbinamenti
-  (puoi aggiungere solo parole di collegamento come "e", "con", "su", "si apre su", "sostenuto da", ecc.).
-- Non inventare vitigni, regioni, denominazioni o abbinamenti che non compaiono nel CONTEXT.
-- Evita la forma pubblicitaria: niente "Scopri", "Lasciati conquistare", "un vino che incanta", ecc.
-- "hook" = 1 riga descrittiva (max ~120 caratteri) che contenga il nome o la denominazione
-  e 1–2 note aromatiche prese letteralmente da "grape_tasting_notes" o "appellation_typical_notes".
-- "palate" = 1–2 frasi (max ~200 caratteri) che descrivano bocca/struttura/uso a tavola, usando:
-  • i valori di "struttura" (acidità/tannino/corpo…),
-  • almeno 1 descrittore preso da "grape_style_hints", "appellation_style_hints"
-    o "denominazione_palate_template",
-  • almeno 1 abbinamento preso da "abbinamenti_scelti" oppure da
-    "grape_pairings"/"appellation_pairings".
+Stile:
+- NON ripetere il nome del vino o dell'azienda (sono già visibili all'utente).
+- NON elencare abbinamenti cibo-vino: non citarli affatto nel testo.
+- NON scrivere elenchi tipo "note di X, Y e Z"; integra gli aromi in frasi fluide.
+- NON usare etichette numeriche/tecniche ("tannino medio-alto", "acidità alta", ecc.).
+- Evita tono pubblicitario: niente "Scopri", "Lasciati conquistare", "un vino che incanta", ecc.
 
-Devi restituire SOLO un JSON della forma:
-{"hook":"...","palate":"..."}.
+Output:
+Devi restituire SOLO un JSON con:
+{"hook":"...","palate":"..."}
+
+"hook":
+- 1 frase molto breve (max ~90 caratteri).
+- Riassume lo stile generale del vino e 1–2 aromi chiave, usando parole prese da "notes_scelte" o dalle liste di note.
+
+"palate":
+- 1 o 2 frasi (max ~220 caratteri).
+- Descrive colore e sensazioni di bocca: ingresso, centro bocca, finale.
+- Traduci la struttura in parole semplici: ad es. acidità alta -> "fresco e vibrante", corpo pieno -> "sorso ricco e avvolgente", tannino alto -> "tannino fitto ma ben integrato".
+- Puoi usare 1–2 aromi dal CONTEXT per collegare naso e bocca, ma senza forma elenco.
+
+Usa un italiano naturale, come in una carta dei vini di un ristorante curato.
 `.trim();
 
 
