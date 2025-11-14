@@ -30,15 +30,48 @@ function norm(s?: string | null): string {
     .trim();
 }
 
-function parseJSONList(s?: string | null): string[] {
-  if (!s) return [];
-  try {
-    const v = JSON.parse(s);
-    return Array.isArray(v) ? v.map((x) => String(x)) : [];
-  } catch {
-    return [];
+function parseJSONList(value: any): string[] {
+  if (value == null) return [];
+
+  // Caso 1: è già un array (tasting_notes, pairings, typical_notes, ecc.)
+  if (Array.isArray(value)) {
+    return value.map((x) => String(x));
   }
+
+  // Caso 2: è una stringa (es: text_summary, palate_template, o dati importati da CSV)
+  if (typeof value === "string") {
+    const s = value.trim();
+    if (!s) return [];
+
+    // Prova prima come JSON normale
+    try {
+      const v = JSON.parse(s);
+      if (Array.isArray(v)) return v.map((x: any) => String(x));
+      if (v && typeof v === "object") {
+        return Object.values(v).map((x) => String(x));
+      }
+    } catch {
+      // Formato tipo: {"corpo pieno","tannino maturo","acidità media"}
+      if (s.startsWith("{") && s.endsWith("}")) {
+        const inner = s.slice(1, -1);
+        return inner
+          .split(",")
+          .map((p) => p.replace(/^"+|"+$/g, "").trim())
+          .filter(Boolean);
+      }
+
+      // Fallback: split semplice su virgola
+      return s
+        .split(",")
+        .map((x) => x.trim())
+        .filter((x) => x.length > 0);
+    }
+  }
+
+  // Caso 3: altro tipo (number, ecc.) → converto a stringa singola
+  return [String(value)];
 }
+
 
 function unique(list: (string | null | undefined)[]): string[] {
   const out: string[] = [];
@@ -561,7 +594,3 @@ Devi restituire SOLO un JSON della forma:
     );
   }
 });
-
-
-
-
