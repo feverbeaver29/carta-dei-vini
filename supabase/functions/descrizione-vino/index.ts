@@ -273,34 +273,99 @@ serve(async (req) => {
 
     // 5) COSTRUISCI POOL DI NOTE & ABBINAMENTI
 
-    const grapeNotesAll = grapesDetailed.flatMap((g) =>
-      g.profile ? parseJSONList(g.profile.tasting_notes) : []
-    );
-    const grapePairsAll = grapesDetailed.flatMap((g) =>
-      g.profile ? parseJSONList(g.profile.pairings) : []
-    );
+const grapeNotesAll = grapesDetailed.flatMap((g) =>
+  g.profile ? parseJSONList(g.profile.tasting_notes) : []
+);
+const grapePairsAll = grapesDetailed.flatMap((g) =>
+  g.profile ? parseJSONList(g.profile.pairings) : []
+);
 
-    const appNotes = app ? parseJSONList(app.typical_notes) : [];
-    const appPairs = app ? parseJSONList(app.typical_pairings) : [];
+const appNotes = app ? parseJSONList(app.typical_notes) : [];
+const appPairs = app ? parseJSONList(app.typical_pairings) : [];
 
-    const styleHints = grapesDetailed.flatMap((g) =>
-      g.profile ? parseJSONList(g.profile.style_hints) : []
-    );
-    const grapeTextSummaries = grapesDetailed.flatMap((g) =>
-      g.profile ? parseJSONList(g.profile.text_summary) : []
-    );
-    const appStyleHints = app ? parseJSONList(app.style_hints) : [];
-    const appPalateTemplate = app ? parseJSONList(app.palate_template) : [];
+const styleHints = grapesDetailed.flatMap((g) =>
+  g.profile ? parseJSONList(g.profile.style_hints) : []
+);
+const grapeTextSummaries = grapesDetailed.flatMap((g) =>
+  g.profile ? parseJSONList(g.profile.text_summary) : []
+);
+const appStyleHints = app ? parseJSONList(app.style_hints) : [];
+const appPalateTemplate = app ? parseJSONList(app.palate_template) : [];
 
-    const notesPool = unique([...grapeNotesAll, ...appNotes]);
-    const pairingsPool = unique([...grapePairsAll, ...appPairs]);
+// pool iniziali da uve + denominazione
+let notesPool = unique([...grapeNotesAll, ...appNotes]);
+let pairingsPool = unique([...grapePairsAll, ...appPairs]);
 
-    const notesChosen = pickDeterministic(notesPool, 3, wineSeed + "|notes");
-    const pairingsChosen = pickDeterministic(
-      pairingsPool,
-      3,
-      wineSeed + "|pair"
-    );
+// fallback generici in base al colore / stile se i pool sono vuoti
+const catNorm = norm(wine.categoria);
+const baseColor =
+  app?.default_color ||
+  (catNorm.includes("rosso")
+    ? "rosso"
+    : catNorm.includes("bianco")
+    ? "bianco"
+    : catNorm.includes("rosa") || catNorm.includes("rosato")
+    ? "rosato"
+    : catNorm.includes("bollicine") ||
+      catNorm.includes("franciacorta") ||
+      catNorm.includes("spumante")
+    ? "bollicine"
+    : "");
+
+if (!notesPool.length) {
+  if (baseColor === "rosso") {
+    notesPool = ["frutti rossi", "spezie dolci", "nota balsamica"];
+  } else if (baseColor === "bianco") {
+    notesPool = ["frutta a polpa bianca", "agrumi", "nota minerale"];
+  } else if (baseColor === "rosato") {
+    notesPool = ["frutti di bosco", "rosa", "agrume delicato"];
+  } else if (baseColor === "bollicine") {
+    notesPool = ["crosta di pane", "agrumi", "mela verde"];
+  } else {
+    notesPool = ["frutto fresco", "leggere spezie", "nota floreale"];
+  }
+}
+
+if (!pairingsPool.length) {
+  if (baseColor === "rosso") {
+    pairingsPool = [
+      "carni rosse",
+      "primi piatti saporiti",
+      "formaggi stagionati",
+    ];
+  } else if (baseColor === "bianco" || baseColor === "bollicine") {
+    pairingsPool = [
+      "antipasti di pesce",
+      "crostacei",
+      "piatti di verdure",
+    ];
+  } else if (baseColor === "rosato") {
+    pairingsPool = [
+      "salumi delicati",
+      "piatti di pesce saporiti",
+      "cucina mediterranea",
+    ];
+  } else {
+    pairingsPool = [
+      "piatti della cucina locale",
+      "salumi misti",
+      "formaggi di media stagionatura",
+    ];
+  }
+}
+
+// scegli massimo 3, ma se il pool è più corto usa quello che c'è
+const notesChosen = pickDeterministic(
+  notesPool,
+  Math.min(3, notesPool.length),
+  wineSeed + "|notes",
+);
+const pairingsChosen = pickDeterministic(
+  pairingsPool,
+  Math.min(3, pairingsPool.length),
+  wineSeed + "|pair",
+);
+
 
     // 6) PROFILO STRUTTURALE (acid/tannin/body/sweet/bubbles) combinando uva + delta denominazione
 
@@ -404,18 +469,26 @@ serve(async (req) => {
     };
 
     // fallback descrizione “template” se GPT dovesse fallire
-    const fallbackHook = clampChars(
-      `${wine.nome}${wine.annata ? ` (${wine.annata})` : ""} – ${defaultColor.toLowerCase()} di profilo ${struttura.corpo}, tannino ${struttura.tannino}, acidità ${struttura.acidita}.`,
-      120
-    );
-    const fallbackPalate = clampChars(
-      notesChosen.length
-        ? `Al naso emergono ${notesChosen.join(
-            ", "
-          )}; in bocca mantiene uno stile equilibrato e gastronomico.`
-        : `Stile coerente con la denominazione, pensato per essere versatile a tavola.`,
-      180
-    );
+const denomLabel =
+  app?.denom_norm || wine.sottocategoria || wine.categoria || "";
+
+const fallbackHook = clampChars(
+  `${wine.nome}${wine.annata ? ` (${wine.annata})` : ""}${
+    denomLabel ? ` · ${denomLabel}` : ""
+  }: ${defaultColor.toLowerCase()} ${struttura.corpo} con tannino ${
+    struttura.tannino
+  } e acidità ${struttura.acidita}.`,
+  120,
+);
+
+const fallbackPalate = clampChars(
+  notesChosen.length
+    ? `Profilo al naso su ${notesChosen.join(
+        ", ",
+      )}; al palato equilibrio tra struttura e freschezza, adatto a tavola.`
+    : `Profilo equilibrato tra struttura e freschezza, pensato per accompagnare piatti della cucina locale.`,
+  200,
+);
 
     // 8) CHIAMATA GPT: genera hook + palate (2–3 frasi)
 
@@ -423,16 +496,22 @@ serve(async (req) => {
     let palate = fallbackPalate;
 
     try {
-      const system = `
-Sei un sommelier digitale. 
+const system = `
+Sei un sommelier digitale.
 Usa solo i dati nel CONTEXT per descrivere il vino in italiano.
 Non inventare vitigni, regioni o denominazioni non presenti.
+Evita frasi generiche come "Scopri il carattere", "Scopri l'eleganza",
+"Perfetto con carni rosse e formaggi stagionati".
 Devi restituire un JSON con:
 {"hook":"...","palate":"..."}.
-"hook" = 1 riga breve e accattivante (max ~120 caratteri).
-"palate" = 1–2 frasi su bocca/struttura/uso a tavola (max ~200 caratteri).
+"hook" = 1 riga breve e accattivante (max ~120 caratteri) che citi colore,
+denominazione o stile (es. bollicina, territorio, stile tradizionale/moderno).
+"palate" = 1–2 frasi su bocca/struttura/uso a tavola (max ~200 caratteri),
+usando la struttura (acidità/tannino/corpo) e, se ha senso,
+almeno 1 elemento da notes_scelte e 1 abbinamento da abbinamenti_scelti.
 Non restituire altro testo fuori dal JSON.
 `.trim();
+
 
       const userMsg = `CONTEXT:\n${JSON.stringify(context, null, 2)}`;
 
