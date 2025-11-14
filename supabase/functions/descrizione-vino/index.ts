@@ -271,7 +271,7 @@ serve(async (req) => {
       }
     }
 
-    // 5) COSTRUISCI POOL DI NOTE & ABBINAMENTI
+// 5) COSTRUISCI POOL DI NOTE & ABBINAMENTI
 
 const grapeNotesAll = grapesDetailed.flatMap((g) =>
   g.profile ? parseJSONList(g.profile.tasting_notes) : []
@@ -292,80 +292,28 @@ const grapeTextSummaries = grapesDetailed.flatMap((g) =>
 const appStyleHints = app ? parseJSONList(app.style_hints) : [];
 const appPalateTemplate = app ? parseJSONList(app.palate_template) : [];
 
-// pool iniziali da uve + denominazione
-let notesPool = unique([...grapeNotesAll, ...appNotes]);
-let pairingsPool = unique([...grapePairsAll, ...appPairs]);
+// pool solo dai DATI delle tabelle (uva + denominazione)
+const notesPool = unique([...grapeNotesAll, ...appNotes]);
+const pairingsPool = unique([...grapePairsAll, ...appPairs]);
 
-// fallback generici in base al colore / stile se i pool sono vuoti
-const catNorm = norm(wine.categoria);
-const baseColor =
-  app?.default_color ||
-  (catNorm.includes("rosso")
-    ? "rosso"
-    : catNorm.includes("bianco")
-    ? "bianco"
-    : catNorm.includes("rosa") || catNorm.includes("rosato")
-    ? "rosato"
-    : catNorm.includes("bollicine") ||
-      catNorm.includes("franciacorta") ||
-      catNorm.includes("spumante")
-    ? "bollicine"
-    : "");
+// scegli massimo 3, ma se il pool è vuoto usa un fallback neutro
+const notesChosen =
+  notesPool.length > 0
+    ? pickDeterministic(
+        notesPool,
+        Math.min(3, notesPool.length),
+        wineSeed + "|notes",
+      )
+    : ["nota fruttata", "leggera speziatura"];
 
-if (!notesPool.length) {
-  if (baseColor === "rosso") {
-    notesPool = ["frutti rossi", "spezie dolci", "nota balsamica"];
-  } else if (baseColor === "bianco") {
-    notesPool = ["frutta a polpa bianca", "agrumi", "nota minerale"];
-  } else if (baseColor === "rosato") {
-    notesPool = ["frutti di bosco", "rosa", "agrume delicato"];
-  } else if (baseColor === "bollicine") {
-    notesPool = ["crosta di pane", "agrumi", "mela verde"];
-  } else {
-    notesPool = ["frutto fresco", "leggere spezie", "nota floreale"];
-  }
-}
-
-if (!pairingsPool.length) {
-  if (baseColor === "rosso") {
-    pairingsPool = [
-      "carni rosse",
-      "primi piatti saporiti",
-      "formaggi stagionati",
-    ];
-  } else if (baseColor === "bianco" || baseColor === "bollicine") {
-    pairingsPool = [
-      "antipasti di pesce",
-      "crostacei",
-      "piatti di verdure",
-    ];
-  } else if (baseColor === "rosato") {
-    pairingsPool = [
-      "salumi delicati",
-      "piatti di pesce saporiti",
-      "cucina mediterranea",
-    ];
-  } else {
-    pairingsPool = [
-      "piatti della cucina locale",
-      "salumi misti",
-      "formaggi di media stagionatura",
-    ];
-  }
-}
-
-// scegli massimo 3, ma se il pool è più corto usa quello che c'è
-const notesChosen = pickDeterministic(
-  notesPool,
-  Math.min(3, notesPool.length),
-  wineSeed + "|notes",
-);
-const pairingsChosen = pickDeterministic(
-  pairingsPool,
-  Math.min(3, pairingsPool.length),
-  wineSeed + "|pair",
-);
-
+const pairingsChosen =
+  pairingsPool.length > 0
+    ? pickDeterministic(
+        pairingsPool,
+        Math.min(3, pairingsPool.length),
+        wineSeed + "|pair",
+      )
+    : ["piatti della cucina locale"];
 
     // 6) PROFILO STRUTTURALE (acid/tannin/body/sweet/bubbles) combinando uva + delta denominazione
 
@@ -439,34 +387,45 @@ const pairingsChosen = pickDeterministic(
         ? "Rosato"
         : "ND");
 
-    // 7) COSTRUISCI CONTEXT PER GPT
+// 7) COSTRUISCI CONTEXT PER GPT
 
-    const context = {
-      vino: {
-        nome: wine.nome,
-        annata: wine.annata,
-        categoria: wine.categoria,
-        sottocategoria: wine.sottocategoria,
-        colore: defaultColor,
-      },
-      uvaggi: grapesDetailed.map((g) => ({
-        nome: g.name,
-        percentuale: g.percent,
-        style_hints: g.profile ? parseJSONList(g.profile.style_hints) : [],
-        text_summary: g.profile ? parseJSONList(g.profile.text_summary) : [],
-      })),
-      denominazione: app
-        ? {
-            nome: app.denom_norm,
-            style_hints: appStyleHints,
-            terroir_tags: parseJSONList(app.terroir_tags),
-            palate_template: appPalateTemplate,
-          }
-        : null,
-      struttura,
-      notes_scelte: notesChosen,
-      abbinamenti_scelti: pairingsChosen,
-    };
+const context = {
+  vino: {
+    nome: wine.nome,
+    annata: wine.annata,
+    categoria: wine.categoria,
+    sottocategoria: wine.sottocategoria,
+    colore: defaultColor,
+  },
+  uvaggi: grapesDetailed.map((g) => ({
+    nome: g.name,
+    percentuale: g.percent,
+    style_hints: g.profile ? parseJSONList(g.profile.style_hints) : [],
+    text_summary: g.profile ? parseJSONList(g.profile.text_summary) : [],
+  })),
+  denominazione: app
+    ? {
+        nome: app.denom_norm,
+        style_hints: appStyleHints,
+        terroir_tags: parseJSONList(app.terroir_tags),
+        palate_template: appPalateTemplate,
+      }
+    : null,
+  struttura,
+
+  // DATI COMPLETI dalle tabelle, per aromi/abbinamenti/stile
+  grape_tasting_notes: grapeNotesAll,
+  grape_pairings: grapePairsAll,
+  appellation_typical_notes: appNotes,
+  appellation_pairings: appPairs,
+  grape_style_hints: styleHints,
+  appellation_style_hints: appStyleHints,
+  denominazione_palate_template: appPalateTemplate,
+
+  // sintesi per la mini-card (3 note + 3 abbinamenti)
+  notes_scelte: notesChosen,
+  abbinamenti_scelti: pairingsChosen,
+};
 
     // fallback descrizione “template” se GPT dovesse fallire
 const denomLabel =
@@ -498,18 +457,30 @@ const fallbackPalate = clampChars(
     try {
 const system = `
 Sei un sommelier digitale.
-Usa solo i dati nel CONTEXT per descrivere il vino in italiano.
-Non inventare vitigni, regioni o denominazioni non presenti.
-Evita frasi generiche come "Scopri il carattere", "Scopri l'eleganza",
-"Perfetto con carni rosse e formaggi stagionati".
-Devi restituire un JSON con:
+Il CONTEXT contiene:
+- informazioni sul vino e sulla denominazione;
+- "grape_tasting_notes" e "appellation_typical_notes" (aromi e profumi);
+- "grape_pairings" e "appellation_pairings" (abbinamenti consigliati);
+- "grape_style_hints", "appellation_style_hints" e "denominazione_palate_template" (stile e struttura);
+- "struttura" (acidità, tannino, corpo, dolcezza, bollicina);
+- "notes_scelte" e "abbinamenti_scelti" (sintesi da mostrare nella mini card).
+
+Regole:
+- Usa SOLO parole prese da questi array per aromi, descrittori e abbinamenti
+  (puoi aggiungere solo parole di collegamento come "e", "con", "su", "si apre su", "sostenuto da", ecc.).
+- Non inventare vitigni, regioni, denominazioni o abbinamenti che non compaiono nel CONTEXT.
+- Evita la forma pubblicitaria: niente "Scopri", "Lasciati conquistare", "un vino che incanta", ecc.
+- "hook" = 1 riga descrittiva (max ~120 caratteri) che contenga il nome o la denominazione
+  e 1–2 note aromatiche prese letteralmente da "grape_tasting_notes" o "appellation_typical_notes".
+- "palate" = 1–2 frasi (max ~200 caratteri) che descrivano bocca/struttura/uso a tavola, usando:
+  • i valori di "struttura" (acidità/tannino/corpo…),
+  • almeno 1 descrittore preso da "grape_style_hints", "appellation_style_hints"
+    o "denominazione_palate_template",
+  • almeno 1 abbinamento preso da "abbinamenti_scelti" oppure da
+    "grape_pairings"/"appellation_pairings".
+
+Devi restituire SOLO un JSON della forma:
 {"hook":"...","palate":"..."}.
-"hook" = 1 riga breve e accattivante (max ~120 caratteri) che citi colore,
-denominazione o stile (es. bollicina, territorio, stile tradizionale/moderno).
-"palate" = 1–2 frasi su bocca/struttura/uso a tavola (max ~200 caratteri),
-usando la struttura (acidità/tannino/corpo) e, se ha senso,
-almeno 1 elemento da notes_scelte e 1 abbinamento da abbinamenti_scelti.
-Non restituire altro testo fuori dal JSON.
 `.trim();
 
 
@@ -517,7 +488,7 @@ Non restituire altro testo fuori dal JSON.
 
       const resp = await openai.chat.completions.create({
         model: "gpt-4o-mini",
-        temperature: 0.3,
+        temperature: 0.2,
         messages: [
           { role: "system", content: system },
           { role: "user", content: userMsg },
