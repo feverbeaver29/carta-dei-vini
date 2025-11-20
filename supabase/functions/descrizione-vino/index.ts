@@ -115,16 +115,27 @@ function pickDeterministic<T>(arr: T[], k: number, seed: string): T[] {
 
 function clampChars(s: string, max = 160): string {
   if (s.length <= max) return s;
-  const cut = s.slice(0, max - 1);
-  const i = Math.max(
+
+  // cerca punto o virgola entro i limiti
+  const cut = s.slice(0, max);
+  const punctuation = Math.max(
     cut.lastIndexOf(". "),
     cut.lastIndexOf("! "),
     cut.lastIndexOf("? "),
-    cut.lastIndexOf(", "),
-    cut.lastIndexOf(" ")
+    cut.lastIndexOf("; "),
+    cut.lastIndexOf(", ")
   );
-  return (i > 40 ? cut.slice(0, i) : cut).trimEnd() + "…";
+
+  // se trova una pausa decente → taglia lì
+  if (punctuation > max * 0.4) {
+    return cut.slice(0, punctuation + 1).trim();
+  }
+
+  // altrimenti taglio pulito senza lasciare parole a metà
+  const lastSpace = cut.lastIndexOf(" ");
+  return cut.slice(0, lastSpace) + "…";
 }
+
 
 // traduci valore 0–1 (+ delta) in “basso/medio/medio-alto”
 function livello(val: number | null | undefined): string {
@@ -546,11 +557,13 @@ Il CONTEXT contiene:
 - "abbinamenti_scelti" verrà mostrato separatamente nella carta.
 
 Stile:
-- NON ripetere il nome del vino o dell'azienda (sono già visibili all'utente).
-- NON elencare abbinamenti cibo-vino: non citarli affatto nel testo.
-- NON scrivere elenchi tipo "note di X, Y e Z"; integra gli aromi in frasi fluide.
-- NON usare etichette numeriche/tecniche ("tannino medio-alto", "acidità alta", ecc.).
-- Evita tono pubblicitario: niente "Scopri", "Lasciati conquistare", "un vino che incanta", ecc.
+- NON ripetere il nome del vino o dell’azienda.
+- NON citare abbinamenti nel testo.
+- NON elencare aromi in forma di lista; integrarli in frasi naturali.
+- Evita formule ripetitive: varia l'inizio delle frasi ("In bocca", "Il sorso", "L'ingresso", "La beva", "La trama gustativa", "In apertura", "Al palato").
+- Varia anche le chiusure ("chiude con una scia", "sfuma su toni freschi", "lascia un ricordo sapido", "termina in eleganza").
+- Usa soltanto aromi e sensazioni presenti nel CONTEXT. Non inventare nulla.
+- Linguaggio professionale ma naturale, da sommelier, senza toni pubblicitari.
 
 Output:
 Devi restituire SOLO un JSON con:
@@ -567,6 +580,7 @@ Devi restituire SOLO un JSON con:
 - Puoi usare 1–2 aromi dal CONTEXT per collegare naso e bocca, ma senza forma elenco.
 
 Usa un italiano naturale, come in una carta dei vini di un ristorante curato.
+Assicurati che ogni frase abbia una chiusura completa, senza lasciare sospensioni o frasi interrotte.
 `.trim();
 
 
@@ -574,7 +588,7 @@ Usa un italiano naturale, come in una carta dei vini di un ristorante curato.
 
       const resp = await openai.chat.completions.create({
         model: "gpt-4o-mini",
-        temperature: 0.2,
+        temperature: 0.45,
         messages: [
           { role: "system", content: system },
           { role: "user", content: userMsg },
