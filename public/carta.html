@@ -2466,13 +2466,18 @@ function mostraPopupDescrizione(vino) {
   // Altrimenti procedi col loader + fetch
   const descEl = overlay.querySelector("#descrizioneTesto");
   const wrapEl = overlay.querySelector("#schedaWrap");
-  if (descEl) descEl.textContent = (translations[currentLang]?.loadingDescription) || "Sto caricando una descrizione...";
+  if (descEl) {
+    descEl.textContent =
+      (translations[currentLang]?.loadingDescription) ||
+      "Sto caricando una descrizione.";
+  }
 
   const FN_URL = "https://ldunvbftxhbtuyabgxwh.functions.supabase.co/descrizione-vino";
   fetch(FN_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "x-lang": currentLang,  // 👈 lingua selezionata (MOLTO IMPORTANTE)
       "Authorization": `Bearer ${SUPABASE_API_KEY}`
     },
     body: JSON.stringify({
@@ -2486,36 +2491,37 @@ function mostraPopupDescrizione(vino) {
   })
   .then(async res => {
     const raw = await res.text();
-    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} — ${raw}`);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} ${res.statusText} — ${raw}`);
+    }
     return JSON.parse(raw);
   })
-  .then(async data => {
-    let descr = data.descrizione || translations[currentLang].noDescription || "Nessuna descrizione trovata.";
+  .then(data => {
+    const descr =
+      data.descrizione ||
+      translations[currentLang]?.noDescription ||
+      "Nessuna descrizione trovata.";
+
     const card = data.mini_card || data.scheda || null; // compat: accetto mini_card o scheda
 
-    if (currentLang !== "it" && descr && descr !== "Nessuna descrizione trovata.") {
-      try {
-        const r = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-descrizione", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_API_KEY}` },
-          body: JSON.stringify({ text: descr, targetLang: currentLang })
-        });
-        const t = await r.json();
-        descr = t.text || descr;
-      } catch(e){}
-    }
-
     if (wrapEl && card) {
-  if (descEl) descEl.textContent = "";
-  // 👉 USA LA MINI-CARD (2 righe + chip)
-  renderMiniCardInto(wrapEl, vino.nome + (vino.annata ? ` (${vino.annata})`:""), card, currentLang);
-} else {
-  if (descEl) descEl.textContent = descr;
-}
+      if (descEl) descEl.textContent = "";
+      // 👉 USA LA MINI-CARD (2 righe + chip)
+      renderMiniCardInto(
+        wrapEl,
+        vino.nome + (vino.annata ? ` (${vino.annata})` : ""),
+        card,
+        currentLang
+      );
+    } else {
+      if (descEl) descEl.textContent = descr;
+    }
   })
   .catch(err => {
     console.error("[descrizione-vino]", err);
-    if (descEl) descEl.textContent = "Errore durante il recupero della descrizione.";
+    if (descEl) {
+      descEl.textContent = "Errore durante il recupero della descrizione.";
+    }
   });
 }
 
