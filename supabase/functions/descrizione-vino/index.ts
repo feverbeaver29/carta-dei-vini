@@ -4,7 +4,7 @@ import OpenAI from "https://deno.land/x/openai@v4.24.1/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://www.winesfever.com", // aggiungi altri domini se ti servono
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-lang",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -205,8 +205,6 @@ serve(async (req) => {
     const { nome, annata, uvaggio, categoria, sottocategoria, ristorante_id } =
       await req.json();
 
-    const lang = req.headers.get("x-lang") || "it";
-
     if (!nome) {
       return new Response(
         JSON.stringify({ ok: false, error: "Manca il nome del vino" }),
@@ -239,22 +237,23 @@ serve(async (req) => {
       .maybeSingle();
 
     if (!cacheErr && cached) {
-  const descField = `descrizione_${lang}`;
-  const schedaField = `scheda_${lang}`;
-
-  return new Response(
-    JSON.stringify({
-      ok: true,
-      descrizione: cached[descField] || cached.descrizione_it || cached.descrizione,
-      mini_card: cached[schedaField] || cached.scheda_it || cached.scheda,
-      cached: true,
-    }),
-    {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      // abbiamo già descrizione + scheda salvate
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          descrizione: cached.descrizione,
+          mini_card: cached.scheda,
+          cached: true,
+        }),
+        {
+          status: 200,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
     }
-  );
-}
 
     // seed per rendere ogni vino un po' diverso ma stabile
     const wineSeed = `${nome}|${annata ?? ""}|${ristorante_id ?? ""}`;
@@ -609,74 +608,26 @@ Assicurati che ogni frase abbia una chiusura completa, senza lasciare sospension
     }
 
     const descrizioneCompleta = `${hook} ${palate}`.trim();
-        const mini_card = {
+
+    const mini_card = {
       hook,
       palate,
       notes: notesChosen,
       pairings: pairingsChosen,
       emojis: { notes: {}, pairings: {} },
     };
-    const languages = ["it", "en", "de", "fr", "es", "zh", "ru", "ko"];
-const translations: any = {};
-const miniCards: any = {};
-
-for (const L of languages) {
-  if (L === "it") {
-    translations[L] = descrizioneCompleta;
-    miniCards[L] = mini_card;
-    continue;
-  }
-
-  try {
-    const tr = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      temperature: 0.2,
-      messages: [
-        { role: "system", content: `Sei un traduttore professionista. Traduci fedelmente ma in modo elegante il seguente testo in ${L}. Non aggiungere nulla.` },
-        { role: "user", content: `${descrizioneCompleta}\n\n${JSON.stringify(mini_card)}` },
-      ],
-    });
-
-    const out = tr.choices?.[0]?.message?.content || "";
-
-    // Estrai descrizione tradotta e mini-card (stessa struttura)
-    translations[L] = out.split("\n")[0].trim();
-    miniCards[L] = mini_card; // mini-card non va tradotta ora (solo la descrizione)
-  } catch (e) {
-    translations[L] = descrizioneCompleta;
-    miniCards[L] = mini_card;
-  }
-}
 
     // 9) SALVA NELLA CACHE descrizioni_vini
     try {
       await supabase.from("descrizioni_vini").insert({
-  nome: wine.nome,
-  annata: wine.annata ? String(wine.annata) : null,
-  uvaggio: wine.uvaggio,
-  ristorante_id,
-  fingerprint,
-
-  // tutte le lingue
-  descrizione_it: translations.it,
-  descrizione_en: translations.en,
-  descrizione_de: translations.de,
-  descrizione_fr: translations.fr,
-  descrizione_es: translations.es,
-  descrizione_zh: translations.zh,
-  descrizione_ru: translations.ru,
-  descrizione_ko: translations.ko,
-
-  scheda_it: miniCards.it,
-  scheda_en: miniCards.en,
-  scheda_de: miniCards.de,
-  scheda_fr: miniCards.fr,
-  scheda_es: miniCards.es,
-  scheda_zh: miniCards.zh,
-  scheda_ru: miniCards.ru,
-  scheda_ko: miniCards.ko,
-});
-
+        nome: wine.nome,
+        annata: wine.annata ? String(wine.annata) : null,
+        uvaggio: wine.uvaggio,
+        descrizione: descrizioneCompleta,
+        ristorante_id,
+        fingerprint,
+        scheda: mini_card,
+      });
     } catch (e) {
       console.error("Errore salvataggio descrizioni_vini:", e);
     }
@@ -684,9 +635,8 @@ for (const L of languages) {
     return new Response(
       JSON.stringify({
         ok: true,
-        descrizione: translations[lang],
-mini_card: miniCards[lang],
-
+        descrizione: descrizioneCompleta,
+        mini_card,
         cached: false,
       }),
       {
