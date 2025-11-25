@@ -2468,49 +2468,73 @@ function mostraPopupDescrizione(vino) {
   const wrapEl = overlay.querySelector("#schedaWrap");
   if (descEl) descEl.textContent = (translations[currentLang]?.loadingDescription) || "Sto caricando una descrizione...";
 
-  const FN_URL = "https://ldunvbftxhbtuyabgxwh.functions.supabase.co/descrizione-vino";
-  fetch(FN_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${SUPABASE_API_KEY}`
-    },
-    body: JSON.stringify({
-      nome: vino.nome,
-      annata: vino.annata,
-      uvaggio: vino.uvaggio,
-      categoria: vino.categoria,
-      sottocategoria: vino.sottocategoria,
-      ristorante_id: RESTAURANT_ID,
-      lang: (currentLang === "gb" ? "en" : currentLang)
-    })
-  })
+const DESCR_FN_URL = "https://ldunvbftxhbtuyabgxwh.functions.supabase.co/descrizione-vino";
+const TRAD_FN_URL  = "https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-descrizione-vino";
+
+const payload = {
+  nome: vino.nome,
+  annata: vino.annata,
+  uvaggio: vino.uvaggio,
+  categoria: vino.categoria,
+  sottocategoria: vino.sottocategoria,
+  ristorante_id: RESTAURANT_ID,
+  lang: (currentLang === "gb" ? "en" : currentLang)
+};
+
+const isItalian = (currentLang === "it");
+
+// se IT → uso descrizione-vino
+// se non IT → uso traduci-descrizione-vino
+const fnUrl = isItalian ? DESCR_FN_URL : TRAD_FN_URL;
+
+fetch(fnUrl, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${SUPABASE_API_KEY}`
+  },
+  body: JSON.stringify(payload)
+})
   .then(async res => {
     const raw = await res.text();
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} — ${raw}`);
     return JSON.parse(raw);
   })
-.then(async data => {
-  const descr = data.descrizione || translations[currentLang].noDescription || "Nessuna descrizione trovata.";
-  const card = data.mini_card || data.scheda || null;
+  .then(data => {
+    const descr = data.descrizione || translations[currentLang].noDescription || "Nessuna descrizione trovata.";
+    const card  = data.mini_card || data.scheda || null;
 
-  if (wrapEl && card) {
-    if (descEl) descEl.textContent = "";
-    renderMiniCardInto(
-      wrapEl,
-      vino.nome + (vino.annata ? ` (${vino.annata})` : ""),
-      card,
-      currentLang
-    );
-  } else {
-    if (descEl) descEl.textContent = descr;
-  }
-})
+    if (wrapEl && card) {
+      if (descEl) descEl.textContent = "";
+      renderMiniCardInto(
+        wrapEl,
+        vino.nome + (vino.annata ? ` (${vino.annata})` : ""),
+        card,
+        currentLang
+      );
+    } else {
+      if (descEl) descEl.textContent = descr;
+    }
 
+    // 🔁 se siamo in IT, dopo aver mostrato la descrizione
+    // chiedo in background la preparazione delle traduzioni
+    if (isItalian) {
+      fetch(TRAD_FN_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_API_KEY}`
+        },
+        body: JSON.stringify(payload),
+        keepalive: true
+      }).catch(() => {});
+    }
+  })
   .catch(err => {
-    console.error("[descrizione-vino]", err);
+    console.error("[descrizione-vino / traduci-descrizione-vino]", err);
     if (descEl) descEl.textContent = "Errore durante il recupero della descrizione.";
   });
+
 }
 
 function setupFilterUI() {

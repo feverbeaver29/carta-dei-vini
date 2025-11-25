@@ -72,158 +72,6 @@ function parseJSONList(value: any): string[] {
   return [String(value)];
 }
 
-// =============== LINGUE SUPPORTATE ===============
-type SupportedLang = "it" | "en" | "fr" | "de" | "es" | "zh" | "ru" | "ko";
-
-function normalizeLang(raw?: string | null): SupportedLang {
-  const s = (raw || "it").toLowerCase();
-  const map: Record<string, SupportedLang> = {
-    it: "it",
-    en: "en",
-    gb: "en",
-    fr: "fr",
-    de: "de",
-    es: "es",
-    zh: "zh",
-    "zh-cn": "zh",
-    cn: "zh",
-    ru: "ru",
-    ko: "ko",
-    kr: "ko",
-  };
-  return map[s] ?? "it";
-}
-
-type MiniCard = {
-  hook: string;
-  palate: string;
-  notes: string[];
-  pairings: string[];
-  emojis: {
-    notes?: Record<string, string>;
-    pairings?: Record<string, string>;
-    [k: string]: any;
-  };
-};
-
-type LangTranslation = {
-  descrizione: string;
-  scheda: MiniCard;
-};
-
-type LangTranslationsMap = Partial<Record<SupportedLang, LangTranslation>>;
-
-/**
- * Usa GPT per tradurre descrizione + mini-card italiana
- * in EN, FR, DE, ES, ZH, RU, KO in un colpo solo.
- */
-async function generaTraduzioniMultiLingua(
-  descrizioneIt: string,
-  miniCardIt: MiniCard,
-): Promise<LangTranslationsMap> {
-  if (!descrizioneIt.trim()) return {};
-
-  const system = `
-Sei un traduttore professionale specializzato in testi di vino ed enogastronomia.
-
-Ti fornirò:
-- una descrizione completa di un vino in italiano ("descrizione_it");
-- una mini-card in italiano ("mini_card_it") con:
-  - "hook": breve frase di apertura
-  - "palate": descrizione del sorso
-  - "notes": lista di 2-6 note aromatiche
-  - "pairings": lista di 2-6 abbinamenti
-
-Devi restituire **SOLO** un JSON con questa struttura:
-
-{
-  "en": {
-    "descrizione": "...testo in inglese...",
-    "scheda": {
-      "hook": "...",
-      "palate": "...",
-      "notes": ["...", "..."],
-      "pairings": ["...", "..."]
-    }
-  },
-  "fr": { ... },
-  "de": { ... },
-  "es": { ... },
-  "zh": { ... },   // cinese semplificato
-  "ru": { ... },
-  "ko": { ... }
-}
-
-Regole:
-- Mantieni lo stile professionale da carta dei vini, senza marketing aggressivo.
-- Traduci in modo naturale; non letterale parola per parola.
-- "notes" e "pairings" devono essere liste di stringhe nella lingua di destinazione.
-- Non aggiungere campi diversi da quelli indicati.
-- Se per qualche lingua non ti senti sicuro, copia comunque il significato nel modo migliore possibile.
-`.trim();
-
-  const userPayload = {
-    descrizione_it: descrizioneIt,
-    mini_card_it: {
-      hook: miniCardIt.hook,
-      palate: miniCardIt.palate,
-      notes: miniCardIt.notes || [],
-      pairings: miniCardIt.pairings || [],
-    },
-  };
-
-  const resp = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    temperature: 0.2,
-    messages: [
-      { role: "system", content: system },
-      { role: "user", content: JSON.stringify(userPayload) },
-    ],
-  });
-
-  const raw = resp.choices?.[0]?.message?.content ?? "";
-  const jsonStart = raw.indexOf("{");
-  const jsonEnd = raw.lastIndexOf("}");
-  if (jsonStart === -1 || jsonEnd === -1) return {};
-
-  let parsed: any;
-  try {
-    parsed = JSON.parse(raw.slice(jsonStart, jsonEnd + 1));
-  } catch {
-    return {};
-  }
-
-  const result: LangTranslationsMap = {};
-
-  const langs: SupportedLang[] = ["en", "fr", "de", "es", "zh", "ru", "ko"];
-  for (const lang of langs) {
-    const v = parsed?.[lang];
-    if (!v) continue;
-
-    const schedaSrc = v.scheda ?? {};
-    const hook = (schedaSrc.hook ?? miniCardIt.hook) as string;
-    const palate = (schedaSrc.palate ?? miniCardIt.palate) as string;
-    const notes = Array.isArray(schedaSrc.notes)
-      ? schedaSrc.notes.map((x: any) => String(x))
-      : miniCardIt.notes || [];
-    const pairings = Array.isArray(schedaSrc.pairings)
-      ? schedaSrc.pairings.map((x: any) => String(x))
-      : miniCardIt.pairings || [];
-
-    result[lang] = {
-      descrizione: String(v.descrizione ?? "").trim() || descrizioneIt,
-      scheda: {
-        hook,
-        palate,
-        notes,
-        pairings,
-        emojis: miniCardIt.emojis || { notes: {}, pairings: {} },
-      },
-    };
-  }
-
-  return result;
-}
 
 function unique(list: (string | null | undefined)[]): string[] {
   const out: string[] = [];
@@ -354,17 +202,8 @@ serve(async (req) => {
   }
 
   try {
-    const {
-  nome,
-  annata,
-  uvaggio,
-  categoria,
-  sottocategoria,
-  ristorante_id,
-  lang,
-} = await req.json();
-
-const targetLang: SupportedLang = normalizeLang(lang);
+    const { nome, annata, uvaggio, categoria, sottocategoria, ristorante_id } =
+      await req.json();
 
     if (!nome) {
       return new Response(
@@ -389,70 +228,32 @@ const targetLang: SupportedLang = normalizeLang(lang);
       ristorante_id ?? "",
     ].join("|");
 
-// 0) PROVA A LEGGERE DALLA CACHE descrizioni_vini
-const { data: cached, error: cacheErr } = await supabase
-  .from("descrizioni_vini")
-  .select("*")
-  .eq("ristorante_id", ristorante_id)
-  .eq("fingerprint", fingerprint)
-  .maybeSingle();
+    // 0) PROVA A LEGGERE DALLA CACHE descrizioni_vini
+    const { data: cached, error: cacheErr } = await supabase
+      .from("descrizioni_vini") // <-- cambia nome se la tabella è diversa
+      .select("*")
+      .eq("ristorante_id", ristorante_id)
+      .eq("fingerprint", fingerprint)
+      .maybeSingle();
 
-if (!cacheErr && cached) {
-  // Base in italiano (compatibilità con vecchi record)
-  const baseDescr: string =
-    cached.descrizione_it ||
-    cached.descrizione ||
-    "";
-  const baseScheda: MiniCard =
-    (cached.scheda_it as MiniCard) ||
-    (cached.scheda as MiniCard) ||
-    {
-      hook: "",
-      palate: "",
-      notes: [],
-      pairings: [],
-      emojis: { notes: {}, pairings: {} },
-    };
-
-  let descrOut = baseDescr;
-  let schedaOut: MiniCard = baseScheda;
-
-  if (targetLang !== "it") {
-    const descrKey = `descrizione_${targetLang}` as keyof typeof cached;
-    const schedaKey = `scheda_${targetLang}` as keyof typeof cached;
-
-    const descrTrad = (cached as any)[descrKey] as string | null | undefined;
-    const schedaTrad = (cached as any)[schedaKey] as MiniCard | null | undefined;
-
-    if (descrTrad && schedaTrad) {
-      descrOut = descrTrad;
-      schedaOut = schedaTrad;
-    } else {
-      // se vuoi, qui puoi in futuro aggiungere una traduzione "on demand".
-      // per ora uso il testo italiano come fallback.
-      descrOut = baseDescr;
-      schedaOut = baseScheda;
+    if (!cacheErr && cached) {
+      // abbiamo già descrizione + scheda salvate
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          descrizione: cached.descrizione,
+          mini_card: cached.scheda,
+          cached: true,
+        }),
+        {
+          status: 200,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
     }
-  }
-
-  return new Response(
-    JSON.stringify({
-      ok: true,
-      lang: targetLang,
-      descrizione: descrOut,
-      mini_card: schedaOut,
-      cached: true,
-    }),
-    {
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "application/json",
-      },
-    },
-  );
-}
-
 
     // seed per rendere ogni vino un po' diverso ma stabile
     const wineSeed = `${nome}|${annata ?? ""}|${ristorante_id ?? ""}`;
@@ -808,80 +609,49 @@ Assicurati che ogni frase abbia una chiusura completa, senza lasciare sospension
 
     const descrizioneCompleta = `${hook} ${palate}`.trim();
 
-const mini_card: MiniCard = {
-  hook,
-  palate,
-  notes: notesChosen,
-  pairings: pairingsChosen,
-  emojis: { notes: {}, pairings: {} },
-};
+    const mini_card = {
+      hook,
+      palate,
+      notes: notesChosen,
+      pairings: pairingsChosen,
+      emojis: { notes: {}, pairings: {} },
+    };
 
-// 9) TRADUCI IN TUTTE LE LINGUE & SALVA NELLA CACHE descrizioni_vini
-let translations: LangTranslationsMap = {};
-try {
-  translations = await generaTraduzioniMultiLingua(descrizioneCompleta, mini_card);
-} catch (e) {
-  console.error("Errore traduzione multi-lingua descrizione-vino:", e);
-}
-
-const rowToInsert: any = {
+    // 9) SALVA NELLA CACHE descrizioni_vini
+    try {
+      await supabase.from("descrizioni_vini").insert({
   nome: wine.nome,
   annata: wine.annata ? String(wine.annata) : null,
   uvaggio: wine.uvaggio,
-  // compatibilità vecchia colonna
   descrizione: descrizioneCompleta,
   scheda: mini_card,
-  // nuove colonne "canoniche"
+
+  // nuove colonne "master" in italiano
   descrizione_it: descrizioneCompleta,
   scheda_it: mini_card,
+
   ristorante_id,
   fingerprint,
-};
+});
+    } catch (e) {
+      console.error("Errore salvataggio descrizioni_vini:", e);
+    }
 
-// compila colonne per le altre lingue se disponibili
-const otherLangs: SupportedLang[] = ["en", "fr", "de", "es", "zh", "ru", "ko"];
-for (const l of otherLangs) {
-  const tl = translations[l];
-  if (!tl) continue;
-  rowToInsert[`descrizione_${l}`] = tl.descrizione;
-  rowToInsert[`scheda_${l}`] = tl.scheda;
-}
-
-try {
-  await supabase.from("descrizioni_vini").insert(rowToInsert);
-} catch (e) {
-  console.error("Errore salvataggio descrizioni_vini:", e);
-}
-
-// scegli cosa restituire in base alla lingua richiesta
-let outDescr = descrizioneCompleta;
-let outScheda: MiniCard = mini_card;
-
-if (targetLang !== "it") {
-  const t = translations[targetLang];
-  if (t) {
-    outDescr = t.descrizione;
-    outScheda = t.scheda;
-  }
-}
-
-return new Response(
-  JSON.stringify({
-    ok: true,
-    lang: targetLang,
-    descrizione: outDescr,
-    mini_card: outScheda,
-    cached: false,
-  }),
-  {
-    status: 200,
-    headers: {
-      ...corsHeaders,
-      "Content-Type": "application/json",
-    },
-  },
-);
-
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        descrizione: descrizioneCompleta,
+        mini_card,
+        cached: false,
+      }),
+      {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+      }
+    );
   } catch (err) {
     console.error("descrizione-vino error", err);
     return new Response(
