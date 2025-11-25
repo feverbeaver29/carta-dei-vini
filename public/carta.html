@@ -2481,7 +2481,8 @@ function mostraPopupDescrizione(vino) {
       uvaggio: vino.uvaggio,
       categoria: vino.categoria,
       sottocategoria: vino.sottocategoria,
-      ristorante_id: RESTAURANT_ID
+      ristorante_id: RESTAURANT_ID,
+      lang: (currentLang === "gb" ? "en" : currentLang)
     })
   })
   .then(async res => {
@@ -2489,30 +2490,23 @@ function mostraPopupDescrizione(vino) {
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} — ${raw}`);
     return JSON.parse(raw);
   })
-  .then(async data => {
-    let descr = data.descrizione || translations[currentLang].noDescription || "Nessuna descrizione trovata.";
-    const card = data.mini_card || data.scheda || null; // compat: accetto mini_card o scheda
+.then(async data => {
+  const descr = data.descrizione || translations[currentLang].noDescription || "Nessuna descrizione trovata.";
+  const card = data.mini_card || data.scheda || null;
 
-    if (currentLang !== "it" && descr && descr !== "Nessuna descrizione trovata.") {
-      try {
-        const r = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-descrizione", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_API_KEY}` },
-          body: JSON.stringify({ text: descr, targetLang: currentLang })
-        });
-        const t = await r.json();
-        descr = t.text || descr;
-      } catch(e){}
-    }
+  if (wrapEl && card) {
+    if (descEl) descEl.textContent = "";
+    renderMiniCardInto(
+      wrapEl,
+      vino.nome + (vino.annata ? ` (${vino.annata})` : ""),
+      card,
+      currentLang
+    );
+  } else {
+    if (descEl) descEl.textContent = descr;
+  }
+})
 
-    if (wrapEl && card) {
-  if (descEl) descEl.textContent = "";
-  // 👉 USA LA MINI-CARD (2 righe + chip)
-  renderMiniCardInto(wrapEl, vino.nome + (vino.annata ? ` (${vino.annata})`:""), card, currentLang);
-} else {
-  if (descEl) descEl.textContent = descr;
-}
-  })
   .catch(err => {
     console.error("[descrizione-vino]", err);
     if (descEl) descEl.textContent = "Errore durante il recupero della descrizione.";
