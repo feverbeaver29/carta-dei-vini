@@ -5,6 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestione Carta dei Vini - Admin</title>
   <style>
+
+    .autocomplete-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-top: none;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.autocomplete-item {
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 0.85em;
+}
+
+.autocomplete-item:hover {
+  background: #f5f5f5;
+}
+
+.autocomplete-item strong {
+  display: block;
+}
+
+.autocomplete-item small {
+  display: block;
+  color: #666;
+  margin-top: 2px;
+}
+
     body { font-family: sans-serif; background: #fff9f4; padding: 2em; }
     h1 { text-align: center; }
     .admin-panel { max-width: 600px; margin: auto; background: white; padding: 1.5em 1.5em 2em; border-radius: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.06);box-sizing: border-box; }
@@ -27,50 +63,7 @@
 .custom-popup .btn-save {  background-color: #a00;  color: #fff;}
 
 .custom-popup .btn-cancel {  background-color: #aaa;  color: #333;}
-/* === OCR modal COMPACT === */
-.swal2-popup.sw-compact {
-  width: min(98vw, 520px) !important;   /* più largo ma sempre dentro viewport */
-  padding: 12px !important;
-  font-size: 14px;                      /* scala tutto un filo più piccolo */
-}
-.swal2-title.sw-compact-title {
-  font-size: 1.15rem !important;        /* titolo più piccolo */
-  margin: 4px 0 8px !important;
-}
 
-.sw-card{                                 /* il rettangolo con bordo nero */
-  border-radius: 16px;
-  border: 2px solid #000;
-  padding: 12px;
-  background:#fff;
-}
-
-.sw-card label{ font-size:.85rem; margin: 2px 0 2px; }
-.sw-card input, .sw-card select{
-  width:100%; box-sizing:border-box;
-  border:1px solid #000; border-radius:12px;
-  padding:8px 10px; font-size:.95rem;
-}
-
-/* griglia generale: due colonne compatte per risparmiare spazio */
-.sw-frm{ display:grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.sw-span-2{ grid-column: 1 / -1; }
-
-/* PREZZI: sempre 3 colonne sulla stessa riga */
-.sw-price-grid{
-  display:grid; gap:8px; align-items:end;
-  grid-template-columns: 64px 1fr 1fr; /* Valuta stretta + 2 input */
-}
-.sw-price-grid label{ white-space:nowrap; font-size:.8rem; margin-bottom:2px; }
-.sw-cur select{ height: 34px; padding:0 6px; font-size:.9rem; }
-
-.sw-inline-help{ font-size:.75rem; color:#666; margin-top:2px; }
-
-/* repeater formati (lasciamo compatibile con quelli esistenti) */
-.sw-card .fmt-row{ gap:8px; }
-.sw-card .fmt-input{ padding:.40em .55em; }
-
-#progressBar {  width: 0%;  height: 20px;  background: #b00;  border-radius: 10px;  text-align: center;  color: #fff;  font-size: 0.8em;  line-height: 20px;  transition: width 0.4s ease; /* aggiungi questa riga */}
 .price-row{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:nowrap;max-width:100%;}
 .price-inline{display:flex;align-items:center;gap:6px;flex:1 1 0;min-width:0;}
 .price-row > select{padding:0.32em 0.45em;border-radius:8px;flex:0 0 auto;min-width:52px;}
@@ -143,7 +136,6 @@ h1 {    font-size: 1.3em;  }
   .fmt-input{ width:clamp(56px, 26vw, 96px); padding:.38em .5em; }
   .fmt-row{ gap:6px; }
 }
-.inline-btn{ margin-left:6px; padding:.35em .6em; border-radius:8px; border:1px solid #ccc; background:#fafafa; cursor:pointer; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
 </head>
@@ -151,24 +143,14 @@ h1 {    font-size: 1.3em;  }
 <a href="dashboard.html" id="backToDashboard">← Torna alla Dashboard</a>
 <h1>Gestione Carta dei Vini</h1>
 
-<hr style="margin: 2em 0;">
-<div style="text-align: center; margin-top: 1em;">
-  <button id="uploadTrigger" style="background-color:#a00;padding: 0.6em 1.2em; border-radius: 12px; color:white; font-weight: 500; font-size: 0.95em;">📷 Carica carta dei vini</button>
-  <input type="file" id="ocrUploadInput" style="display: none;" accept="image/*,.pdf">
-</div>
-
-<div id="progressContainer" style="width:100%;background:#ddd;border-radius:10px;margin-top:1em;display:none;">
-  <div id="progressBar" style="width:0%;height:20px;background:#b00;border-radius:10px;text-align:center;color:#fff;font-size:0.8em;line-height:20px;">
-    0%
-  </div>
-</div>
-<div id="ocrStatus" style="margin-top: 1em; font-size: 0.9em;"></div>
-
 <div id="message"></div>
 <div class="admin-panel">
   <h2 id="formTitle">Aggiungi Vino <button id="resetButton" style="display:none; margin-left: 10px; padding: 0.3em 0.6em; font-size: 0.8em;">Aggiungi nuovo</button></h2>
 <label>Nome del vino:</label>
-<input type="text" id="nome_completo" placeholder="Nome completo del vino">
+<div style="position: relative;">
+  <input type="text" id="nome_completo" placeholder="Nome completo del vino" autocomplete="off">
+  <div id="nomeSuggestions" class="autocomplete-list" style="display:none;"></div>
+</div>
   <label>Annata:</label>
   <input type="text" id="annata" placeholder="non obbligatorio">
 <label>Prezzo:</label>
@@ -252,381 +234,6 @@ h1 {    font-size: 1.3em;  }
 </div>
 
 <script>
-  let progressInterval = null;
-
-function aggiornaBarraProgressoFinoAl(target) {
-  const bar = document.getElementById("progressBar");
-  let attuale = parseInt(bar.textContent.replace('%', '')) || 0;
-
-  clearInterval(progressInterval);
-
-  progressInterval = setInterval(() => {
-    if (attuale < target) {
-      attuale++;
-      bar.style.width = `${attuale}%`;
-      bar.textContent = `${attuale}%`;
-    } else {
-      clearInterval(progressInterval);
-    }
-  }, 25); // regola la velocità qui (più basso = più veloce)
-}
-
-  function parseWineLine(line) {
-  const regex = /(.*?)\s(\d{4})\s([€$£¥CHF])?(\d+(?:[\.,]\d{1,2})?)\s+(\w+)\s+([\w\s]+)\s+(.+)/;
-  const match = line.match(regex);
-  if (!match) return null;
-
-  return {
-    nome: match[1].trim(),
-    annata: match[2],
-    valuta: match[3] || "€",
-    prezzo: match[4],
-    categoria: match[5],
-    sottocategoria: match[6].trim(),
-    uvaggio: match[7].trim()
-  };
-}
-async function estraiDatiConIA(riga1, riga2) {
-  const response = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/estrai-vini-carta", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ righe: [riga1, riga2] })
-  });
-
-  const json = await response.json();
-  if (response.ok && json?.vino) return json.vino;
-
-  console.warn("Errore IA:", json);
-  return null;
-}
-
-async function processOCRFile() {
-  if (!winesData.length) await loadWines();
-
-  const file = document.getElementById("ocrUploadInput").files[0];
-  const status = document.getElementById("ocrStatus");
-  const progressContainer = document.getElementById("progressContainer");
-  const progressBar = document.getElementById("progressBar");
-  
-  if (!file) return;
-
-  progressContainer.style.display = "block";
-  progressBar.style.width = "0%";
-  progressBar.textContent = "0%";
-
-  let images = [];
-
-  // PDF multipagina
-  if (file.type === "application/pdf") {
-    const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const viewport = page.getViewport({ scale: 2 });
-      const canvas = document.createElement("canvas");
-      const context = canvas.getContext("2d");
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-      await page.render({ canvasContext: context, viewport }).promise;
-      images.push(canvas.toDataURL());
-    }
-  } else {
-    images = [URL.createObjectURL(file)];
-  }
-
-  const lines = [];
-
-  // Calcolo una sola volta le categorie/sottocategorie già presenti
-const categoriePresenti = Array.from(new Set(winesData.map(w => w.categoria))).filter(Boolean);
-const sottocategoriePresenti = Array.from(new Set(winesData.map(w => w.sottocategoria))).filter(Boolean);
-
-status.textContent = "🧠 Elaborazione OCR...";
-for (let i = 0; i < images.length; i++) {
-  const result = await Tesseract.recognize(images[i], 'eng');
-
-  lines.push(...result.data.text.split('\n').map(l => l.trim()).filter(l => l.length > 10));
-
-  // Progresso basato sull'indice delle immagini
-const progress = Math.round(((i + 1) / images.length) * 30);
-aggiornaBarraProgressoFinoAl(progress);
-}
-  const BATCH_SIZE = 30; 
-  let parsedVini = [];
-  const totalBatches = Math.ceil(lines.length / BATCH_SIZE);
-
-  for (let i = 0; i < lines.length; i += BATCH_SIZE) {
-    const batch = lines.slice(i, i + BATCH_SIZE);
-
-    const response = await fetch(`https://ldunvbftxhbtuyabgxwh.functions.supabase.co/estrai-vini-carta?ristorante_id=${RESTAURANT_ID}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        testo: batch.join('\n'),
-    categorieGiaPresenti: categoriePresenti,
-    sottocategorieGiaPresenti: sottocategoriePresenti
-      })
-    });
-
-    const json = await response.json();
-    parsedVini = parsedVini.concat(json.vini || []);
-
-    // Se l'uvaggio arriva già dal testo OCR, etichetta come "foto"
-parsedVini = parsedVini.map(v => {
-  if (v && v.uvaggio && v.uvaggio.trim()) {
-    v._uv_source = "ocr";
-    v._uv_confidence = null;
-    v._uv_hint = mkUvHint("ocr");
-  }
-  return v;
-});
-
-    // Aggiorna progress-bar
-const progress = 30 + Math.min(70, Math.round(((i + BATCH_SIZE) / lines.length) * 70));
-aggiornaBarraProgressoFinoAl(progress);
-}
-
-  if (parsedVini.length === 0) {
-    status.textContent = "Nessun vino rilevato.";
-    aggiornaBarraProgressoFinoAl(100);
-await new Promise(resolve => setTimeout(resolve, 1000)); // attesa finale per l'effetto
-progressContainer.style.display = "none";
-    return;
-  }
-
-  status.textContent = `Sono stati rilevati ${parsedVini.length} vini`;
-  aggiornaBarraProgressoFinoAl(100);
-await new Promise(resolve => setTimeout(resolve, 1000)); // attesa finale per l'effetto
-progressContainer.style.display = "none";
-
-  const listaHTML = parsedVini.map(v =>
-    `<li><strong>${v.nome_completo || "?"}</strong> — ${v.annata || ""} — ${v.prezzo || ""} ${v.valuta || ""}</li>`
-  ).join("");
-
-  await Swal.fire({
-    title: "Riepilogo vini trovati",
-    html: `<ul style="text-align:left">${listaHTML}</ul>`,
-    confirmButtonText: "Procedi con conferma"
-  });
-
-  for (const vino of parsedVini) {
-if (!vino.uvaggio || vino.uvaggio.trim() === "") {
-  // 3a) tenta dal DB interno
-  const interno = await suggestUvaggioFromDB(vino.nome_completo || vino.nome || "");
-  if (interno && interno.uvaggio) {
-    vino.uvaggio = interno.uvaggio;
-    vino._uv_source = "db";
-    vino._uv_confidence = interno.confidence;
-    vino._uv_hint = mkUvHint("db", interno.confidence);
-  } else {
-    // 3b) fallback: AI
-    const uvaggioRes = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/completa-uvaggio", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome_completo: vino.nome_completo || vino.nome || "" })
-    });
-    const uv = await uvaggioRes.json(); // la tua funzione ora restituisce {uvaggio, grapes, confidence, sources}
-
-    if (uvaggioRes.ok && uv && typeof uv === "object" && (uv.uvaggio || "").trim()) {
-      const testo = String(uv.uvaggio).trim();
-      // scarta risposte inutili
-      const t = testo.toLowerCase();
-      const inutile = t.includes("non posso") || t.includes("non ho accesso") || t.includes("sfortunatamente") || t.includes("online") || testo.length < 3;
-
-      if (!inutile) {
-        vino.uvaggio = testo;
-        vino._uv_source = "ai";
-        vino._uv_confidence = (typeof uv.confidence === "number" ? uv.confidence : 0.6);
-        vino._uv_hint = mkUvHint("ai", vino._uv_confidence);
-      } else {
-        vino.uvaggio = "Uvaggio non trovato online";
-        vino._uv_hint = "";
-      }
-    } else {
-      vino.uvaggio = "Uvaggio non trovato online";
-      vino._uv_hint = "";
-    }
-  }
-}
-
-const result = await Swal.fire({
-  title: 'Conferma vino',
-  html: `
-  <div class="sw-card">
-    <div class="sw-frm">
-
-      <div class="sw-field sw-span-2">
-        <label>Nome</label>
-        <input id="sw_nome" placeholder="nome del vino" value="${vino.nome_completo || ""}">
-      </div>
-
-      <div class="sw-field sw-span-2">
-        <label>Annata</label>
-        <input id="sw_annata" placeholder="annata del vino" value="${vino.annata || ""}">
-      </div>
-
-      <div class="sw-field sw-span-2">
-        <label>Prezzi</label>
-        <div class="sw-price-grid">
-          <div class="sw-cur">
-            <label style="display:block;margin-bottom:2px;">Valuta</label>
-            <select id="sw_valuta">
-              <option value="€"  ${((vino.valuta||'€')==='€')  ? 'selected':''}>€</option>
-              <option value="$"  ${((vino.valuta||'€')==='$')  ? 'selected':''}>$</option>
-              <option value="£"  ${((vino.valuta||'€')==='£')  ? 'selected':''}>£</option>
-              <option value="¥"  ${((vino.valuta||'€')==='¥')  ? 'selected':''}>¥</option>
-              <option value="CHF"${((vino.valuta||'€')==='CHF')? 'selected':''}>CHF</option>
-            </select>
-          </div>
-          <div class="sw-bot">
-            <label style="display:block;margin-bottom:2px;">Bott. 0,75</label>
-            <input id="sw_prezzo" inputmode="decimal" pattern="[0-9]*[\\.,]?[0-9]*"
-                   placeholder="es. 24"
-                   value="${(vino.prezzo || '').toString().replace(/^(€|\\$|£|¥|CHF)?\\s*/, '')}">
-          </div>
-          <div class="sw-cal">
-            <label style="display:block;margin-bottom:2px;">Calice</label>
-            <input id="sw_prezzo_calice" inputmode="decimal" pattern="[0-9]*[\\.,]?[0-9]*"
-                   placeholder="es. 6"
-                   value="${(vino.prezzo_bicchiere || '').toString().replace(/^(€|\\$|£|¥|CHF)?\\s*/, '')}">
-          </div>
-        </div>
-        <div class="sw-inline-help">La valuta selezionata si applica ad entrambi i prezzi.</div>
-      </div>
-
-      <div class="sw-field sw-span-2" id="sw_formatsWrap" style="margin-top:4px;">
-        <button type="button" id="sw_addFormatBtn" style="background:none;border:none;color:#b00;cursor:pointer;font-weight:600;padding:0;">+ aggiungi formato</button>
-        <select id="sw_formatPicker" class="fmt-picker">
-          <option value="" selected disabled>Seleziona formato…</option>
-          <option value="025">1/4 L (0,25)</option>
-          <option value="0375">0,375 L</option>
-          <option value="05">1/2 L (0,5)</option>
-          <option value="15">1,5 L</option>
-          <option value="3l">3 L</option>
-        </select>
-        <div id="sw_formatsRepeater" class="formats"></div>
-      </div>
-
-      <div class="sw-field sw-span-2">
-        <label>Categoria</label>
-        <input id="sw_categoria" list="lista_categorie" placeholder="categoria del vino" value="${vino.categoria || ""}">
-        <datalist id="lista_categorie">
-          ${categoriePresenti.map(cat => `<option value="${cat}">`).join('')}
-        </datalist>
-      </div>
-
-      <div class="sw-field sw-span-2">
-        <label>Sottocategoria</label>
-        <input id="sw_sottocategoria" list="lista_sottocategorie" placeholder="sottocategoria del vino" value="${vino.sottocategoria || ""}">
-        <datalist id="lista_sottocategorie">
-          ${sottocategoriePresenti.map(sub => `<option value="${sub}">`).join('')}
-        </datalist>
-      </div>
-
-      <div class="sw-field sw-span-2">
-        <label>Uvaggio</label>
-        <input id="sw_uvaggio" placeholder="uvaggio del vino" value="${vino.uvaggio || ""}">
-        <small id="sw_uvaggio_hint" class="hint">${vino._uv_hint || ""}</small>
-      </div>
-
-    </div>
-  </div>
-`,
-  didOpen: () => {
-    const swUv = document.getElementById('sw_uvaggio');
-    const swHint = document.getElementById('sw_uvaggio_hint');
-    if (swUv && swHint) swUv.addEventListener('input', () => { swHint.textContent = ''; });
-    const LABELS = { "025":"1/4 L (0,25)", "0375":"0,375 L", "05":"1/2 L (0,5)", "15":"1,5 L", "3l":"3 L" };
-    const KEYS   = { "025":"prezzo_025", "0375":"prezzo_0375", "05":"prezzo_05", "15":"prezzo_15", "3l":"prezzo_3l" };
-
-    const picker  = document.getElementById('sw_formatPicker');
-    const addBtn  = document.getElementById('sw_addFormatBtn');
-    const wrap    = document.getElementById('sw_formatsRepeater');
-
-    function refresh() {
-      const used = new Set([...wrap.querySelectorAll('.fmt-row')].map(r => r.dataset.code));
-      [...picker.options].forEach(o => { if(o.value) o.disabled = used.has(o.value); });
-    }
-    function addRow(code, value="") {
-      if(!KEYS[code]) return;
-      if([...wrap.querySelectorAll('.fmt-row')].some(r => r.dataset.code === code)) return;
-      const row = document.createElement('div');
-      row.className = 'fmt-row';
-      row.dataset.code = code;
-row.innerHTML = `
-  <span class="fmt-chip">${LABELS[code]}</span>
-  <input type="text" class="fmt-input" placeholder="prezzo" value="${(value||'').toString().replace(/^(€|\$|£|¥|CHF)?\s*/, '')}">
-  <button type="button" class="fmt-del" aria-label="Rimuovi">×</button>
-`;
-      row.querySelector('.fmt-del').onclick = () => { row.remove(); refresh(); };
-      wrap.appendChild(row);
-      refresh();
-    }
-
-    addBtn.addEventListener('click', () => {
-      picker.style.display = 'inline-block';
-      refresh();
-      picker.focus();
-    });
-    picker.addEventListener('change', (e) => {
-      if(!e.target.value) return;
-      addRow(e.target.value);
-      e.target.value = '';
-      e.target.style.display = 'none';
-    });
-
-    // Pre-compila dai valori OCR se presenti
-    const pre = {
-      "025": vino.prezzo_025, "0375": vino.prezzo_0375,
-      "05":  vino.prezzo_05,  "15":   vino.prezzo_15, "3l": vino.prezzo_3l
-    };
-    Object.entries(pre).forEach(([code,val]) => { if(val) addRow(code, val); });
-  },
-  confirmButtonText: 'Salva',
-  cancelButtonText: 'Cancella',
-  showCancelButton: true,
-  customClass: { popup: 'sw-compact', title: 'sw-compact-title', confirmButton: 'btn-save', cancelButton: 'btn-cancel' },
-  preConfirm: () => {
-    const valuta = (document.getElementById('sw_valuta').value || '€').trim();
-    const out = {
-      nome: document.getElementById('sw_nome').value.trim(),
-      annata: document.getElementById('sw_annata').value.trim() || null,
-      prezzo: valuta + (document.getElementById('sw_prezzo').value || '').trim(),
-      prezzo_bicchiere: (document.getElementById('sw_prezzo_calice').value || '').trim()
-                          ? valuta + (document.getElementById('sw_prezzo_calice').value || '').trim()
-                          : "",
-      categoria: document.getElementById('sw_categoria').value.trim(),
-      sottocategoria: document.getElementById('sw_sottocategoria').value.trim(),
-      uvaggio: document.getElementById('sw_uvaggio').value.trim(),
-    };
-    // inizializza campi extra
-    out.prezzo_025 = ""; out.prezzo_0375 = ""; out.prezzo_05 = ""; out.prezzo_15 = ""; out.prezzo_3l = "";
-
-    const map = { "025":"prezzo_025", "0375":"prezzo_0375", "05":"prezzo_05", "15":"prezzo_15", "3l":"prezzo_3l" };
-    Swal.getPopup().querySelectorAll('#sw_formatsRepeater .fmt-row').forEach(row => {
-      const code = row.dataset.code;
-      const key  = map[code];
-      const val  = row.querySelector('.fmt-input').value.trim();
-      if (key && val) out[key] = valuta + val;
-    });
-
-    return out;
-  }
-});
-
-    if (result.isConfirmed) {
-      const nuovo = result.value;
-      nuovo.ristorante_id = RESTAURANT_ID;
-
-      await fetch(`${SUPABASE_URL}/rest/v1/wines`, {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_API_KEY },
-        body: JSON.stringify(nuovo)
-      });
-
-      showMessage("Vino salvato da OCR!");
-      loadWines();
-    }
-  }
-}
 
 function normalizeAndCapitalize(arr) {
   const map = new Map();
@@ -650,19 +257,6 @@ let RESTAURANT_ID = new URLSearchParams(window.location.search).get("ristorante_
 let CURRENT_PLAN = null;
 
 // ——— Helper uvaggio: formato e suggerimenti interni ———
-function formatConfidence(c) {
-  if (c == null || isNaN(c)) return "";
-  const pct = c <= 1 ? Math.round(c * 100) : Math.round(c);
-  return `${pct}%`;
-}
-
-function mkUvHint(source, confidence) {
-  const conf = formatConfidence(confidence);
-  if (source === "ocr") return "Estratto dalla foto";
-  if (source === "db")  return `Suggerito da dati interni · conf. ${conf || "60%"}`;
-  if (source === "ai")  return `Suggerito dall’AI · conf. ${conf || "60%"}`;
-  return "";
-}
 
 async function suggestUvaggioFromDB(nome) {
   try {
@@ -707,6 +301,7 @@ async function fetchUserIfNeeded() {
 
 let winesData = [], editIndex = null;
 let currentPage = 1;
+let currentCatalogTemplateId = null;   // null = vino NON scelto dal catalogo
 
 function showMessage(msg, ok = true) {
   const el = document.getElementById("message");
@@ -722,8 +317,10 @@ function resetForm() {
 });
 document.getElementById("formatsRepeater").innerHTML = "";
 document.getElementById("formatPicker").style.display = "none";
-  editIndex = null;
-  showUvaggioBadge(''); // pulisce l’etichetta sotto l’input uvaggio
+    editIndex = null;
+  currentCatalogTemplateId = null;   // <--- QUI
+  showUvaggioBadge('');              // pulisce l’etichetta sotto l’input uvaggio
+  clearNomeSuggestions();            // chiude il dropdown dell’autocomplete (se aperto)
 }
 
 function fillForm(index) {
@@ -977,23 +574,35 @@ catFilter.addEventListener("change", () => {
   subFilter.value = "";
   renderTable();
 });
-
-const uploadBtn = document.getElementById("uploadTrigger");
-if (CURRENT_PLAN !== "pro") {
-  uploadBtn.style.opacity = 0.4;
-  uploadBtn.style.pointerEvents = "auto";
-  uploadBtn.style.cursor = "not-allowed";
-  uploadBtn.title = "Funzione disponibile solo con piano PRO";
-
-  uploadBtn.addEventListener("click", () => {
-Swal.fire({
-  icon: "info",
-  title: "Funzione PRO",
-  html: `Questa funzione è disponibile solo per gli utenti <strong>Piano PRO</strong>.<br><br><a href="/abbonamento.html?ristorante_id=${RESTAURANT_ID}" style="color:#b00;font-weight:bold;text-decoration:underline;">Passa ora al piano superiore</a>`,
-  confirmButtonText: "Chiudi"
-});
-  });
 }
+
+async function upsertWineIntoCatalogFromForm(wine) {
+  // minimo sindacale: serve almeno il nome
+  if (!wine.nome || !wine.nome.trim()) return;
+
+  const payload = {
+    nome: wine.nome.trim(),
+    categoria: wine.categoria || null,
+    sottocategoria: wine.sottocategoria || null,
+    uvaggio: wine.uvaggio || null
+  };
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/wines_catalog`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_API_KEY
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      console.warn("Errore inserimento in wines_catalog:", await res.text());
+    }
+  } catch (e) {
+    console.warn("Errore rete su wines_catalog:", e);
+  }
 }
 
 async function saveWine() {
@@ -1030,11 +639,13 @@ async function saveWine() {
     if (key && val) wine[key] = (valuta + val);
   });
 
+  const isEdit = (editIndex !== null);
+
   // 4) invio a Supabase
-  const url = (editIndex !== null)
+  const url = isEdit
     ? `${SUPABASE_URL}/rest/v1/wines?id=eq.${winesData[editIndex].id}`
     : `${SUPABASE_URL}/rest/v1/wines`;
-  const method = (editIndex !== null) ? "PATCH" : "POST";
+  const method = isEdit ? "PATCH" : "POST";
 
   const res = await fetch(url, {
     method,
@@ -1042,8 +653,17 @@ async function saveWine() {
     body: JSON.stringify(wine)
   });
 
-  if (!res.ok) return showMessage("Errore salvataggio", false);
-  showMessage(editIndex !== null ? "Vino aggiornato" : "Vino aggiunto");
+  if (!res.ok) {
+    showMessage("Errore salvataggio", false);
+    return;
+  }
+
+  // 5) se è un vino NUOVO e NON proviene dal catalogo => aggiungilo a wines_catalog
+  if (!isEdit && !currentCatalogTemplateId) {
+    await upsertWineIntoCatalogFromForm(wine);
+  }
+
+  showMessage(isEdit ? "Vino aggiornato" : "Vino aggiunto");
 
   resetForm();
   loadWines();
@@ -1089,82 +709,12 @@ document.body.addEventListener("click", e => {
 });
 
 loadWines();
-document.getElementById("uploadTrigger").addEventListener("click", async () => {
-  
-const result = await Swal.fire({
-  title: 'Caricamento Carta dei Vini',
-  html: `
-    <p style="text-align:left;margin-bottom:10px;font-size:0.9em;">
-      ⚠️ Consigliamo di caricare al massimo 15 vini per volta per un'estrazione rapida.
-      Caricare più vini sarà più lento.
-    </p>
-    <input type="file" id="popupFileInput" accept="image/*,.pdf" style="margin-top:10px;">
-  `,
-  showCancelButton: true,
-  confirmButtonText: "Estrai vini",
-  cancelButtonText: "Annulla",
-  preConfirm: () => {
-    const fileInput = document.getElementById("popupFileInput");
-    const file = fileInput?.files?.[0];
-    if (!file) {
-      Swal.showValidationMessage("Seleziona un file prima di procedere");
-      return false;
-    }
-    document.getElementById("ocrUploadInput").files = fileInput.files;
-    return true;
-  }
-});
 
-if (result.isConfirmed) {
-  processOCRFile();
-}
+document.getElementById('nome_completo').addEventListener('input', (e) => {
+  const nome = e.target.value.trim();
+  // Solo autocomplete dal catalogo
+  handleNomeInputForCatalog(nome);
 });
-
- // === CONFIG: se false, l'uvaggio NON si compila mentre scrivi
- const AUTOFILL_ON_TYPE = true;  // metti false se vuoi SOLO "bottone AI"
- 
- let uvaggioTimer = null;
- document.getElementById('nome_completo').addEventListener('input', (e) => {
-   clearTimeout(uvaggioTimer);
-   const nome = e.target.value.trim();
- 
-   // Se svuoti il nome, pulisco anche uvaggio + badge + loader
-   if (!nome) {
-     document.getElementById('uvaggio').value = '';
-     showUvaggioBadge('');
-     toggleNomeLoader(false);
-     return;
-   }
- 
-   if (!AUTOFILL_ON_TYPE) {
-     showUvaggioBadge(''); // niente suggerimenti automatici
-     toggleNomeLoader(false);
-     return;
-   }
- 
-   if (nome.length < 6) { 
-     showUvaggioBadge('');
-     toggleNomeLoader(false);
-     return; 
-   }
- 
-   uvaggioTimer = setTimeout(async () => {
-     toggleNomeLoader(true);
-     const suggest = await suggestUvaggioFor(nome);
-     toggleNomeLoader(false);
-     if (suggest?.uvaggio) {
-       const input = document.getElementById('uvaggio');
-       // Compila solo se l’utente non ha già scritto qualcosa
-       if (!input.value || input.value.length < 3) {
-         input.value = suggest.uvaggio;
-       }
-      const srcKey = (suggest.source === 'supabase') ? 'db' : 'ai';
-      showUvaggioBadge(mkUvHint(srcKey, suggest.confidence));
-     } else {
-       showUvaggioBadge('Nessun suggerimento trovato');
-     }
-   }, 400);
- });
 
 const FORMAT_LABELS = {
   "025": "1/4 L (0,25)", "0375": "0,375 L",
@@ -1203,63 +753,6 @@ function refreshPickerOptions(){
   });
 }
 
-// --- REPLACE: usa l'RPC uvaggio_suggest (security definer) ---
-function niceCaseUvaggio(s) {
-  // opzionale: capitalizza parole principali senza toccare % e numeri
-  return (s || "")
-    .split(",")
-    .map(part =>
-      part.trim().replace(/\b([a-zà-ù])([a-zà-ù]*)/gi, (m,a,b) =>
-        a.toUpperCase() + b.toLowerCase()
-      )
-    )
-    .join(", ");
-}
-
-async function findUvaggioFromSupabaseByName(nome) {
-  const q = (nome || "").trim();
-  if (!q) return null;
-
-  const { data, error } = await sb.rpc('uvaggio_suggest', { q, limit_count: 50 });
-  if (error || !data || !data.length) return null;
-
-  // uvaggio_suggest è già ordinata per cnt DESC: il primo è il “consenso”
-  const top = data[0]; // { uvaggio: "cabernet sauvignon 85%, cabernet franc 15%", cnt: N }
-  const uvaggioCanon = niceCaseUvaggio(top.uvaggio); // "Cabernet Sauvignon 85%, Cabernet Franc 15%"
-  const confidence = Math.min(0.5 + (top.cnt || 1) * 0.1, 0.9);
-
-  return { uvaggio: uvaggioCanon, source: 'supabase', confidence };
-}
-
-// 2) Chiamata Edge Function (fallback AI)
-async function fetchUvaggioFromAI(nome) {
-  try {
-    const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/completa-uvaggio", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome_completo: nome })
-    });
-    const json = await res.json().catch(()=>null);
-
-    if (!res.ok || !json?.uvaggio) return null;
-
-    // filtra risposte inutili
-    const t = String(json.uvaggio).trim();
-    const bad = t.length < 5 || /non (posso|ho|sono)|online|sfortunatamente/i.test(t);
-    if (bad) return null;
-
-    return { uvaggio: t, source: 'openai', confidence: (json.confidence ?? 0.7), sources: json.sources ?? [] };
-  } catch(e){ return null; }
-}
-
-// 3) Strategia: prima Supabase, poi AI
-async function suggestUvaggioFor(nome) {
-  const local = await findUvaggioFromSupabaseByName(nome);
-  if (local) return local;
-  return await fetchUvaggioFromAI(nome);
-}
-
-// 4) UI helpers (badge + loader sottile)
 function showUvaggioBadge(msg) {
   let b = document.getElementById('uvaggioBadge');
   if (!b) {
@@ -1270,58 +763,141 @@ function showUvaggioBadge(msg) {
   }
   b.textContent = msg || '';
 }
+
 document.getElementById('uvaggio').addEventListener('input', () => {
   showUvaggioBadge('');
 });
 
-function toggleNomeLoader(on) {
-  let s = document.getElementById('nomeSpinner');
-  if (on) {
-    if (!s) {
-      s = document.createElement('span');
-      s.id = 'nomeSpinner';
-      s.textContent = ' ⏳';
-      document.getElementById('nome_completo').insertAdjacentElement('afterend', s);
-    }
-  } else if (s) {
-    s.remove();
+// === AUTOCOMPLETE NOME VINO DA CATALOGO GLOBALE ===
+
+// tabella del catalogo globale (quella nuova che crei)
+const CATALOG_TABLE = "wines_catalog";
+
+let nomeSuggestTimer = null;
+
+/**
+ * Cerca nel catalogo globalmente per nome (case-insensitive, contiene).
+ * Ritorna max 10 risultati.
+ */
+async function searchCatalogByName(term) {
+  const q = term.trim();
+  if (!q || q.length < 3) return [];
+
+  const url = `${SUPABASE_URL}/rest/v1/${CATALOG_TABLE}`
+    + `?select=id,nome,categoria,sottocategoria,uvaggio`
+    + `&nome=ilike.*${encodeURIComponent(q)}*`
+    + `&order=nome`
+    + `&limit=10`;
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'apikey': SUPABASE_API_KEY,
+        'Accept': 'application/json'
+      }
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (e) {
+    console.warn("Errore catalogo vini:", e);
+    return [];
   }
 }
-(function addAiButton(){
-  const uv = document.getElementById('uvaggio');
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'inline-btn';
-  btn.textContent = 'AI';
-  uv.insertAdjacentElement('afterend', btn);
 
-  btn.addEventListener('click', async () => {
-    const nome = document.getElementById('nome_completo').value.trim();
-    if (nome.length < 3) { showMessage('Scrivi prima il nome del vino', false); return; }
-    toggleNomeLoader(true);
-    const s = await suggestUvaggioFor(nome);
-    toggleNomeLoader(false);
-    if (s?.uvaggio) {
-      document.getElementById('uvaggio').value = s.uvaggio;
-      const srcKey = (s.source === 'supabase') ? 'db' : 'ai';
-      showUvaggioBadge(mkUvHint(srcKey, s.confidence));
-    } else {
-      showUvaggioBadge('Nessun suggerimento trovato');
-    }
+/**
+ * Applica il template scelto: compila i campi del form
+ * con nome / categoria / sottocategoria / uvaggio.
+ * Annata e prezzi RESTANO VUOTI.
+ */
+function applyWineTemplateFromCatalog(wine) {
+  const nomeInput = document.getElementById('nome_completo');
+  const catInput  = document.getElementById('categoria');
+  const subInput  = document.getElementById('sottocategoria');
+  const uvInput   = document.getElementById('uvaggio');
+
+  if (nomeInput) nomeInput.value = wine.nome || "";
+  if (catInput)  catInput.value  = wine.categoria || "";
+  if (subInput)  subInput.value  = wine.sottocategoria || "";
+  if (uvInput)   uvInput.value   = wine.uvaggio || "";
+
+    currentCatalogTemplateId = wine.id || null;  // <--- IMPORTANTE
+
+  // azzero badge/ai hint uvaggio, lo puoi ricalcolare se vuoi
+  showUvaggioBadge("");
+}
+
+/**
+ * Mostra la lista di suggerimenti sotto l'input nome.
+ */
+function showNomeSuggestions(list) {
+  const box = document.getElementById('nomeSuggestions');
+  if (!box) return;
+
+  box.innerHTML = "";
+  if (!list || !list.length) {
+    box.style.display = "none";
+    return;
+  }
+
+  list.forEach(w => {
+    const div = document.createElement('div');
+    div.className = 'autocomplete-item';
+
+    const info = [];
+    if (w.categoria)      info.push(w.categoria);
+    if (w.sottocategoria) info.push(w.sottocategoria);
+
+    const secondLine = [
+      info.join(" · "),
+      w.uvaggio ? `Uvaggio: ${w.uvaggio}` : ""
+    ].filter(Boolean).join(" — ");
+
+    div.innerHTML = `
+      <strong>${w.nome || "(senza nome)"}</strong>
+      ${secondLine ? `<small>${secondLine}</small>` : ""}
+    `;
+
+    div.addEventListener('click', () => {
+      applyWineTemplateFromCatalog(w);
+      clearNomeSuggestions();
+    });
+
+    box.appendChild(div);
   });
-})();
+
+  box.style.display = "block";
+}
+
+/**
+ * Nasconde i suggerimenti.
+ */
+function clearNomeSuggestions() {
+  const box = document.getElementById('nomeSuggestions');
+  if (box) {
+    box.innerHTML = "";
+    box.style.display = "none";
+  }
+}
+
+/**
+ * Handler per input "nome_completo": debounce + fetch + render.
+ */
+async function handleNomeInputForCatalog(term) {
+  clearTimeout(nomeSuggestTimer);
+  nomeSuggestTimer = setTimeout(async () => {
+    const results = await searchCatalogByName(term);
+    showNomeSuggestions(results);
+  }, 250);
+}
+
+// Chiudi il menu quando clicchi fuori
+document.addEventListener('click', (e) => {
+  const input = document.getElementById('nome_completo');
+  const box   = document.getElementById('nomeSuggestions');
+  if (!box) return;
+  if (e.target === input || box.contains(e.target)) return;
+  clearNomeSuggestions();
+});
 </script>
-<!-- PDF.js Library -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.13.216/pdf.min.js"></script>
-<script>
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.13.216/pdf.worker.min.js';
-</script>
-
-<!-- Tesseract OCR -->
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
-
-<!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 </body>
 </html>
