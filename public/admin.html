@@ -265,6 +265,8 @@ const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhY
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_API_KEY);
 let RESTAURANT_ID = new URLSearchParams(window.location.search).get("ristorante_id") || null;
 let CURRENT_PLAN = null;
+// Base URL delle edge function (descrizione-vino, traduci-descrizione-vino, ecc.)
+const FUNCTIONS_BASE = SUPABASE_URL.replace(".supabase.co", ".functions.supabase.co");
 
 // ——— Helper uvaggio: formato e suggerimenti interni ———
 
@@ -620,6 +622,42 @@ async function upsertWineIntoCatalogFromForm(wine) {
   }
 }
 
+// Lancia descrizione-vino + traduci-descrizione-vino per un vino appena creato
+async function triggerDescrizioniForWine(wine) {
+  try {
+    const url = `${FUNCTIONS_BASE}/traduci-descrizione-vino`;
+
+    const payload = {
+      nome: wine.nome,
+      annata: wine.annata || null,
+      uvaggio: wine.uvaggio || null,
+      categoria: wine.categoria || null,
+      sottocategoria: wine.sottocategoria || null,
+      ristorante_id: wine.ristorante_id,
+      lang: "it"    // chiedo l'italiano, le altre lingue partono in background
+    };
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_API_KEY
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      console.warn("Errore traduci-descrizione-vino:", await res.text());
+    } else {
+      // se vuoi puoi loggare il risultato, ma non serve per l'utente
+      // const data = await res.json();
+      // console.log("Descrizione generata:", data);
+    }
+  } catch (e) {
+    console.warn("Errore chiamata traduci-descrizione-vino:", e);
+  }
+}
+
 async function saveWine() {
   await fetchUserIfNeeded();
 
@@ -668,14 +706,22 @@ async function saveWine() {
     body: JSON.stringify(wine)
   });
 
-  if (!res.ok) {
+    if (!res.ok) {
     showMessage("Errore salvataggio", false);
     return;
   }
 
+  const wasNew = !isEdit;
+
   // 5) se è un vino NUOVO e NON proviene dal catalogo => aggiungilo a wines_catalog
-  if (!isEdit && !currentCatalogTemplateId) {
+  if (wasNew && !currentCatalogTemplateId) {
     await upsertWineIntoCatalogFromForm(wine);
+  }
+
+  // 6) se è un vino NUOVO, lancia descrizione + traduzioni
+  if (wasNew) {
+    // non faccio await per non bloccare l'interfaccia: parte "in background"
+    triggerDescrizioniForWine(wine);
   }
 
   showMessage(isEdit ? "Vino aggiornato" : "Vino aggiunto");
