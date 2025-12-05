@@ -1852,7 +1852,7 @@ main.classList.toggle("sommelier-mode", !showCarta);
       popup.onclick = (e) => { if (e.target === popup) popup.style.display = 'none'; }
     }
 
-    function downloadCartaPDF() {
+function downloadCartaPDF() {
   const iframe = document.getElementById("previewFrame");
   if (!iframe || !iframe.contentWindow) {
     alert("Anteprima carta non disponibile. Ricarica la pagina e riprova.");
