@@ -369,70 +369,92 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
 /* --- Modalità export PDF: nasconde elementi di UI inutili --- */
 /* ============ LAYOUT CARTA STAMPABILE (PDF) ============ */
 
+/* ============ LAYOUT CARTA STAMPABILE (PDF) ============ */
+
 .print-carta-root {
   max-width: 18cm;
   margin: 0 auto;
-  padding: 1cm 0 0.7cm;
-  font-size: 0.9rem;
-  background: #fffdf8; /* simile allo sfondo della carta digitale */
+  padding: 0.9cm 0.8cm 0.9cm;
+  font-size: 0.92rem;
+  background: linear-gradient(#fffdf8, #fffaf2);
+  color: #222;
+  font-family: inherit; /* usa il font scelto dal ristorante */
 }
 
+/* HEADER PRINCIPALE */
 .print-header {
   text-align: center;
-  margin-bottom: 0.8cm;
+  margin-bottom: 0.9cm;
 }
 
 .print-header h1 {
   font-size: 1.7rem;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   margin: 0;
   color: var(--accent-color, #b00);
-  font-family: "Playfair Display", "Merriweather", serif;
+  font-weight: 700;
 }
 
+/* eventuale sottotitolo (es. solo vini al calice) */
 .print-subtitle {
   text-align: center;
   font-size: 0.85rem;
-  margin-top: 0.2cm;
-  margin-bottom: 0.6cm;
+  margin-top: 0.25cm;
+  margin-bottom: 0.4cm;
   color: var(--accent-color, #b00);
   font-style: italic;
 }
 
-/* blocco per ogni categoria */
+/* BLOCCO CATEGORIA (ROSSI, BIANCHI, BOLLICINE, …) */
 .print-category-block {
-  page-break-inside: avoid;
-  margin-bottom: 0.7cm;
+  margin-bottom: 0.85cm;
+  page-break-inside: auto;
+  break-inside: auto;
 }
 
-/* NOME CATEGORIA – ben colorato e presente */
+/* Nome categoria: pill colorata elegante */
 .print-category-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25cm;
   font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.95rem;
   margin: 0 0 0.25cm;
-  padding: 0.12cm 0.25cm;
+  padding: 0.13cm 0.5cm;
   border-radius: 999px;
   border: 1px solid var(--accent-color, #b00);
   color: var(--accent-color, #b00);
-  font-family: "Playfair Display", "Merriweather", serif;
+  background: rgba(255, 255, 255, 0.85);
 }
 
-/* NOME SOTTOCATEGORIA – sottolineato per distinguerlo */
+/* Nome sottocategoria (es. Abruzzo, Bolgheri, Champagne…) */
 .print-subcategory-title {
   font-weight: 600;
-  margin: 0.25cm 0 0.12cm;
-  font-size: 0.95rem;
-  text-decoration: underline;
-  text-underline-offset: 0.06cm;
+  margin: 0.35cm 0 0.18cm;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 0.5pt solid rgba(0, 0, 0, 0.25);
+  padding-bottom: 0.04cm;
 }
 
-/* BLOCCO VINO */
+/* BLOCCO VINO – con separatore e DIVIETO di spezzarlo tra le pagine */
 .print-wine-block {
-  margin-bottom: 0.16cm;
+  margin-bottom: 0.18cm;
+  padding: 0.08cm 0 0.12cm;
+  border-bottom: 0.4pt solid rgba(0, 0, 0, 0.10);
+  page-break-inside: avoid;
+  break-inside: avoid;
 }
 
-/* riga nome + prezzi */
+.print-category-block .print-wine-block:last-child {
+  border-bottom: none;
+}
+
+/* Riga principale: nome vino + prezzi allineati a destra */
 .print-wine-row {
   display: flex;
   justify-content: space-between;
@@ -440,29 +462,30 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
   line-height: 1.25;
 }
 
-/* NOME VINO – ora in grassetto */
+/* Nome vino bello presente */
 .print-wine-name {
   flex: 1 1 auto;
   font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
-/* prezzi come prima */
+/* Prezzi (riusiamo le chip esistenti, ma allineate a destra) */
 .print-wine-prices {
   flex: 0 0 auto;
   white-space: nowrap;
   text-align: right;
 }
 
-/* riuso .price-row e .price-chip già esistenti */
 .print-wine-prices .price-row {
   justify-content: flex-end;
   gap: 4px;
   flex-wrap: wrap;
 }
 
-/* uvaggio sotto – resta più leggero e in corsivo */
+/* Uvaggio sotto in corsivo, più leggero */
 .print-wine-uvaggio {
-  margin-left: 0.2cm;
+  margin-left: 0;
+  margin-top: 0.02cm;
   font-size: 0.8rem;
   font-style: italic;
   color: #555;
@@ -483,6 +506,7 @@ body.pdf-export #filterMenu {
 body.pdf-export {
   background: #ffffff !important;
 }
+
 </style>
 </head>
 <body>
@@ -2239,21 +2263,51 @@ function startDownloadPDF() {
   const baseName = (nameSpan?.textContent || "carta-vini")
     .toLowerCase()
     .replace(/[^\w\-]+/g, "-");
+  const t = translations[currentLang] || translations.it;
 
   const opt = {
-    margin: [0.5, 0.5, 0.5, 0.5], // margini cm
+    margin: [0.5, 0.7, 0.8, 0.7], // top,right,bottom,left in cm
     filename: `${baseName}.pdf`,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true },
     jsPDF: { unit: "cm", format: "a4", orientation: "portrait" },
+    pagebreak: { mode: ["css", "legacy"] }
   };
 
-  html2pdf()
+  // Worker html2pdf con numeri di pagina
+  const worker = html2pdf()
     .set(opt)
     .from(printRoot)
-    .save()
-    .finally(() => {
-      // ripristina UI
+    .toPdf()
+    .get("pdf")
+    .then(function (pdf) {
+      const totalPages = pdf.internal.getNumberOfPages();
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8);
+
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        const label = `${t.wineList || "Carta dei Vini"}  •  ${i}/${totalPages}`;
+        pdf.text(label, pageWidth / 2, pageHeight - 0.5, { align: "center" });
+      }
+    })
+    .save();
+
+  // cleanup UI una volta finito
+  worker
+    .then(() => {
+      document.body.classList.remove("pdf-export");
+      if (printRoot.parentNode) {
+        printRoot.parentNode.removeChild(printRoot);
+      }
+      if (app) {
+        app.style.display = previousDisplay ?? "";
+      }
+    })
+    .catch(() => {
       document.body.classList.remove("pdf-export");
       if (printRoot.parentNode) {
         printRoot.parentNode.removeChild(printRoot);
