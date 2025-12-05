@@ -367,6 +367,90 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
 }
 
 /* --- Modalità export PDF: nasconde elementi di UI inutili --- */
+/* ============ LAYOUT CARTA STAMPABILE (PDF) ============ */
+
+.print-carta-root {
+  max-width: 18cm;
+  margin: 0 auto;
+  padding: 1cm 0 0.5cm;
+  font-size: 0.9rem;
+}
+
+.print-header {
+  text-align: center;
+  margin-bottom: 0.7cm;
+}
+
+.print-header h1 {
+  font-size: 1.5rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.print-subtitle {
+  text-align: center;
+  font-size: 0.85rem;
+  margin-top: 0.2cm;
+  margin-bottom: 0.5cm;
+  color: #555;
+}
+
+.print-category-block {
+  page-break-inside: avoid;
+  margin-bottom: 0.6cm;
+}
+
+.print-category-title {
+  font-weight: 700;
+  text-transform: uppercase;
+  border-bottom: 1px solid #000;
+  padding-bottom: 0.08cm;
+  margin: 0 0 0.2cm;
+}
+
+.print-subcategory-title {
+  font-weight: 600;
+  margin: 0.25cm 0 0.1cm;
+  font-size: 0.95rem;
+}
+
+.print-wine-block {
+  margin-bottom: 0.15cm;
+}
+
+.print-wine-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.4cm;
+  line-height: 1.25;
+}
+
+.print-wine-name {
+  flex: 1 1 auto;
+  font-weight: 500;
+}
+
+.print-wine-prices {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* riuso .price-row e .price-chip già esistenti */
+.print-wine-prices .price-row {
+  justify-content: flex-end;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.print-wine-uvaggio {
+  margin-left: 0.2cm;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: #555;
+}
+
 body.pdf-export nav,
 body.pdf-export #fab,
 body.pdf-export #bottomBar,
@@ -1948,6 +2032,172 @@ let reorderType = null;
 let categoriaOrder = [];
 let sottocategoriaOrderMap = {};
 
+function buildPrintWineBlock(w) {
+  const t = translations[currentLang] || translations.it;
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "print-wine-block";
+
+  // riga nome + prezzi
+  const row = document.createElement("div");
+  row.className = "print-wine-row";
+
+  const name = document.createElement("div");
+  name.className = "print-wine-name";
+  const annata = w.annata ? ` (${w.annata})` : "";
+  name.textContent = `${(w.nome || "").trim()}${annata}`;
+
+  const prices = document.createElement("div");
+  prices.className = "print-wine-prices";
+  prices.innerHTML = buildPriceHTML(w) || "";
+
+  row.appendChild(name);
+  row.appendChild(prices);
+  wrapper.appendChild(row);
+
+  // uvaggio sotto, se presente
+  if (w.uvaggio) {
+    const uv = document.createElement("div");
+    uv.className = "print-wine-uvaggio";
+    uv.textContent = `${t.grape}: ${w.uvaggio}`;
+    wrapper.appendChild(uv);
+  }
+
+  return wrapper;
+}
+
+function buildPrintableCarta() {
+  // rispetta i filtri formati (bottiglia / bicchiere / formati extra)
+  const { ids, map } = getCheckedFormats();
+  const filtered = winesMatchFormats(wines, ids, map);
+
+  if (!filtered || !filtered.length) {
+    alert("Non ci sono vini da stampare con i filtri attuali.");
+    return null;
+  }
+
+  const root = document.createElement("div");
+  root.id = "printCartaRoot";
+  root.className = "print-carta-root";
+
+  const t = translations[currentLang] || translations.it;
+
+  // header con nome ristorante / titolo carta
+  const header = document.createElement("div");
+  header.className = "print-header";
+
+  const h1 = document.createElement("h1");
+  const nameSpan = document.querySelector("#restaurantName span");
+  h1.textContent =
+    (nameSpan?.textContent?.trim()) ||
+    t.wineList ||
+    "Carta dei Vini";
+
+  header.appendChild(h1);
+  root.appendChild(header);
+
+  // se stai mostrando solo i vini al calice, lo indichiamo
+  if (typeof isGlassOnly === "function" && isGlassOnly()) {
+    const sub = document.createElement("div");
+    sub.className = "print-subtitle";
+    sub.textContent =
+      t.helperGlassMode || "🍷 Stai visualizzando solo i vini al calice";
+    root.appendChild(sub);
+  }
+
+  // raggruppa per categoria / sottocategoria
+  const catsMap = new Map();
+  filtered.forEach((w) => {
+    const catLabel = w.categoria || "Altro";
+    const catKey = normalize(catLabel) || catLabel.toLowerCase();
+    if (!catsMap.has(catKey)) {
+      catsMap.set(catKey, {
+        name: catLabel,
+        subMap: new Map(), // key normalizzata -> { name, wines[] }
+        noSub: [],        // vini senza sottocategoria
+      });
+    }
+    const cat = catsMap.get(catKey);
+    const subLabel = (w.sottocategoria || "").trim();
+    if (subLabel) {
+      const subKey = normalize(subLabel);
+      if (!cat.subMap.has(subKey)) {
+        cat.subMap.set(subKey, { name: subLabel, wines: [] });
+      }
+      cat.subMap.get(subKey).wines.push(w);
+    } else {
+      cat.noSub.push(w);
+    }
+  });
+
+  // ordina le categorie con ordine personalizzato, se presente
+  const catEntries = Array.from(catsMap.entries());
+  if (Array.isArray(categoriaOrder) && categoriaOrder.length) {
+    catEntries.sort((a, b) => {
+      const i1 = categoriaOrder.indexOf(a[0]);
+      const i2 = categoriaOrder.indexOf(b[0]);
+      if (i1 === -1 && i2 === -1) {
+        return a[1].name.localeCompare(b[1].name, "it");
+      }
+      if (i1 === -1) return 1;
+      if (i2 === -1) return -1;
+      return i1 - i2;
+    });
+  } else {
+    catEntries.sort((a, b) => a[1].name.localeCompare(b[1].name, "it"));
+  }
+
+  catEntries.forEach(([catKey, catData]) => {
+    const block = document.createElement("section");
+    block.className = "print-category-block";
+
+    const h2 = document.createElement("h2");
+    h2.className = "print-category-title";
+    h2.textContent = catData.name;
+    block.appendChild(h2);
+
+    // vini senza sottocategoria
+    catData.noSub.forEach((w) => {
+      block.appendChild(buildPrintWineBlock(w));
+    });
+
+    // sottocategorie ordinate
+    const subEntries = Array.from(catData.subMap.entries());
+    const subOrder =
+      (sottocategoriaOrderMap && sottocategoriaOrderMap[catKey]) || [];
+
+    if (subOrder.length) {
+      subEntries.sort((a, b) => {
+        const i1 = subOrder.indexOf(a[0]);
+        const i2 = subOrder.indexOf(b[0]);
+        if (i1 === -1 && i2 === -1) {
+          return a[1].name.localeCompare(b[1].name, "it");
+        }
+        if (i1 === -1) return 1;
+        if (i2 === -1) return -1;
+        return i1 - i2;
+      });
+    } else {
+      subEntries.sort((a, b) => a[1].name.localeCompare(b[1].name, "it"));
+    }
+
+    subEntries.forEach(([_, subData]) => {
+      const h3 = document.createElement("h3");
+      h3.className = "print-subcategory-title";
+      h3.textContent = subData.name;
+      block.appendChild(h3);
+
+      subData.wines.forEach((w) => {
+        block.appendChild(buildPrintWineBlock(w));
+      });
+    });
+
+    root.appendChild(block);
+  });
+
+  return root;
+}
+
 function startDownloadPDF() {
   // html2pdf ancora non pronto?
   if (typeof html2pdf === "undefined") {
@@ -1955,11 +2205,18 @@ function startDownloadPDF() {
     return;
   }
 
-  // Nascondi elementi di UI (nav, fab, ecc.)
+  // Costruisce il layout completo (categorie + sottocategorie + vini)
+  const printRoot = buildPrintableCarta();
+  if (!printRoot) return;
+
+  // Nascondi la UI interattiva, mostra solo il layout stampabile
   document.body.classList.add("pdf-export");
 
-  // Prendiamo solo il contenuto della carta
-  const element = document.getElementById("app") || document.body;
+  const app = document.getElementById("app");
+  const previousDisplay = app ? app.style.display : null;
+  if (app) app.style.display = "none";
+
+  document.body.appendChild(printRoot);
 
   const nameSpan = document.querySelector("#restaurantName span");
   const baseName = (nameSpan?.textContent || "carta-vini")
@@ -1967,21 +2224,29 @@ function startDownloadPDF() {
     .replace(/[^\w\-]+/g, "-");
 
   const opt = {
-    margin:       [0.5, 0.5, 0.5, 0.5],      // margini cm
-    filename:     `${baseName}.pdf`,
-    image:        { type: "jpeg", quality: 0.98 },
-    html2canvas:  { scale: 2, useCORS: true },
-    jsPDF:        { unit: "cm", format: "a4", orientation: "portrait" }
+    margin: [0.5, 0.5, 0.5, 0.5], // margini cm
+    filename: `${baseName}.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: "cm", format: "a4", orientation: "portrait" },
   };
 
   html2pdf()
     .set(opt)
-    .from(element)
+    .from(printRoot)
     .save()
     .finally(() => {
+      // ripristina UI
       document.body.classList.remove("pdf-export");
+      if (printRoot.parentNode) {
+        printRoot.parentNode.removeChild(printRoot);
+      }
+      if (app) {
+        app.style.display = previousDisplay ?? "";
+      }
     });
 }
+
 
 window.addEventListener("message", (event) => {
   if (event.data?.action === "updateFontLive") {
