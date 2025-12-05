@@ -906,37 +906,57 @@ const urlParams = new URLSearchParams(window.location.search);
 let RESTAURANT_ID = urlParams.get("ristorante_id");
 let slug = urlParams.get("slug");
 
-// Se la pagina è stata aperta come /mioslug o /mioslug.cartadeivini, estraggo lo slug dal path
-if (!slug) {
-  const path = location.pathname.replace(/^\//, ''); // toglie lo slash iniziale
-  if (path && !/\.html$/i.test(path)) {
-    // rimuove l'eventuale .cartadeivini
-    slug = path.replace(/\.cartadeivini$/i, '');
+async function ensureRestaurantId() {
+  // 1) Se la pagina è stata aperta come /mioslug o /mioslug.cartadeivini,
+  //    estraggo lo slug dal path
+  if (!slug) {
+    const path = location.pathname.replace(/^\//, ''); // toglie lo slash iniziale
+    if (path && !/\.html$/i.test(path)) {
+      // rimuove l’eventuale .cartadeivini
+      slug = path.replace(/\.cartadeivini$/i, '');
+    }
   }
-}
 
-if (slug) {
-  const { data: r, error } = await supabase
-    .from('ristoranti')
-    .select('id, slug')
-    .eq('slug', slug)
-    .single();
+  // 2) Se ho uno slug, provo a cercare il ristorante su Supabase
+  if (slug) {
+    try {
+      const { data: r, error } = await supabase
+        .from('ristoranti')
+        .select('id, slug')
+        .eq('slug', slug)
+        .single();
 
-  if (r?.id) {
-    RESTAURANT_ID = r.id;
+      if (error) {
+        console.warn('Errore lookup slug:', error);
+      }
 
-    // Mantieni l'URL "bello" in barra (niente query string)
-    const pretty = `/${r.slug}${/\.cartadeivini$/i.test(location.pathname) ? '.cartadeivini' : ''}`;
-    if (location.pathname !== pretty) history.replaceState({}, '', pretty);
-  } else {
-    console.warn('Slug non trovato, uso eventuale query string o utente loggato.');
+      if (r?.id) {
+        RESTAURANT_ID = r.id;
+
+        // Mantieni l’URL "bello" in barra (niente query string)
+        const pretty = `/${r.slug}${
+          /\.cartadeivini$/i.test(location.pathname) ? '.cartadeivini' : ''
+        }`;
+        if (location.pathname !== pretty) {
+          history.replaceState({}, '', pretty);
+        }
+      } else {
+        console.warn('Slug non trovato, uso eventuale query string o utente loggato.');
+      }
+    } catch (e) {
+      console.error('Eccezione durante lookup slug:', e);
+    }
   }
-}
 
-// Fallback: se ancora non ho l'ID, provo con l'utente loggato (solo in area riservata)
-if (!RESTAURANT_ID) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (user) RESTAURANT_ID = user.id;
+  // 3) Fallback: se ancora non ho l’ID, provo con l’utente loggato (area riservata)
+  if (!RESTAURANT_ID) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) RESTAURANT_ID = user.id;
+    } catch (e) {
+      console.error('Errore durante getUser():', e);
+    }
+  }
 }
 
 // Disabilita sommelier nella demo
@@ -2633,19 +2653,23 @@ if (window._manualNavigation !== true) {
 };
 
 (async () => {
-await fetchCategoryOrder();
-await loadRestaurantData();
-if (ristorante && RESTAURANT_ID) {
-  await loadWineData();
-  setupFilterUI();
-  showCategories();
-}
+  // prima trovo il ristorante (ID da query, slug o utente loggato)
+  await ensureRestaurantId();
 
-const isSommelierOn = ristorante?.sommelier_attivo === true || ristorante?.sommelier_attivo === "true";
-if (isSommelierOn) {
-  setupSommelierUI(); // crea UI del sommelier
-}
+  await fetchCategoryOrder();
+  await loadRestaurantData();
+  if (ristorante && RESTAURANT_ID) {
+    await loadWineData();
+    setupFilterUI();
+    showCategories();
+  }
 
+  const isSommelierOn =
+    ristorante?.sommelier_attivo === true ||
+    ristorante?.sommelier_attivo === "true";
+  if (isSommelierOn) {
+    setupSommelierUI(); // crea UI del sommelier
+  }
   // 🔒 Blocco la palette una volta per tutte
   const isCustom = ristorante.palette_color === "custom";
   window.paletteOverrideLive = isCustom;
