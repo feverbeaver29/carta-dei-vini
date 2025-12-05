@@ -2289,10 +2289,11 @@ function startDownloadPDF() {
       pdf.setFontSize(8);
 
       for (let i = 1; i <= totalPages; i++) {
-        pdf.setPage(i);
-        const label = `${t.wineList || "Carta dei Vini"}  •  ${i}/${totalPages}`;
-        pdf.text(label, pageWidth / 2, pageHeight - 0.5, { align: "center" });
-      }
+  pdf.setPage(i);
+  // uso un trattino semplice per evitare problemi di encoding
+  const labelText = `${t.wineList || "Carta dei Vini"} - ${i}/${totalPages}`;
+  pdf.text(labelText, pageWidth / 2, pageHeight - 0.5, { align: "center" });
+}
     })
     .save();
 
@@ -2453,19 +2454,30 @@ async function fetchCategoryOrder() {
     headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
   });
   const data = await res.json();
-  const ristorante = data[0];
+  const risto = data[0] || {};
 
-  // Normalizza le categorie
-  categoriaOrder = (ristorante.ordine_categorie || []).map(normalize);
+  // --- categorie ---
+  categoriaOrder = (risto.ordine_categorie || []).map(normalize);
 
-  // Normalizza le sottocategorie
-  const rawMap = ristorante.ordine_sottocategorie || {};
+  // --- sottocategorie ---
+  let rawMap = risto.ordine_sottocategorie || {};
+
+  // se arriva come stringa JSON, la parsiamo
+  if (typeof rawMap === "string") {
+    try {
+      rawMap = JSON.parse(rawMap);
+    } catch (e) {
+      console.warn("ordine_sottocategorie non parsabile:", e);
+      rawMap = {};
+    }
+  }
+
   sottocategoriaOrderMap = {};
-  for (const [key, value] of Object.entries(rawMap)) {
-    const normalizedKey = normalize(key);
-    sottocategoriaOrderMap[normalizedKey] = Array.isArray(value)
-      ? value.map(normalize)
-      : [];
+  for (const [catName, value] of Object.entries(rawMap)) {
+    const normCat = normalize(catName);              // chiave: categoria normalizzata
+    const arr = Array.isArray(value) ? value : [];
+    // salviamo i nomi delle sottocategorie normalizzati
+    sottocategoriaOrderMap[normCat] = arr.map(normalize);
   }
 }
 
@@ -2581,9 +2593,7 @@ window.showSubcategories = function (category) {
     return;
   }
 
-  const order = Object.entries(sottocategoriaOrderMap).find(
-    ([key]) => normalize(key) === normalize(category)
-  )?.[1] || [];
+const order = sottocategoriaOrderMap[normalize(category)] || [];
 
 if (Array.isArray(order) && order.length) {
   const seenKeys = Array.from(seen.keys());
