@@ -372,53 +372,67 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
 .print-carta-root {
   max-width: 18cm;
   margin: 0 auto;
-  padding: 1cm 0 0.5cm;
+  padding: 1cm 0 0.7cm;
   font-size: 0.9rem;
+  background: #fffdf8; /* simile allo sfondo della carta digitale */
 }
 
 .print-header {
   text-align: center;
-  margin-bottom: 0.7cm;
+  margin-bottom: 0.8cm;
 }
 
 .print-header h1 {
-  font-size: 1.5rem;
-  letter-spacing: 0.08em;
+  font-size: 1.7rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   margin: 0;
+  color: var(--accent-color, #b00);
+  font-family: "Playfair Display", "Merriweather", serif;
 }
 
 .print-subtitle {
   text-align: center;
   font-size: 0.85rem;
   margin-top: 0.2cm;
-  margin-bottom: 0.5cm;
-  color: #555;
+  margin-bottom: 0.6cm;
+  color: var(--accent-color, #b00);
+  font-style: italic;
 }
 
+/* blocco per ogni categoria */
 .print-category-block {
   page-break-inside: avoid;
-  margin-bottom: 0.6cm;
+  margin-bottom: 0.7cm;
 }
 
+/* NOME CATEGORIA – ben colorato e presente */
 .print-category-title {
   font-weight: 700;
   text-transform: uppercase;
-  border-bottom: 1px solid #000;
-  padding-bottom: 0.08cm;
-  margin: 0 0 0.2cm;
+  margin: 0 0 0.25cm;
+  padding: 0.12cm 0.25cm;
+  border-radius: 999px;
+  border: 1px solid var(--accent-color, #b00);
+  color: var(--accent-color, #b00);
+  font-family: "Playfair Display", "Merriweather", serif;
 }
 
+/* NOME SOTTOCATEGORIA – sottolineato per distinguerlo */
 .print-subcategory-title {
   font-weight: 600;
-  margin: 0.25cm 0 0.1cm;
+  margin: 0.25cm 0 0.12cm;
   font-size: 0.95rem;
+  text-decoration: underline;
+  text-underline-offset: 0.06cm;
 }
 
+/* BLOCCO VINO */
 .print-wine-block {
-  margin-bottom: 0.15cm;
+  margin-bottom: 0.16cm;
 }
 
+/* riga nome + prezzi */
 .print-wine-row {
   display: flex;
   justify-content: space-between;
@@ -426,11 +440,13 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
   line-height: 1.25;
 }
 
+/* NOME VINO – ora in grassetto */
 .print-wine-name {
   flex: 1 1 auto;
-  font-weight: 500;
+  font-weight: 700;
 }
 
+/* prezzi come prima */
 .print-wine-prices {
   flex: 0 0 auto;
   white-space: nowrap;
@@ -444,6 +460,7 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
   flex-wrap: wrap;
 }
 
+/* uvaggio sotto – resta più leggero e in corsivo */
 .print-wine-uvaggio {
   margin-left: 0.2cm;
   font-size: 0.8rem;
@@ -451,6 +468,7 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
   color: #555;
 }
 
+/* --- Modalità export: nasconde elementi di UI inutili --- */
 body.pdf-export nav,
 body.pdf-export #fab,
 body.pdf-export #bottomBar,
@@ -465,7 +483,6 @@ body.pdf-export #filterMenu {
 body.pdf-export {
   background: #ffffff !important;
 }
-
 </style>
 </head>
 <body>
