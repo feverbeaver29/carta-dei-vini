@@ -365,6 +365,23 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
   #sommelierBtn .somm-title{ font-size: 0.9em; }
   #sommelierBtn .somm-sub{   font-size: 0.78em; }
 }
+
+/* --- Modalità export PDF: nasconde elementi di UI inutili --- */
+body.pdf-export nav,
+body.pdf-export #fab,
+body.pdf-export #bottomBar,
+body.pdf-export #helperBanner,
+body.pdf-export #sommelierOverlay,
+body.pdf-export #sommelierBtn,
+body.pdf-export #searchPopover,
+body.pdf-export #filterMenu {
+  display: none !important;
+}
+
+body.pdf-export {
+  background: #ffffff !important;
+}
+
 </style>
 </head>
 <body>
@@ -398,6 +415,9 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"
+        integrity="sha512-YcsIPWyoYwQy8sI2G5kyRjO6jwxKF1u9IiMaTZGi99ZTSdKCbFf8gDuwZQ+Q0jrISFRCGDpa2BkLomqKg2O5nw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script type="module">
 const translations = {
   it: {
@@ -1928,6 +1948,41 @@ let reorderType = null;
 let categoriaOrder = [];
 let sottocategoriaOrderMap = {};
 
+function startDownloadPDF() {
+  // html2pdf ancora non pronto?
+  if (typeof html2pdf === "undefined") {
+    alert("Funzione PDF non disponibile, riprova tra un attimo.");
+    return;
+  }
+
+  // Nascondi elementi di UI (nav, fab, ecc.)
+  document.body.classList.add("pdf-export");
+
+  // Prendiamo solo il contenuto della carta
+  const element = document.getElementById("app") || document.body;
+
+  const nameSpan = document.querySelector("#restaurantName span");
+  const baseName = (nameSpan?.textContent || "carta-vini")
+    .toLowerCase()
+    .replace(/[^\w\-]+/g, "-");
+
+  const opt = {
+    margin:       [0.5, 0.5, 0.5, 0.5],      // margini cm
+    filename:     `${baseName}.pdf`,
+    image:        { type: "jpeg", quality: 0.98 },
+    html2canvas:  { scale: 2, useCORS: true },
+    jsPDF:        { unit: "cm", format: "a4", orientation: "portrait" }
+  };
+
+  html2pdf()
+    .set(opt)
+    .from(element)
+    .save()
+    .finally(() => {
+      document.body.classList.remove("pdf-export");
+    });
+}
+
 window.addEventListener("message", (event) => {
   if (event.data?.action === "updateFontLive") {
   const font = event.data.font;
@@ -2050,6 +2105,10 @@ if (nameSpan) {
       const sottocategorieMap = { [currentCategory]: ordine };
       parent.postMessage({ action: "saveReorder", type: "sottocategorie", sottocategorieMap }, "*");
     }
+  }
+
+    if (event.data?.action === "downloadPDF") {
+    startDownloadPDF();
   }
 });
 

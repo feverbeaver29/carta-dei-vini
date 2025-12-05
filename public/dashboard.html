@@ -770,6 +770,7 @@ footer {
       <button onclick="goTo('admin.html')">Gestione Vini</button>
       <button onclick="goTo('carta.html')">Visualizza Carta</button>
       <button onclick="showQRCode()">Scarica QR Code</button>
+        <button onclick="downloadCartaPDF()">Scarica carta in PDF</button>
       <button onclick="goTo('abbonamento.html')">Gestisci Abbonamento</button>
       <button onclick="logout()">Logout</button>
     </nav>
@@ -780,6 +781,7 @@ footer {
   <button onclick="goTo('admin.html')">Gestione Vini</button>
   <button onclick="goTo('carta.html')">Visualizza Carta</button>
   <button onclick="showQRCode()">Scarica QR Code</button>
+    <button onclick="downloadCartaPDF()">Scarica carta in PDF</button>
   <button onclick="goTo('abbonamento.html')">Gestisci Abbonamento</button>
   <button onclick="logout()">Logout</button>
 </nav>
@@ -1849,6 +1851,17 @@ main.classList.toggle("sommelier-mode", !showCarta);
       }, 500);
       popup.onclick = (e) => { if (e.target === popup) popup.style.display = 'none'; }
     }
+
+    function downloadCartaPDF() {
+  const iframe = document.getElementById("previewFrame");
+  if (!iframe || !iframe.contentWindow) {
+    alert("Anteprima carta non disponibile. Ricarica la pagina e riprova.");
+    return;
+  }
+
+  // Chiede alla carta (iframe) di generare il PDF
+  iframe.contentWindow.postMessage({ action: "downloadPDF" }, "*");
+}
 
     function updatePreviewLive() {
   const iframe = document.getElementById("previewFrame");
