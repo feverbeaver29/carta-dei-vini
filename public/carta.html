@@ -443,8 +443,8 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
 
 /* BLOCCO VINO – con separatore e DIVIETO di spezzarlo tra le pagine */
 .print-wine-block {
-  margin-bottom: 0.18cm;
-  padding: 0.08cm 0 0.12cm;
+  margin-bottom: 0.12cm;        /* meno spazio tra un vino e l’altro */
+  padding: 0.03cm 0 0.06cm;     /* blocco più compatto */
   border-bottom: 0.4pt solid rgba(0, 0, 0, 0.10);
   page-break-inside: avoid;
   break-inside: avoid;
@@ -467,6 +467,7 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
   flex: 1 1 auto;
   font-weight: 700;
   letter-spacing: 0.02em;
+  font-size: 0.86rem;   /* leggermente più piccolo della sottocategoria */
 }
 
 /* Prezzi (riusiamo le chip esistenti, ma allineate a destra) */
@@ -485,7 +486,7 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
 /* Uvaggio sotto in corsivo, più leggero */
 .print-wine-uvaggio {
   margin-left: 0;
-  margin-top: 0.02cm;
+  margin-top: 0;                /* attaccato al nome vino */
   font-size: 0.8rem;
   font-style: italic;
   color: #555;
