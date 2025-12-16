@@ -296,47 +296,152 @@ serve(async (req) => {
       );
     }
 
-    // 3) PARSE UVAGGIO → lista di vitigni
-    const parts = String(wine.uvaggio ?? "")
-      .split(/(?:,|;| e | con |\+|\/)+/i)
-      .map((s) => s.trim())
-      .filter(Boolean);
+// 3) PARSE UVAGGIO → lista di vitigni (robusto + pesi coerenti)
 
-    const parsedGrapes = parts.map((p) => {
-      const pctMatch = p.match(/(\d+)\s*%/);
-      const pct = pctMatch ? parseInt(pctMatch[1]) : null;
-      const name = p.replace(/\d+\s*%/g, "").trim();
-      return { raw: p, name, pct };
+// parole “descrittive” che a volte finiscono dentro l'uvaggio e rovinano il match
+const TRAILING_DESCRIPTORS = [
+  "ramato",
+  "orange",
+  "bio",
+  "brut",
+  "extra brut",
+  "pas dose",
+  "dosaggio zero",
+  "metodo classico",
+  "metodo ancestrale",
+];
+
+function cleanGrapeName(raw: string): string {
+  let s = raw.trim();
+
+  // rimuovi percentuali (anche tra parentesi) tipo " (43%) " o "43%"
+  s = s.replace(/\(\s*\d+(?:[.,]\d+)?\s*%\s*\)/g, " ");
+  s = s.replace(/\d+(?:[.,]\d+)?\s*%/g, " ");
+
+  // normalizza spazi
+  s = s.replace(/\s+/g, " ").trim();
+
+  // togli descrittori finali (solo se in coda)
+  const n = norm(s);
+  for (const d of TRAILING_DESCRIPTORS) {
+    const dn = norm(d);
+    if (n.endsWith(" " + dn) || n === dn) {
+      // rimuovi la parola finale dal testo originale in modo “soft”
+      const re = new RegExp(`\\s+${d}$`, "i");
+      s = s.replace(re, "").trim();
+    }
+  }
+
+  return s;
+}
+
+function parsePercent(raw: string): number | null {
+  const m = raw.match(/(\d+(?:[.,]\d+)?)\s*%/);
+  if (!m) return null;
+  const num = parseFloat(m[1].replace(",", "."));
+  if (Number.isNaN(num)) return null;
+  return num;
+}
+
+// split più ampio (aggiungo & e "and")
+const parts = String(wine.uvaggio ?? "")
+  .split(/(?:,|;| e | ed | con |\+|\/|&| and )+/i)
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+// prima passata: estrai nome+% puliti
+const parsedRaw = parts.map((p) => ({
+  raw: p,
+  name: cleanGrapeName(p),
+  pct: parsePercent(p),
+}));
+
+// unifica duplicati per nome normalizzato (somma le % se ripetute)
+const byKey = new Map<string, { name: string; pct: number | null }>();
+for (const g of parsedRaw) {
+  const key = norm(g.name);
+  if (!key) continue;
+
+  const prev = byKey.get(key);
+  if (!prev) {
+    byKey.set(key, { name: g.name, pct: g.pct });
+  } else {
+    // se entrambe hanno pct → somma, altrimenti mantieni quella esistente
+    if (prev.pct != null && g.pct != null) prev.pct += g.pct;
+    else if (prev.pct == null && g.pct != null) prev.pct = g.pct;
+  }
+}
+
+const parsedGrapes = Array.from(byKey.values());
+
+// calcolo pesi “coerenti”:
+// - se tutte senza %: pesi uguali
+// - se alcune con %: normalizzo le % e ripartisco il resto sulle senza %
+function computeWeights(list: { name: string; pct: number | null }[]) {
+  const withPct = list.filter((x) => x.pct != null) as { name: string; pct: number }[];
+  const withoutPct = list.filter((x) => x.pct == null);
+
+  if (list.length === 0) return [];
+
+  // caso: una sola uva senza % -> 100%
+  if (list.length === 1 && list[0].pct == null) {
+    return [{ name: list[0].name, percent: 100 }];
+  }
+
+  if (withPct.length === 0) {
+    const eq = 100 / list.length;
+    return list.map((x) => ({ name: x.name, percent: eq }));
+  }
+
+  let sum = withPct.reduce((a, b) => a + b.pct, 0);
+
+  // se somma > 100, normalizza a 100
+  if (sum > 100) {
+    return list.map((x) => {
+      if (x.pct == null) return { name: x.name, percent: 0 };
+      return { name: x.name, percent: (x.pct / sum) * 100 };
     });
+  }
 
-    const grapeNames = unique(parsedGrapes.map((g) => g.name));
-    const grapesDetailed = grapeNames.map((gName) => {
-      const key = norm(gName);
-      let best: any = null;
+  const remaining = Math.max(0, 100 - sum);
+  const share = withoutPct.length > 0 ? remaining / withoutPct.length : 0;
 
-      for (const g of allGrapes) {
-        const base = norm(g.grape_norm || g.display_name);
-        const syns = parseJSONList(g.synonyms).map(norm);
-        if (
-          base === key ||
-          syns.includes(key) ||
-          key.includes(base) ||
-          base.includes(key)
-        ) {
-          best = g;
-          break;
-        }
-      }
+  return list.map((x) => ({
+    name: x.name,
+    percent: x.pct != null ? x.pct : share,
+  }));
+}
 
-      const matchPct =
-        parsedGrapes.find((x) => norm(x.name) === key)?.pct ?? null;
+const weightedGrapes = computeWeights(parsedGrapes);
 
-      return {
-        name: gName,
-        percent: matchPct,
-        profile: best,
-      };
-    });
+// 3B) MATCH con grape_profiles → grapesDetailed (usa i pesi calcolati)
+
+const grapesDetailed = weightedGrapes.map((wg) => {
+  const key = norm(wg.name);
+  let best: any = null;
+
+  for (const g of allGrapes) {
+    const base = norm(g.grape_norm || g.display_name);
+    const syns = parseJSONList(g.synonyms).map(norm);
+
+    if (
+      base === key ||
+      syns.includes(key) ||
+      key.includes(base) ||
+      base.includes(key)
+    ) {
+      best = g;
+      break;
+    }
+  }
+
+  return {
+    name: wg.name,
+    percent: wg.percent, // <- numero sempre coerente (0..100)
+    profile: best,       // <- null se non matcha
+  };
+});
+
 
     // 4) TROVA DENOMINAZIONE (appellation_priors) partendo da sottocategoria / nome
     const hint = norm(wine.sottocategoria || wine.nome);
@@ -355,24 +460,43 @@ serve(async (req) => {
       }
     }
 
+    function weightedItems(items: string[], percent: number) {
+  // scala: ogni ~10% = 1 copia, min 1 se percent>0
+  const copies = percent <= 0 ? 0 : Math.max(1, Math.round(percent / 10));
+  const out: string[] = [];
+  for (let i = 0; i < copies; i++) out.push(...items);
+  return out;
+}
+
 // 5) COSTRUISCI POOL DI NOTE & ABBINAMENTI
 
-const grapeNotesAll = grapesDetailed.flatMap((g) =>
-  g.profile ? parseJSONList(g.profile.tasting_notes) : []
-);
-const grapePairsAll = grapesDetailed.flatMap((g) =>
-  g.profile ? parseJSONList(g.profile.pairings) : []
-);
+const grapeNotesAll = grapesDetailed.flatMap((g) => {
+  if (!g.profile) return [];
+  const notes = parseJSONList(g.profile.tasting_notes);
+  return weightedItems(notes, g.percent ?? 0);
+});
+
+const grapePairsAll = grapesDetailed.flatMap((g) => {
+  if (!g.profile) return [];
+  const pairs = parseJSONList(g.profile.pairings);
+  return weightedItems(pairs, g.percent ?? 0);
+});
 
 const appNotes = app ? parseJSONList(app.typical_notes) : [];
 const appPairs = app ? parseJSONList(app.typical_pairings) : [];
 
-const styleHints = grapesDetailed.flatMap((g) =>
-  g.profile ? parseJSONList(g.profile.style_hints) : []
-);
-const grapeTextSummaries = grapesDetailed.flatMap((g) =>
-  g.profile ? parseJSONList(g.profile.text_summary) : []
-);
+const styleHints = grapesDetailed.flatMap((g) => {
+  if (!g.profile) return [];
+  const hints = parseJSONList(g.profile.style_hints);
+  return weightedItems(hints, g.percent ?? 0);
+});
+
+const grapeTextSummaries = grapesDetailed.flatMap((g) => {
+  if (!g.profile) return [];
+  const ts = parseJSONList(g.profile.text_summary);
+  return weightedItems(ts, g.percent ?? 0);
+});
+
 const appStyleHints = app ? parseJSONList(app.style_hints) : [];
 const appPalateTemplate = app ? parseJSONList(app.palate_template) : [];
 
