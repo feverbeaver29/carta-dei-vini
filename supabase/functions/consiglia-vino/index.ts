@@ -125,6 +125,7 @@ type EnrichedWine = {
   nomeN: string;
   __producer: string;
   __uvTokens: Set<string>;
+  __mainGrape?: string;
   __profile: Profile;
   __ctx: WineTextContext;
   __tags: Set<string>;
@@ -174,18 +175,80 @@ const splitDishes = (input: string): string[] =>
     .map((s) => s.trim())
     .filter(Boolean);
 
-function splitGrapes(uvaggio: string): string[] {
-  const raw = (uvaggio || "")
-    .toLowerCase()
-    .replace(/\b(docg?|ig[pt])\b/g, " ")
-    .replace(/\bclassico\b/g, " ")
-    .replace(/\d+\s*%/g, " ");
-  return raw
-    .split(
-      /[,;+\-\/&]|\b(?:e|con|blend|uvaggio|cépage|variet[aà])\b|·/g,
-    )
+function parseBlend(uvaggio: string): { name: string; percent: number }[] {
+  const TRAILING = ["ramato","orange","bio","brut","extra brut","pas dose","dosaggio zero","metodo classico","metodo ancestrale"];
+
+  const cleanName = (raw: string) => {
+    let s = raw.trim();
+    s = s.replace(/\(\s*\d+(?:[.,]\d+)?\s*%\s*\)/g, " ");
+    s = s.replace(/\d+(?:[.,]\d+)?\s*%/g, " ");
+    s = s.replace(/\b(docg?|ig[pt])\b/g, " ");
+    s = s.replace(/\bclassico\b/g, " ");
+    s = s.replace(/\s+/g, " ").trim();
+
+    const n = norm(s);
+    for (const d of TRAILING) {
+      const dn = norm(d);
+      if (n.endsWith(" " + dn) || n === dn) {
+        s = s.replace(new RegExp(`\\s+${d}$`, "i"), "").trim();
+      }
+    }
+    return s;
+  };
+
+  const parsePct = (raw: string): number | null => {
+    const m = raw.match(/(\d+(?:[.,]\d+)?)\s*%/);
+    if (!m) return null;
+    const v = parseFloat(m[1].replace(",", "."));
+    return Number.isFinite(v) ? v : null;
+  };
+
+  const parts = (uvaggio || "")
+    .split(/(?:,|;| e | ed | con |\+|\/|&| and )+/i)
     .map((s) => s.trim())
     .filter(Boolean);
+
+  const raw = parts.map((p) => ({ name: cleanName(p), pct: parsePct(p) }))
+                  .filter((x) => norm(x.name).length > 0);
+
+  // unisci duplicati
+  const byKey = new Map<string, { name: string; pct: number | null }>();
+  for (const x of raw) {
+    const k = norm(x.name);
+    const prev = byKey.get(k);
+    if (!prev) byKey.set(k, { name: x.name, pct: x.pct });
+    else {
+      if (prev.pct != null && x.pct != null) prev.pct += x.pct;
+      else if (prev.pct == null && x.pct != null) prev.pct = x.pct;
+    }
+  }
+  const list = Array.from(byKey.values());
+  if (list.length === 0) return [];
+
+  const withPct = list.filter((x) => x.pct != null) as { name: string; pct: number }[];
+  const withoutPct = list.filter((x) => x.pct == null);
+
+  if (list.length === 1 && list[0].pct == null) return [{ name: list[0].name, percent: 100 }];
+
+  if (withPct.length === 0) {
+    const eq = 100 / list.length;
+    return list.map((x) => ({ name: x.name, percent: eq }));
+  }
+
+  let sum = withPct.reduce((a, b) => a + b.pct, 0);
+  if (sum > 100) {
+    return list.map((x) => x.pct == null
+      ? ({ name: x.name, percent: 0 })
+      : ({ name: x.name, percent: (x.pct / sum) * 100 }));
+  }
+
+  const remaining = Math.max(0, 100 - sum);
+  const share = withoutPct.length ? remaining / withoutPct.length : 0;
+
+  return list.map((x) => ({
+    name: x.name,
+    percent: x.pct != null ? x.pct : share,
+  }));
 }
 
 function wordCount(s: string) {
@@ -296,7 +359,7 @@ const RED_GRAPES = new Set([
 ]);
 
 function inferColorFromGrapes(uvaggio: string): Colore {
-  const toks = splitGrapes(uvaggio).map(norm);
+  const toks = parseBlend(uvaggio).map((b) => norm(b.name));
   const hasWhite = toks.some((t) => WHITE_GRAPES.has(t));
   const hasRed = toks.some((t) => RED_GRAPES.has(t));
   if (hasWhite && !hasRed) return "bianco";
@@ -530,6 +593,24 @@ Piatti: ${items.map((s) => `"${s}"`).join(", ")}
     : combineDishes(items.map(parseDishFallback));
 }
 
+function parseList(value: any): string[] {
+  if (value == null) return [];
+  if (Array.isArray(value)) return value.map((x) => String(x));
+  if (typeof value === "string") {
+    const s = value.trim();
+    if (!s) return [];
+    try {
+      const v = JSON.parse(s);
+      if (Array.isArray(v)) return v.map((x: any) => String(x));
+      if (v && typeof v === "object") return Object.values(v).map(String);
+    } catch {
+      // fallback: split su virgola
+      return s.split(",").map((x) => x.trim()).filter(Boolean);
+    }
+  }
+  return [String(value)];
+}
+
 /** =========================
  *  PRIORS LOADING
  *  ========================= */
@@ -557,14 +638,14 @@ async function loadPriors(headers: Record<string, string>): Promise<Priors> {
     const gp: GrapePrior = {
       display_name: String(r.display_name || r.grape_norm || ""),
       profile,
-      tasting_notes: Array.isArray(r.tasting_notes) ? r.tasting_notes : [],
-      pairings: Array.isArray(r.pairings) ? r.pairings : [],
-      style_hints: Array.isArray(r.style_hints) ? r.style_hints : [],
-      text_summary: Array.isArray(r.text_summary) ? r.text_summary : [],
+      tasting_notes: parseList(r.tasting_notes),
+      pairings: parseList(r.pairings),
+      style_hints: parseList(r.style_hints),
+      text_summary: parseList(r.text_summary),
     };
     const primary = norm(String(r.grape_norm || r.display_name || ""));
     if (primary) grapesByKey.set(primary, gp);
-    for (const syn of (r.synonyms || [])) {
+    for (const syn of parseList(r.synonyms)) {
       const k = norm(String(syn));
       if (k) grapesByKey.set(k, gp);
     }
@@ -590,20 +671,16 @@ async function loadPriors(headers: Record<string, string>): Promise<Priors> {
       denom_norm: String(r.denom_norm || ""),
       delta,
       default_color: parseDefaultColor(r.default_color),
-      typical_notes: Array.isArray(r.typical_notes) ? r.typical_notes : [],
-      typical_pairings: Array.isArray(r.typical_pairings)
-        ? r.typical_pairings
-        : [],
-      style_hints: Array.isArray(r.style_hints) ? r.style_hints : [],
-      terroir_tags: Array.isArray(r.terroir_tags) ? r.terroir_tags : [],
-      palate_template: Array.isArray(r.palate_template)
-        ? r.palate_template
-        : [],
+      typical_notes: parseList(r.typical_notes),
+      typical_pairings: parseList(r.typical_pairings),
+      style_hints: parseList(r.style_hints),
+      terroir_tags: parseList(r.terroir_tags),
+      palate_template: parseList(r.palate_template),
     };
 
     const mainKey = norm(String(r.denom_norm || ""));
     if (mainKey) appellations.push({ key: mainKey, prior });
-    for (const syn of (r.synonyms || [])) {
+    for (const syn of parseList(r.synonyms)) {
       const k = norm(String(syn));
       if (k) appellations.push({ key: k, prior });
     }
@@ -679,36 +756,40 @@ function profileAndContextFromWine(
   priors: Priors,
   coloreCategoria: Colore,
 ): { profile: Profile; colore: Colore; ctx: WineTextContext } {
-  const uvTokens = splitGrapes(String(w.uvaggio || "")).map(norm);
+const blend = parseBlend(String(w.uvaggio || ""));
+const found = blend
+  .map((b) => {
+    const key = norm(b.name);
+    const gp = priors.grapesByKey.get(key);
+    return gp ? { gp, weight: b.percent } : null;
+  })
+  .filter(Boolean) as { gp: GrapePrior; weight: number }[];
 
-  const foundGrapes: GrapePrior[] = [];
-  for (const tok of uvTokens) {
-    const gp = priors.grapesByKey.get(tok);
-    if (gp) foundGrapes.push(gp);
-  }
+let profile: Profile;
+if (found.length) {
+  const W = found.reduce((s, x) => s + x.weight, 0) || 1;
 
-  let profile: Profile;
-  if (foundGrapes.length) {
-    const sum = foundGrapes.reduce(
-      (a, gp) => ({
-        acid: a.acid + gp.profile.acid,
-        tannin: a.tannin + gp.profile.tannin,
-        body: a.body + gp.profile.body,
-        sweet: a.sweet + gp.profile.sweet,
-        bubbles: Math.max(a.bubbles, gp.profile.bubbles),
-      }),
-      { acid: 0, tannin: 0, body: 0, sweet: 0, bubbles: 0 },
-    );
-    profile = {
-      acid: +(sum.acid / foundGrapes.length).toFixed(2),
-      tannin: +(sum.tannin / foundGrapes.length).toFixed(2),
-      body: +(sum.body / foundGrapes.length).toFixed(2),
-      sweet: +(sum.sweet / foundGrapes.length).toFixed(2),
-      bubbles: sum.bubbles > 0 ? 1 : 0,
-    };
-  } else {
-    profile = { acid: 0.55, tannin: 0.35, body: 0.52, sweet: 0, bubbles: 0 };
-  }
+  const sum = found.reduce(
+    (a, x) => ({
+      acid: a.acid + x.gp.profile.acid * (x.weight / W),
+      tannin: a.tannin + x.gp.profile.tannin * (x.weight / W),
+      body: a.body + x.gp.profile.body * (x.weight / W),
+      sweet: a.sweet + x.gp.profile.sweet * (x.weight / W),
+      bubbles: Math.max(a.bubbles, x.gp.profile.bubbles > 0 ? 1 : 0),
+    }),
+    { acid: 0, tannin: 0, body: 0, sweet: 0, bubbles: 0 },
+  );
+
+  profile = {
+    acid: +sum.acid.toFixed(2),
+    tannin: +sum.tannin.toFixed(2),
+    body: +sum.body.toFixed(2),
+    sweet: +sum.sweet.toFixed(2),
+    bubbles: sum.bubbles,
+  };
+} else {
+  profile = { acid: 0.55, tannin: 0.35, body: 0.52, sweet: 0, bubbles: 0 };
+}
 
   const ctx: WineTextContext = {
     grapes: [],
@@ -723,13 +804,25 @@ function profileAndContextFromWine(
     palateTemplate: [],
   };
 
-  for (const gp of foundGrapes) {
-    if (gp.display_name) ctx.grapes.push(gp.display_name);
-    ctx.tastingNotes.push(...(gp.tasting_notes || []));
-    ctx.grapePairings.push(...(gp.pairings || []));
-    ctx.grapeStyleHints.push(...(gp.style_hints || []));
-    ctx.grapeTextSummary.push(...(gp.text_summary || []));
-  }
+const weightedItems = (arr: string[], percent: number) => {
+  const copies = percent <= 0 ? 0 : Math.min(6, Math.max(1, Math.round(percent / 15)));
+  const out: string[] = [];
+  for (let i = 0; i < copies; i++) out.push(...(arr || []));
+  return out;
+};
+
+for (const x of found) {
+  const gp = x.gp;
+  const pct = x.weight;
+
+  if (gp.display_name) ctx.grapes.push(gp.display_name);
+
+  ctx.tastingNotes.push(...weightedItems(gp.tasting_notes || [], pct));
+  ctx.grapePairings.push(...weightedItems(gp.pairings || [], pct));
+  ctx.grapeStyleHints.push(...weightedItems(gp.style_hints || [], pct));
+  ctx.grapeTextSummary.push(...weightedItems(gp.text_summary || [], pct));
+}
+
 
   const bag = norm(
     `${w.sottocategoria || ""} ${w.categoria || ""} ${w.nome || ""}`,
@@ -1105,6 +1198,7 @@ function mmrScore(cand: EnrichedWine, chosen: EnrichedWine[], lambda = 0.65) {
 }
 
 function mainGrapeOf(w: EnrichedWine): string {
+  if (w.__mainGrape) return w.__mainGrape;
   const arr = Array.from(w.__uvTokens || []);
   if (arr.length) return arr[0];
   const bag = `${w.sottocategoria || ""} ${w.categoria || ""} ${w.nome || ""}`
@@ -1283,9 +1377,10 @@ serve(async (req) => {
         const nomeN = norm(v.nome);
         const producerRaw = String(v.nome || "").split("|")[0];
         const __producer = norm(producerRaw);
-        const __uvTokens = new Set(splitGrapes(String(v.uvaggio || "")).map(
-          norm,
-        ));
+        const blend = parseBlend(String(v.uvaggio || ""));
+        const __uvTokens = new Set(blend.map((b) => norm(b.name)));
+        const top = [...blend].sort((a, b) => b.percent - a.percent)[0];
+        const __mainGrape = top?.name ? norm(top.name) : "";
 
         return {
           ...v,
@@ -1294,6 +1389,7 @@ serve(async (req) => {
           nomeN,
           __producer,
           __uvTokens,
+          __mainGrape,
         } as EnrichedWine;
       })
       .filter((v) =>
