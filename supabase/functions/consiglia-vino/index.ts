@@ -260,6 +260,30 @@ function trimToWords(s: string, max: number) {
   return words.join(" ");
 }
 
+function uniqNorm(arr: string[]) {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const x of arr || []) {
+    const s = String(x || "").trim();
+    if (!s) continue;
+    const k = norm(s);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(s);
+  }
+  return out;
+}
+
+function pickN<T>(arr: T[], n: number, rand: () => number): T[] {
+  const a = [...arr];
+  const out: T[] = [];
+  while (a.length && out.length < n) {
+    const i = Math.floor(rand() * a.length);
+    out.push(a.splice(i, 1)[0]);
+  }
+  return out;
+}
+
 /** =========================
  *  COLOR PARSING
  *  ========================= */
@@ -1180,6 +1204,106 @@ intro = cleanIntro(intro);
   return final.endsWith(".") ? final : final + ".";
 }
 
+async function gptMotivationsBatch(
+  openaiKey: string,
+  langCode: string,
+  piatto: string,
+  dish: Dish,
+  wines: EnrichedWine[],
+  randSeed: string,
+): Promise<string[] | null> {
+  const code = String(langCode || "it").toLowerCase();
+  const L = LANGS[code === "gb" ? "en" : code] || LANGS.it;
+
+  const payload = wines.map((w) => {
+    const notes = uniqNorm([...(w.__ctx.tastingNotes || []), ...(w.__ctx.typicalNotes || [])]).slice(0, 8);
+    const style = uniqNorm([
+      ...(w.__ctx.grapeTextSummary || []),
+      ...(w.__ctx.palateTemplate || []),
+      ...(w.__ctx.grapeStyleHints || []),
+      ...(w.__ctx.appStyleHints || []),
+      ...(w.__ctx.terroirTags || []),
+    ]).slice(0, 8);
+
+    return {
+      nome: w.nome,
+      colore: w.colore,
+      uvaggio: (w.uvaggio && String(w.uvaggio).trim()) ? String(w.uvaggio).trim() : "N.D.",
+      profile: w.__profile,
+      notes,
+      style,
+    };
+  });
+
+  const userPrompt = `
+Lingua: ${L.name}
+Piatto: "${piatto}"
+Caratteristiche piatto (numeriche): ${JSON.stringify(dish)}
+
+Genera SOLO un ARRAY JSON di stringhe, stessa lunghezza e stesso ordine di "vini".
+Ogni stringa:
+- 14–22 parole, 1 sola frase.
+- Tono da sommelier, naturale, non “template”.
+- Deve citare almeno 1 elemento tra NOTES o STYLE del vino (anche parafrasato).
+- Deve includere 1 meccanica di abbinamento coerente (acidità / tannino / corpo / bollicina / dolcezza).
+- Evita ripetizioni: frasi diverse tra loro, niente “Profilo morbido accompagna...” riciclato.
+- Niente virgolette, niente punti elenco.
+
+vini:
+${JSON.stringify(payload)}
+`.trim();
+
+  let resp: Response | null = null;
+  try {
+    resp = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${openaiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        temperature: 0.7,
+        max_tokens: 500,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Rispondi sempre e solo con un ARRAY JSON valido di stringhe. Nessun testo prima o dopo.",
+          },
+          { role: "user", content: userPrompt },
+        ],
+      }),
+    });
+  } catch {
+    return null;
+  }
+  if (!resp?.ok) return null;
+
+  const data = await resp.json();
+  const content: string = data?.choices?.[0]?.message?.content || "";
+
+  try {
+    const raw = content.trim().startsWith("[")
+      ? content.trim()
+      : (content.match(/\[[\s\S]*\]/)?.[0] ?? "[]");
+
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return null;
+
+    const out = arr.map((x: any) => String(x || "").trim());
+    if (out.length !== wines.length) return null;
+
+    // micro-sicurezza: taglia se sfora
+    return out.map((s) => {
+      const t = s.replace(/\s+/g, " ").trim();
+      return wordCount(t) <= 22 ? (t.endsWith(".") ? t : t + ".") : (trimToWords(t, 22) + ".");
+    });
+  } catch {
+    return null;
+  }
+}
+
 /** =========================
  *  ROTAZIONE & MMR
  *  ========================= */
@@ -1625,25 +1749,35 @@ serve(async (req) => {
       discoveryWine ? [discoveryWine.nomeN] : [],
     );
 
-    const out = finalChosen.map((w) => {
-      const grape = (w.uvaggio && String(w.uvaggio).trim())
-        ? String(w.uvaggio).trim()
-        : "N.D.";
-      const motive = buildMotivation(
-        w.__profile,
-        dish,
-        w.__ctx,
-        rng,
-      );
-      const __style = styleOf(w.colore, w.__profile);
+// prepara grape e stile prima
+const preOut = finalChosen.map((w) => {
+  const grape = (w.uvaggio && String(w.uvaggio).trim())
+    ? String(w.uvaggio).trim()
+    : "N.D.";
+  const __style = styleOf(w.colore, w.__profile);
+  return { ...w, grape, __style };
+});
 
-      return {
-        ...w,
-        __style,
-        grape,
-        motive,
-      };
-    });
+// 1 sola call GPT per tutte le motivazioni
+let motives: string[] | null = null;
+const openaiKey = Deno.env.get("OPENAI_API_KEY");
+if (openaiKey) {
+  motives = await gptMotivationsBatch(
+    openaiKey,
+    code,
+    piatto,
+    dish,
+    preOut,
+    `${ristorante_id}|${norm(piatto)}|${day}`,
+  );
+}
+
+// fallback: se GPT fallisce usa la tua buildMotivation attuale
+const out = preOut.map((w, i) => {
+  const motive = motives?.[i] || buildMotivation(w.__profile, dish, w.__ctx, rng);
+  return { ...w, motive };
+});
+
 
     // logging sintetico server-side
     console.log("PICKED", out.map((x) => ({
