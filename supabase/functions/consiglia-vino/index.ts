@@ -602,6 +602,7 @@ function parseList(value: any): string[] {
     try {
       const v = JSON.parse(s);
       if (Array.isArray(v)) return v.map((x: any) => String(x));
+            if (typeof v === "string") return [v]; // ✅ <— QUESTO
       if (v && typeof v === "object") return Object.values(v).map(String);
     } catch {
       // fallback: split su virgola
@@ -1162,6 +1163,15 @@ function buildMotivation(
   }
 
   if (!intro) return core;
+
+  const cleanIntro = (t: string) =>
+  String(t || "")
+    .trim()
+    .replace(/^[\s{\["'`]+/, "")
+    .replace(/[\s}\]"'`]+$/, "")
+    .replace(/\s+/g, " ");
+
+intro = cleanIntro(intro);
 
   const introShort = trimToWords(intro, 8);
   const coreShort = trimToWords(core, 14);
