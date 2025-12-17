@@ -49,9 +49,11 @@ body{
   font-weight:700;
 }
 html.boot-loading #bootSplash{ display:flex; }
-html.boot-loading body{ visibility:hidden; } /* niente flash UI */
+html.boot-loading body{ overflow:hidden; } /* evita scroll durante lo splash */
+html.boot-loading #app,
 html.boot-loading nav,
-html.boot-loading #bottomBar{ visibility:hidden; } /* niente “barra che salta” */
+html.boot-loading #bottomBar,
+html.boot-loading #helperBanner{ visibility:hidden; } /* nasconde UI, lascia visibile lo splash */
 
 button, .save-btn{ background-color: var(--accent-color); }
 
@@ -536,6 +538,9 @@ body.pdf-export {
 </style>
 </head>
 <body>
+    <div id="bootSplash" aria-hidden="true">
+    <div class="box">Caricamento…</div>
+  </div>
 <nav>
   <button onclick="goBack()" style="background:none; border:none; padding:0; cursor:pointer;">
   <img src="arrowicon.png" alt="Indietro" style="width:50px; height:50px; display:block;">
