@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - Wine's Fever</title>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond&family=Great+Vibes&family=Bebas+Neue&family=Merriweather&family=Abril+Fatface&family=Lobster&family=Oswald&family=Amatic+SC&family=Bitter&family=Quicksand&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
 * { box-sizing: border-box; }
@@ -1002,7 +1002,7 @@ footer {
   <footer>© 2025 Wine's Fever - Tutti i diritti riservati</footer>
   <script>
 
-  let supabase, RESTAURANT_ID = null;
+  let sb, RESTAURANT_ID = null;
   let boostCount = 0;
   const maxBoosts = 5;
 
@@ -1132,8 +1132,8 @@ function renderLogoPreview(url) {
   removeBtn.onclick = async () => {
     const ext = preview.src.split('.').pop().split('?')[0];
     const filePath = `${RESTAURANT_ID}.${ext}`;
-    await supabase.storage.from("loghi").remove([`ristoranti/${filePath}`]);
-    await supabase.from("ristoranti").update({ logo_url: null }).eq("id", RESTAURANT_ID);
+    await sb.storage.from("loghi").remove([`ristoranti/${filePath}`]);
+    await sb.from("ristoranti").update({ logo_url: null }).eq("id", RESTAURANT_ID);
     preview.remove();
     removeBtn.remove();
     document.getElementById("logoOptions").style.display = "none";
@@ -1180,8 +1180,8 @@ function renderSommelierLogoPreview(url) {
   removeBtn.onclick = async () => {
     const ext = preview.src.split('.').pop().split('?')[0];
     const filePath = `sommelier_${RESTAURANT_ID}.${ext}`;
-    await supabase.storage.from("sommelier").remove([filePath]);
-    await supabase.from("ristoranti").update({ sommelier_url: null }).eq("id", RESTAURANT_ID);
+    await sb.storage.from("sommelier").remove([filePath]);
+    await sb.from("ristoranti").update({ sommelier_url: null }).eq("id", RESTAURANT_ID);
     preview.remove();
     removeBtn.remove();
     alert("Logo del sommelier rimosso!");
@@ -1324,8 +1324,8 @@ async function checkSlugAvailability(s) {
     if (window.location.hash === "#") {
   history.replaceState(null, "", window.location.pathname);
 }
-    supabase = window.supabase.createClient("https://ldunvbftxhbtuyabgxwh.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo");
-    const { data: { user }, error } = await supabase.auth.getUser();
+    sb = window.supabase.createClient("https://ldunvbftxhbtuyabgxwh.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo");
+    const { data: { user }, error } = await sb.auth.getUser();
       if (!user) return (window.location.href = '/');
       const urlParams = new URLSearchParams(window.location.search);
 RESTAURANT_ID = urlParams.get("ristorante_id");
@@ -1681,10 +1681,10 @@ if (!allowedTypes.includes(file.type)) {
     .list("ristoranti", { search: fileName });
 
   if (existing?.length > 0) {
-    await supabase.storage.from("loghi").remove([filePath]);
+    await sb.storage.from("loghi").remove([filePath]);
   }
 
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await sb.storage
     .from("loghi")
     .upload(filePath, file, {
       contentType: file.type
@@ -1749,7 +1749,7 @@ const update = type === 'categorie'
   : { ordine_sottocategorie: event.data.sottocategorieMap };
 
 
-    const { error } = await supabase.from("ristoranti").update(update).eq("id", RESTAURANT_ID);
+    const { error } = await sb.from("ristoranti").update(update).eq("id", RESTAURANT_ID);
     if (error) return alert("Errore durante il salvataggio dell'ordine");
     alert(`Ordine ${type} salvato!`);
     updatePreview();
@@ -1798,7 +1798,7 @@ function goTo(path) {
 
 
     async function logout() {
-      await supabase.auth.signOut();
+      await sb.auth.signOut();
       window.location.href = "/";
     }
     function showSettings(type) {
@@ -1962,7 +1962,7 @@ async function saveSommelierSettings() {
     .map(i => i.value.trim())
     .filter(Boolean);
 
-  await supabase.from("ristoranti").update({
+  await sb.from("ristoranti").update({
     sommelier_range: range,
     sommelier_boost_multi: boostMulti,
     sommelier_gender: gender
@@ -1987,9 +1987,9 @@ if (!allowedTypes.includes(file.type)) {
   const ext = file.name.split('.').pop();
   const fileName = `sommelier_${RESTAURANT_ID}.${ext}`;
 
-  await supabase.storage.from("sommelier").remove([fileName]); // optional: pulizia
+  await sb.storage.from("sommelier").remove([fileName]); // optional: pulizia
 
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await sb.storage
     .from("sommelier")
     .upload(fileName, file, {
       contentType: file.type,
@@ -2006,7 +2006,7 @@ if (!allowedTypes.includes(file.type)) {
     .from("sommelier")
     .getPublicUrl(fileName);
 
-  await supabase.from("ristoranti").update({ sommelier_url: publicUrl }).eq("id", RESTAURANT_ID);
+  await sb.from("ristoranti").update({ sommelier_url: publicUrl }).eq("id", RESTAURANT_ID);
 
   renderSommelierLogoPreview(publicUrl);
 

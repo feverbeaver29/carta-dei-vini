@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gestione Abbonamento</title>
   <link href="https://fonts.googleapis.com/css2?family=Quicksand&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
   <style>
     body {
       background-color: #fff9f4;
@@ -140,7 +140,7 @@
   </div>
 
   <script>
-    const supabase = window.supabase.createClient(
+    const sb = window.supabase.createClient(
       "https://ldunvbftxhbtuyabgxwh.supabase.co",
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo"
     );
@@ -152,7 +152,7 @@
 
     document.addEventListener("DOMContentLoaded", async () => {
       try {
-        const { data: { user }, error } = await supabase.auth.getUser();
+        const { data: { user }, error } = await sb.auth.getUser();
         if (error || !user) return window.location.href = "/login.html";
         RESTAURANT_ID = user.id;
         mostraPianoUtente();
@@ -258,7 +258,7 @@
       if (hasError) return;
 
       // Call backend (stessa logica di prima)
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const { data: { user }, error } = await sb.auth.getUser();
       if (error || !user || !user.email) return alert("Errore nel recupero dell'email dell'utente.");
 
       const btn = document.getElementById('continueModal');

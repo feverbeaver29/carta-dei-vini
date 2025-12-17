@@ -12,7 +12,7 @@
     button { width: 100%; padding: 12px; margin-top: 20px; background-color: #b00; color: white; border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer; }
     button:hover { background-color: #800000; }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div class="container">
@@ -25,9 +25,9 @@
   document.addEventListener("DOMContentLoaded", async () => {
     const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const { data: { user }, error } = await sb.auth.getUser();
     if (error || !user) {
       alert("Non sei autenticato. Ritorna alla homepage.");
       window.location.href = "/";
@@ -38,7 +38,7 @@ window.salvaNomeRistorante = async function () {
   const nome = document.getElementById("ristorante").value;
   if (!nome) return alert("Inserisci il nome del ristorante.");
 
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const { data: { user }, error: userError } = await sb.auth.getUser();
   if (userError || !user) {
     return alert("Utente non autenticato.");
   }

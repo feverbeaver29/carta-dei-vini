@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Registrazione - Wine's Fever</title>
   <link href="https://fonts.googleapis.com/css2?family=Quicksand&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
   <style>
     body {
       background-color: #fff9f4;
@@ -157,7 +157,7 @@
 <script>
   const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   function toggleVisibility(id) {
     const field = document.getElementById(id);
@@ -190,11 +190,11 @@
     if (!privacyAccepted) return alert("Devi accettare la Privacy Policy per continuare.");
     if (password !== confirmPassword) return alert("Le password non coincidono.");
 
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await sb.auth.signUp({ email, password });
     if (error) return alert("Errore registrazione: " + error.message);
 
     const userId = data.user.id;
-    const { error: insertError } = await supabase.from('ristoranti').insert([
+    const { error: insertError } = await sb.from('ristoranti').insert([
       { id: userId, nome: ristorante, email: email }
     ]);
     if (insertError) return alert("Registrazione ok, ma errore nel salvare il nome del ristorante.");
@@ -204,7 +204,7 @@ window.location.href = "email-inviata.html";
   }
 
   async function registerWithGoogle() {
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await sb.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: window.location.origin + '/setup-ristorante.html'

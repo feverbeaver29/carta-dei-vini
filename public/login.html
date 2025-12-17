@@ -103,7 +103,7 @@
       font-size: 0.9em;
     }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div class="container">
@@ -136,7 +136,7 @@
 <script>
   const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   function toggleVisibility(id) {
     const field = document.getElementById(id);
@@ -155,7 +155,7 @@ if (params.get("checkout") === "success") {
 
       if (!email || !password) return alert("Compila tutti i campi.");
 
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
       if (error) return alert("Errore login: " + error.message);
 
       localStorage.setItem("sb-access-token", data.session.access_token);
@@ -186,7 +186,7 @@ if (!ristoData || ristoData.subscription_status !== "active") {
     }
 
 window.loginWithGoogle = async function () {
-  const { data, error } = await supabase.auth.signInWithOAuth({
+  const { data, error } = await sb.auth.signInWithOAuth({
     provider: 'google',
     options: {
       redirectTo: window.location.origin + '/dashboard.html?from=google'
