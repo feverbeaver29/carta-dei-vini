@@ -43,7 +43,7 @@ window.salvaNomeRistorante = async function () {
     return alert("Utente non autenticato.");
   }
 
-  const { error: insertError } = await supabase
+  const { error: insertError } = await sb
     .from("ristoranti")
     .insert([{ id: user.id, nome, email: user.email }]);
 

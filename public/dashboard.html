@@ -1305,7 +1305,7 @@ async function checkSlugAvailability(s) {
   if (!isValidSlug(s)) return { ok: false, reason: "Formato non valido" };
 
   // Cerca collisioni con altri ristoranti (diversi dall'ID corrente)
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from("ristoranti")
     .select("id")
     .eq("slug", s)
@@ -1336,7 +1336,7 @@ if (!RESTAURANT_ID && user) {
   return; // Evita di eseguire altro codice fino al reload
 }
 
-const { data: info } = await supabase
+const { data: info } = await sb
   .from("ristoranti")
   .select("nome, font, palette_color, logo_url, sommelier_url, sommelier_range, sommelier_boost_multi, logo_size, name_size, name_color, name_bold, name_font, ordine_vini, sommelier_attivo, sommelier_gender, subscription_plan, slug")
   .eq("id", RESTAURANT_ID)
@@ -1435,7 +1435,7 @@ displayNameInput.addEventListener("blur", () => {
   }
 });
 
-      const { data: vini } = await supabase
+      const { data: vini } = await sb
         .from("wines")
         .select("nome")
         .eq("ristorante_id", RESTAURANT_ID)
@@ -1595,7 +1595,7 @@ document.getElementById("paletteSelector").addEventListener("change", () => {
 });
 document.getElementById("wineOrder").addEventListener("change", async (e) => {
   const ordine = e.target.value;
-  await supabase
+  await sb
     .from("ristoranti")
     .update({ ordine_vini: ordine })
     .eq("id", RESTAURANT_ID);
@@ -1649,7 +1649,7 @@ showSettings('carta');
   document.getElementById("toggleSommelierBtn").addEventListener("change", async function () {
   const showSommelier = this.checked;
 
-  const { error } = await supabase
+  const { error } = await sb
     .from("ristoranti")
     .update({ sommelier_attivo: showSommelier })
     .eq("id", RESTAURANT_ID);
@@ -1675,7 +1675,7 @@ if (!allowedTypes.includes(file.type)) {
   const fileName = `${RESTAURANT_ID}.${ext}`;
   const filePath = `ristoranti/${fileName}`;
 
-  const { data: existing } = await supabase
+  const { data: existing } = await sb
     .storage
     .from("loghi")
     .list("ristoranti", { search: fileName });
@@ -1700,7 +1700,7 @@ if (!allowedTypes.includes(file.type)) {
     .from("loghi")
     .getPublicUrl(filePath);
 
-  await supabase
+  await sb
     .from("ristoranti")
     .update({ logo_url: publicUrl })
     .eq("id", RESTAURANT_ID);
@@ -1923,7 +1923,7 @@ async function saveSettings() {
     slug: slugToSave
   };
 
-  const { error } = await supabase
+  const { error } = await sb
     .from("ristoranti")
     .update(updatePayload)
     .eq("id", RESTAURANT_ID);

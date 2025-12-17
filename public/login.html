@@ -165,7 +165,7 @@ if (params.get("checkout") === "success") {
         localStorage.removeItem("rememberedEmail");
       }
 
-      const { data: ristoData, error: ristoError } = await supabase
+      const { data: ristoData, error: ristoError } = await sb
   .from("ristoranti")
   .select("subscription_status")
   .eq("id", data.user.id)
