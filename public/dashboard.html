@@ -755,6 +755,115 @@ footer {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ============================
+   NUOVO LAYOUT (stile Canva)
+   ============================ */
+
+.settings-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:nowrap;
+  overflow-x:auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 6px 0 14px;
+  justify-content:center;
+}
+.settings-actions::-webkit-scrollbar{ display:none; }
+
+.pill-btn{
+  background-color:#b00;
+  color:#fff;
+  border:none;
+  padding:10px 16px;
+  border-radius:999px;
+  font-size:0.9em;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.pill-btn:hover{ background-color:#800000; }
+.pill-btn.active{ background-color:#800000; }
+
+#impostazioniCarta .accordion-header{ display:none !important; }
+
+#impostazioniCarta .accordion-content{
+  display:none;
+  max-height:0;
+  overflow:hidden;
+  transition: max-height .35s ease, padding .35s ease;
+  padding: 0 12px !important;
+}
+#impostazioniCarta .accordion.open .accordion-content{
+  display:block;
+  max-height: 4000px;
+  padding: 12px !important;
+  border: 1px solid #eee;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.bottom-nav{
+  position: fixed;
+  left:0; right:0; bottom:0;
+  background: rgba(255,255,255,0.94);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid #eee;
+  display:flex;
+  justify-content: space-around;
+  padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+  z-index: 1800;
+}
+.bottom-nav .bn-item{
+  background: transparent;
+  border: none;
+  display:flex;
+  flex-direction: column;
+  align-items:center;
+  gap:4px;
+  cursor:pointer;
+  color:#333;
+  font-size:0.72em;
+  padding: 6px 8px;
+  border-radius: 14px;
+}
+.bottom-nav .bn-item .icon{ font-size:1.2em; line-height:1; }
+.bottom-nav .bn-item.active{ color:#b00; }
+
+.more-menu{
+  position: fixed;
+  right: 10px;
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  background:#fff;
+  border:1px solid #eee;
+  border-radius:16px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+  display:none;
+  flex-direction: column;
+  min-width: 220px;
+  overflow:hidden;
+  z-index: 1900;
+}
+.more-menu.show{
+  display:flex;
+  animation: slideUpFade .18s ease-out;
+}
+.more-menu button{
+  width:100%;
+  text-align:left;
+  padding: 12px 14px;
+  background:#fff;
+  border:0;
+  border-bottom:1px solid #f1f1f1;
+  font-size:0.95em;
+  cursor:pointer;
+}
+.more-menu button:last-child{ border-bottom:0; }
+.more-menu button:hover{ background:#fafafa; }
+
+@keyframes slideUpFade{
+  from{ opacity:0; transform: translateY(8px); }
+  to{ opacity:1; transform: translateY(0); }
+}
+
   </style>
 </head>
 <body>
@@ -762,40 +871,21 @@ footer {
     <h1 id="ristoranteName">Nome Ristorante - Dashboard</h1>
     </div>
 
-<header class="sticky-header">
-  <button class="mobile-nav-toggle" onclick="toggleMobileNav()">☰ Menu</button>
-  <nav class="mobile" id="mobileNav">
-      <button onclick="showSettings('carta')">Impostazioni Carta dei Vini</button>
-      <button onclick="showSettings('sommelier')">Impostazioni Sommelier Virtuale</button>
-      <button onclick="goTo('admin.html')">Gestione Vini</button>
-      <button onclick="goTo('carta.html')">Visualizza Carta</button>
-      <button onclick="showQRCode()">Scarica QR Code</button>
-        <button onclick="downloadCartaPDF()">Scarica carta in PDF</button>
-      <button onclick="goTo('abbonamento.html')">Gestisci Abbonamento</button>
-      <button onclick="logout()">Logout</button>
-    </nav>
-
-    <nav class="desktop-nav">
-  <button onclick="showSettings('carta')">Impostazioni Carta dei Vini</button>
-  <button onclick="showSettings('sommelier')">Impostazioni Sommelier Virtuale</button>
-  <button onclick="goTo('admin.html')">Gestione Vini</button>
-  <button onclick="goTo('carta.html')">Visualizza Carta</button>
-  <button onclick="showQRCode()">Scarica QR Code</button>
-    <button onclick="downloadCartaPDF()">Scarica carta in PDF</button>
-  <button onclick="goTo('abbonamento.html')">Gestisci Abbonamento</button>
-  <button onclick="logout()">Logout</button>
-</nav>
-</header>
-
 <main>
   <!-- SEZIONE IMPOSTAZIONI CARTA -->
   <div id="cartaSettings">
     <h2 id="titoloCartaVini">Impostazioni Carta dei Vini</h2>
+<div class="settings-actions" id="cartaQuickActions">
+  <button type="button" class="pill-btn active" data-target="accNomeLogo">Nome o Logo</button>
+  <button type="button" class="pill-btn" data-target="accStile">Stile carta</button>
+  <button type="button" class="pill-btn" data-target="accOrdina">Ordina le voci</button>
+</div>
+
     <div class="section" id="cartaSection">
       <!-- Colonna sinistra: impostazioni -->
       <div id="impostazioniCarta" class="dashboard-grid">
         <!-- BLOCCO: Nome o Logo -->
-        <div class="impostazione accordion">
+        <div class="impostazione accordion" id="accNomeLogo">
           <h3 class="accordion-header">Nome o Logo <span class="accordion-icon">+</span></h3>
           <div class="accordion-content">
         <!-- URL pubblico (slug) -->
@@ -847,7 +937,7 @@ footer {
         </div>
 
         <!-- BLOCCO: Stile Carta -->
-        <div class="impostazione accordion">
+        <div class="impostazione accordion" id="accStile">
           <h3 class="accordion-header">Stile carta dei vini<span class="accordion-icon">+</span></h3>
           <div class="accordion-content">
             <label for="fontSelector">Font principale</label>
@@ -886,7 +976,7 @@ footer {
         </div>
 
         <!-- BLOCCO: Ordina Voci -->
-        <div class="impostazione accordion">
+        <div class="impostazione accordion" id="accOrdina">
           <h3 class="accordion-header">Ordina le voci<span class="accordion-icon">+</span></h3>
           <div class="accordion-content">
             <div>
@@ -999,6 +1089,33 @@ footer {
   </div>
 </div>
 
+<!-- Bottom navigation (stile Canva) -->
+<div id="bottomNav" class="bottom-nav">
+  <button id="bnCarta" class="bn-item active" type="button" onclick="showSettings('carta')">
+    <span class="icon">⚙️</span><span class="label">Carta</span>
+  </button>
+  <button id="bnSommelier" class="bn-item" type="button" onclick="showSettings('sommelier')">
+    <span class="icon">🍷</span><span class="label">Sommelier</span>
+  </button>
+  <button id="bnVini" class="bn-item" type="button" onclick="goTo('admin.html')">
+    <span class="icon">🗂️</span><span class="label">Vini</span>
+  </button>
+  <button id="bnVista" class="bn-item" type="button" onclick="goTo('carta.html')">
+    <span class="icon">📖</span><span class="label">Carta</span>
+  </button>
+  <button id="moreBtn" class="bn-item" type="button" aria-expanded="false" onclick="toggleMoreMenu()">
+    <span class="icon">⋯</span><span class="label">Altro</span>
+  </button>
+</div>
+
+<!-- Menu "Altro" -->
+<div id="moreMenu" class="more-menu" role="menu" aria-label="Altro">
+  <button type="button" role="menuitem" onclick="showQRCode(); toggleMoreMenu(false)">Scarica QR Code</button>
+  <button type="button" role="menuitem" onclick="downloadCartaPDF(); toggleMoreMenu(false)">Scarica carta in PDF</button>
+  <button type="button" role="menuitem" onclick="goTo('abbonamento.html'); toggleMoreMenu(false)">Gestisci abbonamento</button>
+  <button type="button" role="menuitem" onclick="logout();">Logout</button>
+</div>
+
   <footer>© 2025 Wine's Fever - Tutti i diritti riservati</footer>
   <script>
 
@@ -1020,29 +1137,34 @@ function updatePaletteLivePreview() {
   }, "*");
 }
 
-document.querySelectorAll('.accordion-header').forEach(header => {
-  header.addEventListener('click', () => {
-    const clicked = header.closest('.accordion');
-    const isOpen = clicked.classList.contains('open');
+// --- Nuova UI: bottoni orizzontali per le 3 impostazioni carta ---
+let currentCartaPanel = "accNomeLogo";
 
-    // Chiudi tutti e rendi tutti visibili
-    document.querySelectorAll('.accordion').forEach(acc => {
-      acc.classList.remove('open', 'accordion-hidden');
-      acc.querySelector(".accordion-icon").textContent = "+";
-    });
+function openCartaPanel(panelId) {
+  currentCartaPanel = panelId;
 
-    // Se non era aperto prima, aprilo e nascondi gli altri
-    if (!isOpen) {
-      clicked.classList.add('open');
-      clicked.querySelector(".accordion-icon").textContent = "−";
-
-      // Nascondi gli altri
-      document.querySelectorAll('.accordion').forEach(acc => {
-        if (acc !== clicked) acc.classList.add('accordion-hidden');
-      });
-    }
+  document.querySelectorAll("#impostazioniCarta .accordion").forEach(acc => {
+    acc.classList.toggle("open", acc.id === panelId);
   });
-});
+
+  document.querySelectorAll("#cartaQuickActions .pill-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.target === panelId);
+  });
+}
+
+function initCartaQuickActions() {
+  const wrap = document.getElementById("cartaQuickActions");
+  if (!wrap) return;
+
+  if (wrap.dataset.bound === "1") return;
+  wrap.dataset.bound = "1";
+
+  wrap.querySelectorAll(".pill-btn").forEach(btn => {
+    btn.addEventListener("click", () => openCartaPanel(btn.dataset.target));
+  });
+
+  openCartaPanel(currentCartaPanel);
+}
 
   function updateFontLivePreview() {
   const font = document.getElementById("fontSelector").value;
@@ -1717,6 +1839,32 @@ let reorderMode = null;
 function toggleMobileNav() {
   document.getElementById('mobileNav').classList.toggle('show');
 }
+// --- Bottom nav: menu "Altro" ---
+function toggleMoreMenu(force) {
+  const menu = document.getElementById("moreMenu");
+  const btn = document.getElementById("moreBtn");
+  if (!menu) return;
+
+  const shouldShow = (typeof force === "boolean") ? force : !menu.classList.contains("show");
+  menu.classList.toggle("show", shouldShow);
+  if (btn) btn.setAttribute("aria-expanded", shouldShow ? "true" : "false");
+}
+
+document.addEventListener("click", (e) => {
+  const menu = document.getElementById("moreMenu");
+  const btn = document.getElementById("moreBtn");
+  if (!menu || !btn) return;
+  if (!menu.classList.contains("show")) return;
+  if (menu.contains(e.target) || btn.contains(e.target)) return;
+  toggleMoreMenu(false);
+});
+
+function setBottomNavActive(which) {
+  const map = { carta: "bnCarta", sommelier: "bnSommelier" };
+  document.querySelectorAll("#bottomNav .bn-item").forEach(b => b.classList.remove("active"));
+  const id = map[which];
+  if (id) document.getElementById(id)?.classList.add("active");
+}
 
 function toggleReorder(type) {
   const iframe = document.getElementById("previewFrame");
@@ -1807,6 +1955,9 @@ const showCarta = type === "carta";
 document.getElementById("cartaSettings").style.display = showCarta ? "block" : "none";
 document.getElementById("sommelierSettings").classList.toggle("active", !showCarta);
 main.classList.toggle("sommelier-mode", !showCarta);
+setBottomNavActive(type);
+toggleMoreMenu(false);
+if (showCarta) initCartaQuickActions();
 
       if (type === "sommelier" && !document.querySelector("#boostContainer input")) {
         const container = document.getElementById("boostContainer");
