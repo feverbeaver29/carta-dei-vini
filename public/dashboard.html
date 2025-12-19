@@ -6,7 +6,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - Wine's Fever</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond&family=Great+Vibes&family=Bebas+Neue&family=Merriweather&family=Abril+Fatface&family=Lobster&family=Oswald&family=Amatic+SC&family=Bitter&family=Quicksand&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
@@ -97,25 +97,6 @@ body {
   flex: 1 0 auto;
 }
 
-details summary {
-  cursor: pointer;
-  font-size: 0.95em;
-  padding: 8px 0;
-  border-bottom: 1px solid #ccc;
-}
-
-details[open] summary {
-  margin-bottom: 8px;
-}
-
-label {
-  font-size: 0.95em;
-  margin-top: 12px;
-}
-input[type="text"], select {
-  padding: 6px 8px;
-  font-size: 0.95em;
-}
 input[type="color"] {
   height: 24px;
   width: 32px;
@@ -151,77 +132,6 @@ input[type="range"] {
   color: #333;
   letter-spacing: 0.4px;
   margin: 0;
-}
-
-header {
-  position: sticky;
-  top: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  z-index: 1000;
-  background: #fff;
-  border-bottom: 1px solid #ccc;
-  padding: 1em 0.5em;
-  text-align: center;
-  transition: box-shadow 0.3s ease;
-}
-header h1 {
-  margin: 0;
-  font-size: 1.5em;
-}
-header.scrolled {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-
-nav {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1em;
-  margin-top: 0.5em;
-}
-nav button {
-  background-color: var(--accent);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 0.9em;
-}
-nav button:hover {
-  background-color: var(--accent-700);
-}
-
-nav.mobile {
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75em;
-  width: 100%;
-  padding: 1em 0;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-nav.mobile.show {
-  display: flex;
-  animation: slideDownFade 0.25s ease-out;
-}
-.mobile-nav-toggle {
-  background-color: var(--accent);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 20px;
-  font-size: 0.9em;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  margin: 2px auto 0 auto;
-  display: block;
-}
-.mobile-nav-toggle:hover {
-  background-color: var(--accent-700);
 }
 
 main {
@@ -438,59 +348,6 @@ footer {
   margin-bottom: 12px;
   }
 
-  /* Accordion */
-  .accordion-hidden {
-    display: none !important;
-  }
-
-  .accordion,
-  .accordion.open .accordion-content {
-    border-bottom: 1px solid #eee;
-  }
-
-.accordion {
-  width: 100%;
-  margin-bottom: 6px;
-  padding: 0;
-}
-
-  .accordion-content {
-    display: none;
-    max-height: 0;
-    overflow: hidden;
-    transition: all 0.35s ease;
-    padding: 6px 0 6px 0 !important;
-  animation: fadeIn 0.4s ease;
-  }
-
-  .accordion.open .accordion-content {
-    display: block;
-    max-height: 1000px;
-    padding-top: 6px;
-  }
-
-.accordion-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.95em;
-  font-weight: 500;
-  color: #000;
-  border-bottom: 1px solid #ccc;
-  padding: 6px 0;
-  margin: 0 auto;
-  width: 100%;
-  max-width: 360px;
-  padding-left: 16px;
-  padding-right: 16px;
-  box-sizing: border-box;
-}
-
-.accordion-header .accordion-icon {
-  font-size: 1.2em;
-  padding-left: 150px; /* ✅ aggiunge spazio minimo di separazione */
-}
-
 .accordion:last-child {
   margin-bottom: 0 !important;
   padding-bottom: 0 !important;
@@ -637,47 +494,6 @@ footer {
   .accordion-header .accordion-icon {
   display: none;
 }
-  .sticky-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: 0.8em 0;
-  box-sizing: border-box;
-}
-
-   nav.mobile {
-    display: none !important;
-  }
-
-  .mobile-nav-toggle {
-    display: none !important;
-  }
-.desktop-nav {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 1em;
-  padding: 0.5em 2em;
-  width: 100%;
-  max-width: none;
-  background: #fff;
-  border-bottom: 1px solid #ccc;
-  box-sizing: border-box;
-}
-
-  .desktop-nav button {
-    background-color: transparent;
-    color: var(--accent);
-    border: 1px solid var(--accent);
-    padding: 8px 16px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 0.9em;
-    transition: background 0.2s ease;
-  }
-
   .desktop-nav button:hover {
     background-color: var(--accent);
     color: #fff;
@@ -698,20 +514,6 @@ footer {
   gap: 16px;
 }
 
-#impostazioniCarta details {
-  display: block !important;
-  border: none;
-  margin: 0;
-  padding: 0;
-}
-
-#impostazioniCarta summary {
-  display: none !important;
-}
-#impostazioniCarta > details > div {
-  padding: 6px 0;
-  border-bottom: 1px solid #eee;
-}
 #cartaSection {
   align-items: center;
 }
@@ -839,9 +641,7 @@ border-color: var(--border);
 transform: translateX(-50%);
 bottom: 10px;
 width: min(100% - 20px, var(--content));
-  background: rgba(255,255,255,0.94);
   backdrop-filter: blur(10px);
-  border-top: 1px solid #eee;
   display:flex;
   justify-content: space-around;
   padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
@@ -1119,7 +919,7 @@ background: rgba(255,255,255,.92);
     <button onclick="document.getElementById('fontPopup').style.display='none'" style="margin-top:20px;">Chiudi</button>
   </div>
 </div>
-</main>
+
 <!-- Popup QR -->
 <div id="qrPopup">
   <div id="qrPopupContent">
@@ -1521,7 +1321,6 @@ renderSlugPreview(slugInput.value);
 
 checkSlugBtn.addEventListener("click", () => {
   // forza una verifica immediata sul valore attuale
-  debouncedCheck.cancel?.(); // se usi debounce con cancel opzionale
   (async () => {
     const s = slugInput.value.trim();
     if (!s) {
@@ -1604,27 +1403,6 @@ displayNameInput.addEventListener("blur", () => {
 
       window.viniList = vini ? vini.map(v => v.nome) : [];
       window._sommelierBoostRaw = info?.sommelier_boost_multi;
-
-if (vini && Array.isArray(vini)) {
-  window.viniList = vini.map(v => v.nome);
-}
-
-setTimeout(() => {
-  let savedBoosts = [];
-
-  try {
-    const raw = info?.sommelier_boost_multi;
-    savedBoosts = typeof raw === "string" ? JSON.parse(raw) : raw;
-  } catch (e) {
-    console.warn("❌ Errore nel parsing sommelier_boost_multi", e);
-  }
-
-  if (Array.isArray(savedBoosts)) {
-    savedBoosts.forEach(val => addBoostInput(val));
-  } else {
-    addBoostInput();
-  }
-}, 0); 
 
 // imposta valori iniziali
         const nameFont = info?.name_font || "Arial";
@@ -1875,9 +1653,6 @@ if (!allowedTypes.includes(file.type)) {
 
 let reorderMode = null;
 
-function toggleMobileNav() {
-  document.getElementById('mobileNav').classList.toggle('show');
-}
 // --- Bottom nav: menu "Altro" ---
 function toggleMoreMenu(force) {
   const menu = document.getElementById("moreMenu");
@@ -2203,15 +1978,6 @@ if (!allowedTypes.includes(file.type)) {
   const iframe = document.getElementById("previewFrame");
   if (iframe?.contentWindow) {
     iframe.contentWindow.postMessage({ action: "updateSommelierLogo", url: publicUrl }, "*");
-  }
-});
-
-window.addEventListener("scroll", () => {
-  const sticky = document.querySelector(".sticky-header");
-  if (window.scrollY > 10) {
-    sticky.classList.add("scrolled");
-  } else {
-    sticky.classList.remove("scrolled");
   }
 });
 
