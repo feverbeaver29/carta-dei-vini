@@ -1016,6 +1016,44 @@ async function ensureRestaurantId() {
   }
 }
 
+// ========= SOMMELIER ANALYTICS (MVP) =========
+function getSessionId(){
+  const k = "sid_v1";
+  let v = localStorage.getItem(k);
+  if (!v) {
+    v = (crypto?.randomUUID?.() || (Date.now()+"_"+Math.random().toString(16).slice(2)));
+    localStorage.setItem(k, v);
+  }
+  return v;
+}
+
+let __tracked = new Set(); // per eventi "una tantum" nella sessione
+
+async function trackSommelier(event, props = {}, onceKey = null){
+  try {
+    if (onceKey) {
+      const key = event + "::" + onceKey;
+      if (__tracked.has(key)) return;
+      __tracked.add(key);
+    }
+
+    const payload = {
+      restaurant_id: RESTAURANT_ID || null,
+      session_id: getSessionId(),
+      event,
+      props,
+      path: location.pathname + location.search + location.hash,
+      ua: navigator.userAgent
+    };
+
+    // Inserimento diretto su tabella Supabase (richiede policy INSERT su sommelier_events)
+    const { error } = await supabase.from("sommelier_events").insert(payload);
+    if (error) console.warn("[trackSommelier] insert error:", error);
+  } catch (e) {
+    console.warn("[trackSommelier] failed:", e);
+  }
+}
+
 let wines = [];
 let ristorante = null;
 let ristoranteSommelierURL = null;
@@ -1158,6 +1196,7 @@ window.addEventListener("message", async (event) => {
   }
 });
 function toggleSommelier() {
+  trackSommelier("sommelier_popup_open", { lang: currentLang });
   const overlay = document.getElementById('sommelierOverlay');
     overlay.classList.remove("fade-out");
     overlay.classList.add("fade-in");
@@ -1182,6 +1221,15 @@ if (inputEl) inputEl.focus();
 }
 
 function closeSommelierPopup() {
+  const hadText = !!document.getElementById('foodInput')?.value?.trim();
+const hadResults = !!document.getElementById('wineSuggestion')?.innerHTML?.trim();
+
+trackSommelier("sommelier_popup_close", {
+  lang: currentLang,
+  had_text: hadText,
+  had_results: hadResults
+});
+
 const overlay = document.getElementById('sommelierOverlay');
 if (overlay) {
   overlay.classList.remove("fade-in");
@@ -1258,6 +1306,7 @@ window.suggestWine = async function () {
 
   if (!input) {
     suggestion.innerHTML = translations[currentLang].emptyInput;
+    trackSommelier("sommelier_submit_empty", { lang: currentLang });
     return;
   }
 
@@ -1268,6 +1317,14 @@ try {
   const wineColorChecks = document.querySelectorAll("#wineTypeDropdown input[type='checkbox']");
   const wineColors = Array.from(wineColorChecks).filter(cb => cb.checked).map(cb => cb.value);
 
+  trackSommelier("sommelier_submit", {
+  lang: currentLang,
+  has_price_limit: !!document.getElementById("priceFilter")?.value,
+  colors_selected: Array.from(document.querySelectorAll("#wineTypeDropdown input[type='checkbox']"))
+    .filter(cb => cb.checked).map(cb => cb.value),
+  input_len: input.length,
+  commas: (input.match(/,/g) || []).length
+});
   const response = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/consiglia-vino", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -1424,7 +1481,8 @@ if (wFound) {
     if (!cardsHtml || cardsHtml.trim() === "") {
       suggestion.innerHTML = `
         <div style="background:${responseBg}; padding:15px; border-radius:12px; border:1px solid ${vignetteColor}; color: ${textColor}; font-style:italic;">${translations[currentLang].noMatch}</div>`;
-      return;
+      trackSommelier("sommelier_result_nomatch", { lang: currentLang });
+        return;
     }
 
     aggiornaStorico(input);
@@ -1450,6 +1508,7 @@ suggestion.innerHTML = `
   } catch (err) {
     console.error(err);
     suggestion.innerHTML = "Errore nel generare il suggerimento.";
+    trackSommelier("sommelier_result_error", { lang: currentLang, msg: String(err?.message || err) });
   }
 }
 
@@ -2004,8 +2063,14 @@ btn.innerHTML = `
 `;
   document.body.appendChild(btn);
 
+  trackSommelier("sommelier_btn_shown", {
+  lang: currentLang,
+  palette: window.ristorantePalette || null
+}, "btn_shown");
+
   // Apri il popup al click
   btn.addEventListener("click", () => {
+    trackSommelier("sommelier_btn_click", { lang: currentLang });
     localStorage.setItem("sommelier_seen", "1");
     btn.classList.remove("pulse");
     toggleSommelier();
@@ -2068,13 +2133,23 @@ btn.innerHTML = `
     const sendBtn = document.getElementById("sendFoodBtn");
 
     if (foodInput && sendBtn) {
-      foodInput.addEventListener("input", () => {
-        if (foodInput.value.trim().length > 0) {
-          sendBtn.style.display = "inline-block";
-        } else {
-          sendBtn.style.display = "none";
-        }
-      });
+      let _firstTypeTracked = false;
+
+foodInput.addEventListener("input", () => {
+  if (!_firstTypeTracked && foodInput.value.trim().length > 0) {
+    _firstTypeTracked = true;
+    trackSommelier("sommelier_input_started", {
+      lang: currentLang
+    }, "input_started");
+  }
+
+  if (foodInput.value.trim().length > 0) {
+    sendBtn.style.display = "inline-block";
+  } else {
+    sendBtn.style.display = "none";
+  }
+});
+
     }
 
     const dropdown = document.createElement("div");
