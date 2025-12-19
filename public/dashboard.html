@@ -11,6 +11,23 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
 * { box-sizing: border-box; }
+:root{
+  --bg: #F7F4EF;            /* fondo caldo, elegante */
+  --card: #FFFFFF;          /* card */
+  --text: #1F2937;          /* quasi nero */
+  --muted: #6B7280;         /* grigio testi secondari */
+  --border: #E6E2DA;        /* bordi morbidi */
+
+  --accent: #6B1E2B;        /* vino scuro (premium) */
+  --accent-700: #4C1420;    /* hover/active */
+  --accent-soft: #F3E7E9;   /* pill “soft” */
+
+  --radius: 18px;
+  --radius-pill: 999px;
+  --shadow: 0 10px 30px rgba(17,24,39,.08);
+  --content: 980px;
+}
+
 .switch {
   position: relative;
   display: inline-block;
@@ -71,7 +88,8 @@ html, body {
   display: flex;
   flex-direction: column;
   font-family: 'Segoe UI', sans-serif;
-  background-color: #fff9f4;
+  background-color: var(--bg);
+color: var(--text);
   overflow-x: hidden;
 }
 
@@ -107,7 +125,7 @@ input[type="range"] {
 }
 
 .mini-save-btn {
-  background-color: #b00;
+  background-color: var(--accent);
   color: white;
   padding: 6px 14px;
   border: none;
@@ -117,7 +135,7 @@ input[type="range"] {
   cursor: pointer;
 }
 .mini-save-btn:hover {
-  background-color: #800000;
+  background-color: var(--accent-700);
 }
 
 .page-title {
@@ -164,7 +182,7 @@ nav {
   margin-top: 0.5em;
 }
 nav button {
-  background-color: #b00;
+  background-color: var(--accent);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -173,7 +191,7 @@ nav button {
   font-size: 0.9em;
 }
 nav button:hover {
-  background-color: #800000;
+  background-color: var(--accent-700);
 }
 
 nav.mobile {
@@ -191,7 +209,7 @@ nav.mobile.show {
   animation: slideDownFade 0.25s ease-out;
 }
 .mobile-nav-toggle {
-  background-color: #b00;
+  background-color: var(--accent);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -203,7 +221,7 @@ nav.mobile.show {
   display: block;
 }
 .mobile-nav-toggle:hover {
-  background-color: #800000;
+  background-color: var(--accent-700);
 }
 
 main {
@@ -211,10 +229,14 @@ main {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  max-width: 1200px;
+  max-width: var(--content);
   margin: auto;
   padding: 80px 20px 60px;
   gap: 40px;
+  width: 100%;
+padding-left: 16px;
+padding-right: 16px;
+padding-bottom: calc(90px + env(safe-area-inset-bottom)); /* spazio per bottom bar */
 }
 
 .section {
@@ -295,19 +317,19 @@ input[type="text"], select {
 }
 
 .mockup {
-  border: 1px solid #ccc;
-  border-radius: 16px;
-  width: 360px;
-  height: 640px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: min(360px, 92vw);
+  height: min(640px, 70vh);
   background: white;
   overflow: hidden;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow);
   margin-bottom: 140px; /* spazio fisso per il footer */
 }
 
 .save-btn {
   margin-top: 30px;
-  background-color: #b00;
+  background-color: var(--accent);
   color: white;
   padding: 15px 30px;
   border: none;
@@ -316,7 +338,7 @@ input[type="text"], select {
   cursor: pointer;
 }
 .save-btn:hover {
-  background-color: #800000;
+  background-color: var(--accent-700);
 }
 
 footer {
@@ -347,7 +369,7 @@ footer {
 }
 #qrPopupContent button {
   margin-top: 10px;
-  background-color: #b00;
+  background-color: var(--accent);
   color: white;
   padding: 10px 20px;
   border: none;
@@ -355,7 +377,7 @@ footer {
   cursor: pointer;
 }
 #qrPopupContent button:hover {
-  background-color: #800000;
+  background-color: var(--accent-700);
 }
 #titoloCartaVini {
   text-align: center;
@@ -499,7 +521,7 @@ footer {
   }
 
   main {
-    padding: 25px 1em 40px;
+    padding: 18px 16px calc(90px + env(safe-area-inset-bottom));
   }
 
   /* Griglie e layout */
@@ -647,8 +669,8 @@ footer {
 
   .desktop-nav button {
     background-color: transparent;
-    color: #b00;
-    border: 1px solid #b00;
+    color: var(--accent);
+    border: 1px solid var(--accent);
     padding: 8px 16px;
     border-radius: 20px;
     cursor: pointer;
@@ -657,7 +679,7 @@ footer {
   }
 
   .desktop-nav button:hover {
-    background-color: #b00;
+    background-color: var(--accent);
     color: #fff;
   }
 
@@ -771,17 +793,25 @@ footer {
 .settings-actions::-webkit-scrollbar{ display:none; }
 
 .pill-btn{
-  background-color:#b00;
-  color:#fff;
-  border:none;
-  padding:10px 16px;
-  border-radius:999px;
-  font-size:0.9em;
-  cursor:pointer;
-  white-space:nowrap;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 0.92em;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px rgba(17,24,39,.06);
 }
-.pill-btn:hover{ background-color:#800000; }
-.pill-btn.active{ background-color:#800000; }
+.pill-btn:hover{
+  border-color: rgba(107,30,43,.35);
+}
+.pill-btn.active{
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: rgba(107,30,43,.35);
+}
+
 
 #impostazioniCarta .accordion-header{ display:none !important; }
 
@@ -799,11 +829,16 @@ footer {
   border: 1px solid #eee;
   border-radius: 16px;
   background: #fff;
+  box-shadow: 0 8px 22px rgba(17,24,39,.06);
+border-color: var(--border);
 }
 
 .bottom-nav{
   position: fixed;
-  left:0; right:0; bottom:0;
+  left: 50%;
+transform: translateX(-50%);
+bottom: 10px;
+width: min(100% - 20px, var(--content));
   background: rgba(255,255,255,0.94);
   backdrop-filter: blur(10px);
   border-top: 1px solid #eee;
@@ -811,6 +846,10 @@ footer {
   justify-content: space-around;
   padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
   z-index: 1800;
+  border: 1px solid var(--border);
+border-radius: 22px;
+box-shadow: var(--shadow);
+background: rgba(255,255,255,.92);
 }
 .bottom-nav .bn-item{
   background: transparent;
@@ -826,7 +865,7 @@ footer {
   border-radius: 14px;
 }
 .bottom-nav .bn-item .icon{ font-size:1.2em; line-height:1; }
-.bottom-nav .bn-item.active{ color:#b00; }
+.bottom-nav .bn-item.active{ color: var(--accent); background: rgba(107,30,43,.08); }
 
 .more-menu{
   position: fixed;
@@ -1030,7 +1069,7 @@ footer {
 <!-- o logo personalizzato -->
 <div style="display: flex; align-items: center; gap: 6px;">
   <label for="sommelierLogoUpload" style="margin-top: 4px;">oppure carica un logo personalizzato</label>
-  <span id="lockIcon" title="Disponibile solo per utenti PRO" style="font-size: 1em; color: #b00; cursor: pointer;">🔒</span>
+  <span id="lockIcon" title="Disponibile solo per utenti PRO" style="font-size: 1em; color: var(--accent);; cursor: pointer;">🔒</span>
 </div>
 <input type="file" id="sommelierLogoUpload" accept="image/*">
 <div id="proTooltip" style="display: none; font-size: 0.85em; margin-top: 4px; color: #555;">
@@ -1051,15 +1090,15 @@ footer {
 <div style="position: relative; display: inline-flex; align-items: center; gap: 8px; margin-top: 6px;">
   <button id="addBoostBtn" type="button" onclick="addBoostInput()" style="
     background: transparent;
-    color: #b00;
-    border: 1px solid #b00;
+    color: var(--accent);
+    border: 1px solid var(--accent);
     border-radius: 20px;
     padding: 6px 14px;
     font-size: 0.9em;
     cursor: pointer;
     transition: 0.3s;
   ">+ Aggiungi vino da spingere</button>
-  <span id="boostLockIcon" title="Solo per utenti PRO" style="cursor: pointer; color: #b00; font-size: 1.2em;">🔒</span>
+  <span id="boostLockIcon" title="Solo per utenti PRO" style="cursor: pointer; color: var(--accent); font-size: 1.2em;">🔒</span>
 </div>
 <div id="boostLockTooltip" style="display: none; font-size: 0.85em; margin-top: 4px; color: #555;">
   🔒 Solo per utenti <strong>PRO</strong>. 
@@ -1368,7 +1407,7 @@ function attachLogoListeners() {
     top: 50%;
     transform: translateY(-50%);
     font-weight: bold;
-    color: #b00;
+    color: var(--accent);
     font-size: 16px;
     background: white;
     padding: 0 5px;
