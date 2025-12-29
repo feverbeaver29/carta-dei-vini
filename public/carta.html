@@ -1017,14 +1017,21 @@ async function ensureRestaurantId() {
 }
 
 // ========= SOMMELIER ANALYTICS (MVP) =========
-function getSessionId(){
+function getSessionId() {
   const k = "sid_v1";
-  let v = localStorage.getItem(k);
-  if (!v) {
-    v = (crypto?.randomUUID?.() || (Date.now()+"_"+Math.random().toString(16).slice(2)));
-    localStorage.setItem(k, v);
+  const ttlMs = 24 * 60 * 60 * 1000; // 24h
+  let obj = null;
+
+  try { obj = JSON.parse(localStorage.getItem(k) || "null"); } catch {}
+
+  const expired = !obj?.id || !obj?.t || (Date.now() - obj.t > ttlMs);
+
+  if (expired) {
+    const id = (crypto?.randomUUID?.() || (Date.now()+"_"+Math.random().toString(16).slice(2)));
+    obj = { id, t: Date.now() };
+    localStorage.setItem(k, JSON.stringify(obj));
   }
-  return v;
+  return obj.id;
 }
 
 let __tracked = new Set(); // per eventi "una tantum" nella sessione
@@ -1047,11 +1054,32 @@ async function trackSommelier(event, props = {}, onceKey = null){
     };
 
     // Inserimento diretto su tabella Supabase (richiede policy INSERT su sommelier_events)
-    const { error } = await supabase.from("sommelier_events").insert(payload);
+    const { error } = await supabase
+  .from("sommelier_events")
+  .insert([payload], { returning: "minimal" });
+
+if (error) {
+  console.warn("[trackSommelier] insert error:", error, payload);
+  return false;
+}
+return true;
+
     if (error) console.warn("[trackSommelier] insert error:", error);
   } catch (e) {
     console.warn("[trackSommelier] failed:", e);
+    return false;
   }
+}
+
+function nudgeSommelier(reason) {
+  const btn = document.getElementById("sommelierBtn");
+  if (!btn) return;
+  if (localStorage.getItem("sommelier_seen")) return; // non rompere chi già lo usa
+
+  btn.classList.add("pulse");
+  trackSommelier("sommelier_nudge", { lang: currentLang, reason });
+
+  setTimeout(() => btn.classList.remove("pulse"), 5000);
 }
 
 let wines = [];
@@ -1301,6 +1329,7 @@ window.suggestWine = async function () {
       <div style="background:#fff3f0; padding:15px; border-radius:12px; border:1px solid #ddd; color:#333; font-style:italic;">
         Per favore scrivimi il nome di un piatto, così posso consigliarti il vino perfetto! 🍷
       </div>`;
+      trackSommelier("sommelier_submit_blocked", { lang: currentLang });
     return;
   }
 
@@ -1481,7 +1510,7 @@ if (wFound) {
     if (!cardsHtml || cardsHtml.trim() === "") {
       suggestion.innerHTML = `
         <div style="background:${responseBg}; padding:15px; border-radius:12px; border:1px solid ${vignetteColor}; color: ${textColor}; font-style:italic;">${translations[currentLang].noMatch}</div>`;
-      trackSommelier("sommelier_result_nomatch", { lang: currentLang });
+      await trackSommelier("sommelier_result_nomatch", { lang: currentLang });
         return;
     }
 
@@ -1504,11 +1533,15 @@ suggestion.innerHTML = `
     </div>
   </div>
 `;
+await trackSommelier("sommelier_result_success", {
+  lang: currentLang,
+  results_count: rawBlocks.length
+});
 
   } catch (err) {
     console.error(err);
     suggestion.innerHTML = "Errore nel generare il suggerimento.";
-    trackSommelier("sommelier_result_error", { lang: currentLang, msg: String(err?.message || err) });
+    await trackSommelier("sommelier_result_error", { lang: currentLang, msg: String(err?.message || err) });
   }
 }
 
@@ -1524,9 +1557,13 @@ function stripLabelPrefix(line, labels) {
   return raw;
 }
 
-window.addEventListener('click', e => {
+window.addEventListener('click', (e) => {
   const overlay = document.getElementById('sommelierOverlay');
-  if (e.target === overlay) closeSommelierPopup();
+  if (!overlay) return;
+  if (e.target === overlay) {
+    trackSommelier("sommelier_popup_close_overlay", { lang: currentLang });
+    closeSommelierPopup();
+  }
 });
 
 window.addEventListener('popstate', (event) => {
@@ -1938,6 +1975,7 @@ card.innerHTML = `
 };
   });
 applyPalette(window.ristorantePalette);
+nudgeSommelier("entered_wine_list");
 
   const subcatList = document.getElementById('subcategory-list');
   if (subcatList) subcatList.style.display = 'none';
@@ -1989,6 +2027,7 @@ function showWinesForCategory(category) {
 
   // riapplica palette
   applyPalette(window.ristorantePalette);
+  nudgeSommelier("entered_wine_list");
 }
 
 async function loadWineData() {
@@ -3568,6 +3607,7 @@ if (!searchResults.length){
 
   // re-applica palette alla UI appena generata
 applyPalette(window.ristorantePalette);
+nudgeSommelier("entered_wine_list");
 
   setHelper(`Risultati per: “${query}”`);
   history.pushState({ view:"search", query }, "");
