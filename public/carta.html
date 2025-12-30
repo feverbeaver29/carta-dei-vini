@@ -179,7 +179,11 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
   z-index:1000;
 
   /* aspetto “primo screen” */
-  background: linear-gradient(90deg, var(--accent-color), #e05);
+  background: linear-gradient(90deg,
+  color-mix(in srgb, var(--accent-color) 92%, #000),
+  color-mix(in srgb, var(--accent-color) 78%, #fff)
+);
+border: 1px solid rgba(255,255,255,.35);
   color:#fff; border:none; border-radius:999px;
   display:flex; align-items:center; gap:12px; box-sizing:border-box;
   box-shadow:0 14px 28px rgba(0,0,0,.2), 0 0 0 6px rgba(255,255,255,.35) inset;
@@ -1063,8 +1067,6 @@ if (error) {
   return false;
 }
 return true;
-
-    if (error) console.warn("[trackSommelier] insert error:", error);
   } catch (e) {
     console.warn("[trackSommelier] failed:", e);
     return false;
@@ -1074,7 +1076,11 @@ return true;
 function nudgeSommelier(reason) {
   const btn = document.getElementById("sommelierBtn");
   if (!btn) return;
-  if (localStorage.getItem("sommelier_seen")) return; // non rompere chi già lo usa
+  if (localStorage.getItem("sommelier_seen")) return;
+const dayKey = "sommelier_nudge_day";
+const today = new Date().toISOString().slice(0,10);
+if (localStorage.getItem(dayKey) === today) return;
+localStorage.setItem(dayKey, today);
 
   btn.classList.add("pulse");
   trackSommelier("sommelier_nudge", { lang: currentLang, reason });
