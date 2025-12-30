@@ -1100,7 +1100,16 @@ if (dish.protein === "carne_rossa" || dish.cooking === "brasato") {
 
   // 2) dettaglio “meccanico” ma detto da sala
   if (dish.cooking === "fritto" || dish.fat >= 0.6) {
-    if (hasBubbles) lines.push("La bollicina fa da spazzolino: ripulisce e alleggerisce ogni boccone");
+    if (hasBubbles) {
+  const base = [
+    "La bollicina fa da spazzolino: ripulisce e alleggerisce ogni boccone",
+    "La bolla pulisce il palato e rende il boccone più leggero",
+    "Con il fritto è perfetto: bollicina e freschezza fanno reset",
+    "La bollicina sgrassa e ti prepara subito al boccone successivo",
+    "È il classico abbinamento da fritto: croccantezza fuori, bocca pulita dentro",
+  ];
+  lines.push(pickOne(base, rand));
+}
     else if (feelsFresh) {
   const base = [
     "Ha lo slancio giusto per sgrassare e tenere il palato vivo",
@@ -1113,14 +1122,39 @@ if (dish.protein === "carne_rossa" || dish.cooking === "brasato") {
 }
   }
 
-  if (isSpicy) {
-    if (isSoft) lines.push("Ha una punta di morbidezza che fa da cuscino al piccante");
-    else lines.push("Non spinge sul “calore”: accompagna il piccante senza farlo salire");
+if (isSpicy && rand() < 0.9) {
+  if (isSoft) {
+    const base = [
+      "Ha una punta di morbidezza che fa da cuscino al piccante",
+      "La morbidezza smussa il piccante e rende il sorso più rotondo",
+      "Addolcisce gli spigoli del peperoncino e resta piacevole",
+      "Ha quel minimo di dolcezza che spegne il fuoco e rilancia il gusto",
+      "Fa da “cuscino” al piccante: bocca più calma e sorso più fluido",
+    ];
+    lines.push(pickOne(base, rand));
+  } else {
+    const base = [
+      "Non spinge sul calore: accompagna il piccante senza farlo salire",
+      "Resta fresco e lineare: non amplifica la speziatura",
+      "Tiene il piccante in equilibrio, senza asciugare troppo la bocca",
+      "È un sorso controllato: non accende il peperoncino",
+      "Sta sul filo giusto: accompagna la spezia senza farla dominare",
+    ];
+    lines.push(pickOne(base, rand));
   }
+}
 
-  if (dish.acid_hint) {
-    lines.push("Si aggancia bene alla parte più fresca/acidula del piatto e lo rende più armonico");
-  }
+if (dish.acid_hint && rand() < 0.75) { // 75%: così non appare sempre identica
+  const base = [
+    "Si aggancia bene alla parte più fresca/acidula del piatto e lo rende più armonico",
+    "Dialoga con l’acidità del piatto e tiene il sorso dritto",
+    "Sta benissimo sul pomodoro: accompagna la parte fresca senza coprirla",
+    "Sulla componente acida resta pulito e non si scompone",
+    "Resta preciso sull’acidità e lascia la bocca più “pulita”",
+  ];
+  lines.push(pickOne(base, rand));
+}
+
 
   // intensità (detta bene)
   if (isRich && hasShoulder) {
@@ -1134,7 +1168,17 @@ if (dish.protein === "carne_rossa" || dish.cooking === "brasato") {
   lines.push(pickOne(base, rand));
 }
 
-  if (isDelicate && !hasShoulder) lines.push("È snello: non invade e ti lascia gustare i dettagli del piatto");
+if (isDelicate && !hasShoulder && rand() < 0.85) {
+  const base = [
+    "È snello: non invade e ti lascia gustare i dettagli del piatto",
+    "Resta leggero e preciso: accompagna senza coprire",
+    "È tutto giocato sulla misura: sorso agile e boccone protagonista",
+    "Ha un profilo fine: valorizza il piatto senza alzare la voce",
+    "Scorrevole e pulito, così il piatto resta al centro",
+    "È essenziale e gastronomico: non appesantisce, ma dà continuità",
+  ];
+  lines.push(pickOne(base, rand));
+}
 
   // pick 2 frasi, massimo naturale
   const pool = lines.filter(Boolean);
@@ -1159,21 +1203,35 @@ function buildMotivation(
   const core = lowerFirst(buildPairingCore(profile, dish, rand));
 
   // prendi 1–2 note tra tasting/typical (senza diventare prolissi)
-  const notes = pickUnique(
-    [...(ctx.tastingNotes || []), ...(ctx.typicalNotes || [])],
-    2,
-    rand,
-  ).map((s) => trimToWords(s, 4));
+const rawNotes = pickUnique(
+  [...(ctx.tastingNotes || []), ...(ctx.typicalNotes || [])],
+  4, // prendo più roba e poi filtro
+  rand,
+).map((s) => trimToWords(s, 4));
+
+const notes: string[] = [];
+const seen = new Set<string>();
+for (const n of rawNotes) {
+  const k = norm(n).replace(/[^\p{L}\p{N} ]+/gu, " ").replace(/\s+/g, " ").trim();
+  if (!k || seen.has(k)) continue;
+  seen.add(k);
+  notes.push(n);
+  if (notes.length >= 2) break;
+}
 
   const hasNotes = notes.length > 0;
 
   // intro “da sala” (variazione)
-  const intros = [
-    "Io lo sceglierei perché",
-    "È un abbinamento che funziona perché",
-    "Qui ci sta benissimo:",
-    "Se vuoi andare sul sicuro:",
-  ];
+const intros = [
+  "Io lo sceglierei perché",
+  "È un abbinamento che funziona perché",
+  "Qui ci sta benissimo:",
+  "Se vuoi andare sul sicuro:",
+  "Secondo me è centrato perché",
+  "Da sommelier te lo dico: ",
+  "Se vuoi un sorso “giusto”,",
+  "È una scelta elegante perché",
+];
   const intro = intros[Math.floor(rand() * intros.length)];
 
   let text = "";
@@ -1186,8 +1244,40 @@ text = `${intro} ${notePart} ${core}`;
 
   // compatto, una riga, niente spiegoni
   text = text.replace(/\s+/g, " ").trim();
-  const final = wordCount(text) <= 34 ? text : trimToWords(text, 34);
-  return final.endsWith(".") ? final : final + ".";
+
+let final = text;
+
+if (wordCount(final) > 34) {
+  // prova a tenere solo la prima frase (o le prime 2 se ci stanno)
+  const sents = final.split(/(?<=[.!?])\s+/).filter(Boolean);
+  let acc = "";
+  for (const s of sents) {
+    const candidate = acc ? `${acc} ${s}` : s;
+    if (wordCount(candidate) <= 34) acc = candidate;
+    else break;
+  }
+  final = acc || trimToWords(sents[0] || final, 34);
+}
+
+// pulizia finale: evita che finisca con "e" / "ed" / ";"
+final = final.replace(/\b(e|ed)\s*$/i, "").trim();
+final = final.replace(/;\s*$/g, "").trim();
+
+// micro-firma da sala (raramente), dà identità senza essere ripetitiva
+if (rand() < 0.28) {
+  const closers = [
+    "Da tavola vera.",
+    "Molto gastronomico.",
+    "Bevibilità altissima.",
+    "Equilibrio e pulizia.",
+    "Sorso preciso, finale pulito.",
+    "Scorrevole e centrato.",
+  ];
+  const c = pickOne(closers, rand);
+  // evita doppia chiusura se già lunghissimo
+  if (wordCount(final) <= 28) final = `${final} ${c}`;
+}
+return final.endsWith(".") ? final : final + ".";
 }
 
 /** =========================
