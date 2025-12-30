@@ -1558,14 +1558,23 @@ serve(async (req) => {
     });
 
     // logging sintetico server-side
-    console.log("PICKED", out.map((x) => ({
+console.log(
+  "PICKED",
+  {
+    piatto,
+    seed: `${ristorante_id}|${norm(piatto)}|${day}`,
+    picks: out.map((x) => ({
       nome: x.nome,
       colore: x.colore,
       q: +Number(x.__q ?? 0).toFixed(3),
       base: +Number(x.__scoreCore ?? 0).toFixed(3),
       style: x.__style,
+      grape: x.grape,
+      motive: x.motive,
       prof: x.__profile,
-    })), { seed: `${ristorante_id}|${norm(piatto)}|${day}` });
+    })),
+  },
+);
 
     // persist log
     try {
