@@ -534,6 +534,37 @@ Piatti: ${items.map((s) => `"${s}"`).join(", ")}
  *  PRIORS LOADING
  *  ========================= */
 
+function toStringArray(raw: any): string[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.map(x => String(x)).filter(Boolean);
+
+  const s = String(raw).trim();
+  if (!s) return [];
+
+  // JSON array
+  if (s.startsWith("[") && s.endsWith("]")) {
+    try {
+      const arr = JSON.parse(s);
+      return Array.isArray(arr) ? arr.map(x => String(x)).filter(Boolean) : [s];
+    } catch {
+      return [s];
+    }
+  }
+
+  // Postgres text[] style: {"a","b"} oppure {a,b}
+  if (s.startsWith("{") && s.endsWith("}")) {
+    const inner = s.slice(1, -1).trim();
+    if (!inner) return [];
+    // split “safe enough” per il tuo caso (virgolette e virgole)
+    return inner
+      .split(/",(?![^"]*")|,(?![^"]*")/g)
+      .map(x => x.replace(/^"+|"+$/g, "").trim())
+      .filter(Boolean);
+  }
+
+  return [s];
+}
+
 async function loadPriors(headers: Record<string, string>): Promise<Priors> {
   const supabaseUrl = "https://ldunvbftxhbtuyabgxwh.supabase.co";
 
@@ -557,10 +588,10 @@ async function loadPriors(headers: Record<string, string>): Promise<Priors> {
     const gp: GrapePrior = {
       display_name: String(r.display_name || r.grape_norm || ""),
       profile,
-      tasting_notes: Array.isArray(r.tasting_notes) ? r.tasting_notes : [],
-      pairings: Array.isArray(r.pairings) ? r.pairings : [],
-      style_hints: Array.isArray(r.style_hints) ? r.style_hints : [],
-      text_summary: Array.isArray(r.text_summary) ? r.text_summary : [],
+      tasting_notes: toStringArray(r.tasting_notes),
+pairings: toStringArray(r.pairings),
+style_hints: toStringArray(r.style_hints),
+text_summary: toStringArray(r.text_summary),
     };
     const primary = norm(String(r.grape_norm || r.display_name || ""));
     if (primary) grapesByKey.set(primary, gp);
@@ -590,15 +621,11 @@ async function loadPriors(headers: Record<string, string>): Promise<Priors> {
       denom_norm: String(r.denom_norm || ""),
       delta,
       default_color: parseDefaultColor(r.default_color),
-      typical_notes: Array.isArray(r.typical_notes) ? r.typical_notes : [],
-      typical_pairings: Array.isArray(r.typical_pairings)
-        ? r.typical_pairings
-        : [],
-      style_hints: Array.isArray(r.style_hints) ? r.style_hints : [],
-      terroir_tags: Array.isArray(r.terroir_tags) ? r.terroir_tags : [],
-      palate_template: Array.isArray(r.palate_template)
-        ? r.palate_template
-        : [],
+      typical_notes: toStringArray(r.typical_notes),
+typical_pairings: toStringArray(r.typical_pairings),
+style_hints: toStringArray(r.style_hints),
+terroir_tags: toStringArray(r.terroir_tags),
+palate_template: toStringArray(r.palate_template),
     };
 
     const mainKey = norm(String(r.denom_norm || ""));
@@ -674,41 +701,118 @@ function buildTags(ctx: WineTextContext, colore: Colore): Set<string> {
   return tags;
 }
 
+type UvPart = { key: string; weight: number; display?: string };
+
+function parseUvaggioWeighted(uvaggioRaw: string, priors: Priors): UvPart[] {
+  const s0 = (uvaggioRaw || "")
+    .replace(/\.+$/g, "")
+    .replace(/biologico/gi, " ")
+    .replace(/nelle variet[àa]/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!s0) return [];
+
+  // split “umano” (virgole, ;, /, &, +, e)
+  const chunks = s0
+    .split(/[,;\/&+]|(?:\s+e\s+)|(?:\s+ed\s+)/gi)
+    .map(x => x.trim())
+    .filter(Boolean);
+
+  const temp: { key: string; pct?: number; display?: string }[] = [];
+
+  for (const c of chunks) {
+    const m = c.match(/(\d+(?:[.,]\d+)?)\s*%/);
+    const pct = m ? parseFloat(m[1].replace(",", ".")) : undefined;
+
+    const name = norm(c.replace(/(\d+(?:[.,]\d+)?)\s*%/g, " "))
+      .replace(/\b(varieta|varieta|uve|uvaggio|blend)\b/g, "")
+      .trim();
+
+    if (!name) continue;
+
+    // prova match diretto su grape_profiles (incl. synonyms già in map)
+    const gp = priors.grapesByKey.get(name);
+    if (gp) {
+      temp.push({ key: name, pct, display: gp.display_name });
+      continue;
+    }
+
+    // fallback: a volte arriva "cabernet sauvignon" -> ok; ma se restano parole extra
+    // prova a trovare una chiave contenuta (light, non costoso)
+    let foundKey = "";
+    for (const k of priors.grapesByKey.keys()) {
+      if (k.length >= 4 && name.includes(k)) { foundKey = k; break; }
+    }
+    if (foundKey) {
+      const gp2 = priors.grapesByKey.get(foundKey);
+      temp.push({ key: foundKey, pct, display: gp2?.display_name });
+    }
+  }
+
+  if (!temp.length) return [];
+
+  const withPct = temp.filter(x => typeof x.pct === "number" && !isNaN(x.pct!));
+  const withoutPct = temp.filter(x => x.pct == null);
+
+  if (withPct.length === 0) {
+    const w = 1 / temp.length;
+    return temp.map(x => ({ key: x.key, weight: w, display: x.display }));
+  }
+
+  const sumPct = withPct.reduce((a, x) => a + (x.pct || 0), 0);
+  const rem = Math.max(0, 100 - sumPct);
+  const fill = withoutPct.length ? (rem / withoutPct.length) : 0;
+
+  const parts = temp.map(x => ({
+    key: x.key,
+    display: x.display,
+    weight: ((x.pct ?? fill) / 100),
+  }));
+
+  // normalizza pesi (nel caso sum>100 o stringhe strane)
+  const S = parts.reduce((a, p) => a + p.weight, 0) || 1;
+  return parts
+    .map(p => ({ ...p, weight: p.weight / S }))
+    .filter(p => p.weight > 0.0001)
+    .sort((a,b) => b.weight - a.weight);
+}
+
 function profileAndContextFromWine(
   w: any,
   priors: Priors,
   coloreCategoria: Colore,
 ): { profile: Profile; colore: Colore; ctx: WineTextContext } {
-  const uvTokens = splitGrapes(String(w.uvaggio || "")).map(norm);
+  const uvParts = parseUvaggioWeighted(String(w.uvaggio || ""), priors);
+const uvTokens = uvParts.map(p => p.key);
 
-  const foundGrapes: GrapePrior[] = [];
-  for (const tok of uvTokens) {
-    const gp = priors.grapesByKey.get(tok);
-    if (gp) foundGrapes.push(gp);
-  }
+const found: { gp: GrapePrior; w: number }[] = [];
+for (const part of uvParts) {
+  const gp = priors.grapesByKey.get(part.key);
+  if (gp) found.push({ gp, w: part.weight });
+}
 
-  let profile: Profile;
-  if (foundGrapes.length) {
-    const sum = foundGrapes.reduce(
-      (a, gp) => ({
-        acid: a.acid + gp.profile.acid,
-        tannin: a.tannin + gp.profile.tannin,
-        body: a.body + gp.profile.body,
-        sweet: a.sweet + gp.profile.sweet,
-        bubbles: Math.max(a.bubbles, gp.profile.bubbles),
-      }),
-      { acid: 0, tannin: 0, body: 0, sweet: 0, bubbles: 0 },
-    );
-    profile = {
-      acid: +(sum.acid / foundGrapes.length).toFixed(2),
-      tannin: +(sum.tannin / foundGrapes.length).toFixed(2),
-      body: +(sum.body / foundGrapes.length).toFixed(2),
-      sweet: +(sum.sweet / foundGrapes.length).toFixed(2),
-      bubbles: sum.bubbles > 0 ? 1 : 0,
-    };
-  } else {
-    profile = { acid: 0.55, tannin: 0.35, body: 0.52, sweet: 0, bubbles: 0 };
-  }
+let profile: Profile;
+if (found.length) {
+  const sumW = found.reduce((a, x) => a + x.w, 0) || 1;
+  const agg = found.reduce((a, x) => ({
+    acid: a.acid + x.gp.profile.acid * (x.w / sumW),
+    tannin: a.tannin + x.gp.profile.tannin * (x.w / sumW),
+    body: a.body + x.gp.profile.body * (x.w / sumW),
+    sweet: a.sweet + x.gp.profile.sweet * (x.w / sumW),
+    bubbles: Math.max(a.bubbles, x.gp.profile.bubbles),
+  }), { acid: 0, tannin: 0, body: 0, sweet: 0, bubbles: 0 });
+
+  profile = {
+    acid: +agg.acid.toFixed(2),
+    tannin: +agg.tannin.toFixed(2),
+    body: +agg.body.toFixed(2),
+    sweet: +agg.sweet.toFixed(2),
+    bubbles: agg.bubbles > 0 ? 1 : 0,
+  };
+} else {
+  profile = { acid: 0.55, tannin: 0.35, body: 0.52, sweet: 0, bubbles: 0 };
+}
 
   const ctx: WineTextContext = {
     grapes: [],
@@ -723,13 +827,13 @@ function profileAndContextFromWine(
     palateTemplate: [],
   };
 
-  for (const gp of foundGrapes) {
-    if (gp.display_name) ctx.grapes.push(gp.display_name);
-    ctx.tastingNotes.push(...(gp.tasting_notes || []));
-    ctx.grapePairings.push(...(gp.pairings || []));
-    ctx.grapeStyleHints.push(...(gp.style_hints || []));
-    ctx.grapeTextSummary.push(...(gp.text_summary || []));
-  }
+for (const { gp } of found) {
+  if (gp.display_name) ctx.grapes.push(gp.display_name);
+  ctx.tastingNotes.push(...toStringArray(gp.tasting_notes));
+  ctx.grapePairings.push(...toStringArray(gp.pairings));
+  ctx.grapeStyleHints.push(...toStringArray(gp.style_hints));
+  ctx.grapeTextSummary.push(...toStringArray(gp.text_summary));
+}
 
   const bag = norm(
     `${w.sottocategoria || ""} ${w.categoria || ""} ${w.nome || ""}`,
@@ -915,13 +1019,15 @@ function matchScore(
     sc += 0.1 * Math.min(pairingHits, 3);
   }
 
-  const styleAll = norm(
-    [
-      ...(wineCtx.grapeStyleHints || []),
-      ...(wineCtx.appStyleHints || []),
-      ...(wineCtx.terroirTags || []),
-    ].join(" "),
-  );
+const styleAll = norm(
+  [
+    ...(wineCtx.grapeStyleHints || []),
+    ...(wineCtx.appStyleHints || []),
+    ...(wineCtx.terroirTags || []),
+    ...(wineCtx.grapeTextSummary || []),
+    ...(wineCtx.palateTemplate || []),
+  ].join(" "),
+);
 
   const richDish = dish.fat >= 0.6 || dish.intensity >= 0.7 ||
     dish.cooking === "brasato";
@@ -1056,7 +1162,12 @@ if (dish.protein === "carne_rossa" || dish.cooking === "brasato") {
     "Non fa a pugni con l’ittico: resta scorrevole e preciso",
     "È l’abbinamento che non sbaglia: pulizia e armonia",
   ];
-  lines.push(pickOne(base, rand));
+
+  const pool = (dish.cooking === "crudo")
+    ? base
+    : base.filter(s => !/crudo/i.test(s));
+
+  lines.push(pickOne(pool, rand));
 
 } else if (dish.protein === "salumi") {
   const base = [
