@@ -961,7 +961,10 @@ function matchScore(
 /** =========================
  *  MOTIVAZIONE TESTUALE
  *  ========================= */
-
+function lowerFirst(s: string) {
+  s = (s || "").trim();
+  return s ? s[0].toLowerCase() + s.slice(1) : s;
+}
 function pickUnique(arr: string[], n: number, rand: () => number) {
   const clean = (arr || [])
     .map((x) => String(x || "").trim())
@@ -996,6 +999,10 @@ function joinNice(list: string[]) {
   return `${list.slice(0, -1).join(", ")} e ${list[list.length - 1]}`;
 }
 
+function pickOne(arr: string[], rand: () => number) {
+  return arr[Math.floor(rand() * arr.length)];
+}
+
 function buildPairingCore(profile: Profile, dish: Dish, rand: () => number) {
   const lines: string[] = [];
 
@@ -1008,25 +1015,102 @@ function buildPairingCore(profile: Profile, dish: Dish, rand: () => number) {
   const hasShoulder = profile.body >= 0.6;
   const isSoft = profile.sweet >= 0.12; // “punta di morbidezza”
 
-  // 1) frase “piatto-centric”
-  if (dish.protein === "carne_rossa" || dish.cooking === "brasato") {
-    lines.push("Sta al passo con la succulenza e la lunga cottura, senza perdere ritmo");
-  } else if (dish.protein === "carne_bianca") {
-    lines.push("Accompagna la carne con equilibrio: sapore pieno, ma senza coprire il piatto");
-  } else if (dish.protein === "pesce" || dish.cooking === "crudo") {
-    lines.push("È preciso e pulito sul pesce: resta armonico e non “indurisce” il boccone");
-  } else if (dish.protein === "salumi") {
-    lines.push("Con i salumi funziona perché ti pulisce la bocca e ti fa venire voglia di un altro assaggio");
-  } else if (dish.protein === "formaggio") {
-    lines.push("Con il formaggio regge bene la sapidità e la maturazione, senza impastare");
-  } else {
-    lines.push("Resta agile e gastronomico: sostiene il sapore, ma lascia il piatto protagonista");
-  }
+// 1) frase “piatto-centric” (POOL)
+if (dish.protein === "carne_rossa" || dish.cooking === "brasato") {
+  const base = [
+    "Sta al passo con la succulenza e la lunga cottura, senza perdere ritmo",
+    "Tiene testa al piatto e lo accompagna fino in fondo, boccone dopo boccone",
+    "Con questo piatto serve un rosso con spalla: qui non si siede mai",
+    "Fa da struttura al piatto: sostiene la carne e pulisce il finale",
+    "È centrato: regge la parte intensa senza diventare pesante",
+    "Sulla lunga cottura funziona perché resta teso e non si appiattisce",
+    "Si incastra bene con la parte pepata e la profondità del sugo",
+    "Ha passo lungo: accompagna la masticazione e chiude asciutto",
+    "È un rosso “da tavola”: sostiene il piatto senza sovrastarlo",
+    "Fa ordine nel boccone: intensità giusta e finale pulito",
+  ];
+  lines.push(pickOne(base, rand));
+
+} else if (dish.protein === "carne_bianca") {
+  const base = [
+    "Accompagna la carne bianca con equilibrio, senza coprire i sapori",
+    "È un abbinamento morbido: sostiene il piatto ma resta elegante",
+    "Sta bene perché non appesantisce e lascia il boccone pulito",
+    "Sulla carne bianca funziona perché resta preciso e scorrevole",
+    "Tiene il centro bocca pieno ma con un finale asciutto",
+    "Fa da spalla al piatto senza diventare invadente",
+    "Rispetta la delicatezza, ma dà comunque soddisfazione al sorso",
+    "È centrato: sapore, ma sempre con misura",
+  ];
+  lines.push(pickOne(base, rand));
+
+} else if (dish.protein === "pesce" || dish.cooking === "crudo") {
+  const base = [
+    "È preciso sul pesce: resta armonico e non indurisce il boccone",
+    "Sul crudo è perfetto perché è pulito e ti lascia la bocca fresca",
+    "Sta bene perché accompagna senza coprire la delicatezza del piatto",
+    "Funziona: bevi e hai subito voglia di un altro boccone",
+    "È un sorso “marino”: pulito, dritto e molto gastronomico",
+    "Tiene tutto in equilibrio e valorizza la parte più fine del piatto",
+    "Non fa a pugni con l’ittico: resta scorrevole e preciso",
+    "È l’abbinamento che non sbaglia: pulizia e armonia",
+  ];
+  lines.push(pickOne(base, rand));
+
+} else if (dish.protein === "salumi") {
+  const base = [
+    "Con i salumi funziona perché ti pulisce la bocca e invoglia l’assaggio successivo",
+    "È perfetto per i salumi: alleggerisce il grasso e resta scorrevole",
+    "Ti tiene il palato vivo tra un taglio e l’altro",
+    "Sta bene perché non diventa pesante e non impasta",
+    "Fa da “reset” tra un boccone e l’altro",
+    "Tiene insieme sapidità e grassezza con naturalezza",
+    "È un abbinamento da aperitivo serio: pulito e gastronomico",
+    "Con i salumi fa il suo lavoro: alleggerisce e rilancia",
+  ];
+  lines.push(pickOne(base, rand));
+
+} else if (dish.protein === "formaggio") {
+  const base = [
+    "Con il formaggio regge sapidità e maturazione senza impastare",
+    "Sta bene perché accompagna la cremosità e chiude pulito",
+    "Funziona: sostiene il gusto del formaggio e resta equilibrato",
+    "È centrato perché non diventa stucchevole con la parte grassa",
+    "Tiene il boccone ordinato e lascia una bella freschezza finale",
+    "Con il formaggio fa da spalla e non si perde",
+    "È un abbinamento che scorre: niente pesantezza, solo armonia",
+    "Si incastra bene con la sapidità e rende il sorso più invitante",
+  ];
+  lines.push(pickOne(base, rand));
+
+} else {
+  // veg / altro
+  const base = [
+    "Resta agile e gastronomico: sostiene il sapore, ma lascia il piatto protagonista",
+    "È un abbinamento pulito: accompagna e non invade",
+    "Sta bene perché dà slancio senza coprire i dettagli",
+    "È preciso: sorso scorrevole e molto “da tavola”",
+    "Fa compagnia al piatto senza prendersi la scena",
+    "È quello che scegli quando vuoi equilibrio e bevibilità",
+    "Tiene il ritmo del piatto e chiude asciutto",
+    "Rispetta i sapori e rende il boccone più leggero",
+  ];
+  lines.push(pickOne(base, rand));
+}
 
   // 2) dettaglio “meccanico” ma detto da sala
   if (dish.cooking === "fritto" || dish.fat >= 0.6) {
     if (hasBubbles) lines.push("La bollicina fa da spazzolino: ripulisce e alleggerisce ogni boccone");
-    else if (feelsFresh) lines.push("Ha lo slancio giusto per sgrassare e tenere il palato sempre vivo");
+    else if (feelsFresh) {
+  const base = [
+    "Ha lo slancio giusto per sgrassare e tenere il palato vivo",
+    "Ripulisce bene e rende il boccone più leggero",
+    "Dà freschezza e ti invita al sorso successivo",
+    "Fa da reset tra un boccone e l’altro",
+    "Tiene la bocca pulita e non stanca",
+  ];
+  lines.push(pickOne(base, rand));
+}
   }
 
   if (isSpicy) {
@@ -1039,7 +1123,17 @@ function buildPairingCore(profile: Profile, dish: Dish, rand: () => number) {
   }
 
   // intensità (detta bene)
-  if (isRich && hasShoulder) lines.push("Ha abbastanza spalla per non farsi mettere in ombra");
+  if (isRich && hasShoulder) {
+  const base = [
+    "Ha abbastanza spalla per non farsi mettere in ombra",
+    "Resta presente anche con un piatto importante",
+    "Ha struttura sufficiente per reggere il boccone",
+    "Non si perde: accompagna fino al finale",
+    "Tiene bene il ritmo anche sulla parte più intensa",
+  ];
+  lines.push(pickOne(base, rand));
+}
+
   if (isDelicate && !hasShoulder) lines.push("È snello: non invade e ti lascia gustare i dettagli del piatto");
 
   // pick 2 frasi, massimo naturale
@@ -1050,9 +1144,10 @@ function buildPairingCore(profile: Profile, dish: Dish, rand: () => number) {
     chosen.push(pool.splice(idx, 1)[0]);
   }
 
-  const text = chosen.join(". ");
-  const final = trimToWords(text.replace(/\s+/g, " ").replace(/\.\s*$/, ""), 26);
-  return final.endsWith(".") ? final : final + ".";
+  const text = chosen.join(". ").replace(/\s+/g, " ").trim();
+const parts = text.split(/(?<=[.!?])\s+/).filter(Boolean);
+const final = parts.slice(0, 2).join(" ").trim();
+return final.endsWith(".") ? final : final + ".";
 }
 
 function buildMotivation(
@@ -1061,7 +1156,7 @@ function buildMotivation(
   ctx: WineTextContext,
   rand: () => number,
 ): string {
-  const core = buildPairingCore(profile, dish, rand);
+  const core = lowerFirst(buildPairingCore(profile, dish, rand));
 
   // prendi 1–2 note tra tasting/typical (senza diventare prolissi)
   const notes = pickUnique(
@@ -1083,8 +1178,8 @@ function buildMotivation(
 
   let text = "";
   if (hasNotes) {
-    const notePart = `ti porta ${joinNice(notes)} e`;
-    text = `${intro} ${notePart} ${core}`;
+const notePart = `ti porta ${joinNice(notes)};`;
+text = `${intro} ${notePart} ${core}`;
   } else {
     text = `${intro} ${core}`;
   }
@@ -1541,12 +1636,12 @@ serve(async (req) => {
       const grape = (w.uvaggio && String(w.uvaggio).trim())
         ? String(w.uvaggio).trim()
         : "N.D.";
-      const motive = buildMotivation(
-        w.__profile,
-        dish,
-        w.__ctx,
-        rng,
-      );
+const wineRng = mulberry32(
+  hashStringToSeed(`${ristorante_id}|${norm(piatto)}|${day}|${w.nomeN}`),
+);
+
+const motive = buildMotivation(w.__profile, dish, w.__ctx, wineRng);
+
       const __style = styleOf(w.colore, w.__profile);
 
       return {
