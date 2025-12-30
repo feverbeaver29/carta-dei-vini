@@ -1000,6 +1000,7 @@ function joinNice(list: string[]) {
 }
 
 function pickOne(arr: string[], rand: () => number) {
+  if (!arr || arr.length === 0) return "";
   return arr[Math.floor(rand() * arr.length)];
 }
 
@@ -1181,7 +1182,7 @@ if (isDelicate && !hasShoulder && rand() < 0.85) {
 }
 
   // pick 2 frasi, massimo naturale
-  const pool = lines.filter(Boolean);
+  const pool = Array.from(new Set(lines.filter(Boolean)));
   const chosen: string[] = [];
   while (chosen.length < 2 && pool.length) {
     const idx = Math.floor(rand() * pool.length);
