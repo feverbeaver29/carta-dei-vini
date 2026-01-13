@@ -14,7 +14,7 @@
   --accent-color: #b00;
   --bg-default: #fff9f4;
   --bottom-bar-height: 56px;
-  --sommelier-side-gap: 12px;         /* margine ai lati */
+  --sommelier-side-gap: 10px;         /* margine ai lati */
   --sommelier-height:   64px;         /* leggermente > della bottom bar (56px) */
   --safe-bottom-gap: 24px; /* margine extra per ombre/animazioni */
 }
@@ -167,16 +167,17 @@ nav button{ background:none; border:none; font-size:1em; cursor:pointer; color:v
 #sommelierBtn{
   position:fixed;
   bottom: calc(var(--bottom-bar-height) + 22px);
-  left: var(--sommelier-side-gap);
-  right: var(--sommelier-side-gap);
-  transform: none;                     /* niente translateX */
-  width: auto;                         /* occupa tutto tra left e right */
-  max-width: none;                     /* niente limite */
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: min(calc(100% - (var(--sommelier-side-gap) * 2)), 560px);
+  max-width: 560px;
   height: var(--sommelier-height);
   min-height: var(--sommelier-height);
   padding: 8px 16px;                   /* più snello */
   gap: 10px;
   z-index:1000;
+  justify-content: center;
 
   /* aspetto “primo screen” */
   background: linear-gradient(90deg,
@@ -191,8 +192,8 @@ border: 1px solid rgba(255,255,255,.35);
   transition: transform .15s ease, filter .2s ease, box-shadow .2s ease;
   white-space:normal; /* consente al testo di andare a capo dentro al bottone */
 }
-#sommelierBtn:hover  { transform: scale(1.01); }
-#sommelierBtn:active { transform: scale(.98);  }
+#sommelierBtn:hover  { filter: brightness(1.05); }
+#sommelierBtn:active { filter: brightness(0.98); }
 
 /* — Avatar */
 #sommelierBtn img{
@@ -201,7 +202,7 @@ border: 1px solid rgba(255,255,255,.35);
 }
 
 /* — Testo e badge */
-#sommelierBtn .somm-text{ display:flex; flex-direction:column; line-height:1.05; max-width: none;white-space: normal;flex: 1 1 auto; }
+#sommelierBtn .somm-text{  display:flex;  flex-direction:column;  line-height:1.05;  flex: 1 1 auto;  text-align:center;  align-items:center;}
 #sommelierBtn .somm-title{ font-weight:800; letter-spacing:.2px;font-size: 0.95em; }
 #sommelierBtn .somm-sub{ font-size: 0.82em; opacity: .95; font-weight:600; margin-top:2px; line-height: 1.25; }
 
@@ -221,6 +222,16 @@ border: 1px solid rgba(255,255,255,.35);
 @keyframes sommPulse{
   0%{ box-shadow:0 0 0 0 rgba(0,0,0,.22), 0 10px 24px rgba(0,0,0,.18); }
   100%{ box-shadow:0 0 0 16px rgba(0,0,0,0), 0 10px 24px rgba(0,0,0,.18); }
+}
+
+#sommelierBtn.breathe{
+  animation: sommBreathe 5.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes sommBreathe{
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50%      { transform: translateX(-50%) scale(1.02); }
 }
 
 /* Popover posizionati sopra la bar */
@@ -2150,6 +2161,7 @@ btn.innerHTML = `
   </div>
 `;
   document.body.appendChild(btn);
+  btn.classList.add("breathe");
   refreshSommelierBtnCopy();
 
   trackSommelier("sommelier_btn_shown", {
@@ -2165,20 +2177,11 @@ btn.innerHTML = `
     toggleSommelier();
   });
 
-  // Effetti periodici: glow e wiggle (soft)
-  setInterval(() => btn.classList.toggle("glow"), 3500);
 setInterval(() => {
   if (localStorage.getItem("sommelier_seen")) return; // solo finché non l’hanno mai usato
   btn.classList.add("wiggle");
   setTimeout(() => btn.classList.remove("wiggle"), 950);
 }, 22000);
-
-
-  // Pulse solo se mai cliccato
-  if (!localStorage.getItem("sommelier_seen")) {
-    btn.classList.add("pulse");
-  }
-
 
     const overlay = document.createElement("div");
     overlay.id = "sommelierOverlay";
