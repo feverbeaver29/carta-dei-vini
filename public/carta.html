@@ -2737,14 +2737,15 @@ function sortByOrder(array, orderArray) {
 // override showCategories and showSubcategories to apply order
 const originalShowCategories = window.showCategories;
 const originalShowSubcategories = window.showSubcategories;
+const _catI18nCache = new Map(); // key: lang|originalText -> translatedText
 let _catRenderToken = 0;
 
 window.showCategories = async function () {
   setHelperByKey('helperChooseCategory');
 
-  // 👉 1) calcolo l’elenco categorie dai vini filtrati (come prima)
   const { ids, map } = getCheckedFormats();
   const filtered = winesMatchFormats(wines, ids, map);
+
   const seen = new Map();
   filtered.forEach(w => {
     const key = normalize(w.categoria);
@@ -2752,7 +2753,6 @@ window.showCategories = async function () {
   });
 
   let orderedKeys = Array.from(seen.keys());
-
   if (categoriaOrder.length) {
     const seenKeys = Array.from(seen.keys());
     const customOrder = categoriaOrder
@@ -2764,53 +2764,74 @@ window.showCategories = async function () {
     if (customOrder.length > 0) orderedKeys = customOrder;
   }
 
-  // 👉 2) token di render per annullare render precedenti
   const myToken = ++_catRenderToken;
 
   const container = document.getElementById('category-list');
   if (!container) return;
   container.style.display = 'block';
-  container.innerHTML = ''; // svuota SUBITO
+  container.innerHTML = ''; // ok: svuoto, MA POI renderizzo SUBITO
 
-  // 👉 3) preparo TUTTI i testi (tradotti) prima, poi renderizzo una sola volta
-  const items = await Promise.all(orderedKeys.map(async (key) => {
-    let display = seen.get(key);
-    if (currentLang !== "it") {
-      try {
-        const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-categoria", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: display, targetLang: currentLang })
-        });
-        const data = await res.json();
-        display = (data.text?.trim()) || display;
-      } catch (_) {}
-    }
-    return { key, display };
-  }));
-
-  // 👉 4) se nel frattempo è partito un altro render, mi fermo
-  if (myToken !== _catRenderToken) return;
-
-  // 👉 5) dedup per sicurezza (es. due categorie diverse -> stessa traduzione)
-  const already = new Set();
+  // 1) Render immediato (nessun await)
   const frag = document.createDocumentFragment();
-  for (const { key, display } of items) {
-    const label = display;
-    const dedupKey = normalize(label);
-    if (already.has(dedupKey)) continue;
-    already.add(dedupKey);
+  const nodeByKey = new Map();
+
+  for (const key of orderedKeys) {
+    const original = seen.get(key) || key;
 
     const div = document.createElement('div');
     div.className = 'category';
-    div.textContent = label;
+
+    // testo immediato: cache se esiste, altrimenti originale
+    const cacheKey = `${currentLang}|${original}`;
+    div.textContent = _catI18nCache.get(cacheKey) || original;
+
     div.onclick = () => showSubcategories(key);
+
     frag.appendChild(div);
+    nodeByKey.set(key, { node: div, original });
   }
 
   container.appendChild(frag);
   applyPalette(window.ristorantePalette);
+
+  // 2) Traduzione “lazy” (aggiorna card una a una)
+  if (currentLang === "it") return;
+
+  for (const [key, obj] of nodeByKey.entries()) {
+    // se già in cache, skip
+    const cacheKey = `${currentLang}|${obj.original}`;
+    if (_catI18nCache.has(cacheKey)) continue;
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2500); // evita “appesi”
+
+      const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-categoria", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: obj.original, targetLang: currentLang }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeout);
+
+      const data = await res.json();
+      const translated = (data.text?.trim()) || obj.original;
+
+      _catI18nCache.set(cacheKey, translated);
+
+      // se nel frattempo è cambiata lingua / rerender → non tocco più niente
+      if (myToken !== _catRenderToken) return;
+
+      // aggiorna testo solo se il nodo è ancora quello giusto
+      if (obj.node && obj.node.isConnected) obj.node.textContent = translated;
+
+    } catch (e) {
+      // fallback: resta originale (niente blocchi, niente lista vuota)
+    }
+  }
 };
+
 
 window.showSubcategories = function (category) {
   currentCategory = category;
