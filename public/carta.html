@@ -203,7 +203,7 @@ border: 1px solid rgba(255,255,255,.35);
 /* — Testo e badge */
 #sommelierBtn .somm-text{ display:flex; flex-direction:column; line-height:1.05; max-width: none;white-space: normal;flex: 1 1 auto; }
 #sommelierBtn .somm-title{ font-weight:800; letter-spacing:.2px;font-size: 0.95em; }
-#sommelierBtn .somm-sub{ font-size: 0.82em; opacity: .95; font-weight:600; margin-top:2px; }
+#sommelierBtn .somm-sub{ font-size: 0.82em; opacity: .95; font-weight:600; margin-top:2px; line-height: 1.25; }
 
 /* — Effetti */
 #sommelierBtn.glow{ box-shadow:0 14px 28px rgba(0,0,0,.2), 0 0 0 6px rgba(255,255,255,.35) inset, 0 0 24px rgba(255,60,120,.35); }
@@ -903,7 +903,7 @@ function refreshSommelierBtnCopy(){
   const subEl   = btn.querySelector('[data-key="sommelierBtnSub"]');
 
   if (titleEl) titleEl.textContent = t.sommelierBtnTitle || "";
-  if (subEl)   subEl.textContent   = getSommelierBtnSubText();
+  if (subEl)   subEl.innerHTML   = getSommelierBtnSubText();
 
   // aria-label più descrittivo
   btn.setAttribute("aria-label", t.sommelierBtnTitle || t.sommelierBtn || "Sommelier");
