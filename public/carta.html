@@ -560,7 +560,8 @@ body.pdf-export {
   <div style="flex: 1; display: flex; justify-content: center;">
     <div id="restaurantName"><span>CARTA DEI VINI</span></div>
   </div>
-    <select id="langSelector" onchange="changeLanguage()" style="margin-left: 10px; font-size: 1.5em;">
+  <span id="langHint" style="margin-left:10px; font-size:12px; opacity:.75; font-weight:700;">🌍 Language</span>
+    <select id="langSelector" onchange="changeLanguage()"  style="margin-left:8px; font-size:1.3em; border-radius:999px; padding:6px 10px; border:1px solid rgba(0,0,0,.15); background:rgba(255,255,255,.8);">
     <option value="it">🇮🇹</option>
     <option value="en">🇬🇧</option>
     <option value="fr">🇫🇷</option>
@@ -1159,6 +1160,7 @@ window.paletteColors = {
 function changeLanguage() {
   const langSelector = document.getElementById("langSelector");
   currentLang = langSelector.value;
+  localStorage.setItem("lang_pref", currentLang);
   if (!translations[currentLang]) { currentLang = "en"; langSelector.value = "en"; }
 
   applyTranslations();
@@ -2915,6 +2917,22 @@ if (window._manualNavigation !== true) {
   history.pushState({ view: "subcategory", category }, "");
 }
 };
+function pickBestLang() {
+  // 1) se l’utente aveva già scelto una lingua in passato, rispetta quella
+  const saved = localStorage.getItem("lang_pref");
+  if (saved && translations[saved]) return saved;
+
+  // 2) lingua del browser/telefono
+  const nav = (navigator.languages && navigator.languages.length ? navigator.languages[0] : navigator.language) || "en";
+  const base = nav.toLowerCase().split("-")[0];
+
+  // 3) mappa lingue supportate
+  const supported = new Set(Object.keys(translations)); // it,en,fr,de,es,zh,ko,ru
+  if (supported.has(base)) return base;
+
+  // 4) fallback: se è italiano → it, altrimenti inglese
+  return base === "it" ? "it" : "en";
+}
 
 (async () => {
   // 1) Prima risolviamo l’ID del ristorante (da query, slug o utente loggato)
@@ -2936,6 +2954,15 @@ if (window._manualNavigation !== true) {
   if (ristorante && RESTAURANT_ID) {
     await loadWineData();
     setupFilterUI();
+    // 🌍 auto-lingua (telefono) con fallback
+    const best = pickBestLang();
+    currentLang = best;
+
+    const sel = document.getElementById("langSelector");
+    if (sel) sel.value = best;
+
+    applyTranslations();
+    refreshFilterOptionsPreservingState();
     showCategories();
   }
 
