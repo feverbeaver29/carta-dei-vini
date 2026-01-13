@@ -2737,7 +2737,70 @@ function sortByOrder(array, orderArray) {
 // override showCategories and showSubcategories to apply order
 const originalShowCategories = window.showCategories;
 const originalShowSubcategories = window.showSubcategories;
-const _catI18nCache = new Map(); // key: lang|originalText -> translatedText
+// --- I18N CACHE (memory + localStorage) ---
+const _catI18nCache = new Map(); // key: lang|text -> translated
+const _catI18nLSKey = "cat_i18n_cache_v1";
+
+(function loadCatCache(){
+  try{
+    const raw = localStorage.getItem(_catI18nLSKey);
+    if (!raw) return;
+    const obj = JSON.parse(raw);
+    Object.entries(obj).forEach(([k,v]) => _catI18nCache.set(k, v));
+  } catch {}
+})();
+
+function saveCatCache(){
+  try{
+    const obj = Object.fromEntries(_catI18nCache.entries());
+    localStorage.setItem(_catI18nLSKey, JSON.stringify(obj));
+  } catch {}
+}
+
+function fetchWithTimeout(url, opts={}, ms=2500){
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { ...opts, signal: controller.signal })
+    .finally(() => clearTimeout(t));
+}
+
+async function translateCatOnce(text, lang){
+  const key = `${lang}|${text}`;
+  if (_catI18nCache.has(key)) return _catI18nCache.get(key);
+
+  const body = JSON.stringify({ text, targetLang: lang });
+
+  // 1° tentativo
+  try{
+    const res = await fetchWithTimeout(
+      "https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-categoria",
+      { method:"POST", headers:{ "Content-Type":"application/json" }, body },
+      2500
+    );
+    const data = await res.json();
+    const tr = (data.text || text).trim();
+    _catI18nCache.set(key, tr);
+    return tr;
+  } catch(e){}
+
+  // retry 1 volta (breve)
+  try{
+    const res = await fetchWithTimeout(
+      "https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-categoria",
+      { method:"POST", headers:{ "Content-Type":"application/json" }, body },
+      3500
+    );
+    const data = await res.json();
+    const tr = (data.text || text).trim();
+    _catI18nCache.set(key, tr);
+    return tr;
+  } catch(e){}
+
+  // fallback
+  _catI18nCache.set(key, text);
+  return text;
+}
+
 let _catRenderToken = 0;
 
 window.showCategories = async function () {
@@ -2764,74 +2827,32 @@ window.showCategories = async function () {
     if (customOrder.length > 0) orderedKeys = customOrder;
   }
 
-  const myToken = ++_catRenderToken;
-
   const container = document.getElementById('category-list');
   if (!container) return;
   container.style.display = 'block';
-  container.innerHTML = ''; // ok: svuoto, MA POI renderizzo SUBITO
+  container.innerHTML = '';
 
-  // 1) Render immediato (nessun await)
-  const frag = document.createDocumentFragment();
-  const nodeByKey = new Map();
+  const originals = orderedKeys.map(k => seen.get(k) || k);
 
-  for (const key of orderedKeys) {
-    const original = seen.get(key) || key;
+  // ✅ se non IT: preparo TUTTE le traduzioni prima di renderizzare
+  let labels = originals;
+  if (currentLang !== "it") {
+    labels = await Promise.all(originals.map(txt => translateCatOnce(txt, currentLang)));
+    saveCatCache(); // persiste per le prossime volte (istantaneo)
+  }
 
+  // Render una volta sola (zero "piano piano")
+  for (let i = 0; i < orderedKeys.length; i++) {
+    const key = orderedKeys[i];
     const div = document.createElement('div');
     div.className = 'category';
-
-    // testo immediato: cache se esiste, altrimenti originale
-    const cacheKey = `${currentLang}|${original}`;
-    div.textContent = _catI18nCache.get(cacheKey) || original;
-
+    div.textContent = labels[i];
     div.onclick = () => showSubcategories(key);
-
-    frag.appendChild(div);
-    nodeByKey.set(key, { node: div, original });
+    container.appendChild(div);
   }
 
-  container.appendChild(frag);
   applyPalette(window.ristorantePalette);
-
-  // 2) Traduzione “lazy” (aggiorna card una a una)
-  if (currentLang === "it") return;
-
-  for (const [key, obj] of nodeByKey.entries()) {
-    // se già in cache, skip
-    const cacheKey = `${currentLang}|${obj.original}`;
-    if (_catI18nCache.has(cacheKey)) continue;
-
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 2500); // evita “appesi”
-
-      const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-categoria", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: obj.original, targetLang: currentLang }),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeout);
-
-      const data = await res.json();
-      const translated = (data.text?.trim()) || obj.original;
-
-      _catI18nCache.set(cacheKey, translated);
-
-      // se nel frattempo è cambiata lingua / rerender → non tocco più niente
-      if (myToken !== _catRenderToken) return;
-
-      // aggiorna testo solo se il nodo è ancora quello giusto
-      if (obj.node && obj.node.isConnected) obj.node.textContent = translated;
-
-    } catch (e) {
-      // fallback: resta originale (niente blocchi, niente lista vuota)
-    }
-  }
 };
-
 
 window.showSubcategories = function (category) {
   currentCategory = category;
