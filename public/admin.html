@@ -267,8 +267,8 @@ h1 {    font-size: 1.3em;  }
   <h2>Lista Vini</h2>
 <div style="display: flex; flex-direction: column; gap: 0.8em; margin-top: 1em;">
   <input type="text" id="searchInput" placeholder="Cerca vino per nome..." oninput="renderTable()" style="width: 100%; max-width: 100%; padding: 0.5em; border-radius: 8px; border: 1px solid #ccc;">
+<!-- RIGA 1: Categoria + Sottocategoria -->
 <div style="display:flex; gap:1em; flex-wrap:nowrap; justify-content:space-between; align-items:flex-end;">
-
   <div style="flex: 1;">
     <label for="filterCategoria" style="font-size: 0.6em; margin-bottom: 4px; display: block;">Filtra per categoria</label>
     <select id="filterCategoria" onchange="currentPage=1;renderTable()" style="width: 100%; padding: 0.5em; border-radius: 8px; border: 1px solid #ccc;">
@@ -282,7 +282,10 @@ h1 {    font-size: 1.3em;  }
       <option value="">Tutte</option>
     </select>
   </div>
+</div>
 
+<!-- RIGA 2: Nascondi non visibili + Ordina -->
+<div style="display:flex; gap:1em; flex-wrap:nowrap; justify-content:space-between; align-items:flex-end; margin-top:0.6em;">
   <div style="flex: 1;">
     <label style="font-size: 0.6em; margin-bottom: 4px; display: block;">Visibilità</label>
     <div style="display:flex; align-items:center; gap:8px; height:42px; padding:0 0.5em; border-radius:8px; border:1px solid #ccc; background:#fff;">
@@ -302,8 +305,8 @@ h1 {    font-size: 1.3em;  }
       <option value="price_desc">Prezzo decrescente</option>
     </select>
   </div>
-
 </div>
+
 </div>
 
 <div id="wineCardContainer" style="display: flex; flex-direction: column; gap: 0.6em; margin-top: 1.5em;"></div>
