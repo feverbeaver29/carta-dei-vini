@@ -267,31 +267,33 @@ h1 {    font-size: 1.3em;  }
   <h2>Lista Vini</h2>
 <div style="display: flex; flex-direction: column; gap: 0.8em; margin-top: 1em;">
   <input type="text" id="searchInput" placeholder="Cerca vino per nome..." oninput="renderTable()" style="width: 100%; max-width: 100%; padding: 0.5em; border-radius: 8px; border: 1px solid #ccc;">
+<div style="display:flex; gap:1em; flex-wrap:nowrap; justify-content:space-between; align-items:flex-end;">
 
-  <div style="display: flex; gap: 1em; flex-wrap: nowrap; justify-content: space-between;">
-    <div style="flex: 1;">
-      <label for="filterCategoria" style="font-size: 0.6em; margin-bottom: 4px; display: block;">Filtra per categoria</label>
-      <select id="filterCategoria" onchange="renderTable()" style="width: 100%; padding: 0.5em; border-radius: 8px; border: 1px solid #ccc;">
-        <option value="">Tutte</option>
-      </select>
-    </div>
-
-    <div style="flex: 1;">
-      <label for="filterSottocategoria" style="font-size: 0.6em; margin-bottom: 4px; display: block;">Filtra per sottocategoria</label>
-      <select id="filterSottocategoria" onchange="renderTable()" style="width: 100%; padding: 0.5em; border-radius: 8px; border: 1px solid #ccc;">
-        <option value="">Tutte</option>
-      </select>
-    </div>
-  </div>
-  <div style="display:flex; gap:1em; align-items:flex-end; flex-wrap:wrap; margin-top:0.6em;">
-  <div style="display:flex; align-items:center; gap:8px;">
-    <input type="checkbox" id="hideNotVisible" onchange="currentPage=1;renderTable()">
-    <label for="hideNotVisible" style="margin:0; font-size:0.8em;">
-      Nascondi etichette non visibili
-    </label>
+  <div style="flex: 1;">
+    <label for="filterCategoria" style="font-size: 0.6em; margin-bottom: 4px; display: block;">Filtra per categoria</label>
+    <select id="filterCategoria" onchange="currentPage=1;renderTable()" style="width: 100%; padding: 0.5em; border-radius: 8px; border: 1px solid #ccc;">
+      <option value="">Tutte</option>
+    </select>
   </div>
 
-  <div style="flex:1; min-width: 180px;">
+  <div style="flex: 1;">
+    <label for="filterSottocategoria" style="font-size: 0.6em; margin-bottom: 4px; display: block;">Filtra per sottocategoria</label>
+    <select id="filterSottocategoria" onchange="currentPage=1;renderTable()" style="width: 100%; padding: 0.5em; border-radius: 8px; border: 1px solid #ccc;">
+      <option value="">Tutte</option>
+    </select>
+  </div>
+
+  <div style="flex: 1;">
+    <label style="font-size: 0.6em; margin-bottom: 4px; display: block;">Visibilità</label>
+    <div style="display:flex; align-items:center; gap:8px; height:42px; padding:0 0.5em; border-radius:8px; border:1px solid #ccc; background:#fff;">
+      <input type="checkbox" id="hideNotVisible" onchange="currentPage=1;renderTable()">
+      <label for="hideNotVisible" style="margin:0; font-size:0.8em; line-height:1.1;">
+        Nascondi non visibili
+      </label>
+    </div>
+  </div>
+
+  <div style="flex: 1;">
     <label for="sortBy" style="font-size: 0.6em; margin-bottom: 4px; display: block;">Ordina per</label>
     <select id="sortBy" onchange="currentPage=1;renderTable()" style="width: 100%; padding: 0.5em; border-radius: 8px; border: 1px solid #ccc;">
       <option value="name_asc" selected>Nome A → Z</option>
@@ -300,6 +302,7 @@ h1 {    font-size: 1.3em;  }
       <option value="price_desc">Prezzo decrescente</option>
     </select>
   </div>
+
 </div>
 </div>
 
