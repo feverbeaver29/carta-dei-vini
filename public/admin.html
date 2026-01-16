@@ -72,52 +72,69 @@
 .icon-16{width:14px;height:14px;object-fit:contain;vertical-align:middle;}
 .hint{font-size:0.75em;color:#666;margin-top:2px}
 
+/* Prezzi sotto al nome: lista verticale */
 .price-bar{
   display:flex;
-  flex-wrap:wrap;
-  gap:6px;
+  flex-direction:column;
+  gap:4px;
   margin-top:6px;
   padding-left:0.4em;
 }
-.price-chip{
-  display:inline-flex;
+
+.price-line{
+  display:flex;
   align-items:center;
   gap:6px;
-  background:#f6f6f6;
-  border:1px solid #e8e8e8;
-  border-radius:999px;
-  padding:3px 8px;
-  font-size:0.75em;
-  line-height:1;
+  font-size:0.78em;
+  line-height:1.15;
 }
-.price-chip.is-hidden{
+
+.price-line.is-hidden{
   opacity:0.45;
-  text-decoration:line-through;
 }
-.price-chip img{
+
+.price-line img{
   width:14px;
   height:14px;
   object-fit:contain;
+  vertical-align:middle;
 }
-.price-chip .lbl{
+
+.price-line .lbl{
   color:#555;
-  font-weight:600;
-  margin-right:2px;
+  font-weight:500;
+  white-space:nowrap;
 }
-.price-chip .actions{
+
+.price-line .sep{
+  color:#888;
+}
+
+.price-line .val{
+  font-weight:700;   /* prezzo in grassetto */
+}
+
+.price-line .actions{
+  margin-left:auto;
   display:inline-flex;
   align-items:center;
-  gap:4px;
-  margin-left:2px;
 }
-.price-chip .actions button{
+
+.eye-btn{
   background:none;
   border:none;
   cursor:pointer;
   padding:0 2px;
-  font-size:14px;
   line-height:1;
   color:#666;
+  display:inline-flex;
+  align-items:center;
+}
+
+.eye-btn svg{
+  width:16px;
+  height:16px;
+  display:block;
 }
 
 /* — repeater formati — */
@@ -839,13 +856,15 @@ const FORMAT_KEYS = {
 };
 
 const PRICE_META = [
-  { key:"prezzo",          label:"0,75",  icon:"bottleicon.png" },
-  { key:"prezzo_bicchiere",label:"calice",icon:"glassico.png"  },
-  { key:"prezzo_025",      label:"0,25",  icon:"bottleicon.png" },
-  { key:"prezzo_0375",     label:"0,375", icon:"bottleicon.png" },
-  { key:"prezzo_05",       label:"0,5",   icon:"bottleicon.png" },
-  { key:"prezzo_15",       label:"1,5",   icon:"bottleicon.png" },
-  { key:"prezzo_3l",       label:"3L",    icon:"bottleicon.png" },
+  { key:"prezzo",           label:"0,75",  icon:"bottleicon.png" },
+  { key:"prezzo_bicchiere", label:"calice",icon:"glassico.png"  },
+
+  // altri formati: solo testo (niente icona)
+  { key:"prezzo_025",       label:"0,25"  },
+  { key:"prezzo_0375",      label:"0,375" },
+  { key:"prezzo_05",        label:"1/2"   },
+  { key:"prezzo_15",        label:"1,5"   },
+  { key:"prezzo_3l",        label:"3L"    },
 ];
 
 function hasPrice(v){
@@ -870,17 +889,6 @@ async function patchWine(id, patch){
   return res.ok;
 }
 
-async function clearPriceField(wine, key){
-  if (!wine?.id) return;
-  const ok = await patchWine(wine.id, { [key]: "" });
-  if (ok){
-    wine[key] = "";
-    renderTable();
-  } else {
-    showMessage("Errore rimozione prezzo", false);
-  }
-}
-
 async function toggleHiddenField(wine, key){
   if (!wine?.id) return;
   const map = getHiddenMap(wine);
@@ -899,43 +907,63 @@ function buildPricesBar(wine){
   const present = PRICE_META.filter(m => hasPrice(wine[m.key]));
   if (!present.length) return null;
 
-  const multi = present.length > 1; // <— la tua regola: controlli solo se + formati
+  const multi = present.length > 1; // occhio solo se + formati
   const hiddenMap = getHiddenMap(wine);
+
+  // mini SVG (niente librerie)
+  const EYE_OPEN = `
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="2" />
+      <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
+    </svg>`;
+  const EYE_OFF = `
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="2" />
+      <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
+      <path d="M4 20L20 4" stroke="currentColor" stroke-width="2" />
+    </svg>`;
 
   const bar = document.createElement("div");
   bar.className = "price-bar";
 
   present.forEach(m => {
-    const chip = document.createElement("span");
     const isHidden = !!hiddenMap[m.key];
-    chip.className = "price-chip" + (isHidden ? " is-hidden" : "");
 
-    chip.innerHTML = `
-      <img src="${m.icon}" alt="">
-      <span class="lbl">${m.label}</span>
+    const row = document.createElement("div");
+    row.className = "price-line" + (isHidden ? " is-hidden" : "");
+
+    // label: icona solo per prezzo (0,75) e calice
+    const left = document.createElement("span");
+    if (m.icon) {
+      left.innerHTML = `<img src="${m.icon}" alt="">`;
+    } else {
+      left.innerHTML = `<span class="lbl">${m.label}</span>`;
+    }
+
+    // testo: (icona) - PREZZO (bold)
+    const labelText = m.icon ? `<span class="lbl">${m.label}</span>` : "";
+    row.innerHTML = `
+      ${m.icon ? `<img src="${m.icon}" alt="">${labelText}` : `<span class="lbl">${m.label}</span>`}
+      <span class="sep">-</span>
       <span class="val">${wine[m.key]}</span>
     `;
 
+    // azioni: SOLO occhio, SOLO se multi-formato
     if (multi) {
       const actions = document.createElement("span");
       actions.className = "actions";
 
       const eye = document.createElement("button");
-      eye.title = isHidden ? "Mostra formato" : "Nascondi formato";
-      eye.textContent = isHidden ? "👁️" : "🙈";
+      eye.className = "eye-btn";
+      eye.title = isHidden ? "Mostra questo formato" : "Nascondi questo formato";
+      eye.innerHTML = isHidden ? EYE_OFF : EYE_OPEN;
       eye.onclick = (e) => { e.stopPropagation(); toggleHiddenField(wine, m.key); };
 
-      const x = document.createElement("button");
-      x.title = "Rimuovi prezzo";
-      x.textContent = "✕";
-      x.onclick = (e) => { e.stopPropagation(); clearPriceField(wine, m.key); };
-
       actions.appendChild(eye);
-      actions.appendChild(x);
-      chip.appendChild(actions);
+      row.appendChild(actions);
     }
 
-    bar.appendChild(chip);
+    bar.appendChild(row);
   });
 
   return bar;
