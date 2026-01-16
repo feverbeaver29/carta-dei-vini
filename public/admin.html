@@ -115,7 +115,7 @@
 }
 
 .price-line .actions{
-  margin-left:auto;
+  margin-left:6px;            /* 👈 vicino al prezzo */
   display:inline-flex;
   align-items:center;
 }
@@ -283,6 +283,24 @@ h1 {    font-size: 1.3em;  }
       </select>
     </div>
   </div>
+  <div style="display:flex; gap:1em; align-items:flex-end; flex-wrap:wrap; margin-top:0.6em;">
+  <div style="display:flex; align-items:center; gap:8px;">
+    <input type="checkbox" id="hideNotVisible" onchange="currentPage=1;renderTable()">
+    <label for="hideNotVisible" style="margin:0; font-size:0.8em;">
+      Nascondi etichette non visibili
+    </label>
+  </div>
+
+  <div style="flex:1; min-width: 180px;">
+    <label for="sortBy" style="font-size: 0.6em; margin-bottom: 4px; display: block;">Ordina per</label>
+    <select id="sortBy" onchange="currentPage=1;renderTable()" style="width: 100%; padding: 0.5em; border-radius: 8px; border: 1px solid #ccc;">
+      <option value="name_asc" selected>Nome A → Z</option>
+      <option value="name_desc">Nome Z → A</option>
+      <option value="price_asc">Prezzo crescente</option>
+      <option value="price_desc">Prezzo decrescente</option>
+    </select>
+  </div>
+</div>
 </div>
 
 <div id="wineCardContainer" style="display: flex; flex-direction: column; gap: 0.6em; margin-top: 1.5em;"></div>
@@ -445,6 +463,30 @@ if (wine.prezzo_3l){
   document.getElementById("saveButton").textContent = "Aggiorna";
 }
 
+function parsePriceNumber(v){
+  if (!v) return NaN;
+  // es: "€20", "€ 20,50", "$18.00"
+  const s = String(v)
+    .replace(/[^\d,.\-]/g, "")   // lascia numeri e separatori
+    .replace(",", ".")
+    .trim();
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+// prezzo “principale” per ordinare: usa bottiglia 0,75 se c’è, altrimenti il primo prezzo disponibile
+function getSortPrice(w){
+  const primary = parsePriceNumber(w.prezzo);
+  if (Number.isFinite(primary)) return primary;
+
+  const fallbackKeys = ["prezzo_bicchiere","prezzo_0375","prezzo_05","prezzo_025","prezzo_15","prezzo_3l"];
+  for (const k of fallbackKeys){
+    const n = parsePriceNumber(w[k]);
+    if (Number.isFinite(n)) return n;
+  }
+  return NaN;
+}
+
 function renderTable() {
   if (currentPage < 1) currentPage = 1;
 
@@ -454,16 +496,42 @@ function renderTable() {
   const search = document.getElementById("searchInput").value.trim().toLowerCase();
   const cat = document.getElementById("filterCategoria").value.trim().toLowerCase();
   const sub = document.getElementById("filterSottocategoria").value.trim().toLowerCase();
-  const perPage = parseInt(document.getElementById("itemsPerPage").value);
+    const perPage = parseInt(document.getElementById("itemsPerPage").value);
+  const hideNotVisible = document.getElementById("hideNotVisible")?.checked || false;
+  const sortBy = document.getElementById("sortBy")?.value || "name_asc";
 
   let filtered = winesData.filter(w => {
     const nome = (w.nome || '').toLowerCase();
     const categoria = (w.categoria || '').toLowerCase();
     const sottocategoria = (w.sottocategoria || '').toLowerCase();
-    return (!search || nome.includes(search)) &&
+        return (!search || nome.includes(search)) &&
            (!cat || categoria === cat) &&
-           (!sub || sottocategoria === sub);
+           (!sub || sottocategoria === sub) &&
+           (!hideNotVisible || w.visibile);   // 👈 se spunti, nasconde i non visibili
   });
+
+    // Ordinamento
+  if (sortBy === "name_asc") {
+    filtered.sort((a,b) => (a.nome || "").localeCompare(b.nome || "", "it", { sensitivity:"base" }));
+  } else if (sortBy === "name_desc") {
+    filtered.sort((a,b) => (b.nome || "").localeCompare(a.nome || "", "it", { sensitivity:"base" }));
+  } else if (sortBy === "price_asc") {
+    filtered.sort((a,b) => {
+      const pa = getSortPrice(a), pb = getSortPrice(b);
+      if (!Number.isFinite(pa) && !Number.isFinite(pb)) return 0;
+      if (!Number.isFinite(pa)) return 1;  // senza prezzo in fondo
+      if (!Number.isFinite(pb)) return -1;
+      return pa - pb;
+    });
+  } else if (sortBy === "price_desc") {
+    filtered.sort((a,b) => {
+      const pa = getSortPrice(a), pb = getSortPrice(b);
+      if (!Number.isFinite(pa) && !Number.isFinite(pb)) return 0;
+      if (!Number.isFinite(pa)) return 1;
+      if (!Number.isFinite(pb)) return -1;
+      return pb - pa;
+    });
+  }
 
   const totalPages = Math.ceil(filtered.length / perPage);
   if (currentPage > totalPages) currentPage = 1;
@@ -480,6 +548,7 @@ wrapper.style = `
   font-size: 0.85em;
   width: 100%;
   box-sizing: border-box;
+  opacity: ${wine.visibile ? 1 : 0.55};   /* 👈 più opaca se nascosta */
 `;
 
   const name = document.createElement("div");
