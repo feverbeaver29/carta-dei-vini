@@ -2043,10 +2043,24 @@ function goToCategories() {
 }
 window.goToCategories = goToCategories;
 
+function getHiddenMap(wine){
+  if (!wine || !wine.prezzi_hidden) return {};
+  if (typeof wine.prezzi_hidden === "string") {
+    try { return JSON.parse(wine.prezzi_hidden || "{}"); } catch { return {}; }
+  }
+  return wine.prezzi_hidden || {};
+}
+
+function hasVisiblePrice(w, key){
+  if (!w || !w[key]) return false;
+  const map = getHiddenMap(w);
+  return !map[key]; // true = mostrabile
+}
+
 function buildPriceHTML(w){
   const chips = [];
 
-  if (w.prezzo) {
+    if (hasVisiblePrice(w, "prezzo")) {
     chips.push(
       `<span class="price-chip">
          <img class="icon" src="bottleico.png"
@@ -2056,7 +2070,7 @@ function buildPriceHTML(w){
        </span>`
     );
   }
-  if (w.prezzo_bicchiere) {
+    if (hasVisiblePrice(w, "prezzo_bicchiere")) {
     chips.push(
       `<span class="price-chip">
          <img class="icon" src="glassico.png" alt="calice">
@@ -2065,12 +2079,17 @@ function buildPriceHTML(w){
     );
   }
 
-  const add = (label, val) => { if (val) chips.push(`<span class="price-chip"><strong>${label}</strong> ${val}</span>`); };
-  add('1/4lt',   w.prezzo_025);
-  add('0,375lt', w.prezzo_0375);
-  add('1/2lt',   w.prezzo_05);
-  add('1,5lt',   w.prezzo_15);
-  add('3lt',     w.prezzo_3l);
+  const add = (label, key) => {
+    if (hasVisiblePrice(w, key)) {
+      chips.push(`<span class="price-chip"><strong>${label}</strong> ${w[key]}</span>`);
+    }
+  };
+
+  add('1/4lt',   'prezzo_025');
+  add('0,375lt', 'prezzo_0375');
+  add('1/2lt',   'prezzo_05');
+  add('1,5lt',   'prezzo_15');
+  add('3lt',     'prezzo_3l');
 
   if (!chips.length) return '';
   return `<div class="price-row">${chips.join(' ')}</div>`;
@@ -3365,7 +3384,7 @@ const formatsMapUI = {                    // ← solo formati "bottiglia"
 const availableFormats = {};
 wines.forEach(w => {
   for (const [id, f] of Object.entries(formatsMapUI)) {
-    if (w[f.key]) availableFormats[id] = f;
+    if (hasVisiblePrice(w, f.key)) availableFormats[id] = f;
   }
 });
 
@@ -3483,7 +3502,7 @@ function refreshFilterOptionsPreservingState() {
   const availableFormats = {};
   wines.forEach(w => {
     for (const [id, f] of Object.entries(formatsMap)) {
-      if (w[f.key]) availableFormats[id] = f;
+      if (hasVisiblePrice(w, f.key)) availableFormats[id] = f;
     }
   });
 
@@ -3542,7 +3561,7 @@ function getCheckedFormats() {
 
 function winesMatchFormats(list, ids, map) {
   if (!ids.length) return []; // nessun formato selezionato → nessun vino
-  return list.filter(w => ids.some(f => w[map[f]]));
+  return list.filter(w => ids.some(f => hasVisiblePrice(w, map[f])));
 }
 
 function applyFilters() {
