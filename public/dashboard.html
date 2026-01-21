@@ -761,7 +761,7 @@ background: rgba(255,255,255,.92);
 </head>
 <body>
   <div class="page-title">
-  <div class="topbar"><div class="page-title">
+  <div class="topbar">
     <h1 id="ristoranteName">Nome Ristorante - Dashboard</h1>
 
     <div class="lang-switch" aria-label="Language selector">
@@ -1637,7 +1637,6 @@ background: rgba(255,255,255,.92);
     if (toggleLblStrong) toggleLblStrong.textContent = t("enable_virtual_sommelier");
 
     setText("#sommelierLogoTitle strong", t("sommelier_logo"));
-    if (somLogoStrong) somLogoStrong.textContent = t("sommelier_logo");
     setText('#impostazioniSommelier small', t("choose_our_sommeliers"));
 
     const imgMan = document.querySelector('img[src="sommelier.png"]'); if (imgMan) imgMan.alt = t("sommelier_man_alt");
