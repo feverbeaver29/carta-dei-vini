@@ -347,6 +347,9 @@ footer {
   padding: 6px 10px;
   cursor:pointer;
   font-size: 0.85em;
+    width: 160px;      /* desktop: più corto */
+  max-width: 50%;    /* non oltre metà riga */
+  text-align: center;
 }
 .file-btn:hover{ background: #DDE1E6; }
 .file-name{
@@ -371,6 +374,8 @@ footer {
     padding: 5px 8px;
     font-size: 0.78em;
     border-radius: 12px;
+    width: 140px;    /* mobile: ancora più corto */
+    max-width: 50%;
   }
 }
 
@@ -469,6 +474,16 @@ footer {
   display: flex;
   flex-direction: column;
   gap: 12px;
+
+  /* ✅ centra la colonna */
+  align-items: center;
+  width: 100%;
+}
+
+/* ✅ ogni “riga” dentro sommelier resta centrata e con larghezza controllata */
+#impostazioniSommelier > * {
+  width: 100%;
+  max-width: 420px;
 }
 
   #boostContainer {
@@ -2023,8 +2038,8 @@ function attachLogoListeners() {
 
   const wrapper = document.createElement("div");
   wrapper.style.position = "relative";
-  wrapper.style.maxWidth = "400px";
-  wrapper.style.marginBottom = "10px";
+wrapper.style.maxWidth = "400px";
+wrapper.style.margin = "0 auto 10px";   // ✅ centrato
 
   const input = document.createElement("input");
   input.type = "text";
