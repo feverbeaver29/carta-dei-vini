@@ -773,9 +773,36 @@ background: rgba(255,255,255,.92);
 }
 
 @media (max-width: 520px){
-  .topbar{ flex-wrap: wrap; justify-content:center; }
-  #ristoranteName{ width:100%; text-align:center; }
-  .lang-switch{ width:100%; justify-content:center; }
+  .topbar{
+    flex-wrap: nowrap;              /* ✅ non va a capo */
+    justify-content: space-between; /* ✅ titolo a sinistra, lingua a destra */
+    align-items: center;
+  }
+
+  #ristoranteName{
+    width: auto;                    /* ✅ non 100% */
+    text-align: left;
+    flex: 1 1 auto;
+    min-width: 0;                   /* ✅ evita overflow */
+    font-size: 1.05em;
+  }
+
+  .lang-switch{
+    width: auto;                    /* ✅ non 100% */
+    justify-content: flex-end;
+    flex: 0 0 auto;
+    gap: 6px;
+  }
+
+  /* opzionale: compattiamo leggermente select su schermi piccoli */
+  #langSelect{
+    padding: 6px 8px;
+    font-size: 0.9em;
+  }
+  #langLabel{
+    font-size: 0.9em;
+    white-space: nowrap;
+  }
 }
 
   </style>
