@@ -335,8 +335,8 @@ footer {
   display:flex;
   align-items:center;
   gap:10px;
-  justify-content:center;
-  flex-wrap:wrap;
+  justify-content:flex-start;   /* ✅ bottone a sinistra */
+  flex-wrap:nowrap;             /* ✅ nome a destra */
   margin-top: 6px;
 }
 .file-btn{
@@ -352,7 +352,8 @@ footer {
 .file-name{
   color: var(--muted);
   font-size: 0.9em;
-  max-width: 240px;
+  flex: 1 1 auto;               /* ✅ prende lo spazio a destra */
+  max-width: none;              /* ✅ lascia che si allarghi */
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
@@ -832,7 +833,7 @@ background: rgba(255,255,255,.92);
             </div>
             <label for="logoUpload" id="logoUploadLabel">oppure carica il logo del tuo ristorante</label>
 
-            <div class="file-field">
+            <div class="file-field" id="logoFileField">
               <input type="file" id="logoUpload" accept="image/*" hidden>
               <button type="button" class="file-btn" id="logoChooseBtn"></button>
               <span class="file-name" id="logoFileName"></span>
@@ -944,7 +945,7 @@ background: rgba(255,255,255,.92);
 </div>
 <input type="file" id="sommelierLogoUpload" accept="image/*" hidden>
 
-<div class="file-field">
+<div class="file-field" id="sommelierFileField">
   <button type="button" class="file-btn" id="sommelierChooseBtn"></button>
   <span class="file-name" id="sommelierFileName"></span>
 </div>
@@ -1737,6 +1738,19 @@ background: rgba(255,255,255,.92);
   input.__wfRenderFileName = renderName;
 }
 
+function setLogoUploadUIVisible(visible) {
+  const label = document.getElementById("logoUploadLabel");
+  const row = document.getElementById("logoFileField");
+  if (label) label.style.display = visible ? "block" : "none";
+  if (row) row.style.display = visible ? "flex" : "none";
+}
+
+function setSommelierUploadUIVisible(visible) {
+  const row = document.getElementById("sommelierFileField");
+  // la label del sommelier è dentro un <div> con lock, quindi lasciamo quella com’è
+  if (row) row.style.display = visible ? "flex" : "none";
+}
+
 function applyFileTranslations() {
   const logoChooseBtn = document.getElementById("logoChooseBtn");
   const somChooseBtn  = document.getElementById("sommelierChooseBtn");
@@ -1913,6 +1927,12 @@ function renderLogoPreview(url) {
     removeBtn.remove();
     document.getElementById("logoOptions").style.display = "none";
     toggleNameLogoOptions(false);
+    // mostra di nuovo UI upload + reset testo
+    setLogoUploadUIVisible(true);
+      const inp = document.getElementById("logoUpload");
+      if (inp) inp.value = "";
+      const name = document.getElementById("logoFileName");
+      if (name) name.textContent = t("no_file_selected");
     alert(t("logo_removed_success"));
     updatePreview();
   };
@@ -2373,11 +2393,13 @@ updateNamePreviewLive();
 updateLogoPreviewLive();
 
     if (info?.logo_url) {
+  setLogoUploadUIVisible(false);
   toggleNameLogoOptions(true);
   renderLogoPreview(info.logo_url);
   attachLogoListeners();
   updateLogoPreviewLive();
 } else {
+  setLogoUploadUIVisible(true); 
   toggleNameLogoOptions(false);
 }
 
@@ -2456,10 +2478,10 @@ if (!allowedTypes.includes(file.type)) {
     return alert(t("logo_upload_error"));
   }
 
-  const { data: { publicUrl } } = supabase
-    .storage
-    .from("loghi")
-    .getPublicUrl(filePath);
+const { data: { publicUrl } } = sb
+  .storage
+  .from("loghi")
+  .getPublicUrl(filePath);
 
   await sb
     .from("ristoranti")
@@ -2469,6 +2491,7 @@ if (!allowedTypes.includes(file.type)) {
   alert(t("logo_upload_success"));
   toggleNameLogoOptions(true);
   renderLogoPreview(publicUrl);
+  setLogoUploadUIVisible(false);
   attachLogoListeners();
   updateLogoPreviewLive();
 });
@@ -2788,7 +2811,7 @@ if (!allowedTypes.includes(file.type)) {
     return alert(t("sommelier_logo_upload_error"));
   }
 
-  const { data: { publicUrl } } = supabase
+  const { data: { publicUrl } } = sb
     .storage
     .from("sommelier")
     .getPublicUrl(fileName);
