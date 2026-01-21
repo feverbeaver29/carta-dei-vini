@@ -340,15 +340,15 @@ footer {
   margin-top: 6px;
 }
 .file-btn{
-  background: var(--accent);
-  color:#fff;
-  border:0;
-  border-radius: 16px;
-  padding: 8px 14px;
+  background: #E5E7EB;          /* grigio */
+  color: #111827;
+  border: 1px solid #D1D5DB;
+  border-radius: 14px;
+  padding: 6px 10px;
   cursor:pointer;
-  font-size: 0.9em;
+  font-size: 0.85em;
 }
-.file-btn:hover{ background: var(--accent-700); }
+.file-btn:hover{ background: #DDE1E6; }
 .file-name{
   color: var(--muted);
   font-size: 0.9em;
@@ -367,6 +367,11 @@ footer {
   /* riduciamo ancora un filo spazi e dimensioni */
   .impostazione .accordion-content { padding: 6px 10px; }
   .mini-save-btn { padding: 6px 12px; font-size: 0.85em; }
+  .file-btn{
+    padding: 5px 8px;
+    font-size: 0.78em;
+    border-radius: 12px;
+  }
 }
 
 
@@ -961,7 +966,7 @@ background: rgba(255,255,255,.92);
         <option value="5-7">Da 5 a 7</option>
       </select>
 
-      <label><strong>Vini da spingere in carta</strong></label>
+      <label id="boostWinesLabel"><strong>Vini da spingere in carta</strong></label>
       <div id="boostContainer"></div>
 
 <div style="position: relative; display: inline-flex; align-items: center; gap: 8px; margin-top: 6px;">
@@ -1665,10 +1670,7 @@ background: rgba(255,255,255,.92);
     }
 
     const boostStrong = document.querySelector('#impostazioniSommelier label strong:nth-child(1)'); // might be brittle
-    // safer: find label whose text contains "Vini da spingere"
-    document.querySelectorAll("#impostazioniSommelier label strong").forEach(st => {
-      if ((st.textContent || "").toLowerCase().includes("vini da spingere")) st.textContent = t("boost_wines");
-    });
+    setText("#boostWinesLabel strong", t("boost_wines"));
 
     // add boost button
     const addBoostBtn = document.getElementById("addBoostBtn");
@@ -1716,6 +1718,9 @@ background: rgba(255,255,255,.92);
     // footer
     setText("footer", t("footer_rights"));
     applyFileTranslations();
+    document.querySelectorAll("#boostContainer input").forEach(inp => {
+  inp.placeholder = t("search_wine_placeholder");
+});
   }
 
   function bindCustomFileUI(inputId, btnId, nameId) {
@@ -1901,8 +1906,8 @@ function renderLogoPreview(url) {
   preview.style.display = "block";
   preview.style.margin = "10px auto";
 
-  const uploadField = document.getElementById("logoUpload");
-  uploadField.insertAdjacentElement("afterend", preview);
+const anchor = document.getElementById("logoFileField") || document.getElementById("logoUpload");
+anchor.insertAdjacentElement("afterend", preview);
 
   const oldRemoveBtn = document.getElementById("removeLogoBtn");
   if (oldRemoveBtn) oldRemoveBtn.remove();
@@ -2608,7 +2613,7 @@ function goTo(path) {
       await sb.auth.signOut();
       window.location.href = "/";
     }
-    function showSettings(type) {
+    function showSettings(type, doScroll = true) {
 const main = document.querySelector("main");
 const showCarta = type === "carta";
 document.getElementById("cartaSettings").style.display = showCarta ? "block" : "none";
@@ -2637,7 +2642,7 @@ if (showCarta) initCartaQuickActions();
         }
       }
 
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (doScroll) window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     function showQRCode() {
