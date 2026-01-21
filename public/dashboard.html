@@ -347,9 +347,10 @@ footer {
   padding: 6px 10px;
   cursor:pointer;
   font-size: 0.85em;
-    width: 160px;      /* desktop: più corto */
-  max-width: 50%;    /* non oltre metà riga */
   text-align: center;
+  width: fit-content;
+flex: 0 0 auto;
+white-space: nowrap;
 }
 .file-btn:hover{ background: #DDE1E6; }
 .file-name{
@@ -360,6 +361,7 @@ footer {
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
+  min-width: 0;
 }
 
 /* mobile: impediamo ai bottoni di occupare tutta la riga in quest'area */
@@ -374,8 +376,6 @@ footer {
     padding: 5px 8px;
     font-size: 0.78em;
     border-radius: 12px;
-    width: 140px;    /* mobile: ancora più corto */
-    max-width: 50%;
   }
 }
 
@@ -440,7 +440,7 @@ footer {
   .dashboard-grid select,
   .dashboard-grid input[type="text"],
   .dashboard-grid input[type="file"],
-  .dashboard-grid button {
+  .dashboard-grid button:not(.file-btn) {
     width: 100%;
     max-width: 100%;
     font-size: 1em;
