@@ -708,6 +708,15 @@ background: rgba(255,255,255,.92);
 <body>
   <div class="page-title">
     <h1 id="ristoranteName">Nome Ristorante - Dashboard</h1>
+    <div class="lang-switch" aria-label="Language selector">
+      <label id="langLabel" for="langSelect">Lingua</label>
+      <select id="langSelect">
+        <option value="it">Italiano</option>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+      </select>
+    </div>
     </div>
 
 <main>
@@ -959,6 +968,692 @@ background: rgba(255,255,255,.92);
   <script>
 
   let sb, RESTAURANT_ID = null;
+  // ==========================
+  // i18n (Dashboard only)
+  // ==========================
+  const SUPPORTED_LANGS = ["it", "en", "fr", "es"];
+  let currentLang = "it";
+  window.__WF_LANG = () => currentLang;
+
+  const TRANSLATIONS = {
+    it: {
+      language: "Lingua",
+      dashboard_title: "{name} - Dashboard",
+      restaurant_default: "Ristorante",
+
+      settings_wine_list: "Impostazioni Carta dei Vini",
+      tab_name_logo: "Nome o Logo",
+      tab_style: "Stile carta",
+      tab_order: "Ordina le voci",
+
+      public_url: "URL pubblico",
+      slug_help_html: "Solo lettere, numeri e trattini. Esempio: <code>ristorante-mario-rossi</code>",
+      check: "Controlla",
+      url_prefix: "URL:",
+      display_name: "Nome da visualizzare",
+      name_font: "Font Nome",
+      name_size: "Dimensione Nome",
+      name_color: "Colore Nome",
+      bold: "Grassetto",
+      or_upload_logo: "oppure carica il logo del tuo ristorante",
+      logo_size: "Dimensione Logo",
+      save: "Salva",
+
+      style_wine_list: "Stile carta dei vini",
+      main_font: "Font principale",
+      colors_palette: "Palette Colori",
+      other_fonts: "Altri font...",
+      settings_saved: "✅ Impostazioni salvate con successo",
+
+      order_entries: "Ordina le voci",
+      order_categories: "Ordina Categorie",
+      order_subcategories: "Ordina Sottocategorie",
+      order_wines_by: "Ordina i vini per:",
+      order_price: "Prezzo",
+      order_vintage: "Annata",
+      order_alpha: "Alfabetico",
+      save_order: "Salva Ordine",
+
+      sommelier_settings: "Impostazioni Sommelier Virtuale",
+      enable_virtual_sommelier: "Abilita sommelier virtuale",
+      sommelier_logo: "Logo del sommelier",
+      choose_our_sommeliers: "Scegli tra i nostri sommelier",
+      sommelier_man_alt: "Sommelier Uomo",
+      sommelier_woman_alt: "Sommelier Donna",
+      or_upload_custom_logo: "oppure carica un logo personalizzato",
+      pro_only_title: "Disponibile solo per utenti PRO",
+      pro_only: "🔒 Disponibile solo per utenti PRO.",
+      pro_only_html: "🔒 Disponibile solo per utenti <strong>PRO</strong>.",
+      upgrade_now: "Passa ora al piano superiore",
+
+      wines_to_recommend: "Numero di vini da consigliare",
+      range_1_3: "Da 1 a 3",
+      range_3_5: "Da 3 a 5",
+      range_5_7: "Da 5 a 7",
+
+      boost_wines: "Vini da spingere in carta",
+      add_boost: "Aggiungi vino da spingere",
+      pro_only_short: "Solo per utenti PRO",
+      save_sommelier_settings: "Salva Impostazioni Sommelier",
+
+      choose_font: "Scegli un font",
+      close: "Chiudi",
+
+      download_qr: "Scarica QR Code",
+      download_pdf: "Scarica carta in PDF",
+      manage_subscription: "Gestisci abbonamento",
+      logout: "Logout",
+
+      nav_card: "Carta",
+      nav_sommelier: "Sommelier",
+      nav_wines: "Vini",
+      nav_view: "Visualizza",
+      nav_more: "Altro",
+
+      footer_rights: "© 2025 Wine's Fever - Tutti i diritti riservati",
+
+      // Dynamic messages / alerts
+      logo_preview_alt: "Anteprima Logo",
+      remove_logo: "✕ Rimuovi logo",
+      logo_removed_success: "Logo rimosso con successo!",
+      sommelier_logo_alt: "Logo Sommelier",
+      sommelier_logo_removed: "Logo del sommelier rimosso!",
+      remove: "Rimuovi",
+      search_wine_placeholder: "Cerca un vino dalla tua carta",
+
+      slug_enter: "Inserisci uno slug.",
+      slug_invalid: "Formato non valido. Usa solo lettere, numeri e trattini.",
+      slug_available: "Disponibile ✅",
+      slug_taken: "Già in uso ❌ Scegline un altro",
+      slug_verify_error: "Impossibile verificare. Riprova.",
+      slug_not_valid_alert: "Lo slug non è valido. Usa solo lettere, numeri e trattini.",
+      slug_taken_alert: "Questo URL è già in uso. Scegline un altro.",
+      slug_verify_error_alert: "Impossibile verificare la disponibilità dello slug. Riprova.",
+
+      sommelier_toggle_save_error: "Errore nel salvataggio dell'impostazione sommelier.",
+      unsupported_format: "Formato non supportato. Usa JPG, PNG, WEBP o GIF.",
+      logo_upload_error: "Errore nel caricamento del logo.",
+      logo_upload_success: "Logo caricato con successo!",
+      order_save_error: "Errore durante il salvataggio dell'ordine",
+      order_saved: "Ordine {type} salvato!",
+      need_open_category: "Devi prima aprire una categoria per ordinare le sottocategorie.",
+      preview_not_available: "Anteprima carta non disponibile. Ricarica la pagina e riprova.",
+      save_error: "Errore nel salvataggio. Riprova.",
+      saved_short: "✅ Salvato!",
+      sommelier_saved: "Impostazioni del sommelier salvate!",
+      sommelier_pro_only_alert: "Questa funzione è disponibile solo per utenti PRO. Passa al piano superiore nella sezione Abbonamento.",
+      sommelier_logo_upload_error: "Errore nel caricamento del logo del sommelier."
+    },
+
+    en: {
+      language: "Language",
+      dashboard_title: "{name} - Dashboard",
+      restaurant_default: "Restaurant",
+
+      settings_wine_list: "Wine List Settings",
+      tab_name_logo: "Name or Logo",
+      tab_style: "Menu style",
+      tab_order: "Reorder items",
+
+      public_url: "Public URL",
+      slug_help_html: "Only letters, numbers and hyphens. Example: <code>restaurant-mario-rossi</code>",
+      check: "Check",
+      url_prefix: "URL:",
+      display_name: "Display name",
+      name_font: "Name font",
+      name_size: "Name size",
+      name_color: "Name color",
+      bold: "Bold",
+      or_upload_logo: "or upload your restaurant logo",
+      logo_size: "Logo size",
+      save: "Save",
+
+      style_wine_list: "Wine list style",
+      main_font: "Main font",
+      colors_palette: "Color palette",
+      other_fonts: "More fonts...",
+      settings_saved: "✅ Settings saved successfully",
+
+      order_entries: "Reorder items",
+      order_categories: "Reorder categories",
+      order_subcategories: "Reorder subcategories",
+      order_wines_by: "Sort wines by:",
+      order_price: "Price",
+      order_vintage: "Vintage",
+      order_alpha: "Alphabetical",
+      save_order: "Save order",
+
+      sommelier_settings: "Virtual Sommelier Settings",
+      enable_virtual_sommelier: "Enable virtual sommelier",
+      sommelier_logo: "Sommelier logo",
+      choose_our_sommeliers: "Choose from our sommeliers",
+      sommelier_man_alt: "Male sommelier",
+      sommelier_woman_alt: "Female sommelier",
+      or_upload_custom_logo: "or upload a custom logo",
+      pro_only_title: "Available for PRO users only",
+      pro_only: "🔒 Available for PRO users only.",
+      pro_only_html: "🔒 Available for <strong>PRO</strong> users only.",
+      upgrade_now: "Upgrade now",
+
+      wines_to_recommend: "Number of wines to recommend",
+      range_1_3: "From 1 to 3",
+      range_3_5: "From 3 to 5",
+      range_5_7: "From 5 to 7",
+
+      boost_wines: "Wines to boost on the list",
+      add_boost: "Add a wine to boost",
+      pro_only_short: "PRO only",
+      save_sommelier_settings: "Save Sommelier Settings",
+
+      choose_font: "Choose a font",
+      close: "Close",
+
+      download_qr: "Download QR Code",
+      download_pdf: "Download PDF wine list",
+      manage_subscription: "Manage subscription",
+      logout: "Logout",
+
+      nav_card: "Menu",
+      nav_sommelier: "Sommelier",
+      nav_wines: "Wines",
+      nav_view: "View",
+      nav_more: "More",
+
+      footer_rights: "© 2025 Wine's Fever - All rights reserved",
+
+      logo_preview_alt: "Logo preview",
+      remove_logo: "✕ Remove logo",
+      logo_removed_success: "Logo removed successfully!",
+      sommelier_logo_alt: "Sommelier logo",
+      sommelier_logo_removed: "Sommelier logo removed!",
+      remove: "Remove",
+      search_wine_placeholder: "Search a wine from your list",
+
+      slug_enter: "Enter a slug.",
+      slug_invalid: "Invalid format. Use only letters, numbers and hyphens.",
+      slug_available: "Available ✅",
+      slug_taken: "Already taken ❌ Choose another",
+      slug_verify_error: "Could not verify. Try again.",
+      slug_not_valid_alert: "The slug is not valid. Use only letters, numbers and hyphens.",
+      slug_taken_alert: "This URL is already taken. Choose another.",
+      slug_verify_error_alert: "Could not verify slug availability. Try again.",
+
+      sommelier_toggle_save_error: "Error saving the sommelier setting.",
+      unsupported_format: "Unsupported format. Use JPG, PNG, WEBP or GIF.",
+      logo_upload_error: "Error uploading the logo.",
+      logo_upload_success: "Logo uploaded successfully!",
+      order_save_error: "Error while saving the order",
+      order_saved: "{type} order saved!",
+      need_open_category: "Open a category first to reorder subcategories.",
+      preview_not_available: "Preview not available. Reload the page and try again.",
+      save_error: "Error while saving. Try again.",
+      saved_short: "✅ Saved!",
+      sommelier_saved: "Sommelier settings saved!",
+      sommelier_pro_only_alert: "This feature is available for PRO users only. Upgrade in the Subscription section.",
+      sommelier_logo_upload_error: "Error uploading the sommelier logo."
+    },
+
+    fr: {
+      language: "Langue",
+      dashboard_title: "{name} - Tableau de bord",
+      restaurant_default: "Restaurant",
+
+      settings_wine_list: "Paramètres de la carte des vins",
+      tab_name_logo: "Nom ou logo",
+      tab_style: "Style de la carte",
+      tab_order: "Réorganiser",
+
+      public_url: "URL publique",
+      slug_help_html: "Uniquement lettres, chiffres et tirets. Exemple : <code>restaurant-mario-rossi</code>",
+      check: "Vérifier",
+      url_prefix: "URL :",
+      display_name: "Nom affiché",
+      name_font: "Police du nom",
+      name_size: "Taille du nom",
+      name_color: "Couleur du nom",
+      bold: "Gras",
+      or_upload_logo: "ou téléversez le logo de votre restaurant",
+      logo_size: "Taille du logo",
+      save: "Enregistrer",
+
+      style_wine_list: "Style de la carte des vins",
+      main_font: "Police principale",
+      colors_palette: "Palette de couleurs",
+      other_fonts: "Autres polices…",
+      settings_saved: "✅ Paramètres enregistrés",
+
+      order_entries: "Réorganiser",
+      order_categories: "Réorganiser les catégories",
+      order_subcategories: "Réorganiser les sous-catégories",
+      order_wines_by: "Trier les vins par :",
+      order_price: "Prix",
+      order_vintage: "Millésime",
+      order_alpha: "Alphabétique",
+      save_order: "Enregistrer l’ordre",
+
+      sommelier_settings: "Paramètres du sommelier virtuel",
+      enable_virtual_sommelier: "Activer le sommelier virtuel",
+      sommelier_logo: "Logo du sommelier",
+      choose_our_sommeliers: "Choisissez parmi nos sommeliers",
+      sommelier_man_alt: "Sommelier homme",
+      sommelier_woman_alt: "Sommelier femme",
+      or_upload_custom_logo: "ou téléversez un logo personnalisé",
+      pro_only_title: "Disponible uniquement pour les utilisateurs PRO",
+      pro_only: "🔒 Disponible uniquement pour les utilisateurs PRO.",
+      pro_only_html: "🔒 Disponible uniquement pour les utilisateurs <strong>PRO</strong>.",
+      upgrade_now: "Passer à PRO",
+
+      wines_to_recommend: "Nombre de vins à recommander",
+      range_1_3: "De 1 à 3",
+      range_3_5: "De 3 à 5",
+      range_5_7: "De 5 à 7",
+
+      boost_wines: "Vins à mettre en avant",
+      add_boost: "Ajouter un vin à mettre en avant",
+      pro_only_short: "PRO uniquement",
+      save_sommelier_settings: "Enregistrer les paramètres",
+
+      choose_font: "Choisir une police",
+      close: "Fermer",
+
+      download_qr: "Télécharger le QR Code",
+      download_pdf: "Télécharger la carte en PDF",
+      manage_subscription: "Gérer l’abonnement",
+      logout: "Déconnexion",
+
+      nav_card: "Carte",
+      nav_sommelier: "Sommelier",
+      nav_wines: "Vins",
+      nav_view: "Voir",
+      nav_more: "Plus",
+
+      footer_rights: "© 2025 Wine's Fever - Tous droits réservés",
+
+      logo_preview_alt: "Aperçu du logo",
+      remove_logo: "✕ Supprimer le logo",
+      logo_removed_success: "Logo supprimé !",
+      sommelier_logo_alt: "Logo du sommelier",
+      sommelier_logo_removed: "Logo du sommelier supprimé !",
+      remove: "Supprimer",
+      search_wine_placeholder: "Rechercher un vin dans votre carte",
+
+      slug_enter: "Saisissez un slug.",
+      slug_invalid: "Format invalide. Utilisez seulement lettres, chiffres et tirets.",
+      slug_available: "Disponible ✅",
+      slug_taken: "Déjà utilisé ❌ Choisissez-en un autre",
+      slug_verify_error: "Impossible de vérifier. Réessayez.",
+      slug_not_valid_alert: "Le slug n’est pas valide. Utilisez seulement lettres, chiffres et tirets.",
+      slug_taken_alert: "Cette URL est déjà utilisée. Choisissez-en une autre.",
+      slug_verify_error_alert: "Impossible de vérifier la disponibilité du slug. Réessayez.",
+
+      sommelier_toggle_save_error: "Erreur lors de l’enregistrement du paramètre sommelier.",
+      unsupported_format: "Format non pris en charge. Utilisez JPG, PNG, WEBP ou GIF.",
+      logo_upload_error: "Erreur lors du téléversement du logo.",
+      logo_upload_success: "Logo téléversé avec succès !",
+      order_save_error: "Erreur lors de l’enregistrement de l’ordre",
+      order_saved: "Ordre {type} enregistré !",
+      need_open_category: "Ouvrez d’abord une catégorie pour réorganiser les sous-catégories.",
+      preview_not_available: "Aperçu indisponible. Rechargez la page et réessayez.",
+      save_error: "Erreur lors de l’enregistrement. Réessayez.",
+      saved_short: "✅ Enregistré !",
+      sommelier_saved: "Paramètres du sommelier enregistrés !",
+      sommelier_pro_only_alert: "Cette fonctionnalité est réservée aux utilisateurs PRO. Passez à PRO dans la section Abonnement.",
+      sommelier_logo_upload_error: "Erreur lors du téléversement du logo du sommelier."
+    },
+
+    es: {
+      language: "Idioma",
+      dashboard_title: "{name} - Panel",
+      restaurant_default: "Restaurante",
+
+      settings_wine_list: "Ajustes de la carta de vinos",
+      tab_name_logo: "Nombre o logo",
+      tab_style: "Estilo de la carta",
+      tab_order: "Reordenar",
+
+      public_url: "URL pública",
+      slug_help_html: "Solo letras, números y guiones. Ejemplo: <code>restaurante-mario-rossi</code>",
+      check: "Comprobar",
+      url_prefix: "URL:",
+      display_name: "Nombre a mostrar",
+      name_font: "Fuente del nombre",
+      name_size: "Tamaño del nombre",
+      name_color: "Color del nombre",
+      bold: "Negrita",
+      or_upload_logo: "o sube el logo de tu restaurante",
+      logo_size: "Tamaño del logo",
+      save: "Guardar",
+
+      style_wine_list: "Estilo de la carta de vinos",
+      main_font: "Fuente principal",
+      colors_palette: "Paleta de colores",
+      other_fonts: "Más fuentes…",
+      settings_saved: "✅ Ajustes guardados",
+
+      order_entries: "Reordenar",
+      order_categories: "Reordenar categorías",
+      order_subcategories: "Reordenar subcategorías",
+      order_wines_by: "Ordenar vinos por:",
+      order_price: "Precio",
+      order_vintage: "Añada",
+      order_alpha: "Alfabético",
+      save_order: "Guardar orden",
+
+      sommelier_settings: "Ajustes del sumiller virtual",
+      enable_virtual_sommelier: "Activar sumiller virtual",
+      sommelier_logo: "Logo del sumiller",
+      choose_our_sommeliers: "Elige entre nuestros sumilleres",
+      sommelier_man_alt: "Sumiller hombre",
+      sommelier_woman_alt: "Sumiller mujer",
+      or_upload_custom_logo: "o sube un logo personalizado",
+      pro_only_title: "Disponible solo para usuarios PRO",
+      pro_only: "🔒 Disponible solo para usuarios PRO.",
+      pro_only_html: "🔒 Disponible solo para usuarios <strong>PRO</strong>.",
+      upgrade_now: "Mejorar a PRO",
+
+      wines_to_recommend: "Número de vinos a recomendar",
+      range_1_3: "De 1 a 3",
+      range_3_5: "De 3 a 5",
+      range_5_7: "De 5 a 7",
+
+      boost_wines: "Vinos para destacar",
+      add_boost: "Añadir vino para destacar",
+      pro_only_short: "Solo PRO",
+      save_sommelier_settings: "Guardar ajustes del sumiller",
+
+      choose_font: "Elegir una fuente",
+      close: "Cerrar",
+
+      download_qr: "Descargar QR Code",
+      download_pdf: "Descargar carta en PDF",
+      manage_subscription: "Gestionar suscripción",
+      logout: "Cerrar sesión",
+
+      nav_card: "Carta",
+      nav_sommelier: "Sumiller",
+      nav_wines: "Vinos",
+      nav_view: "Ver",
+      nav_more: "Más",
+
+      footer_rights: "© 2025 Wine's Fever - Todos los derechos reservados",
+
+      logo_preview_alt: "Vista previa del logo",
+      remove_logo: "✕ Quitar logo",
+      logo_removed_success: "¡Logo eliminado!",
+      sommelier_logo_alt: "Logo del sumiller",
+      sommelier_logo_removed: "¡Logo del sumiller eliminado!",
+      remove: "Quitar",
+      search_wine_placeholder: "Busca un vino en tu carta",
+
+      slug_enter: "Introduce un slug.",
+      slug_invalid: "Formato inválido. Usa solo letras, números y guiones.",
+      slug_available: "Disponible ✅",
+      slug_taken: "Ya está en uso ❌ Elige otro",
+      slug_verify_error: "No se puede verificar. Inténtalo de nuevo.",
+      slug_not_valid_alert: "El slug no es válido. Usa solo letras, números y guiones.",
+      slug_taken_alert: "Esta URL ya está en uso. Elige otra.",
+      slug_verify_error_alert: "No se pudo verificar la disponibilidad del slug. Inténtalo de nuevo.",
+
+      sommelier_toggle_save_error: "Error al guardar la opción del sumiller.",
+      unsupported_format: "Formato no compatible. Usa JPG, PNG, WEBP o GIF.",
+      logo_upload_error: "Error al subir el logo.",
+      logo_upload_success: "¡Logo subido con éxito!",
+      order_save_error: "Error al guardar el orden",
+      order_saved: "¡Orden de {type} guardado!",
+      need_open_category: "Abre primero una categoría para reordenar subcategorías.",
+      preview_not_available: "Vista previa no disponible. Recarga la página e inténtalo de nuevo.",
+      save_error: "Error al guardar. Inténtalo de nuevo.",
+      saved_short: "✅ ¡Guardado!",
+      sommelier_saved: "¡Ajustes del sumiller guardados!",
+      sommelier_pro_only_alert: "Esta función es solo para usuarios PRO. Mejora en la sección Suscripción.",
+      sommelier_logo_upload_error: "Error al subir el logo del sumiller."
+    }
+  };
+
+  function normalizeLang(raw) {
+    const s = (raw || "").toLowerCase();
+    if (s.startsWith("it")) return "it";
+    if (s.startsWith("fr")) return "fr";
+    if (s.startsWith("es")) return "es";
+    return "en";
+  }
+
+  function t(key, vars = {}) {
+    const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+    let out = (dict && dict[key]) || (TRANSLATIONS.en && TRANSLATIONS.en[key]) || key;
+    for (const [k, v] of Object.entries(vars)) {
+      out = out.replaceAll(`{${k}}`, String(v));
+    }
+    return out;
+  }
+
+  function setText(sel, text) {
+    const el = document.querySelector(sel);
+    if (el) el.textContent = text;
+  }
+  function setHTML(sel, html) {
+    const el = document.querySelector(sel);
+    if (el) el.innerHTML = html;
+  }
+
+  function setHeaderText(sel, txt) {
+    const el = document.querySelector(sel);
+    if (!el) return;
+    const icon = el.querySelector('.accordion-icon');
+    // Preserve the icon span if present
+    if (icon) {
+      // Ensure there is a text node before the icon
+      if (!el.firstChild || el.firstChild.nodeType !== Node.TEXT_NODE) {
+        el.insertBefore(document.createTextNode(''), icon);
+      }
+      el.firstChild.textContent = txt + ' ';
+    } else {
+      el.textContent = txt;
+    }
+  }
+
+  function setRestaurantTitle(name) {
+    const n = (name || "").trim() || t("restaurant_default");
+    setText("#ristoranteName", t("dashboard_title", { name: n }));
+  }
+
+  function applyTranslations() {
+    // language selector
+    setText("#langLabel", t("language"));
+    const langSelect = document.getElementById("langSelect");
+    if (langSelect) langSelect.value = currentLang;
+
+    // page
+    document.title = t("dashboard_title", { name: "Wine's Fever" });
+
+    // Carta settings
+    setText("#titoloCartaVini", t("settings_wine_list"));
+    setText('#cartaQuickActions .pill-btn[data-target="accNomeLogo"]', t("tab_name_logo"));
+    setText('#cartaQuickActions .pill-btn[data-target="accStile"]', t("tab_style"));
+    setText('#cartaQuickActions .pill-btn[data-target="accOrdina"]', t("tab_order"));
+
+    // Accordion headers (mobile)
+    setHeaderText('#accNomeLogo .accordion-header', t("tab_name_logo"));
+    setHeaderText('#accStile .accordion-header', t("style_wine_list"));
+    setHeaderText('#accOrdina .accordion-header', t("order_entries"));
+
+    setText('label[for="slugInput"]', t("public_url"));
+    setHTML("#slugHelp", t("slug_help_html"));
+    setText("#checkSlugBtn", t("check"));
+
+    // URL preview prefix
+    const slugPreview = document.getElementById("slugPreview");
+    if (slugPreview && slugPreview.childNodes && slugPreview.childNodes.length) {
+      slugPreview.childNodes[0].textContent = t("url_prefix") + " ";
+    }
+
+    setText('label[for="displayName"]', t("display_name"));
+
+    // "Font Nome:" label prefix
+    const nameFontSel = document.getElementById("nameFont");
+    if (nameFontSel && nameFontSel.closest("label")) {
+      // first child is usually a text node: "Font Nome:"
+      const lbl = nameFontSel.closest("label");
+      if (lbl.childNodes && lbl.childNodes.length) lbl.childNodes[0].textContent = t("name_font") + ": ";
+    }
+
+    // Name size label prefix
+    const nameSizeEl = document.getElementById("nameSize");
+    if (nameSizeEl && nameSizeEl.closest("label")) {
+      const lbl = nameSizeEl.closest("label");
+      if (lbl.childNodes && lbl.childNodes.length) lbl.childNodes[0].textContent = t("name_size") + ": ";
+    }
+
+    // Name color label prefix
+    const nameColorEl = document.getElementById("nameColor");
+    if (nameColorEl && nameColorEl.closest("label")) {
+      const lbl = nameColorEl.closest("label");
+      if (lbl.childNodes && lbl.childNodes.length) lbl.childNodes[0].textContent = t("name_color") + ": ";
+    }
+
+    // Bold checkbox label text node after input
+    const boldCb = document.getElementById("nameBold");
+    if (boldCb && boldCb.parentElement) {
+      // label contains input then text
+      const lbl = boldCb.parentElement;
+      lbl.childNodes.forEach(n => {
+        if (n.nodeType === Node.TEXT_NODE) n.textContent = " " + t("bold");
+      });
+    }
+
+    setText('label[for="logoUpload"]', t("or_upload_logo"));
+
+    // Logo size label prefix
+    const logoSizeEl = document.getElementById("logoSize");
+    if (logoSizeEl && logoSizeEl.closest("label")) {
+      const lbl = logoSizeEl.closest("label");
+      if (lbl.childNodes && lbl.childNodes.length) lbl.childNodes[0].textContent = t("logo_size") + ": ";
+    }
+
+    // Save buttons (2 in carta settings)
+    document.querySelectorAll('button.mini-save-btn[onclick="saveSettings()"]').forEach(b => b.textContent = t("save"));
+
+    setText('label[for="fontSelector"]', t("main_font"));
+    setText('label[for="paletteSelector"]', t("colors_palette"));
+
+    // "Altri font..."
+    const nameFontOpt = document.querySelector('#nameFont option[value="custom"]');
+    if (nameFontOpt) nameFontOpt.textContent = t("other_fonts");
+    const bodyFontOpt = document.querySelector('#fontSelector option[value="custom"]');
+    if (bodyFontOpt) bodyFontOpt.textContent = t("other_fonts");
+
+    // save message
+    setText("#saveMessage", t("settings_saved"));
+
+    // Ordering section
+    setText("#ordinaCategorieBtn", t("order_categories"));
+    setText("#ordinaSottocategorieBtn", t("order_subcategories"));
+    setText('label[for="wineOrder"]', t("order_wines_by"));
+    const wOrder = document.getElementById("wineOrder");
+    if (wOrder) {
+      const o1 = wOrder.querySelector('option[value="prezzo"]'); if (o1) o1.textContent = t("order_price");
+      const o2 = wOrder.querySelector('option[value="annata"]'); if (o2) o2.textContent = t("order_vintage");
+      const o3 = wOrder.querySelector('option[value="nome"]');   if (o3) o3.textContent = t("order_alpha");
+    }
+
+    // Sommelier section
+    setText("#impostazioniSommelier > h2", t("sommelier_settings"));
+    const toggleLblStrong = document.querySelector('label[for="toggleSommelierBtn"] strong');
+    if (toggleLblStrong) toggleLblStrong.textContent = t("enable_virtual_sommelier");
+
+    const somLogoStrong = document.querySelector('#impostazioniSommelier label strong');
+    if (somLogoStrong) somLogoStrong.textContent = t("sommelier_logo");
+    setText('#impostazioniSommelier small', t("choose_our_sommeliers"));
+
+    const imgMan = document.querySelector('img[src="sommelier.png"]'); if (imgMan) imgMan.alt = t("sommelier_man_alt");
+    const imgWoman = document.querySelector('img[src="sommelier_femmina.png"]'); if (imgWoman) imgWoman.alt = t("sommelier_woman_alt");
+
+    setText('label[for="sommelierLogoUpload"]', t("or_upload_custom_logo"));
+    const lockIcon = document.getElementById("lockIcon"); if (lockIcon) lockIcon.title = t("pro_only_title");
+    const boostLockIcon = document.getElementById("boostLockIcon"); if (boostLockIcon) boostLockIcon.title = t("pro_only_short");
+
+    // pro tooltip
+    setHTML("#proTooltip", `${t("pro_only_html")} <a href="#" id="upgradeLink" style="color:#b00; text-decoration:underline;">${t("upgrade_now")}</a>`);
+    if (typeof RESTAURANT_ID === "string" && RESTAURANT_ID) {
+      const up = document.getElementById("upgradeLink");
+      if (up) up.href = `abbonamento.html?ristorante_id=${RESTAURANT_ID}`;
+    }
+
+    const rangeStrong = document.querySelector('label[for="sommelierRange"] strong');
+    if (rangeStrong) rangeStrong.textContent = t("wines_to_recommend");
+
+    const sRange = document.getElementById("sommelierRange");
+    if (sRange) {
+      const a = sRange.querySelector('option[value="1-3"]'); if (a) a.textContent = t("range_1_3");
+      const b = sRange.querySelector('option[value="3-5"]'); if (b) b.textContent = t("range_3_5");
+      const c = sRange.querySelector('option[value="5-7"]'); if (c) c.textContent = t("range_5_7");
+    }
+
+    const boostStrong = document.querySelector('#impostazioniSommelier label strong:nth-child(1)'); // might be brittle
+    // safer: find label whose text contains "Vini da spingere"
+    document.querySelectorAll("#impostazioniSommelier label strong").forEach(st => {
+      if ((st.textContent || "").toLowerCase().includes("vini da spingere")) st.textContent = t("boost_wines");
+    });
+
+    // add boost button
+    const addBoostBtn = document.getElementById("addBoostBtn");
+    if (addBoostBtn) addBoostBtn.textContent = `+ ${t("add_boost")}`;
+
+    setHTML("#boostLockTooltip", `${t("pro_only_html")} <a href="abbonamento.html" id="boostUpgradeLink" style="color:#b00; text-decoration:underline;">${t("upgrade_now")}</a>`);
+    if (typeof RESTAURANT_ID === "string" && RESTAURANT_ID) {
+      const up2 = document.getElementById("boostUpgradeLink");
+      if (up2) up2.href = `abbonamento.html?ristorante_id=${RESTAURANT_ID}`;
+    }
+
+    const saveSomBtn = document.querySelector('button.save-btn[onclick="saveSommelierSettings()"]');
+    if (saveSomBtn) saveSomBtn.textContent = t("save_sommelier_settings");
+
+    // font popup
+    setText("#fontPopup h3", t("choose_font"));
+    const closeBtn = document.querySelector('#fontPopup button[onclick*="fontPopup"]');
+    if (closeBtn) closeBtn.textContent = t("close");
+
+    // QR popup
+    setText("#downloadQr", t("download_qr"));
+
+    // bottom nav
+    setText("#bnCarta .label", t("nav_card"));
+    setText("#bnSommelier .label", t("nav_sommelier"));
+    setText("#bnVini .label", t("nav_wines"));
+    setText("#bnVista .label", t("nav_view"));
+    setText("#moreBtn .label", t("nav_more"));
+
+    // more menu
+    const moreBtns = document.querySelectorAll("#moreMenu button");
+    if (moreBtns && moreBtns.length >= 4) {
+      moreBtns[0].textContent = t("download_qr");
+      moreBtns[1].textContent = t("download_pdf");
+      moreBtns[2].textContent = t("manage_subscription");
+      moreBtns[3].textContent = t("logout");
+    }
+
+    // footer
+    setText("footer", t("footer_rights"));
+  }
+
+  function setLang(lang, persist = true) {
+    const normalized = normalizeLang(lang);
+    currentLang = SUPPORTED_LANGS.includes(normalized) ? normalized : "en";
+    document.documentElement.lang = currentLang;
+    if (persist) localStorage.setItem("wf_lang", currentLang);
+    applyTranslations();
+    // refresh dynamic title if we already know it
+    if (window.__WF_REST_NAME !== undefined) setRestaurantTitle(window.__WF_REST_NAME);
+  }
+
+  function initLanguage() {
+    const saved = localStorage.getItem("wf_lang");
+    const auto = normalizeLang(navigator.language || "");
+    setLang(saved || auto, !saved); // persist only if it's a first-time auto choice
+    const sel = document.getElementById("langSelect");
+    if (sel) sel.addEventListener("change", (e) => setLang(e.target.value, true));
+  }
+
   let isPro = false;
   let boostCount = 0;
   const maxBoosts = 5;
@@ -1068,7 +1763,7 @@ function renderLogoPreview(url) {
 
   const preview = document.createElement("img");
   preview.src = url + "?t=" + new Date().getTime();
-  preview.alt = "Anteprima Logo";
+  preview.alt = t("logo_preview_alt");
   preview.className = "logo-preview";
   preview.id = "previewLogo";
   preview.style.display = "block";
@@ -1081,7 +1776,7 @@ function renderLogoPreview(url) {
   if (oldRemoveBtn) oldRemoveBtn.remove();
 
   const removeBtn = document.createElement("button");
-  removeBtn.textContent = "✕ Rimuovi logo";
+  removeBtn.textContent = t("remove_logo");
   removeBtn.id = "removeLogoBtn";
   removeBtn.style.background = "none";
   removeBtn.style.border = "none";
@@ -1100,7 +1795,7 @@ function renderLogoPreview(url) {
     removeBtn.remove();
     document.getElementById("logoOptions").style.display = "none";
     toggleNameLogoOptions(false);
-    alert("Logo rimosso con successo!");
+    alert(t("logo_removed_success"));
     updatePreview();
   };
 
@@ -1113,7 +1808,7 @@ function renderSommelierLogoPreview(url) {
 
   const preview = document.createElement("img");
   preview.src = url + "?t=" + new Date().getTime();
-  preview.alt = "Logo Sommelier";
+  preview.alt = t("sommelier_logo_alt");
   preview.className = "logo-preview";
   preview.id = "previewSommelierLogo";
   preview.style.display = "block";
@@ -1129,7 +1824,7 @@ function renderSommelierLogoPreview(url) {
   if (oldRemoveBtn) oldRemoveBtn.remove();
 
   const removeBtn = document.createElement("button");
-  removeBtn.textContent = "✕ Rimuovi logo";
+  removeBtn.textContent = t("remove_logo");
   removeBtn.id = "removeSommelierLogoBtn";
   removeBtn.style.background = "none";
   removeBtn.style.border = "none";
@@ -1146,7 +1841,7 @@ function renderSommelierLogoPreview(url) {
     await sb.from("ristoranti").update({ sommelier_url: null }).eq("id", RESTAURANT_ID);
     preview.remove();
     removeBtn.remove();
-    alert("Logo del sommelier rimosso!");
+    alert(t("sommelier_logo_removed"));
     updatePreviewLive();
   };
 
@@ -1193,7 +1888,7 @@ function attachLogoListeners() {
   input.className = "awesomplete";
   input.id = `boostInput${boostCount}`; // ✅ aggiunto ID univoco
   input.name = `boostInput${boostCount}`; // ✅ aggiunto name
-  input.placeholder = "Cerca un vino dalla tua carta";
+  input.placeholder = t("search_wine_placeholder");
   input.style.paddingRight = "2.2em";
   input.style.width = "100%";
   input.style.boxSizing = "border-box";
@@ -1201,7 +1896,7 @@ function attachLogoListeners() {
 
   const clearBtn = document.createElement("span");
   clearBtn.textContent = "×";
-  clearBtn.title = "Rimuovi";
+  clearBtn.title = t("remove");
   clearBtn.style.cssText = `
     position: absolute;
     right: 10px;
@@ -1263,10 +1958,10 @@ function debounce(fn, ms=350) {
 }
 
 async function checkSlugAvailability(s) {
-  if (!s) return { ok: false, reason: "Vuoto" };
-  if (!isValidSlug(s)) return { ok: false, reason: "Formato non valido" };
+  // returns: { ok: boolean, code: 'ok'|'empty'|'invalid'|'error'|'taken' }
+  if (!s) return { ok: false, code: "empty" };
+  if (!isValidSlug(s)) return { ok: false, code: "invalid" };
 
-  // Cerca collisioni con altri ristoranti (diversi dall'ID corrente)
   const { data, error } = await sb
     .from("ristoranti")
     .select("id")
@@ -1276,16 +1971,18 @@ async function checkSlugAvailability(s) {
 
   if (error) {
     console.warn("Errore check slug:", error);
-    return { ok: false, reason: "Errore di verifica" };
+    return { ok: false, code: "error" };
   }
   const taken = Array.isArray(data) && data.length > 0;
-  return { ok: !taken, reason: taken ? "Già in uso" : "" };
+  return { ok: !taken, code: taken ? "taken" : "ok" };
 }
 
   document.addEventListener("DOMContentLoaded", async () => {
     if (window.location.hash === "#") {
   history.replaceState(null, "", window.location.pathname);
 }
+    // init language (auto + saved choice)
+    initLanguage();
     sb = window.supabase.createClient("https://ldunvbftxhbtuyabgxwh.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo");
     const { data: { user }, error } = await sb.auth.getUser();
       if (!user) return (window.location.href = '/');
@@ -1325,25 +2022,25 @@ checkSlugBtn.addEventListener("click", () => {
   (async () => {
     const s = slugInput.value.trim();
     if (!s) {
-      slugStatus.textContent = "Inserisci uno slug.";
+      slugStatus.textContent = t("slug_enter");
       slugStatus.style.color = "#b00";
       renderSlugPreview("");
       return;
     }
     if (!isValidSlug(s)) {
-      slugStatus.textContent = "Formato non valido. Usa solo lettere, numeri e trattini.";
+      slugStatus.textContent = t("slug_invalid");
       slugStatus.style.color = "#b00";
       renderSlugPreview(s);
       return;
     }
     const res = await checkSlugAvailability(s);
     if (res.ok) {
-      slugStatus.textContent = "Disponibile ✅";
+      slugStatus.textContent = t("slug_available");
       slugStatus.style.color = "green";
     } else {
-      slugStatus.textContent = (res.reason === "Già in uso")
-        ? "Già in uso ❌ Scegline un altro"
-        : "Impossibile verificare. Riprova.";
+      slugStatus.textContent = (res.code === "taken")
+        ? t("slug_taken")
+        : t("slug_verify_error");
       slugStatus.style.color = "#b00";
     }
     renderSlugPreview(s);
@@ -1353,14 +2050,14 @@ checkSlugBtn.addEventListener("click", () => {
 const debouncedCheck = debounce(async () => {
   const s = slugInput.value.trim();
   if (!s) {
-    slugStatus.textContent = "Inserisci uno slug.";
+    slugStatus.textContent = t("slug_enter");
     slugStatus.style.color = "#b00";
     renderSlugPreview("");
     return;
   }
 
   if (!isValidSlug(s)) {
-    slugStatus.textContent = "Formato non valido. Usa solo lettere, numeri e trattini.";
+    slugStatus.textContent = t("slug_invalid");
     slugStatus.style.color = "#b00";
     renderSlugPreview(s);
     return;
@@ -1368,7 +2065,7 @@ const debouncedCheck = debounce(async () => {
 
   const res = await checkSlugAvailability(s);
   if (res.ok) {
-    slugStatus.textContent = "Disponibile ✅";
+    slugStatus.textContent = t("slug_available");
     slugStatus.style.color = "green";
   } else {
     slugStatus.textContent = (res.reason === "Già in uso")
@@ -1502,11 +2199,13 @@ if (!isPro) {
       } else {
         renderSommelierLogoPreview(sommelierUrl);
       }
-    document.getElementById("ristoranteName").innerText = `${info?.nome || 'Ristorante'} - Dashboard`;
+    window.__WF_REST_NAME = info?.nome || '';
+    setRestaurantTitle(window.__WF_REST_NAME);
     document.getElementById("displayName").value = info?.nome || "";
     document.getElementById("wineOrder").value = info?.ordine_vini || "prezzo";
     document.getElementById("displayName").addEventListener("input", (e) => {
-    document.getElementById("ristoranteName").innerText = `${e.target.value || 'Ristorante'} - Dashboard`;
+    window.__WF_REST_NAME = e.target.value || '';
+    setRestaurantTitle(window.__WF_REST_NAME);
 });
   const fontBody = info?.font || "Arial";
 const bodyFontSelect = document.getElementById("fontSelector");
@@ -1581,6 +2280,8 @@ iframe.addEventListener("load", () => {
     updatePreview();
 // Mostra la sezione carta dei vini all’avvio
 showSettings('carta');
+    // ensure translations apply after initial rendering
+    applyTranslations();
 
       document.getElementById("fontSelector").addEventListener("change", () => {
         updateFontLivePreview(); // anteprima live font body
@@ -1606,7 +2307,7 @@ document.getElementById("logoUpload").addEventListener("change", async (event) =
   const file = event.target.files[0];
   const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 if (!allowedTypes.includes(file.type)) {
-  return alert("Formato non supportato. Usa JPG, PNG, WEBP o GIF.");
+  return alert(t("unsupported_format"));
 }
 
   if (!file) return;
@@ -1632,7 +2333,7 @@ if (!allowedTypes.includes(file.type)) {
 
   if (uploadError) {
     console.error(uploadError);
-    return alert("Errore nel caricamento del logo.");
+    return alert(t("logo_upload_error"));
   }
 
   const { data: { publicUrl } } = supabase
@@ -1645,7 +2346,7 @@ if (!allowedTypes.includes(file.type)) {
     .update({ logo_url: publicUrl })
     .eq("id", RESTAURANT_ID);
 
-  alert("Logo caricato con successo!");
+  alert(t("logo_upload_success"));
   toggleNameLogoOptions(true);
   renderLogoPreview(publicUrl);
   attachLogoListeners();
@@ -1693,11 +2394,11 @@ function toggleReorder(type) {
 
   if (reorderMode === type) {
     iframe.contentWindow.postMessage({ action: 'getReorder', type }, '*');
-    btn.textContent = `Ordina ${capitalize(type)}`;
+    btn.textContent = (type === "categorie") ? t("order_categories") : t("order_subcategories");
     reorderMode = null;
   } else {
     iframe.contentWindow.postMessage({ action: 'startReorder', type }, '*');
-    btn.textContent = "Salva Ordine";
+    btn.textContent = t("save_order");
     reorderMode = type;
   }
 }
@@ -1714,7 +2415,7 @@ const update = type === 'categorie'
 
     const { error } = await sb.from("ristoranti").update(update).eq("id", RESTAURANT_ID);
     if (error) return alert("Errore durante il salvataggio dell'ordine");
-    alert(`Ordine ${type} salvato!`);
+    alert(t("order_saved", { type: type === "categorie" ? t("order_categories") : t("order_subcategories") }));
     updatePreview();
   }
 
@@ -1723,17 +2424,17 @@ const update = type === 'categorie'
     const btn = document.getElementById("ordinaSottocategorieBtn");
 
     if (!event.data.allowed) {
-      alert("Devi prima aprire una categoria per ordinare le sottocategorie.");
+      alert(t("need_open_category"));
       return;
     }
 
     if (reorderMode === 'sottocategorie') {
       iframe.contentWindow.postMessage({ action: 'getReorder', type: 'sottocategorie' }, '*');
-      btn.textContent = `Ordina Sottocategorie`;
+      btn.textContent = t("order_subcategories");
       reorderMode = null;
     } else {
       iframe.contentWindow.postMessage({ action: 'startReorder', type: 'sottocategorie' }, '*');
-      btn.textContent = "Salva Ordine";
+      btn.textContent = t("save_order");
       reorderMode = 'sottocategorie';
     }
   }
@@ -1821,7 +2522,7 @@ if (showCarta) initCartaQuickActions();
 function downloadCartaPDF() {
   const iframe = document.getElementById("previewFrame");
   if (!iframe || !iframe.contentWindow) {
-    alert("Anteprima carta non disponibile. Ricarica la pagina e riprova.");
+    alert(t("preview_not_available"));
     return;
   }
 
@@ -1859,14 +2560,14 @@ async function saveSettings() {
   let slugToSave = null;
   if (wantedSlug) {
     if (!isValidSlug(wantedSlug)) {
-      alert("Lo slug non è valido. Usa solo lettere, numeri e trattini.");
+      alert(t("slug_not_valid_alert"));
       return;
     }
     const res = await checkSlugAvailability(wantedSlug);
     if (!res.ok) {
-      alert(res.reason === "Già in uso"
-        ? "Questo URL è già in uso. Scegline un altro."
-        : "Impossibile verificare la disponibilità dello slug. Riprova.");
+      alert(res.code === "taken"
+        ? t("slug_taken_alert")
+        : t("slug_verify_error_alert"));
       return;
     }
     slugToSave = wantedSlug;
@@ -1896,7 +2597,7 @@ async function saveSettings() {
 
   if (error) {
     console.error("Errore salvataggio:", error);
-    alert("Errore nel salvataggio. Riprova.");
+    alert(t("save_error"));
     return;
   }
 
@@ -1910,7 +2611,7 @@ async function saveSettings() {
   const btn = document.querySelector(".save-btn");
   if (btn) {
     const originalText = btn.textContent;
-    btn.textContent = "✅ Salvato!";
+    btn.textContent = t("saved_short");
     setTimeout(() => { btn.textContent = originalText; }, 2000);
   }
 
@@ -1934,18 +2635,18 @@ async function saveSommelierSettings() {
     sommelier_gender: gender
   }).eq("id", RESTAURANT_ID);
 
-  alert("Impostazioni del sommelier salvate!");
+  alert(t("sommelier_saved"));
 }
 
 
 document.getElementById("sommelierLogoUpload").addEventListener("change", async (event) => {
   if (!isPro) {
-    return alert("Questa funzione è disponibile solo per utenti PRO. Passa al piano superiore nella sezione Abbonamento.");
+    return alert(t("sommelier_pro_only_alert"));
   }
   const file = event.target.files[0];
   const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 if (!allowedTypes.includes(file.type)) {
-  return alert("Formato non supportato. Usa JPG, PNG, WEBP o GIF.");
+  return alert(t("unsupported_format"));
 }
 
   if (!file) return;
@@ -1964,7 +2665,7 @@ if (!allowedTypes.includes(file.type)) {
 
   if (uploadError) {
     console.error(uploadError);
-    return alert("Errore nel caricamento del logo del sommelier.");
+    return alert(t("sommelier_logo_upload_error"));
   }
 
   const { data: { publicUrl } } = supabase
