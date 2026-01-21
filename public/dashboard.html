@@ -331,6 +331,33 @@ footer {
 .impostazione input[type="text"],
 .impostazione select { padding:8px 10px; }
 
+.file-field{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-top: 6px;
+}
+.file-btn{
+  background: var(--accent);
+  color:#fff;
+  border:0;
+  border-radius: 16px;
+  padding: 8px 14px;
+  cursor:pointer;
+  font-size: 0.9em;
+}
+.file-btn:hover{ background: var(--accent-700); }
+.file-name{
+  color: var(--muted);
+  font-size: 0.9em;
+  max-width: 240px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
 /* mobile: impediamo ai bottoni di occupare tutta la riga in quest'area */
 @media (max-width:768px) {
   .slug-row { flex-wrap: wrap; }
@@ -702,12 +729,41 @@ background: rgba(255,255,255,.92);
   from{ opacity:0; transform: translateY(8px); }
   to{ opacity:1; transform: translateY(0); }
 }
+.page-title{
+  background:#fff;
+  border-bottom:1px solid #ddd;
+  padding: 10px 14px;
+  text-align: left; /* non più center */
+}
+
+.topbar{
+  max-width: var(--content);
+  margin: 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lang-switch{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+}
+
+@media (max-width: 520px){
+  .topbar{ flex-wrap: wrap; justify-content:center; }
+  #ristoranteName{ width:100%; text-align:center; }
+  .lang-switch{ width:100%; justify-content:center; }
+}
 
   </style>
 </head>
 <body>
   <div class="page-title">
+  <div class="topbar"><div class="page-title">
     <h1 id="ristoranteName">Nome Ristorante - Dashboard</h1>
+
     <div class="lang-switch" aria-label="Language selector">
       <label id="langLabel" for="langSelect">Lingua</label>
       <select id="langSelect">
@@ -716,8 +772,9 @@ background: rgba(255,255,255,.92);
         <option value="fr">Français</option>
         <option value="es">Español</option>
       </select>
-    </div>
-    </div>
+      </div>
+  </div>
+</div>
 
 <main>
   <!-- SEZIONE IMPOSTAZIONI CARTA -->
@@ -773,8 +830,13 @@ background: rgba(255,255,255,.92);
               </label>
               <label><input type="checkbox" id="nameBold"> Grassetto</label>
             </div>
-            <label for="logoUpload">oppure carica il logo del tuo ristorante</label>
-            <input type="file" id="logoUpload" accept="image/*">
+            <label for="logoUpload" id="logoUploadLabel">oppure carica il logo del tuo ristorante</label>
+
+            <div class="file-field">
+              <input type="file" id="logoUpload" accept="image/*" hidden>
+              <button type="button" class="file-btn" id="logoChooseBtn"></button>
+              <span class="file-name" id="logoFileName"></span>
+            </div>
             <div id="logoOptions" style="display: none; margin-top: 12px;">
               <label>Dimensione Logo:
                 <input type="range" id="logoSize" min="30" max="120" value="40"> px
@@ -863,7 +925,7 @@ background: rgba(255,255,255,.92);
   </label>
 </div>
 
-<label><strong>Logo del sommelier</strong></label>
+<label id="sommelierLogoTitle"><strong>Logo del sommelier</strong></label>
 <small style="text-align: center; display: block; font-family: 'Cormorant Garamond', serif; font-size: 0.85em; margin-top: -4px;">
   Scegli tra i nostri sommelier
 </small>
@@ -880,7 +942,12 @@ background: rgba(255,255,255,.92);
   <label for="sommelierLogoUpload" style="margin-top: 4px;">oppure carica un logo personalizzato</label>
   <span id="lockIcon" title="Disponibile solo per utenti PRO" style="font-size: 1em; color: var(--accent);; cursor: pointer;">🔒</span>
 </div>
-<input type="file" id="sommelierLogoUpload" accept="image/*">
+<input type="file" id="sommelierLogoUpload" accept="image/*" hidden>
+
+<div class="file-field">
+  <button type="button" class="file-btn" id="sommelierChooseBtn"></button>
+  <span class="file-name" id="sommelierFileName"></span>
+</div>
 <div id="proTooltip" style="display: none; font-size: 0.85em; margin-top: 4px; color: #555;">
   🔒 Disponibile solo per utenti <strong>PRO</strong>. 
   <a href="#" id="upgradeLink" style="color:#b00; text-decoration:underline;">Passa ora al piano superiore</a>
@@ -1082,7 +1149,9 @@ background: rgba(255,255,255,.92);
       saved_short: "✅ Salvato!",
       sommelier_saved: "Impostazioni del sommelier salvate!",
       sommelier_pro_only_alert: "Questa funzione è disponibile solo per utenti PRO. Passa al piano superiore nella sezione Abbonamento.",
-      sommelier_logo_upload_error: "Errore nel caricamento del logo del sommelier."
+      sommelier_logo_upload_error: "Errore nel caricamento del logo del sommelier.",
+      choose_file: "Scegli file",
+      no_file_selected: "Nessun file selezionato",
     },
 
     en: {
@@ -1190,7 +1259,9 @@ background: rgba(255,255,255,.92);
       saved_short: "✅ Saved!",
       sommelier_saved: "Sommelier settings saved!",
       sommelier_pro_only_alert: "This feature is available for PRO users only. Upgrade in the Subscription section.",
-      sommelier_logo_upload_error: "Error uploading the sommelier logo."
+      sommelier_logo_upload_error: "Error uploading the sommelier logo.",
+      choose_file: "Choose file",
+      no_file_selected: "No file selected",
     },
 
     fr: {
@@ -1298,7 +1369,9 @@ background: rgba(255,255,255,.92);
       saved_short: "✅ Enregistré !",
       sommelier_saved: "Paramètres du sommelier enregistrés !",
       sommelier_pro_only_alert: "Cette fonctionnalité est réservée aux utilisateurs PRO. Passez à PRO dans la section Abonnement.",
-      sommelier_logo_upload_error: "Erreur lors du téléversement du logo du sommelier."
+      sommelier_logo_upload_error: "Erreur lors du téléversement du logo du sommelier.",
+      choose_file: "Choisir un fichier",
+      no_file_selected: "Aucun fichier sélectionné",
     },
 
     es: {
@@ -1406,7 +1479,9 @@ background: rgba(255,255,255,.92);
       saved_short: "✅ ¡Guardado!",
       sommelier_saved: "¡Ajustes del sumiller guardados!",
       sommelier_pro_only_alert: "Esta función es solo para usuarios PRO. Mejora en la sección Suscripción.",
-      sommelier_logo_upload_error: "Error al subir el logo del sumiller."
+      sommelier_logo_upload_error: "Error al subir el logo del sumiller.",
+      choose_file: "Elegir archivo",
+      no_file_selected: "Ningún archivo seleccionado",
     }
   };
 
@@ -1561,7 +1636,7 @@ background: rgba(255,255,255,.92);
     const toggleLblStrong = document.querySelector('label[for="toggleSommelierBtn"] strong');
     if (toggleLblStrong) toggleLblStrong.textContent = t("enable_virtual_sommelier");
 
-    const somLogoStrong = document.querySelector('#impostazioniSommelier label strong');
+    setText("#sommelierLogoTitle strong", t("sommelier_logo"));
     if (somLogoStrong) somLogoStrong.textContent = t("sommelier_logo");
     setText('#impostazioniSommelier small', t("choose_our_sommeliers"));
 
@@ -1632,9 +1707,49 @@ background: rgba(255,255,255,.92);
       moreBtns[3].textContent = t("logout");
     }
 
+    const removeLogoBtn = document.getElementById("removeLogoBtn");
+    if (removeLogoBtn) removeLogoBtn.textContent = t("remove_logo");
+
+    const removeSomBtn = document.getElementById("removeSommelierLogoBtn");
+    if (removeSomBtn) removeSomBtn.textContent = t("remove_logo");
+
     // footer
     setText("footer", t("footer_rights"));
+    applyFileTranslations();
   }
+
+  function bindCustomFileUI(inputId, btnId, nameId) {
+  const input = document.getElementById(inputId);
+  const btn = document.getElementById(btnId);
+  const name = document.getElementById(nameId);
+  if (!input || !btn || !name) return;
+
+  btn.addEventListener("click", () => input.click());
+
+  const renderName = () => {
+    const file = input.files && input.files[0];
+    name.textContent = file ? file.name : t("no_file_selected");
+  };
+
+  input.addEventListener("change", renderName);
+  renderName();
+
+  // espongo una mini-fn per aggiornare testi al cambio lingua
+  input.__wfRenderFileName = renderName;
+}
+
+function applyFileTranslations() {
+  const logoChooseBtn = document.getElementById("logoChooseBtn");
+  const somChooseBtn  = document.getElementById("sommelierChooseBtn");
+  if (logoChooseBtn) logoChooseBtn.textContent = t("choose_file");
+  if (somChooseBtn)  somChooseBtn.textContent  = t("choose_file");
+
+  // aggiorna anche “nessun file selezionato” se non c’è file
+  ["logoUpload", "sommelierLogoUpload"].forEach(id => {
+    const inp = document.getElementById(id);
+    if (inp && typeof inp.__wfRenderFileName === "function") inp.__wfRenderFileName();
+  });
+}
 
   function setLang(lang, persist = true) {
     const normalized = normalizeLang(lang);
@@ -1644,6 +1759,10 @@ background: rgba(255,255,255,.92);
     applyTranslations();
     // refresh dynamic title if we already know it
     if (window.__WF_REST_NAME !== undefined) setRestaurantTitle(window.__WF_REST_NAME);
+    const iframe = document.getElementById("previewFrame");
+if (iframe?.contentWindow) {
+  iframe.contentWindow.postMessage({ action: "setLanguage", lang: currentLang }, "*");
+}
   }
 
   function initLanguage() {
@@ -2286,6 +2405,8 @@ showSettings('carta');
       document.getElementById("fontSelector").addEventListener("change", () => {
         updateFontLivePreview(); // anteprima live font body
       });
+      bindCustomFileUI("logoUpload", "logoChooseBtn", "logoFileName");
+      bindCustomFileUI("sommelierLogoUpload", "sommelierChooseBtn", "sommelierFileName");
   });
   document.getElementById("toggleSommelierBtn").addEventListener("change", async function () {
   const showSommelier = this.checked;
@@ -2296,7 +2417,7 @@ showSettings('carta');
     .eq("id", RESTAURANT_ID);
 
   if (error) {
-    alert("Errore nel salvataggio dell'impostazione sommelier.");
+    alert(t("sommelier_toggle_save_error"));
     console.error("Errore Supabase:", error);
   } else {
     console.log("✔️ Impostazione sommelier salvata:", showSommelier);
@@ -2446,7 +2567,7 @@ function capitalize(str) {
 }
 
 function updatePreview() {
-  const url = `carta.html`;
+  const url = `carta.html?ristorante_id=${encodeURIComponent(RESTAURANT_ID)}&lang=${encodeURIComponent(currentLang)}&preview=1`;
   document.getElementById('previewFrame').src = url;
 }
 
