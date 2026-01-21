@@ -633,12 +633,15 @@ white-space: nowrap;
 
 .settings-actions{
   display:flex;
-  gap:10px;
-  flex-wrap:nowrap;
-  overflow-x:auto;
+  gap:8px;
+  flex-wrap:nowrap;              /* sempre in riga */
+  overflow-x:auto;               /* scroll orizzontale se serve */
   -webkit-overflow-scrolling: touch;
-  padding: 6px 0 14px;
-  justify-content:center;
+  padding: 6px 2px 14px;
+  justify-content:flex-start;    /* ✅ non center: evita tagli ai bordi */
+  scroll-snap-type: x mandatory; /* ✅ “snap” più bello */
+  padding-left: 8px;
+  padding-right: 8px;
 }
 .settings-actions::-webkit-scrollbar{ display:none; }
 
@@ -660,6 +663,19 @@ white-space: nowrap;
   background: var(--accent-soft);
   color: var(--accent);
   border-color: rgba(107,30,43,.35);
+}
+@media (max-width: 420px){
+  .pill-btn{
+    padding: 8px 10px;     /* ✅ più strette */
+    font-size: 0.82em;     /* ✅ testo più piccolo */
+    box-shadow: none;      /* ✅ meno “peso” visivo */
+  }
+  .settings-actions{
+    gap:6px;
+  }
+  .pill-btn{
+    scroll-snap-align: start; /* ✅ ogni pill “aggancia” */
+  }
 }
 
 
