@@ -2650,6 +2650,43 @@ async function startDownloadPDF() {
 
 
 window.addEventListener("message", async (event) => {
+    // 👇 lingua comandata dal dashboard (iframe)
+  if (event.data?.action === "setLanguage") {
+    const lang = (event.data.lang || "").toLowerCase();
+    if (!translations[lang]) return;
+
+    currentLang = lang;
+
+    // aggiorna select se esiste
+    const sel = document.getElementById("langSelector");
+    if (sel) sel.value = lang;
+
+    // in preview non sporcare le preferenze utente salvate
+    const isPreview = new URLSearchParams(location.search).get("preview") === "1";
+    if (!isPreview) localStorage.setItem("lang_pref", lang);
+
+    applyTranslations();
+    refreshFilterOptionsPreservingState();
+
+    // stessa logica di rerender che usi in changeLanguage()
+    const prev = window._manualNavigation;
+    window._manualNavigation = true;
+
+    if (currentView === "categories") {
+      showCategories();
+    } else if (currentView === "subcategory") {
+      showSubcategories(currentCategory);
+    } else if (currentView === "wines") {
+      if (window.currentSubcategory) {
+        showWinesBySubcategory(window.currentSubcategory);
+      } else {
+        showWinesForCategory(currentCategory);
+      }
+    }
+
+    window._manualNavigation = prev;
+    return;
+  }
   if (event.data?.action === "updateFontLive") {
   const font = event.data.font;
   if (font) {
@@ -3008,6 +3045,10 @@ if (window._manualNavigation !== true) {
 }
 };
 function pickBestLang() {
+    // 0) se arriva ?lang=... (es. dall’iframe dashboard), usa quello
+  const urlLang = new URLSearchParams(window.location.search).get("lang");
+  if (urlLang && translations[urlLang]) return urlLang;
+
   // 1) se l’utente aveva già scelto una lingua in passato, rispetta quella
   const saved = localStorage.getItem("lang_pref");
   if (saved && translations[saved]) return saved;

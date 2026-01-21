@@ -1835,8 +1835,9 @@ function applyFileTranslations() {
     applyTranslations();
     // refresh dynamic title if we already know it
     if (window.__WF_REST_NAME !== undefined) setRestaurantTitle(window.__WF_REST_NAME);
-    const iframe = document.getElementById("previewFrame");
-if (iframe?.contentWindow) {
+// 👇 manda la lingua anche alla carta nell'iframe
+const iframe = document.getElementById("previewFrame");
+if (iframe && iframe.contentWindow) {
   iframe.contentWindow.postMessage({ action: "setLanguage", lang: currentLang }, "*");
 }
   }
@@ -2184,6 +2185,16 @@ async function checkSlugAvailability(s) {
 }
     // init language (auto + saved choice)
     initLanguage();
+    // 👇 quando l'iframe finisce di caricare, reinvia la lingua corrente
+const _iframe = document.getElementById("previewFrame");
+if (_iframe && !_iframe.dataset.langBound) {
+  _iframe.dataset.langBound = "1";
+  _iframe.addEventListener("load", () => {
+    try {
+      _iframe.contentWindow?.postMessage({ action: "setLanguage", lang: currentLang }, "*");
+    } catch(e) {}
+  });
+}
     sb = window.supabase.createClient("https://ldunvbftxhbtuyabgxwh.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo");
     const { data: { user }, error } = await sb.auth.getUser();
       if (!user) return (window.location.href = '/');
@@ -2652,8 +2663,15 @@ function capitalize(str) {
 }
 
 function updatePreview() {
-  const url = `carta.html?ristorante_id=${encodeURIComponent(RESTAURANT_ID)}&lang=${encodeURIComponent(currentLang)}&preview=1`;
-  document.getElementById('previewFrame').src = url;
+  if (!RESTAURANT_ID) return;
+
+  const qs = new URLSearchParams({
+    ristorante_id: RESTAURANT_ID,
+    preview: "1",
+    lang: currentLang
+  }).toString();
+
+  document.getElementById("previewFrame").src = `carta.html?${qs}`;
 }
 
 function goTo(path) {
