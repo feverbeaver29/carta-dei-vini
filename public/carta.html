@@ -639,6 +639,42 @@ body.reordering { overscroll-behavior: contain; }
 
 .sortable-ghost { opacity: 0.35; }
 .sortable-chosen { transform: scale(1.02); }
+/* --- REORDER: performance & premium feel --- */
+body.reordering .category,
+body.reordering .subcategory{
+  transition: none !important;             /* evita micro-lag */
+  box-shadow: 0 1px 2px rgba(0,0,0,.06) !important;
+  will-change: transform;
+}
+
+body.reordering .sortable-ghost{
+  opacity: 0.12 !important;
+  transform: scale(0.98) !important;
+  border-style: dashed !important;
+}
+
+body.reordering .sortable-chosen{
+  transform: scale(1.01) !important;
+}
+
+body.reordering .sortable-drag{
+  opacity: 1 !important;
+  transform: scale(1.04) !important;
+  box-shadow: 0 18px 45px rgba(0,0,0,.22) !important; /* “lift” premium */
+  cursor: grabbing !important;
+}
+body.reordering #sommelierBtn,
+body.reordering #bottomBar{
+  pointer-events: none;
+  opacity: .85;
+}
+@media (prefers-reduced-motion: reduce){
+  body.reordering .sortable-drag,
+  body.reordering .sortable-chosen,
+  body.reordering .sortable-ghost{
+    transform: none !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -2842,42 +2878,54 @@ if (event.data?.action === "startReorder") {
   container.addEventListener("click", window._reorderClickBlocker, true);
 
   // ✅ crea Sortable: drag su TUTTA la categoria/sottocategoria (niente handle)
-const isTouch = (navigator.maxTouchPoints > 0) || ("ontouchstart" in window);
+const isTouch =
+  (navigator.maxTouchPoints > 0) ||
+  ("ontouchstart" in window) ||
+  (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
 
 window._sortableInstance = new Sortable(container, {
   draggable: itemSelector,
 
-  // più “attaccato” al dito/mouse
-  animation: 140,
+  animation: 120,
   easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
 
   ghostClass: "sortable-ghost",
   chosenClass: "sortable-chosen",
   dragClass: "sortable-drag",
 
-  // ✅ drag su tutta la riga (come vuoi tu)
+  // ✅ Drag su tutta la riga
   handle: null,
 
-  // ✅ Su touch usa fallback (molto più fluido)
-  forceFallback: isTouch,
-  fallbackOnBody: true,
-  fallbackTolerance: isTouch ? 0 : 4,
+  // ✅ Sempre fallback = segue meglio dito/mouse (soprattutto mobile/iframe)
+  forceFallback: true,
 
-  // ✅ Niente “attesa” che fa sembrare tutto lento
-  delayOnTouchOnly: false,
+  // ✅ IMPORTANTISSIMO: evita offset strani con scroll/iframe
+  fallbackOnBody: false,
+
+  // ✅ micro-movimento minimo prima di “agganciare”
+  fallbackTolerance: isTouch ? 2 : 0,
+  touchStartThreshold: isTouch ? 2 : 0,
+
+  // ✅ niente delay che lo fa sembrare “lento”
   delay: 0,
-  touchStartThreshold: 0,
-
-  // “swap feeling” (scambio immediato tra elementi)
-  swapThreshold: 0.75,
-  invertSwap: true,
+  delayOnTouchOnly: false,
 
   direction: "vertical",
 
-  // scroll mentre trascini (meno aggressivo)
+  // ✅ scroll mentre trascini (più naturale)
   scroll: true,
-  scrollSensitivity: 50,
-  scrollSpeed: 10
+  scrollSensitivity: 60,
+  scrollSpeed: 12,
+
+  onStart: () => {
+    document.body.classList.add("dragging-now");
+    // “haptic” leggero = premium (se supportato)
+    try { navigator.vibrate && navigator.vibrate(10); } catch {}
+  },
+  onEnd: () => {
+    document.body.classList.remove("dragging-now");
+    try { navigator.vibrate && navigator.vibrate(8); } catch {}
+  }
 });
 }
 
