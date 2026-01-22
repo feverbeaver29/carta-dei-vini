@@ -18,8 +18,6 @@
   --sommelier-height:   64px;         /* leggermente > della bottom bar (56px) */
   --safe-bottom-gap: 24px; /* margine extra per ombre/animazioni */
 }
-.drag-handle { opacity: .6; margin-right: .6em; cursor: grab; user-select: none; }
-.sortable-ghost { opacity: .4; }
 /* =========================
    ELEMENTI COMUNI
 ========================= */
@@ -636,6 +634,23 @@ body.pdf-export {
   background: #ffffff !important;
 }
 
+body.reordering .category,
+body.reordering .subcategory {
+  position: relative;
+  padding-left: 34px; /* spazio per l’icona */
+}
+
+.drag-handle {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.45;
+  pointer-events: none; /* NON blocca il drag */
+}
+
+.sortable-ghost { opacity: 0.35; }
+.sortable-chosen { transform: scale(1.02); }
 </style>
 </head>
 <body>
@@ -2810,11 +2825,16 @@ if (event.data?.action === "startReorder") {
 
   document.body.classList.add("reordering");
 
-  // ✅ aggiungi la maniglia SOLO se non esiste già
+  // ✅ aggiungi la maniglia SOLO se non esiste già (serve solo come icona, MA il drag è su tutta la riga)
   [...container.querySelectorAll(itemSelector)].forEach(el => {
     el.style.cursor = "grab";
+    el.style.userSelect = "none";
+
     if (!el.querySelector(".drag-handle")) {
-      el.insertAdjacentHTML("afterbegin", `<span class="drag-handle" aria-hidden="true">☰</span>`);
+      el.insertAdjacentHTML(
+        "afterbegin",
+        `<span class="drag-handle" aria-hidden="true">☰</span>`
+      );
     }
   });
 
@@ -2833,18 +2853,27 @@ if (event.data?.action === "startReorder") {
   };
   container.addEventListener("click", window._reorderClickBlocker, true);
 
-  // ✅ crea Sortable: drag SOLO da ☰ + fallback stabile (migliora animazione dentro iframe/mockup)
+  // ✅ crea Sortable: drag su TUTTA la categoria/sottocategoria (niente handle)
   window._sortableInstance = new Sortable(container, {
-    animation: 150,
-    handle: ".drag-handle",
+    animation: 180,
     draggable: itemSelector,
+
     ghostClass: "sortable-ghost",
     chosenClass: "sortable-chosen",
     dragClass: "sortable-drag",
+
     forceFallback: true,
     fallbackOnBody: true,
-    delay: 120,
-    delayOnTouchOnly: true
+    fallbackTolerance: 6,
+
+    // feeling “swap” più naturale
+    swapThreshold: 0.65,
+    invertSwap: true,
+
+    direction: "vertical",
+    scroll: true,
+    scrollSensitivity: 60,
+    scrollSpeed: 10
   });
 }
 
@@ -2878,6 +2907,12 @@ if (event.data?.action === "getReorder") {
   }
 
   // (opzionale ma pulito) rimuovi le maniglie
+  [...container.querySelectorAll(".drag-handle")].forEach(h => h.remove());
+    // pulizia stili
+  [...container.querySelectorAll(itemSelector)].forEach(el => {
+    el.style.cursor = "";
+    el.style.userSelect = "";
+  });
   [...container.querySelectorAll(".drag-handle")].forEach(h => h.remove());
 }
 
