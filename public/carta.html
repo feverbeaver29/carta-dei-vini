@@ -155,6 +155,33 @@ nav{ position:fixed; top:0; left:0; right:0; } /* già c'è, lo ribadisco */
 .price-chip{ display:inline-flex; align-items:center; gap:6px; font-size:.95em; }
 .price-chip img.icon{ width:25px; height:25px; vertical-align:middle; object-fit:contain; }
 .price-chip strong{ font-weight:600; }
+/* =========================
+   SORTABLE (ORDINA VOCI)
+========================= */
+.drag-handle{ display:none; opacity:.55; margin-right:.5em; }
+body.reordering .drag-handle{ display:inline-block; }
+
+.sortable-ghost{ opacity:.25; }
+.sortable-chosen{ transform:none !important; }
+.sortable-drag{
+  opacity:1 !important;
+  z-index:9999 !important;
+  box-shadow:0 14px 30px rgba(0,0,0,.22);
+}
+
+/* mentre stai ordinando: niente hover-transform (confligge con Sortable) */
+body.reordering .category:hover,
+body.reordering .subcategory:hover{
+  transform:none !important;
+}
+
+/* migliora il drag su mobile */
+body.reordering .category,
+body.reordering .subcategory{
+  user-select:none;
+  -webkit-user-select:none;
+  touch-action:none;
+}
 
 /* =========================
    BOTTOM BAR FISSA
@@ -2774,29 +2801,63 @@ if (nameSpan) {
     reorderMode = true;
     reorderType = event.data.type;
 
-    if (reorderType === "categorie") {
-      const container = document.getElementById("category-list");
-      [...container.children].forEach(el => {
-        el.style.cursor = "grab";
-        el.innerHTML = `<span style='opacity:0.5;margin-right:0.5em;'>☰</span>${el.innerHTML}`;
-      });
+if (reorderType === "categorie") {
+  document.body.classList.add("reordering");
 
-      new Sortable(container, {
-        animation: 150,
-        ghostClass: 'sortable-ghost'
-      });
-    } else if (reorderType === "sottocategorie") {
-      const subContainer = document.getElementById("subcategory-list");
-      [...subContainer.children].forEach(el => {
-        el.style.cursor = "grab";
-        el.innerHTML = `<span style='opacity:0.5;margin-right:0.5em;'>☰</span>${el.innerHTML}`;
-      });
+  const container = document.getElementById("category-list");
 
-      new Sortable(subContainer, {
-        animation: 150,
-        ghostClass: 'sortable-ghost'
-      });
+  // evita di aggiungere ☰ mille volte
+  [...container.children].forEach(el => {
+    el.style.cursor = "grab";
+    if (!el.querySelector(".drag-handle")) {
+      el.insertAdjacentHTML("afterbegin", `<span class="drag-handle">☰</span>`);
     }
+  });
+
+  // se esiste già una sortable attiva, distruggila
+  if (window._sortableInstance) {
+    window._sortableInstance.destroy();
+    window._sortableInstance = null;
+  }
+
+  window._sortableInstance = new Sortable(container, {
+    animation: 150,
+    ghostClass: "sortable-ghost",
+    chosenClass: "sortable-chosen",
+    dragClass: "sortable-drag",
+    fallbackOnBody: true,
+    // utile su mobile: evita tap/click accidentali
+    delay: 120,
+    delayOnTouchOnly: true
+  });
+}
+else if (reorderType === "sottocategorie") {
+  document.body.classList.add("reordering");
+
+  const subContainer = document.getElementById("subcategory-list");
+
+  [...subContainer.children].forEach(el => {
+    el.style.cursor = "grab";
+    if (!el.querySelector(".drag-handle")) {
+      el.insertAdjacentHTML("afterbegin", `<span class="drag-handle">☰</span>`);
+    }
+  });
+
+  if (window._sortableInstance) {
+    window._sortableInstance.destroy();
+    window._sortableInstance = null;
+  }
+
+  window._sortableInstance = new Sortable(subContainer, {
+    animation: 150,
+    ghostClass: "sortable-ghost",
+    chosenClass: "sortable-chosen",
+    dragClass: "sortable-drag",
+    fallbackOnBody: true,
+    delay: 120,
+    delayOnTouchOnly: true
+  });
+}
   }
 
   if (event.data?.action === "getReorder") {
@@ -2806,6 +2867,12 @@ if (nameSpan) {
   el.textContent.replace(/^☰\s*/, '').trim()
 );
       parent.postMessage({ action: "saveReorder", type: "categorie", ordine }, "*");
+      // esci dalla modalità reorder
+document.body.classList.remove("reordering");
+if (window._sortableInstance) {
+  window._sortableInstance.destroy();
+  window._sortableInstance = null;
+}
     } else if (reorderType === "sottocategorie") {
       const subContainer = document.getElementById("subcategory-list");
       const ordine = [...subContainer.children].map(el =>
@@ -2813,6 +2880,12 @@ if (nameSpan) {
 );
       const sottocategorieMap = { [currentCategory]: ordine };
       parent.postMessage({ action: "saveReorder", type: "sottocategorie", sottocategorieMap }, "*");
+      // esci dalla modalità reorder
+document.body.classList.remove("reordering");
+if (window._sortableInstance) {
+  window._sortableInstance.destroy();
+  window._sortableInstance = null;
+}
     }
   }
 
