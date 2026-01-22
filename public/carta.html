@@ -2791,103 +2791,94 @@ if (nameSpan) {
 }}
 
 
-  if (event.data?.action === "startReorder") {
-    if (typeof Sortable === "undefined") {
-  await loadScriptOnce(
-    "sortable-js",
-    "https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"
-  );
-}
-    reorderMode = true;
-    reorderType = event.data.type;
+if (event.data?.action === "startReorder") {
+  if (typeof Sortable === "undefined") {
+    await loadScriptOnce(
+      "sortable-js",
+      "https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"
+    );
+  }
 
-if (reorderType === "categorie") {
+  reorderMode = true;
+  reorderType = event.data.type;
+
+  const isCats = reorderType === "categorie";
+  const container = document.getElementById(isCats ? "category-list" : "subcategory-list");
+  const itemSelector = isCats ? ".category" : ".subcategory";
+  if (!container) return;
+
   document.body.classList.add("reordering");
 
-  const container = document.getElementById("category-list");
-
-  // evita di aggiungere ☰ mille volte
-  [...container.children].forEach(el => {
+  // ✅ aggiungi la maniglia SOLO se non esiste già
+  [...container.querySelectorAll(itemSelector)].forEach(el => {
     el.style.cursor = "grab";
     if (!el.querySelector(".drag-handle")) {
-      el.insertAdjacentHTML("afterbegin", `<span class="drag-handle">☰</span>`);
+      el.insertAdjacentHTML("afterbegin", `<span class="drag-handle" aria-hidden="true">☰</span>`);
     }
   });
 
-  // se esiste già una sortable attiva, distruggila
+  // ✅ distruggi eventuale istanza precedente
   if (window._sortableInstance) {
     window._sortableInstance.destroy();
     window._sortableInstance = null;
   }
 
+  // ✅ blocca i click mentre stai riordinando (evita che apra categorie/sottocategorie)
+  window._reorderClickBlocker = window._reorderClickBlocker || function (e) {
+    if (document.body.classList.contains("reordering")) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+  container.addEventListener("click", window._reorderClickBlocker, true);
+
+  // ✅ crea Sortable: drag SOLO da ☰ + fallback stabile (migliora animazione dentro iframe/mockup)
   window._sortableInstance = new Sortable(container, {
     animation: 150,
+    handle: ".drag-handle",
+    draggable: itemSelector,
     ghostClass: "sortable-ghost",
     chosenClass: "sortable-chosen",
     dragClass: "sortable-drag",
+    forceFallback: true,
     fallbackOnBody: true,
-    // utile su mobile: evita tap/click accidentali
     delay: 120,
     delayOnTouchOnly: true
   });
 }
-else if (reorderType === "sottocategorie") {
-  document.body.classList.add("reordering");
 
-  const subContainer = document.getElementById("subcategory-list");
+if (event.data?.action === "getReorder") {
+  const isCats = reorderType === "categorie";
+  const container = document.getElementById(isCats ? "category-list" : "subcategory-list");
+  const itemSelector = isCats ? ".category" : ".subcategory";
+  if (!container) return;
 
-  [...subContainer.children].forEach(el => {
-    el.style.cursor = "grab";
-    if (!el.querySelector(".drag-handle")) {
-      el.insertAdjacentHTML("afterbegin", `<span class="drag-handle">☰</span>`);
-    }
-  });
+  const ordine = [...container.querySelectorAll(itemSelector)].map(el =>
+    el.textContent.replace(/^☰\s*/, "").trim()
+  );
+
+  if (isCats) {
+    parent.postMessage({ action: "saveReorder", type: "categorie", ordine }, "*");
+  } else {
+    const sottocategorieMap = { [currentCategory]: ordine };
+    parent.postMessage({ action: "saveReorder", type: "sottocategorie", sottocategorieMap }, "*");
+  }
+
+  // ✅ cleanup: esci dalla modalità reorder
+  document.body.classList.remove("reordering");
 
   if (window._sortableInstance) {
     window._sortableInstance.destroy();
     window._sortableInstance = null;
   }
 
-  window._sortableInstance = new Sortable(subContainer, {
-    animation: 150,
-    ghostClass: "sortable-ghost",
-    chosenClass: "sortable-chosen",
-    dragClass: "sortable-drag",
-    fallbackOnBody: true,
-    delay: 120,
-    delayOnTouchOnly: true
-  });
-}
+  if (window._reorderClickBlocker) {
+    container.removeEventListener("click", window._reorderClickBlocker, true);
   }
 
-  if (event.data?.action === "getReorder") {
-    if (reorderType === "categorie") {
-      const container = document.getElementById("category-list");
-      const ordine = [...container.children].map(el =>
-  el.textContent.replace(/^☰\s*/, '').trim()
-);
-      parent.postMessage({ action: "saveReorder", type: "categorie", ordine }, "*");
-      // esci dalla modalità reorder
-document.body.classList.remove("reordering");
-if (window._sortableInstance) {
-  window._sortableInstance.destroy();
-  window._sortableInstance = null;
+  // (opzionale ma pulito) rimuovi le maniglie
+  [...container.querySelectorAll(".drag-handle")].forEach(h => h.remove());
 }
-    } else if (reorderType === "sottocategorie") {
-      const subContainer = document.getElementById("subcategory-list");
-      const ordine = [...subContainer.children].map(el =>
-  el.textContent.replace(/^☰\s*/, '').trim()
-);
-      const sottocategorieMap = { [currentCategory]: ordine };
-      parent.postMessage({ action: "saveReorder", type: "sottocategorie", sottocategorieMap }, "*");
-      // esci dalla modalità reorder
-document.body.classList.remove("reordering");
-if (window._sortableInstance) {
-  window._sortableInstance.destroy();
-  window._sortableInstance = null;
-}
-    }
-  }
 
     if (event.data?.action === "downloadPDF") {
     startDownloadPDF();
