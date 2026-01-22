@@ -613,6 +613,21 @@ body.reordering .subcategory {
   padding-left: 34px; /* spazio per l’icona */
 }
 
+/* ✅ Durante il riordino: niente GRID (fa lag), lista verticale fluida */
+body.reordering #category-list,
+body.reordering #subcategory-list{
+  display:flex !important;
+  flex-direction:column;
+  gap:10px;
+}
+
+/* Migliora feeling su touch */
+body.reordering .category,
+body.reordering .subcategory{
+  touch-action:none;
+}
+body.reordering { overscroll-behavior: contain; }
+
 .drag-handle {
   position: absolute;
   left: 10px;
@@ -2827,38 +2842,42 @@ if (event.data?.action === "startReorder") {
   container.addEventListener("click", window._reorderClickBlocker, true);
 
   // ✅ crea Sortable: drag su TUTTA la categoria/sottocategoria (niente handle)
+const isTouch = (navigator.maxTouchPoints > 0) || ("ontouchstart" in window);
+
 window._sortableInstance = new Sortable(container, {
   draggable: itemSelector,
 
-  // animazione “premium”
-  animation: 220,
+  // più “attaccato” al dito/mouse
+  animation: 140,
   easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
 
   ghostClass: "sortable-ghost",
   chosenClass: "sortable-chosen",
   dragClass: "sortable-drag",
 
-  // ✅ drag su tutta la riga (nessun handle)
+  // ✅ drag su tutta la riga (come vuoi tu)
   handle: null,
 
-  // ✅ touch/mobile: rende il drag affidabile (senza bloccare i tap normali)
-  delayOnTouchOnly: true,
-  delay: 120,
-  touchStartThreshold: 3,
-
-  // ✅ lascia che Sortable scelga la modalità migliore (niente forceFallback fisso)
-  forceFallback: false,
+  // ✅ Su touch usa fallback (molto più fluido)
+  forceFallback: isTouch,
   fallbackOnBody: true,
-  fallbackTolerance: 4,
+  fallbackTolerance: isTouch ? 0 : 4,
 
-  // “swap feeling”
-  swapThreshold: 0.65,
+  // ✅ Niente “attesa” che fa sembrare tutto lento
+  delayOnTouchOnly: false,
+  delay: 0,
+  touchStartThreshold: 0,
+
+  // “swap feeling” (scambio immediato tra elementi)
+  swapThreshold: 0.75,
   invertSwap: true,
 
   direction: "vertical",
+
+  // scroll mentre trascini (meno aggressivo)
   scroll: true,
-  scrollSensitivity: 80,
-  scrollSpeed: 12
+  scrollSensitivity: 50,
+  scrollSpeed: 10
 });
 }
 
