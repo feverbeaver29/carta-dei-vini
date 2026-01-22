@@ -3606,66 +3606,40 @@ function winesMatchFormats(list, ids, map) {
 }
 
 function applyFilters() {
-    // 👉 Se siamo sulla vista categorie, delega sempre a showCategories
+  // 👉 Se siamo sulla vista categorie, delega sempre a showCategories (che già traduce e rende una volta sola)
   if (currentView === 'categories') {
     showCategories();
     updateFormatActiveState();
     return;
   }
+
   const { ids, map } = getCheckedFormats();
-  // 1) ricava i vini che hanno almeno uno dei formati scelti
   const filteredWines = winesMatchFormats(wines, ids, map);
 
-  // 2) capiamo dove siamo e rigeneriamo l’UI di conseguenza
-  if (currentView === 'categories') {
-    // mostro solo le categorie che hanno almeno un vino valido
-    const haveCats = Array.from(new Set(filteredWines.map(w => w.categoria).filter(Boolean)));
-    const ordered = (categoriaOrder && categoriaOrder.length)
-      ? haveCats.sort((a,b) => categoriaOrder.indexOf(normalize(a)) - categoriaOrder.indexOf(normalize(b)))
-      : haveCats;
-    const container = document.getElementById('category-list');
-    container.innerHTML = '';
-ordered.forEach(async (cat) => {
-  const div = document.createElement('div');
-  div.className = 'category';
-
-  // traduzione dinamica se lingua != it
-  let display = cat;
-  if (currentLang !== 'it') {
-    try {
-      const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-categoria", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: cat, targetLang: currentLang })
-      });
-      const data = await res.json();
-      display = (data.text || cat).trim();
-    } catch (_) { /* fallback: cat */ }
-  }
-  div.textContent = display;
-
-  div.onclick = () => showSubcategories(cat);
-  container.appendChild(div);
-});
-
-  } else if (currentView === 'subcategory') {
+  if (currentView === 'subcategory') {
     // solo le sottocategorie della categoria corrente che hanno un vino valido
     const list = filteredWines.filter(w => normalize(w.categoria) === normalize(currentCategory));
     const haveSub = Array.from(new Set(list.map(w => w.sottocategoria).filter(Boolean)));
+
     let ordered = haveSub;
     const order = Object.entries(sottocategoriaOrderMap).find(
       ([key]) => normalize(key) === normalize(currentCategory)
     )?.[1] || [];
+
     if (order.length) {
       ordered = haveSub.sort((a,b) => order.indexOf(normalize(a)) - order.indexOf(normalize(b)));
     }
+
     const container = document.getElementById('subcategory-list');
     container.innerHTML = '';
-      // 👉 Se i filtri azzerano le sottocategorie visibili, mostra direttamente i vini della categoria
-  if (ordered.length === 0) {
-    showWinesForCategory(currentCategory);
-    return;
-  }
+
+    // 👉 Se i filtri azzerano le sottocategorie visibili, mostra direttamente i vini della categoria
+    if (ordered.length === 0) {
+      showWinesForCategory(currentCategory);
+      updateFormatActiveState();
+      return;
+    }
+
     ordered.forEach(sub => {
       const div = document.createElement('div');
       div.className = 'subcategory';
@@ -3673,54 +3647,57 @@ ordered.forEach(async (cat) => {
       div.onclick = () => showWinesBySubcategory(sub);
       container.appendChild(div);
     });
-} else if (currentView === 'wines') {
-  const wineList = document.getElementById("wine-list");
-  if (!wineList) return;
 
-  wineList.innerHTML = "";
+  } else if (currentView === 'wines') {
+    const wineList = document.getElementById("wine-list");
+    if (!wineList) return;
 
-  // Se ho una sottocategoria attiva → comportamento attuale
-  if (window.currentSubcategory) {
-    const inSub = wines.filter(w =>
-      normalize(w.categoria) === normalize(currentCategory) &&
-      normalize(w.sottocategoria) === normalize(window.currentSubcategory)
-    );
-    const filtered = winesMatchFormats(inSub, ids, map);
-    filtered.forEach(w => {
-      const card = document.createElement("div");
-      card.className = "wine-card";
-      const annata = w.annata ? ` (${w.annata})` : "";
-      const nomePulito = (w.nome || "").trim();
-      const t = translations[currentLang];
-      card.innerHTML = `
-        <strong>${nomePulito}${annata}</strong>
-        ${buildPriceHTML(w)}
-        ${w.uvaggio ? `<small>${t.grape}: ${w.uvaggio}</small>` : ""}`;
-      card.onclick = () => mostraPopupDescrizione(w);
-      wineList.appendChild(card);
-    });
-  } else {
-    // ✅ Nessuna sottocategoria attiva → filtra solo per categoria
-    const inCat = wines.filter(w =>
-      normalize(w.categoria) === normalize(currentCategory)
-    );
-    const filtered = winesMatchFormats(inCat, ids, map);
-    filtered.forEach(w => {
-      const card = document.createElement("div");
-      card.className = "wine-card";
-      const annata = w.annata ? ` (${w.annata})` : "";
-      const nomePulito = (w.nome || "").trim();
-      const t = translations[currentLang];
-      card.innerHTML = `
-        <strong>${nomePulito}${annata}</strong>
-        ${buildPriceHTML(w)}
-        ${w.uvaggio ? `<small>${t.grape}: ${w.uvaggio}</small>` : ""}`;
-      card.onclick = () => mostraPopupDescrizione(w);
-      wineList.appendChild(card);
-    });
+    wineList.innerHTML = "";
+
+    // Se ho una sottocategoria attiva → comportamento attuale
+    if (window.currentSubcategory) {
+      const inSub = wines.filter(w =>
+        normalize(w.categoria) === normalize(currentCategory) &&
+        normalize(w.sottocategoria) === normalize(window.currentSubcategory)
+      );
+      const filtered = winesMatchFormats(inSub, ids, map);
+
+      filtered.forEach(w => {
+        const card = document.createElement("div");
+        card.className = "wine-card";
+        const annata = w.annata ? ` (${w.annata})` : "";
+        const nomePulito = (w.nome || "").trim();
+        const t = translations[currentLang];
+        card.innerHTML = `
+          <strong>${nomePulito}${annata}</strong>
+          ${buildPriceHTML(w)}
+          ${w.uvaggio ? `<small>${t.grape}: ${w.uvaggio}</small>` : ""}`;
+        card.onclick = () => mostraPopupDescrizione(w);
+        wineList.appendChild(card);
+      });
+
+    } else {
+      // ✅ Nessuna sottocategoria attiva → filtra solo per categoria
+      const inCat = wines.filter(w => normalize(w.categoria) === normalize(currentCategory));
+      const filtered = winesMatchFormats(inCat, ids, map);
+
+      filtered.forEach(w => {
+        const card = document.createElement("div");
+        card.className = "wine-card";
+        const annata = w.annata ? ` (${w.annata})` : "";
+        const nomePulito = (w.nome || "").trim();
+        const t = translations[currentLang];
+        card.innerHTML = `
+          <strong>${nomePulito}${annata}</strong>
+          ${buildPriceHTML(w)}
+          ${w.uvaggio ? `<small>${t.grape}: ${w.uvaggio}</small>` : ""}`;
+        card.onclick = () => mostraPopupDescrizione(w);
+        wineList.appendChild(card);
+      });
+    }
   }
-}
-updateFormatActiveState()
+
+  updateFormatActiveState();
 }
 
 function updateFormatActiveState(){
