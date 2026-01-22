@@ -154,33 +154,6 @@ nav{ position:fixed; top:0; left:0; right:0; } /* già c'è, lo ribadisco */
 .price-chip{ display:inline-flex; align-items:center; gap:6px; font-size:.95em; }
 .price-chip img.icon{ width:25px; height:25px; vertical-align:middle; object-fit:contain; }
 .price-chip strong{ font-weight:600; }
-/* =========================
-   SORTABLE (ORDINA VOCI)
-========================= */
-.drag-handle{ display:none; opacity:.55; margin-right:.5em; }
-body.reordering .drag-handle{ display:inline-block; }
-
-.sortable-ghost{ opacity:.25; }
-.sortable-chosen{ transform:none !important; }
-.sortable-drag{
-  opacity:1 !important;
-  z-index:9999 !important;
-  box-shadow:0 14px 30px rgba(0,0,0,.22);
-}
-
-/* mentre stai ordinando: niente hover-transform (confligge con Sortable) */
-body.reordering .category:hover,
-body.reordering .subcategory:hover{
-  transform:none !important;
-}
-
-/* migliora il drag su mobile */
-body.reordering .category,
-body.reordering .subcategory{
-  user-select:none;
-  -webkit-user-select:none;
-  touch-action:none;
-}
 
 /* =========================
    BOTTOM BAR FISSA
@@ -2854,27 +2827,39 @@ if (event.data?.action === "startReorder") {
   container.addEventListener("click", window._reorderClickBlocker, true);
 
   // ✅ crea Sortable: drag su TUTTA la categoria/sottocategoria (niente handle)
-  window._sortableInstance = new Sortable(container, {
-    animation: 180,
-    draggable: itemSelector,
+window._sortableInstance = new Sortable(container, {
+  draggable: itemSelector,
 
-    ghostClass: "sortable-ghost",
-    chosenClass: "sortable-chosen",
-    dragClass: "sortable-drag",
+  // animazione “premium”
+  animation: 220,
+  easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
 
-    forceFallback: true,
-    fallbackOnBody: true,
-    fallbackTolerance: 6,
+  ghostClass: "sortable-ghost",
+  chosenClass: "sortable-chosen",
+  dragClass: "sortable-drag",
 
-    // feeling “swap” più naturale
-    swapThreshold: 0.65,
-    invertSwap: true,
+  // ✅ drag su tutta la riga (nessun handle)
+  handle: null,
 
-    direction: "vertical",
-    scroll: true,
-    scrollSensitivity: 60,
-    scrollSpeed: 10
-  });
+  // ✅ touch/mobile: rende il drag affidabile (senza bloccare i tap normali)
+  delayOnTouchOnly: true,
+  delay: 120,
+  touchStartThreshold: 3,
+
+  // ✅ lascia che Sortable scelga la modalità migliore (niente forceFallback fisso)
+  forceFallback: false,
+  fallbackOnBody: true,
+  fallbackTolerance: 4,
+
+  // “swap feeling”
+  swapThreshold: 0.65,
+  invertSwap: true,
+
+  direction: "vertical",
+  scroll: true,
+  scrollSensitivity: 80,
+  scrollSpeed: 12
+});
 }
 
 if (event.data?.action === "getReorder") {
@@ -2883,9 +2868,9 @@ if (event.data?.action === "getReorder") {
   const itemSelector = isCats ? ".category" : ".subcategory";
   if (!container) return;
 
-  const ordine = [...container.querySelectorAll(itemSelector)].map(el =>
-    el.textContent.replace(/^☰\s*/, "").trim()
-  );
+const ordine = [...container.querySelectorAll(itemSelector)]
+  .map(el => (el.dataset.raw || "").trim())
+  .filter(Boolean);
 
   if (isCats) {
     parent.postMessage({ action: "saveReorder", type: "categorie", ordine }, "*");
@@ -3081,17 +3066,25 @@ window.showCategories = async function () {
   // 🔥 check anche prima del render (sicurezza)
   if (myToken !== _catRenderToken) return;
 
-  for (let i = 0; i < orderedKeys.length; i++) {
-    // 🔥 check in loop (ultra-safe)
-    if (myToken !== _catRenderToken) return;
+for (let i = 0; i < orderedKeys.length; i++) {
+  if (myToken !== _catRenderToken) return;
 
-    const key = orderedKeys[i];
-    const div = document.createElement('div');
-    div.className = 'category';
-    div.textContent = labels[i];
-    div.onclick = () => showSubcategories(key);
-    container.appendChild(div);
-  }
+  const key = orderedKeys[i];               // chiave normalizzata
+  const raw = originals[i];                 // nome categoria reale (IT)
+
+  const div = document.createElement('div');
+  div.className = 'category';
+
+  // 🔒 questo è ciò che useremo per salvare l'ordine (sempre IT)
+  div.dataset.raw = raw;
+  div.dataset.key = key;
+
+  // questo è ciò che mostriamo (tradotto o IT)
+  div.textContent = labels[i];
+
+  div.onclick = () => showSubcategories(key);
+  container.appendChild(div);
+}
 
   applyPalette(window.ristorantePalette);
 };
@@ -3138,14 +3131,24 @@ if (Array.isArray(order) && order.length) {
 
   const container = document.getElementById('subcategory-list');
   container.innerHTML = '';
-  for (const key of orderedKeys) {
-    const display = seen.get(key);
-    const div = document.createElement('div');
-    div.className = 'subcategory';
-    div.textContent = display.charAt(0).toUpperCase() + display.slice(1).toLowerCase();
-    div.onclick = () => showWinesBySubcategory(key);
-    container.appendChild(div);
-  }
+
+for (const key of orderedKeys) {
+  const raw = seen.get(key); // sottocategoria reale (IT)
+
+  const div = document.createElement('div');
+  div.className = 'subcategory';
+
+  // 🔒 per salvare l'ordine (sempre IT)
+  div.dataset.raw = raw;
+  div.dataset.key = key;
+
+  // testo mostrato
+  div.textContent = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+
+  div.onclick = () => showWinesBySubcategory(key);
+  container.appendChild(div);
+}
+
 applyPalette(window.ristorantePalette);
 
     const catList = document.getElementById('category-list');
