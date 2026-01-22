@@ -119,6 +119,16 @@ input[type="range"] {
   background-color: var(--accent-700);
 }
 
+#checkSlugBtn{
+  padding: 5px 10px;
+  font-size: 0.82em;
+  margin-top: 8px;
+}
+#slugPreview{
+  font-size: 0.85em;
+  margin-top: 6px;
+}
+
 .page-title {
   background: #fff;
   text-align: center;
@@ -306,16 +316,22 @@ footer {
   display: flex;
   align-items: center;
   gap: 8px;
-  max-width: 360px;
+  max-width: 100%;
 }
 .slug-row input[type="text"] {
   flex: 1 1 auto;
   max-width: none;
-  padding: 8px 10px;
+  padding: 6px 8px;
+  font-size: 0.9em;
 }
 .slug-row button {
   flex: 0 0 auto;
   width: auto; /* evita il width:100% globale dei bottoni */
+}
+#accNomeLogo label[for="slugInput"]{
+  font-size: 0.85em;
+  margin-top: 6px !important;
+  margin-bottom: 2px !important;
 }
 
 /* testi compatti */
@@ -324,12 +340,27 @@ footer {
 .slug-preview { margin-top:6px; font-size:0.9em; color:#333; }
 
 /* compattiamo l'intero blocco "Nome o Logo" */
-.impostazione .accordion-content {
-  padding: 8px 12px;
+.impostazione .accordion-content{
+  padding: 6px 10px;
 }
-.impostazione label { margin-top:8px; margin-bottom:4px; font-size:0.95em; }
+
+.impostazione label{
+  margin-top: 6px;
+  margin-bottom: 3px;
+  font-size: 0.92em;
+}
+
 .impostazione input[type="text"],
-.impostazione select { padding:8px 10px; }
+.impostazione select{
+  padding: 7px 9px;
+  font-size: 0.95em;
+}
+
+#accOrdina .mini-save-btn{
+  padding: 6px 12px;
+  font-size: 0.85em;
+  margin-top: 8px;
+}
 
 .file-field{
   display:flex;
@@ -515,7 +546,18 @@ white-space: nowrap;
   }
   #cartaSection {
   gap: 6px !important;
-}
+  flex-direction: column;
+  align-items: center;
+  }
+
+  #impostazioniCarta{
+    width: 100%;
+  }
+
+  /* ✅ i “rettangoli” (accordion-content) devono prendere tutta la larghezza */
+  #impostazioniCarta .accordion.open .accordion-content{
+    width: 100%;
+  }
 }
 
 /* Extra small screens */
