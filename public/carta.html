@@ -2933,6 +2933,8 @@ async function translateCatOnce(text, lang){
 let _catRenderToken = 0;
 
 window.showCategories = async function () {
+  const myToken = ++_catRenderToken; // ✅ questo render è l’unico valido
+
   setHelperByKey('helperChooseCategory');
 
   const { ids, map } = getCheckedFormats();
@@ -2958,20 +2960,31 @@ window.showCategories = async function () {
 
   const container = document.getElementById('category-list');
   if (!container) return;
+
   container.style.display = 'block';
   container.innerHTML = '';
 
   const originals = orderedKeys.map(k => seen.get(k) || k);
 
-  // ✅ se non IT: preparo TUTTE le traduzioni prima di renderizzare
   let labels = originals;
+
+  // ✅ se non IT: preparo TUTTE le traduzioni prima di renderizzare
   if (currentLang !== "it") {
     labels = await Promise.all(originals.map(txt => translateCatOnce(txt, currentLang)));
-    saveCatCache(); // persiste per le prossime volte (istantaneo)
+
+    // 🔥 se nel frattempo è partito un nuovo render, abortisco
+    if (myToken !== _catRenderToken) return;
+
+    saveCatCache();
   }
 
-  // Render una volta sola (zero "piano piano")
+  // 🔥 check anche prima del render (sicurezza)
+  if (myToken !== _catRenderToken) return;
+
   for (let i = 0; i < orderedKeys.length; i++) {
+    // 🔥 check in loop (ultra-safe)
+    if (myToken !== _catRenderToken) return;
+
     const key = orderedKeys[i];
     const div = document.createElement('div');
     div.className = 'category';
