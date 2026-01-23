@@ -200,17 +200,43 @@ h1 {    font-size: 1.3em;  }
 
   .fmt-input{ width:clamp(56px, 26vw, 96px); padding:.38em .5em; }
   .fmt-row{ gap:6px; }
+
+  .topbar{
+  max-width:600px;
+  margin:0 auto 10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+
+/* evita che il back link “spinga” verso il basso */
+.topbar #backToDashboard{ margin-bottom:0; }
+
+.lang-wrap{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.lang-wrap label{ margin:0; font-size:0.9em; }
+
+.lang-wrap select{
+  padding:6px 10px;
+  border-radius:10px;
+  border:1px solid #ccc;
+}
 }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
 </head>
 <body>
-<a href="dashboard.html" id="backToDashboard">← Torna alla Dashboard</a>
-<h1>Gestione Carta dei Vini</h1>
-<div style="display:flex; justify-content:flex-end; max-width:600px; margin:0 auto 8px;">
-  <div style="display:flex; align-items:center; gap:8px;">
-    <label id="langLabel" for="langSelect" style="margin:0; font-size:0.9em;">Lingua</label>
-    <select id="langSelect" style="padding:6px 10px; border-radius:10px; border:1px solid #ccc;">
+<div class="topbar">
+  <a href="dashboard.html" id="backToDashboard">← Torna alla Dashboard</a>
+
+  <div class="lang-wrap">
+    <label id="langLabel" for="langSelect">Lingua</label>
+    <select id="langSelect">
       <option value="it">Italiano</option>
       <option value="en">English</option>
       <option value="fr">Français</option>
@@ -218,6 +244,8 @@ h1 {    font-size: 1.3em;  }
     </select>
   </div>
 </div>
+
+<h1>Gestione Carta dei Vini</h1>
 
 <div id="message"></div>
 <div class="admin-panel">
@@ -342,6 +370,7 @@ let currentLang = "it";
 
 const TRANSLATIONS = {
   it: {
+    glass_lbl: "Calice",
     language: "Lingua",
     back_dashboard: "← Torna alla Dashboard",
     page_title: "Gestione Carta dei Vini",
@@ -392,6 +421,7 @@ const TRANSLATIONS = {
     saved_updated: "Vino aggiornato"
   },
   en: {
+    glass_lbl: "Glass",
     language: "Language",
     back_dashboard: "← Back to Dashboard",
     page_title: "Wine List Admin",
@@ -442,6 +472,7 @@ const TRANSLATIONS = {
     saved_updated: "Wine updated"
   },
 fr: {
+  glass_lbl: "Verre",
   back_dashboard: "← Retour au tableau de bord",
   page_title: "Gestion de la carte des vins",
   language: "Langue",
@@ -504,6 +535,7 @@ fr: {
 },
 
 es: {
+  glass_lbl: "Copa",
   back_dashboard: "← Volver al panel",
   page_title: "Gestión de la carta de vinos",
   language: "Idioma",
@@ -1328,7 +1360,7 @@ const FORMAT_KEYS = {
 
 const PRICE_META = [
   { key:"prezzo",           label:"0,75",  icon:"bottleicon.png" },
-  { key:"prezzo_bicchiere", label:"calice",icon:"glassico.png"  },
+  { key:"prezzo_bicchiere", labelKey:"glass_lbl", icon:"glassico.png" },
 
   // altri formati: solo testo (niente icona)
   { key:"prezzo_025",       label:"0,25"  },
@@ -1412,12 +1444,12 @@ function buildPricesBar(wine){
     }
 
     // testo: (icona) - PREZZO (bold)
-    const labelText = m.icon ? `<span class="lbl">${m.label}</span>` : "";
-    row.innerHTML = `
-      ${m.icon ? `<img src="${m.icon}" alt="">${labelText}` : `<span class="lbl">${m.label}</span>`}
-      <span class="sep">-</span>
-      <span class="val">${wine[m.key]}</span>
-    `;
+const labelText = m.icon ? `<span class="lbl">${lbl}</span>` : "";
+row.innerHTML = `
+  ${m.icon ? `<img src="${m.icon}" alt="">${labelText}` : `<span class="lbl">${lbl}</span>`}
+  <span class="sep">-</span>
+  <span class="val">${wine[m.key]}</span>
+`;
 
     // azioni: SOLO occhio, SOLO se multi-formato
     if (multi) {
