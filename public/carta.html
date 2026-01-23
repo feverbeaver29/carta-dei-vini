@@ -628,72 +628,77 @@ body.reordering .subcategory{
 }
 body.reordering { overscroll-behavior: contain; }
 
-.drag-handle {
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  opacity: 0.45;
-  pointer-events: none; /* NON blocca il drag */
+/* =========================
+   RIORDINO (SortableJS) — fluido + premium
+   NOTE: non impostare mai "transform" su .sortable-*
+   perché Sortable lo usa per far seguire il dito/mouse.
+========================= */
+
+/* ✅ Durante il riordino: lista verticale (niente grid) */
+body.reordering #category-list,
+body.reordering #subcategory-list{
+  display:flex !important;
+  flex-direction:column;
+  gap:10px;
 }
 
-.sortable-ghost { opacity: 0.35; }
-.sortable-chosen { transform: scale(1.02); }
-/* --- REORDER: performance & premium feel --- */
+/* Base item in reorder */
 body.reordering .category,
 body.reordering .subcategory{
-  transition: none !important;             /* evita micro-lag */
+  position: relative;
+  padding-left: 34px;              /* spazio per l’icona */
+  transition: none !important;     /* evita micro-lag */
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
   box-shadow: 0 1px 2px rgba(0,0,0,.06) !important;
-  will-change: transform;
 }
 
+/* maniglia (solo icona) */
+.drag-handle{
+  position:absolute;
+  left:10px;
+  top:50%;
+  transform: translateY(-50%);
+  opacity:.45;
+  pointer-events:none;
+}
+
+/* placeholder nella lista (quello “trasparente”) */
 body.reordering .sortable-ghost{
-  opacity: 0.12 !important;
-  transform: scale(0.98) !important;
+  opacity: .18 !important;
   border-style: dashed !important;
 }
 
-body.reordering .sortable-chosen{
-  transform: scale(1.01) !important;
+/* elemento originale selezionato: lo nascondo
+   (così sembra che “quello preso” si muova davvero) */
+body.reordering .sortable-chosen:not(.sortable-fallback):not(.sortable-drag){
+  opacity: 0 !important;
 }
 
-body.reordering .sortable-drag{
-  opacity: 1 !important;
-  z-index: 99999 !important;
-  box-shadow: 0 18px 45px rgba(0,0,0,.22) !important; /* “lift” premium */
-  cursor: grabbing !important;
-}
-body.reordering #sommelierBtn,
-body.reordering #bottomBar{
-  pointer-events: none;
-  opacity: .85;
-}
-
-/* ✅ Il pezzo "preso" (originale) non deve restare visibile fermo lì */
-body.reordering .sortable-chosen{
-  opacity: 0 !important;          /* così sembra che l’elemento si muova davvero */
-}
-
-/* ✅ Il clone che segue il dito/mouse (fallback) deve essere pieno e premium */
+/* clone che segue il dito/mouse (fallback) */
 body.reordering .sortable-fallback{
   opacity: 1 !important;
-  z-index: 99999 !important;
+  z-index: 999999 !important;
   box-shadow: 0 18px 45px rgba(0,0,0,.22) !important;
   border-radius: 12px;
   cursor: grabbing !important;
 }
 
-/* placeholder (ghost) resta “leggero” nella lista */
-body.reordering .sortable-ghost{
-  opacity: .12 !important;
+/* in alcuni casi Sortable mette anche .sortable-drag sul clone */
+body.reordering .sortable-drag{
+  opacity: 1 !important;
+  z-index: 999999 !important;
+  box-shadow: 0 18px 45px rgba(0,0,0,.22) !important;
+  cursor: grabbing !important;
 }
 
-@media (prefers-reduced-motion: reduce){
-  body.reordering .sortable-drag,
-  body.reordering .sortable-chosen,
-  body.reordering .sortable-ghost{
-    transform: none !important;
-  }
+/* disabilita click su UI fissa mentre si trascina */
+body.reordering #sommelierBtn,
+body.reordering #bottomBar{
+  pointer-events:none;
+  opacity:.85;
 }
 </style>
 </head>
