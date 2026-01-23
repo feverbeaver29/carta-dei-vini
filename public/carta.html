@@ -614,11 +614,17 @@ body.reordering .subcategory {
 }
 
 /* ✅ Durante il riordino: mostra SOLO la lista che stai ordinando */
-body.reordering.reorder-categorie #category-list,
-body.reordering.reorder-sottocategorie #subcategory-list{
+body.reordering.reorder-categorie #category-list{
   display:flex !important;
   flex-direction:column;
   gap:10px;
+}
+
+/* ✅ Sottocategorie: mantieni la griglia (2 per riga) anche in reorder */
+body.reordering.reorder-sottocategorie #subcategory-list{
+  display:grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap:1em !important;
 }
 
 /* nascondi le altre “pagine” mentre riordini */
@@ -641,14 +647,6 @@ body.reordering { overscroll-behavior: contain; }
    NOTE: non impostare mai "transform" su .sortable-*
    perché Sortable lo usa per far seguire il dito/mouse.
 ========================= */
-
-/* ✅ Durante il riordino: lista verticale (niente grid) */
-body.reordering #category-list,
-body.reordering #subcategory-list{
-  display:flex !important;
-  flex-direction:column;
-  gap:10px;
-}
 
 /* Base item in reorder */
 body.reordering .category,
