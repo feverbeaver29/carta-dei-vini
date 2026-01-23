@@ -1598,6 +1598,11 @@ background: rgba(255,255,255,.92);
     if (s.startsWith("es")) return "es";
     return "en";
   }
+  function normalize(str) {
+  return str
+    ? str.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim()
+    : "";
+}
 
   function t(key, vars = {}) {
     const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
@@ -2666,11 +2671,42 @@ window.addEventListener("message", async (event) => {
   if (event.data?.action === 'saveReorder') {
     const type = event.data.type;
    if (!type || (type === 'categorie' && !Array.isArray(event.data.ordine))) return;
+   if (type === "sottocategorie" && (!event.data.sottocategorieMap || typeof event.data.sottocategorieMap !== "object")) {
+  return;
+}
 
-const update = type === 'categorie'
-  ? { ordine_categorie: event.data.ordine }
-  : { ordine_sottocategorie: event.data.sottocategorieMap };
+let update;
 
+if (type === "categorie") {
+  update = { ordine_categorie: event.data.ordine };
+} else {
+  // ✅ MERGE: aggiorna solo la categoria corrente senza toccare le altre
+  const { data: row, error: readErr } = await sb
+    .from("ristoranti")
+    .select("ordine_sottocategorie")
+    .eq("id", RESTAURANT_ID)
+    .single();
+
+  let existing = row?.ordine_sottocategorie || {};
+  if (typeof existing === "string") {
+    try { existing = JSON.parse(existing); } catch { existing = {}; }
+  }
+
+  const merged = {};
+
+  // normalizzo e porto dentro tutto l'esistente
+  for (const [catName, arr] of Object.entries(existing || {})) {
+    merged[normalize(catName)] = Array.isArray(arr) ? arr : [];
+  }
+
+  // applico SOLO la categoria che arriva da carta
+  const incoming = event.data.sottocategorieMap || {};
+  for (const [catKey, arr] of Object.entries(incoming)) {
+    merged[normalize(catKey)] = Array.isArray(arr) ? arr : [];
+  }
+
+  update = { ordine_sottocategorie: merged };
+}
 
     const { error } = await sb.from("ristoranti").update(update).eq("id", RESTAURANT_ID);
     if (error) return alert("Errore durante il salvataggio dell'ordine");
