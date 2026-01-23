@@ -200,8 +200,9 @@ h1 {    font-size: 1.3em;  }
 
   .fmt-input{ width:clamp(56px, 26vw, 96px); padding:.38em .5em; }
   .fmt-row{ gap:6px; }
+}
 
-  .topbar{
+.topbar{
   max-width:600px;
   margin:0 auto 10px;
   display:flex;
@@ -209,23 +210,13 @@ h1 {    font-size: 1.3em;  }
   align-items:center;
   gap:12px;
 }
-
-/* evita che il back link “spinga” verso il basso */
 .topbar #backToDashboard{ margin-bottom:0; }
-
-.lang-wrap{
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-
+.lang-wrap{ display:flex; align-items:center; gap:8px; }
 .lang-wrap label{ margin:0; font-size:0.9em; }
-
 .lang-wrap select{
   padding:6px 10px;
   border-radius:10px;
   border:1px solid #ccc;
-}
 }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
@@ -1431,17 +1422,10 @@ function buildPricesBar(wine){
 
   present.forEach(m => {
     const isHidden = !!hiddenMap[m.key];
+    const lbl = m.labelKey ? t(m.labelKey) : m.label;
 
     const row = document.createElement("div");
     row.className = "price-line" + (isHidden ? " is-hidden" : "");
-
-    // label: icona solo per prezzo (0,75) e calice
-    const left = document.createElement("span");
-    if (m.icon) {
-      left.innerHTML = `<img src="${m.icon}" alt="">`;
-    } else {
-      left.innerHTML = `<span class="lbl">${m.label}</span>`;
-    }
 
     // testo: (icona) - PREZZO (bold)
 const labelText = m.icon ? `<span class="lbl">${lbl}</span>` : "";
