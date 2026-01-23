@@ -2917,6 +2917,7 @@ const isTouch =
   ("ontouchstart" in window) ||
   (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
 
+  const isGridReorder = (reorderType === "sottocategorie"); // griglia 2 colonne
 window._sortableInstance = new Sortable(container, {
   draggable: itemSelector,
 
@@ -2945,7 +2946,11 @@ window._sortableInstance = new Sortable(container, {
   delay: 0,
   delayOnTouchOnly: false,
 
-  direction: "vertical",
+  direction: isGridReorder ? "horizontal" : "vertical",
+  // ✅ Per griglie: collisioni migliori (considera anche la colonna di destra)
+  invertSwap: isGridReorder,
+  invertSwapThreshold: isGridReorder ? 0.65 : 1,
+  swapThreshold: isGridReorder ? 0.65 : 1,
 
   // ✅ scroll mentre trascini (più naturale)
   scroll: true,
