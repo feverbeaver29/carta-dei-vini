@@ -593,6 +593,7 @@ function setLang(lang, persist = true) {
   }
 
   applyTranslations();
+  if (typeof renderTable === "function") renderTable();
 }
 
 function initLanguage() {
