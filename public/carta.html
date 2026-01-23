@@ -637,6 +637,8 @@ body.reordering { overscroll-behavior: contain; }
   pointer-events: none; /* NON blocca il drag */
 }
 
+.sortable-ghost { opacity: 0.35; }
+.sortable-chosen { transform: scale(1.02); }
 /* --- REORDER: performance & premium feel --- */
 body.reordering .category,
 body.reordering .subcategory{
@@ -657,7 +659,7 @@ body.reordering .sortable-chosen{
 
 body.reordering .sortable-drag{
   opacity: 1 !important;
-  transform: scale(1.04) !important;
+  z-index: 99999 !important;
   box-shadow: 0 18px 45px rgba(0,0,0,.22) !important; /* “lift” premium */
   cursor: grabbing !important;
 }
@@ -667,17 +669,15 @@ body.reordering #bottomBar{
   opacity: .85;
 }
 
-/* Nascondi solo l'originale fermo (chosen), NON il clone che si muove */
-body.reordering .sortable-chosen:not(.sortable-drag):not(.sortable-fallback){
-  opacity: 0 !important;
+/* ✅ Il pezzo "preso" (originale) non deve restare visibile fermo lì */
+body.reordering .sortable-chosen{
+  opacity: 0 !important;          /* così sembra che l’elemento si muova davvero */
 }
 
 /* ✅ Il clone che segue il dito/mouse (fallback) deve essere pieno e premium */
-body.reordering .sortable-drag,
 body.reordering .sortable-fallback{
   opacity: 1 !important;
   z-index: 99999 !important;
-  transform: scale(1.04) !important;
   box-shadow: 0 18px 45px rgba(0,0,0,.22) !important;
   border-radius: 12px;
   cursor: grabbing !important;
@@ -2919,9 +2919,9 @@ window._sortableInstance = new Sortable(container, {
   // ✅ Sempre fallback = segue meglio dito/mouse (soprattutto mobile/iframe)
   forceFallback: true,
   fallbackClass: "sortable-fallback",
-
+  
   // ✅ IMPORTANTISSIMO: evita offset strani con scroll/iframe
-  fallbackOnBody: false,
+  fallbackOnBody: true,
 
   // ✅ micro-movimento minimo prima di “agganciare”
   fallbackTolerance: isTouch ? 2 : 0,
