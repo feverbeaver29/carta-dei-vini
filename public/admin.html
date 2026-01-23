@@ -207,6 +207,17 @@ h1 {    font-size: 1.3em;  }
 <body>
 <a href="dashboard.html" id="backToDashboard">← Torna alla Dashboard</a>
 <h1>Gestione Carta dei Vini</h1>
+<div style="display:flex; justify-content:flex-end; max-width:600px; margin:0 auto 8px;">
+  <div style="display:flex; align-items:center; gap:8px;">
+    <label id="langLabel" for="langSelect" style="margin:0; font-size:0.9em;">Lingua</label>
+    <select id="langSelect" style="padding:6px 10px; border-radius:10px; border:1px solid #ccc;">
+      <option value="it">Italiano</option>
+      <option value="en">English</option>
+      <option value="fr">Français</option>
+      <option value="es">Español</option>
+    </select>
+  </div>
+</div>
 
 <div id="message"></div>
 <div class="admin-panel">
@@ -287,17 +298,17 @@ h1 {    font-size: 1.3em;  }
 <!-- RIGA 2: Nascondi non visibili + Ordina -->
 <div style="display:flex; gap:1em; flex-wrap:nowrap; justify-content:space-between; align-items:flex-end; margin-top:0.6em;">
   <div style="flex: 1;">
-    <label style="font-size: 0.6em; margin-bottom: 4px; display: block;">Visibilità</label>
+    <label id="visibilityLabel" style="font-size: 0.6em; margin-bottom: 4px; display: block;">Visibilità</label>
     <div style="display:flex; align-items:center; gap:8px; height:42px; padding:0 0.5em; border-radius:8px; border:1px solid #ccc; background:#fff;">
       <input type="checkbox" id="hideNotVisible" onchange="currentPage=1;renderTable()">
-      <label for="hideNotVisible" style="margin:0; font-size:0.8em; line-height:1.1;">
+      <label id="hideNotVisibleLabel" for="hideNotVisible" style="margin:0; font-size:0.8em; line-height:1.1;">
         Nascondi non visibili
       </label>
     </div>
   </div>
 
   <div style="flex: 1;">
-    <label for="sortBy" style="font-size: 0.6em; margin-bottom: 4px; display: block;">Ordina per</label>
+    <label id="sortByLabel" for="sortBy" style="font-size: 0.6em; margin-bottom: 4px; display: block;">Ordina per</label>
     <select id="sortBy" onchange="currentPage=1;renderTable()" style="width: 100%; padding: 0.5em; border-radius: 8px; border: 1px solid #ccc;">
       <option value="name_asc" selected>Nome A → Z</option>
       <option value="name_desc">Nome Z → A</option>
@@ -323,6 +334,391 @@ h1 {    font-size: 1.3em;  }
 </div>
 
 <script>
+// ==========================
+// i18n (Admin)
+// ==========================
+const SUPPORTED_LANGS = ["it", "en", "fr", "es"];
+let currentLang = "it";
+
+const TRANSLATIONS = {
+  it: {
+    language: "Lingua",
+    back_dashboard: "← Torna alla Dashboard",
+    page_title: "Gestione Carta dei Vini",
+    add_wine: "Aggiungi Vino",
+    add_new: "Aggiungi nuovo",
+    edit_wine: "Modifica Vino",
+    save: "Salva",
+    update: "Aggiorna",
+    wine_name_label: "Nome del vino:",
+    wine_name_ph: "Nome completo del vino",
+    vintage_label: "Annata:",
+    vintage_ph: "non obbligatorio",
+    price_label: "Prezzo:",
+    bottle_ph: "bott. 0,75",
+    glass_ph: "calice",
+    currency_hint: "La valuta selezionata si applica ad entrambi i prezzi.",
+    add_format: "+ aggiungi formato",
+    pick_format: "Seleziona formato…",
+    category_label: "Categoria:",
+    subcategory_label: "Sottocategoria:",
+    blend_label: "Uvaggio:",
+    wine_list: "Lista Vini",
+    search_ph: "Cerca vino per nome...",
+    filter_cat: "Filtra per categoria",
+    filter_sub: "Filtra per sottocategoria",
+    all: "Tutte",
+    visibility: "Visibilità",
+    hide_not_visible: "Nascondi non visibili",
+    sort_by: "Ordina per",
+    sort_name_asc: "Nome A → Z",
+    sort_name_desc: "Nome Z → A",
+    sort_price_asc: "Prezzo crescente",
+    sort_price_desc: "Prezzo decrescente",
+    show: "Mostra:",
+    prev: "◀️ Indietro",
+    next: "Avanti ▶️",
+    page_x_of_y: "Pagina {x} di {y}",
+    edit_btn: "Modifica",
+    delete_btn: "Elimina",
+    visible_btn: "✅ Visibile",
+    hidden_btn: "🚫 Nascosto",
+    confirm_delete: "Eliminare questo vino?",
+    err_fetch: "Errore nel recupero dei vini",
+    err_save: "Errore salvataggio",
+    err_delete: "Errore eliminazione",
+    deleted: "Vino eliminato",
+    saved_added: "Vino aggiunto",
+    saved_updated: "Vino aggiornato"
+  },
+  en: {
+    language: "Language",
+    back_dashboard: "← Back to Dashboard",
+    page_title: "Wine List Admin",
+    add_wine: "Add Wine",
+    add_new: "Add new",
+    edit_wine: "Edit Wine",
+    save: "Save",
+    update: "Update",
+    wine_name_label: "Wine name:",
+    wine_name_ph: "Full wine name",
+    vintage_label: "Vintage:",
+    vintage_ph: "optional",
+    price_label: "Price:",
+    bottle_ph: "bottle 0.75",
+    glass_ph: "glass",
+    currency_hint: "Selected currency applies to both prices.",
+    add_format: "+ add format",
+    pick_format: "Select format…",
+    category_label: "Category:",
+    subcategory_label: "Subcategory:",
+    blend_label: "Grapes:",
+    wine_list: "Wine List",
+    search_ph: "Search wine by name...",
+    filter_cat: "Filter by category",
+    filter_sub: "Filter by subcategory",
+    all: "All",
+    visibility: "Visibility",
+    hide_not_visible: "Hide not visible",
+    sort_by: "Sort by",
+    sort_name_asc: "Name A → Z",
+    sort_name_desc: "Name Z → A",
+    sort_price_asc: "Price ascending",
+    sort_price_desc: "Price descending",
+    show: "Show:",
+    prev: "◀️ Prev",
+    next: "Next ▶️",
+    page_x_of_y: "Page {x} of {y}",
+    edit_btn: "Edit",
+    delete_btn: "Delete",
+    visible_btn: "✅ Visible",
+    hidden_btn: "🚫 Hidden",
+    confirm_delete: "Delete this wine?",
+    err_fetch: "Error loading wines",
+    err_save: "Save error",
+    err_delete: "Delete error",
+    deleted: "Wine deleted",
+    saved_added: "Wine added",
+    saved_updated: "Wine updated"
+  },
+fr: {
+  back_dashboard: "← Retour au tableau de bord",
+  page_title: "Gestion de la carte des vins",
+  language: "Langue",
+
+  add_wine: "Ajouter un vin",
+  add_new: "Ajouter nouveau",
+  edit_wine: "Modifier le vin",
+  save: "Enregistrer",
+  update: "Mettre à jour",
+
+  wine_name_label: "Nom du vin :",
+  wine_name_ph: "Nom complet du vin",
+  vintage_label: "Millésime :",
+  vintage_ph: "facultatif",
+  price_label: "Prix :",
+  bottle_ph: "bouteille 0,75",
+  glass_ph: "verre",
+  currency_hint: "La devise sélectionnée s’applique aux deux prix.",
+
+  add_format: "+ ajouter un format",
+  pick_format: "Choisir un format…",
+
+  category_label: "Catégorie :",
+  subcategory_label: "Sous-catégorie :",
+  blend_label: "Assemblage :",
+
+  wine_list: "Liste des vins",
+  search_ph: "Rechercher un vin par nom.",
+
+  filter_cat: "Filtrer par catégorie",
+  filter_sub: "Filtrer par sous-catégorie",
+  all: "Toutes",
+
+  visibility: "Visibilité",
+  hide_not_visible: "Masquer les non visibles",
+  sort_by: "Trier par",
+
+  sort_name_asc: "Nom A → Z",
+  sort_name_desc: "Nom Z → A",
+  sort_price_asc: "Prix croissant",
+  sort_price_desc: "Prix décroissant",
+
+  show: "Afficher :",
+  prev: "◀️ Préc.",
+  next: "Suiv. ▶️",
+  page_x_of_y: "Page {x} sur {y}",
+
+  edit_btn: "Modifier",
+  delete_btn: "Supprimer",
+  visible_btn: "✅ Visible",
+  hidden_btn: "🚫 Masqué",
+
+  confirm_delete: "Supprimer ce vin ?",
+  err_fetch: "Erreur lors du chargement des vins",
+  err_save: "Erreur d’enregistrement",
+  err_delete: "Erreur de suppression",
+  deleted: "Vin supprimé",
+  saved_added: "Vin ajouté",
+  saved_updated: "Vin mis à jour"
+},
+
+es: {
+  back_dashboard: "← Volver al panel",
+  page_title: "Gestión de la carta de vinos",
+  language: "Idioma",
+
+  add_wine: "Añadir vino",
+  add_new: "Añadir nuevo",
+  edit_wine: "Editar vino",
+  save: "Guardar",
+  update: "Actualizar",
+
+  wine_name_label: "Nombre del vino:",
+  wine_name_ph: "Nombre completo del vino",
+  vintage_label: "Añada:",
+  vintage_ph: "opcional",
+  price_label: "Precio:",
+  bottle_ph: "bot. 0,75",
+  glass_ph: "copa",
+  currency_hint: "La moneda seleccionada se aplica a ambos precios.",
+
+  add_format: "+ añadir formato",
+  pick_format: "Selecciona formato…",
+
+  category_label: "Categoría:",
+  subcategory_label: "Subcategoría:",
+  blend_label: "Uvas:",
+
+  wine_list: "Lista de vinos",
+  search_ph: "Buscar vino por nombre.",
+
+  filter_cat: "Filtrar por categoría",
+  filter_sub: "Filtrar por subcategoría",
+  all: "Todas",
+
+  visibility: "Visibilidad",
+  hide_not_visible: "Ocultar no visibles",
+  sort_by: "Ordenar por",
+
+  sort_name_asc: "Nombre A → Z",
+  sort_name_desc: "Nombre Z → A",
+  sort_price_asc: "Precio ascendente",
+  sort_price_desc: "Precio descendente",
+
+  show: "Mostrar:",
+  prev: "◀️ Atrás",
+  next: "Siguiente ▶️",
+  page_x_of_y: "Página {x} de {y}",
+
+  edit_btn: "Editar",
+  delete_btn: "Eliminar",
+  visible_btn: "✅ Visible",
+  hidden_btn: "🚫 Oculto",
+
+  confirm_delete: "¿Eliminar este vino?",
+  err_fetch: "Error al cargar los vinos",
+  err_save: "Error al guardar",
+  err_delete: "Error al eliminar",
+  deleted: "Vino eliminado",
+  saved_added: "Vino añadido",
+  saved_updated: "Vino actualizado"
+}
+};
+
+function normalizeLang(raw) {
+  const s = (raw || "").toLowerCase();
+  if (s.startsWith("it")) return "it";
+  if (s.startsWith("fr")) return "fr";
+  if (s.startsWith("es")) return "es";
+  return "en";
+}
+
+function t(key, vars = {}) {
+  const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+  let out = (dict && dict[key]) || (TRANSLATIONS.en && TRANSLATIONS.en[key]) || key;
+  for (const [k, v] of Object.entries(vars)) out = out.replaceAll(`{${k}}`, String(v));
+  return out;
+}
+
+function setLang(lang, persist = true) {
+  currentLang = SUPPORTED_LANGS.includes(normalizeLang(lang)) ? normalizeLang(lang) : "en";
+  document.documentElement.lang = currentLang;
+
+  if (persist) {
+    localStorage.setItem("wf_lang", currentLang);
+    if (typeof RESTAURANT_ID === "string" && RESTAURANT_ID) {
+      localStorage.setItem(`wf_lang_${RESTAURANT_ID}`, currentLang);
+    }
+  }
+
+  applyTranslations();
+}
+
+function initLanguage() {
+  const qp = new URLSearchParams(window.location.search);
+  const langFromUrl = qp.get("lang");
+
+  const perRest = (typeof RESTAURANT_ID === "string" && RESTAURANT_ID)
+    ? localStorage.getItem(`wf_lang_${RESTAURANT_ID}`)
+    : null;
+
+  const saved = perRest || localStorage.getItem("wf_lang");
+  const auto = normalizeLang(navigator.language || "");
+
+  setLang(langFromUrl || saved || auto, !saved);
+
+  const sel = document.getElementById("langSelect");
+  if (sel) {
+    sel.value = currentLang;
+    sel.addEventListener("change", (e) => setLang(e.target.value, true));
+  }
+  const back = document.getElementById("backToDashboard");
+if (back && RESTAURANT_ID) back.href = `dashboard.html?ristorante_id=${RESTAURANT_ID}&lang=${currentLang}`;
+}
+
+function applyTranslations() {
+  // top
+  const back = document.getElementById("backToDashboard");
+  if (back) back.textContent = t("back_dashboard");
+
+  const h1 = document.querySelector("h1");
+  if (h1) h1.textContent = t("page_title");
+
+  const langLbl = document.getElementById("langLabel");
+  if (langLbl) langLbl.textContent = t("language");
+
+  // form title (attenzione: contiene bottone dentro)
+  const formTitle = document.getElementById("formTitle");
+  if (formTitle) {
+    const isEdit = (typeof editIndex === "number" && editIndex !== null);
+    const btnHtml = isEdit
+      ? `<button id="resetButton">` + t("add_new") + `</button>`
+      : `<button id="resetButton" style="display:none; margin-left: 10px; padding: 0.3em 0.6em; font-size: 0.8em;">` + t("add_new") + `</button>`;
+    formTitle.innerHTML = `${isEdit ? t("edit_wine") : t("add_wine")} ${btnHtml}`;
+  }
+
+  // labels & placeholders
+  // ⚠️ in admin i label non hanno id, quindi li prendiamo “per posizione”.
+  // Mantieni l’ordine dei label nel markup, altrimenti va aggiornato.
+  const labels = Array.from(document.querySelectorAll(".admin-panel > label"));
+  // ordine nel tuo HTML: Nome, Annata, Prezzo, Categoria, Sottocategoria, Uvaggio
+  if (labels[0]) labels[0].textContent = t("wine_name_label");
+  if (labels[1]) labels[1].textContent = t("vintage_label");
+  if (labels[2]) labels[2].textContent = t("price_label");
+  if (labels[3]) labels[3].textContent = t("category_label");
+  if (labels[4]) labels[4].textContent = t("subcategory_label");
+  if (labels[5]) labels[5].textContent = t("blend_label");
+
+  const nome = document.getElementById("nome_completo");
+  if (nome) nome.placeholder = t("wine_name_ph");
+
+  const annata = document.getElementById("annata");
+  if (annata) annata.placeholder = t("vintage_ph");
+
+  const prezzo = document.getElementById("prezzo");
+  if (prezzo) prezzo.placeholder = t("bottle_ph");
+
+  const calice = document.getElementById("prezzo_bicchiere");
+  if (calice) calice.placeholder = t("glass_ph");
+
+  const hint = document.querySelector(".hint");
+  if (hint) hint.textContent = t("currency_hint");
+
+  const addFmt = document.getElementById("addFormatBtn");
+  if (addFmt) addFmt.textContent = t("add_format");
+
+  const pick = document.querySelector('#formatPicker option[value=""]');
+  if (pick) pick.textContent = t("pick_format");
+
+  // lista vini heading
+  const h2s = Array.from(document.querySelectorAll(".admin-panel h2"));
+  // h2s[1] dovrebbe essere “Lista Vini”
+  if (h2s[1]) h2s[1].textContent = t("wine_list");
+
+  const search = document.getElementById("searchInput");
+  if (search) search.placeholder = t("search_ph");
+
+  // filtri
+  const lblCat = document.querySelector('label[for="filterCategoria"]');
+  if (lblCat) lblCat.textContent = t("filter_cat");
+  const lblSub = document.querySelector('label[for="filterSottocategoria"]');
+  if (lblSub) lblSub.textContent = t("filter_sub");
+  const lblVis = document.querySelector('div[style*="Visibilità"] label'); // fragile: meglio mettere id, vedi sotto
+  // 👉 invece: prendi il label “Visibilità” come primo label della riga 2:
+  const row2Labels = Array.from(document.querySelectorAll('div[style*="margin-top:0.6em"] label'));
+  // row2Labels[0] = Visibilità ; row2Labels[1] = Nascondi non visibili ; row2Labels[2] = Ordina per
+  if (row2Labels[0]) row2Labels[0].textContent = t("visibility");
+  if (row2Labels[1]) row2Labels[1].textContent = t("hide_not_visible");
+  if (row2Labels[2]) row2Labels[2].textContent = t("sort_by");
+
+  // option "Tutte/All"
+  const catOptAll = document.querySelector('#filterCategoria option[value=""]');
+  if (catOptAll) catOptAll.textContent = t("all");
+  const subOptAll = document.querySelector('#filterSottocategoria option[value=""]');
+  if (subOptAll) subOptAll.textContent = t("all");
+
+  // sort options
+  const sort = document.getElementById("sortBy");
+  if (sort) {
+    const o1 = sort.querySelector('option[value="name_asc"]');  if (o1) o1.textContent = t("sort_name_asc");
+    const o2 = sort.querySelector('option[value="name_desc"]'); if (o2) o2.textContent = t("sort_name_desc");
+    const o3 = sort.querySelector('option[value="price_asc"]'); if (o3) o3.textContent = t("sort_price_asc");
+    const o4 = sort.querySelector('option[value="price_desc"]');if (o4) o4.textContent = t("sort_price_desc");
+  }
+
+  // mostra:
+  const showLbl = document.querySelector('label[for="itemsPerPage"]');
+  if (showLbl) showLbl.textContent = t("show");
+
+  // bottone salva/aggiorna
+  const saveBtn = document.getElementById("saveButton");
+  if (saveBtn) saveBtn.textContent = (editIndex !== null) ? t("update") : t("save");
+
+  document.getElementById("visibilityLabel").textContent = t("visibility");
+  document.getElementById("hideNotVisibleLabel").textContent = t("hide_not_visible");
+  document.getElementById("sortByLabel").textContent = t("sort_by");
+}
 
 function normalizeAndCapitalize(arr) {
   const map = new Map();
@@ -465,8 +861,9 @@ if (wine.prezzo_3l){
 }
 
   editIndex = index;
-  document.getElementById("formTitle").innerHTML = 'Modifica Vino <button id="resetButton">Aggiungi nuovo</button>';
-  document.getElementById("saveButton").textContent = "Aggiorna";
+  document.getElementById("formTitle").innerHTML =
+   `${t("edit_wine")} <button id="resetButton">${t("add_new")}</button>`;
+  document.getElementById("saveButton").textContent = t("update");
 }
 
 function parsePriceNumber(v){
@@ -576,7 +973,7 @@ actions.style = `
 `;
 
   const modBtn = document.createElement("button");
-  modBtn.textContent = "Modifica";
+  modBtn.textContent = t("edit_btn");
   modBtn.onclick = () => fillFormById(wine.id);
   modBtn.style = `
     font-size: 0.7em;
@@ -584,7 +981,7 @@ actions.style = `
   `;
 
   const delBtn = document.createElement("button");
-  delBtn.textContent = "Elimina";
+  delBtn.textContent = t("delete_btn");
   delBtn.onclick = () => deleteWine(wine.id);
   delBtn.style = `
     font-size: 0.7em;
@@ -596,7 +993,7 @@ actions.style = `
   `;
 
   const toggleBtn = document.createElement("button");
-  toggleBtn.textContent = wine.visibile ? "✅ Visibile" : "🚫 Nascosto";
+  toggleBtn.textContent = wine.visibile ? t("visible_btn") : t("hidden_btn");
   toggleBtn.style = `
     font-size: 0.7em;
     padding: 3px 6px;
@@ -642,19 +1039,19 @@ actions.style = `
   if (totalPages > 1) {
     if (currentPage > 1) {
       const prevBtn = document.createElement("button");
-      prevBtn.textContent = "◀️ Indietro";
+      prevBtn.textContent = t("prev");
       prevBtn.onclick = () => { currentPage--; renderTable(); };
       pagination.appendChild(prevBtn);
     }
 
     const pageIndicator = document.createElement("span");
-    pageIndicator.textContent = `Pagina ${currentPage} di ${totalPages}`;
+    pageIndicator.textContent = t("page_x_of_y", { x: currentPage, y: totalPages });
     pageIndicator.style.margin = "0 10px";
     pagination.appendChild(pageIndicator);
 
     if (currentPage < totalPages) {
       const nextBtn = document.createElement("button");
-      nextBtn.textContent = "Avanti ▶️";
+      nextBtn.textContent = t("next");
       nextBtn.onclick = () => { currentPage++; renderTable(); };
       pagination.appendChild(nextBtn);
     }
@@ -673,7 +1070,7 @@ async function loadWines() {
     headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
   });
   if (!res.ok) {
-  showMessage("Errore nel recupero dei vini", false);
+  showMessage(t("err_fetch"), false);
   winesData = [];
   return;
 }
@@ -851,7 +1248,7 @@ async function saveWine() {
   });
 
     if (!res.ok) {
-    showMessage("Errore salvataggio", false);
+    showMessage(t("err_save"), false);
     return;
   }
 
@@ -868,23 +1265,21 @@ async function saveWine() {
     triggerDescrizioniForWine(wine);
   }
 
-  showMessage(isEdit ? "Vino aggiornato" : "Vino aggiunto");
+  showMessage(isEdit ? t("saved_updated") : t("saved_added"));
 
   resetForm();
+  applyTranslations();
   loadWines();
-  document.getElementById("formTitle").innerHTML =
-    'Aggiungi Vino <button id="resetButton" style="display:none; margin-left: 10px; padding: 0.3em 0.6em; font-size: 0.8em;">Aggiungi nuovo</button>';
-  document.getElementById("saveButton").textContent = "Salva";
 }
 
 async function deleteWine(id) {
-  if (!confirm("Eliminare questo vino?")) return;
+  if (!confirm(t("confirm_delete"))) return;
   const res = await fetch(`${SUPABASE_URL}/rest/v1/wines?id=eq.${id}`, {
     method: "DELETE",
     headers: { 'apikey': SUPABASE_API_KEY, 'Prefer': 'return=minimal' }
   });
-  if (!res.ok) return showMessage("Errore eliminazione", false);
-  showMessage("Vino eliminato");
+  if (!res.ok) return showMessage(t("err_delete"), false);
+  showMessage(t("deleted"));
   loadWines();
 }
 
@@ -908,11 +1303,11 @@ document.getElementById("formatPicker").addEventListener("change", (e)=>{
 document.body.addEventListener("click", e => {
   if (e.target.id === "resetButton") {
     resetForm();
-    document.getElementById("formTitle").innerHTML = 'Aggiungi Vino <button id="resetButton" style="display:none; margin-left: 10px; padding: 0.3em 0.6em; font-size: 0.8em;">Aggiungi nuovo</button>';
-    document.getElementById("saveButton").textContent = "Salva";
+    applyTranslations();
   }
 });
 
+initLanguage();
 loadWines();
 
 document.getElementById('nome_completo').addEventListener('input', (e) => {

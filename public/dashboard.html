@@ -1884,7 +1884,15 @@ function applyFileTranslations() {
     const normalized = normalizeLang(lang);
     currentLang = SUPPORTED_LANGS.includes(normalized) ? normalized : "en";
     document.documentElement.lang = currentLang;
-    if (persist) localStorage.setItem("wf_lang", currentLang);
+    if (persist) {
+  // lingua “globale” (fallback)
+  localStorage.setItem("wf_lang", currentLang);
+
+  // lingua “per ristorante”
+  if (typeof RESTAURANT_ID === "string" && RESTAURANT_ID) {
+    localStorage.setItem(`wf_lang_${RESTAURANT_ID}`, currentLang);
+  }
+}
     applyTranslations();
     // refresh dynamic title if we already know it
     if (window.__WF_REST_NAME !== undefined) setRestaurantTitle(window.__WF_REST_NAME);
@@ -2764,7 +2772,7 @@ function goTo(path) {
     window.location.href = `/${window.RISTORANTE_SLUG}`;
   } else {
     // fallback con ?ristorante_id=
-    window.location.href = `${path}?ristorante_id=${RESTAURANT_ID}`;
+    window.location.href = `${path}?ristorante_id=${RESTAURANT_ID}&lang=${currentLang}`;
   }
 }
 
