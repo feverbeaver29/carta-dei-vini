@@ -613,12 +613,20 @@ body.reordering .subcategory {
   padding-left: 34px; /* spazio per l’icona */
 }
 
-/* ✅ Durante il riordino: niente GRID (fa lag), lista verticale fluida */
-body.reordering #category-list,
-body.reordering #subcategory-list{
+/* ✅ Durante il riordino: mostra SOLO la lista che stai ordinando */
+body.reordering.reorder-categorie #category-list,
+body.reordering.reorder-sottocategorie #subcategory-list{
   display:flex !important;
   flex-direction:column;
   gap:10px;
+}
+
+/* nascondi le altre “pagine” mentre riordini */
+body.reordering.reorder-categorie #subcategory-list,
+body.reordering.reorder-categorie #wine-list,
+body.reordering.reorder-sottocategorie #category-list,
+body.reordering.reorder-sottocategorie #wine-list{
+  display:none !important;
 }
 
 /* Migliora feeling su touch */
@@ -2873,6 +2881,9 @@ if (event.data?.action === "startReorder") {
   if (!container) return;
 
   document.body.classList.add("reordering");
+  // ✅ indica quale lista sto riordinando (serve al CSS per non mostrare anche le categorie)
+document.body.classList.remove("reorder-categorie", "reorder-sottocategorie");
+document.body.classList.add(reorderType === "categorie" ? "reorder-categorie" : "reorder-sottocategorie");
 
   // ✅ aggiungi la maniglia SOLO se non esiste già (serve solo come icona, MA il drag è su tutta la riga)
   [...container.querySelectorAll(itemSelector)].forEach(el => {
@@ -2974,6 +2985,7 @@ const ordine = [...container.querySelectorAll(itemSelector)]
 
   // ✅ cleanup: esci dalla modalità reorder
   document.body.classList.remove("reordering");
+  document.body.classList.remove("reorder-categorie", "reorder-sottocategorie");
 
   if (window._sortableInstance) {
     window._sortableInstance.destroy();
