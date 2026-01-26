@@ -102,41 +102,193 @@
       color: #aaa;
       font-size: 0.9em;
     }
+    .topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom: 10px;
+}
+.lang-wrap{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.lang-wrap label{ margin:0; font-size:0.9em; color:#555; }
+.lang-wrap select{
+  padding:6px 10px;
+  border-radius:10px;
+  border:1px solid #ccc;
+  background:#fff;
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div class="container">
-  <div id="successMessage" style="display:none; background-color:#e6ffea; border: 1px solid #00a152; color: #007b4b; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+<div class="topbar">
+  <div></div>
+  <div class="lang-wrap">
+    <label id="langLabel" for="langSelect">Lingua</label>
+    <select id="langSelect">
+      <option value="it">Italiano</option>
+      <option value="en">English</option>
+      <option value="fr">Français</option>
+      <option value="es">Español</option>
+    </select>
+  </div>
+</div>
+  <div id="successMessage"
+     style="display:none; background-color:#e6ffea; border: 1px solid #00a152; color: #007b4b; padding: 12px; border-radius: 8px; margin-bottom: 20px;"
+     data-i18n="pay_success">
   ✅ Pagamento completato con successo. Effettua il login per accedere alla tua dashboard.
 </div>
-  <h1>Login</h1>
-  <label>Email <span style="color: red">*</span></label>
-  <input type="email" id="email" placeholder="Inserisci la tua email" required>
+  <h1 data-i18n="title">Login</h1>
+  <label data-i18n="email_lbl">Email <span style="color: red">*</span></label>
+  <input type="email" id="email" placeholder="Inserisci la tua email" data-i18n-placeholder="email_ph" required>
 
-  <label>Password <span style="color: red">*</span></label>
+  <label data-i18n="password_lbl">Password <span style="color: red">*</span></label>
   <div class="password-wrapper">
-    <input type="password" id="password" placeholder="Inserisci la password" required>
+    <input type="password" id="password" placeholder="Inserisci la password" data-i18n-placeholder="password_ph" required>
     <span class="toggle-password" onclick="toggleVisibility('password')">👁️</span>
   </div>
 
   <div class="remember">
     <input type="checkbox" id="remember">
-    <label for="remember">Ricordati di me</label>
+    <label for="remember" data-i18n="remember">Ricordati di me</label>
   </div>
 
-  <button onclick="login()">Accedi</button>
+  <button onclick="login()" data-i18n="login_btn">Accedi</button>
   <div class="google-btn" onclick="loginWithGoogle()">
     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Icon">
-    Accedi con Google
+    <span data-i18n="login_google">Accedi con Google</span>
   </div>
-  <footer>© 2025 Wine's Fever - Tutti i diritti riservati</footer>
+  <footer data-i18n="footer">© 2025 Wine's Fever - Tutti i diritti riservati</footer>
+
 </div>
 
 <script>
   const SUPABASE_URL = "https://ldunvbftxhbtuyabgxwh.supabase.co";
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const SUPPORTED_LANGS = ["it","en","fr","es"];
+let currentLang = "it";
+
+const TRANSLATIONS = {
+  it: {
+    language:"Lingua",
+    title:"Login",
+    pay_success:"✅ Pagamento completato con successo. Effettua il login per accedere alla tua dashboard.",
+    email_lbl:"Email <span style='color:red'>*</span>",
+    email_ph:"Inserisci la tua email",
+    password_lbl:"Password <span style='color:red'>*</span>",
+    password_ph:"Inserisci la password",
+    remember:"Ricordati di me",
+    login_btn:"Accedi",
+    login_google:"Accedi con Google",
+    footer:"© 2025 Wine's Fever - Tutti i diritti riservati",
+    fill_all:"Compila tutti i campi.",
+    login_err:"Errore login: ",
+    google_err:"Errore login con Google: ",
+    sub_check_err:"Errore nel controllo abbonamento. Accesso bloccato."
+  },
+  en: {
+    language:"Language",
+    title:"Login",
+    pay_success:"✅ Payment completed successfully. Log in to access your dashboard.",
+    email_lbl:"Email <span style='color:red'>*</span>",
+    email_ph:"Enter your email",
+    password_lbl:"Password <span style='color:red'>*</span>",
+    password_ph:"Enter your password",
+    remember:"Remember me",
+    login_btn:"Log in",
+    login_google:"Continue with Google",
+    footer:"© 2025 Wine's Fever - All rights reserved",
+    fill_all:"Please fill in all fields.",
+    login_err:"Login error: ",
+    google_err:"Google login error: ",
+    sub_check_err:"Error checking subscription. Access blocked."
+  },
+  fr: {
+    language:"Langue",
+    title:"Connexion",
+    pay_success:"✅ Paiement effectué avec succès. Connectez-vous pour accéder à votre tableau de bord.",
+    email_lbl:"E-mail <span style='color:red'>*</span>",
+    email_ph:"Saisissez votre e-mail",
+    password_lbl:"Mot de passe <span style='color:red'>*</span>",
+    password_ph:"Saisissez votre mot de passe",
+    remember:"Se souvenir de moi",
+    login_btn:"Se connecter",
+    login_google:"Continuer avec Google",
+    footer:"© 2025 Wine's Fever - Tous droits réservés",
+    fill_all:"Veuillez remplir tous les champs.",
+    login_err:"Erreur de connexion : ",
+    google_err:"Erreur Google : ",
+    sub_check_err:"Erreur de vérification de l’abonnement. Accès bloqué."
+  },
+  es: {
+    language:"Idioma",
+    title:"Iniciar sesión",
+    pay_success:"✅ Pago completado con éxito. Inicia sesión para acceder a tu panel.",
+    email_lbl:"Email <span style='color:red'>*</span>",
+    email_ph:"Introduce tu email",
+    password_lbl:"Contraseña <span style='color:red'>*</span>",
+    password_ph:"Introduce tu contraseña",
+    remember:"Recuérdame",
+    login_btn:"Entrar",
+    login_google:"Continuar con Google",
+    footer:"© 2025 Wine's Fever - Todos los derechos reservados",
+    fill_all:"Completa todos los campos.",
+    login_err:"Error de inicio de sesión: ",
+    google_err:"Error con Google: ",
+    sub_check_err:"Error comprobando la suscripción. Acceso bloqueado."
+  }
+};
+
+function normalizeLang(raw){
+  const s=(raw||"").toLowerCase();
+  if (s.startsWith("it")) return "it";
+  if (s.startsWith("fr")) return "fr";
+  if (s.startsWith("es")) return "es";
+  return "en";
+}
+function t(key){
+  const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+  return (dict && dict[key]) || (TRANSLATIONS.en && TRANSLATIONS.en[key]) || key;
+}
+function setLang(lang, persist=true){
+  currentLang = SUPPORTED_LANGS.includes(normalizeLang(lang)) ? normalizeLang(lang) : "en";
+  document.documentElement.lang = currentLang;
+  if (persist) localStorage.setItem("wf_lang", currentLang);
+  applyTranslations();
+}
+function initLanguage(){
+  const qp = new URLSearchParams(window.location.search);
+  const langFromUrl = qp.get("lang");
+  const saved = localStorage.getItem("wf_lang");
+  const auto = normalizeLang(navigator.language||"");
+  setLang(langFromUrl || saved || auto, !saved);
+
+  const sel = document.getElementById("langSelect");
+  if (sel){
+    sel.value = currentLang;
+    sel.addEventListener("change", e => setLang(e.target.value, true));
+  }
+}
+function applyTranslations(){
+  const langLbl = document.getElementById("langLabel");
+  if (langLbl) langLbl.textContent = t("language");
+
+  document.querySelectorAll("[data-i18n]").forEach(el=>{
+    const key = el.getAttribute("data-i18n");
+    // email/password label contengono HTML
+    if (key === "email_lbl" || key === "password_lbl") el.innerHTML = t(key);
+    else el.textContent = t(key);
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(el=>{
+    el.setAttribute("placeholder", t(el.getAttribute("data-i18n-placeholder")));
+  });
+}
 
   function toggleVisibility(id) {
     const field = document.getElementById(id);
@@ -145,6 +297,7 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(window.location.search);
+    initLanguage();
 if (params.get("checkout") === "success") {
   document.getElementById("successMessage").style.display = "block";
 }
@@ -153,10 +306,10 @@ if (params.get("checkout") === "success") {
       const password = document.getElementById('password').value;
       const remember = document.getElementById('remember').checked;
 
-      if (!email || !password) return alert("Compila tutti i campi.");
+      if (!email || !password) return alert(t("fill_all"));
 
       const { data, error } = await sb.auth.signInWithPassword({ email, password });
-      if (error) return alert("Errore login: " + error.message);
+      if (error) return alert(t("login_err") + error.message);
 
       localStorage.setItem("sb-access-token", data.session.access_token);
       if (remember) {
@@ -171,16 +324,19 @@ if (params.get("checkout") === "success") {
   .eq("id", data.user.id)
   .single();
 
+  // salva lingua anche “per ristorante”
+localStorage.setItem(`wf_lang_${data.user.id}`, currentLang);
+
 if (ristoError) {
-  alert("Errore nel controllo abbonamento. Accesso bloccato.");
+  alert(t("sub_check_err"));
   return;
 }
 
 if (!ristoData || ristoData.subscription_status !== "active") {
   // primo login oppure abbonamento non ancora attivo
-  window.location.href = "abbonamento.html";
+  window.location.href = `abbonamento.html?lang=${currentLang}`;
 } else {
-  window.location.href = `dashboard.html?ristorante_id=${data.user.id}`;
+  window.location.href = `dashboard.html?ristorante_id=${data.user.id}&lang=${currentLang}`;
 }
 
     }
@@ -192,7 +348,7 @@ window.loginWithGoogle = async function () {
       redirectTo: window.location.origin + '/dashboard.html?from=google'
     }
   });
-  if (error) alert("Errore login con Google: " + error.message);
+  if (error) alert(t("google_err") + error.message);
 }
 
     const rememberedEmail = localStorage.getItem("rememberedEmail");
