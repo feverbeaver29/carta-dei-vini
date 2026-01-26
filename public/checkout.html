@@ -16,12 +16,43 @@
       cursor: pointer;
     }
     button:hover { background-color: #800000; }
+    .topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom: 18px;
+}
+.lang-wrap{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.lang-wrap label{ margin:0; font-size:0.9em; color:#555; }
+.lang-wrap select{
+  padding:6px 10px;
+  border-radius:10px;
+  border:1px solid #ccc;
+  background:#fff;
+}
   </style>
 </head>
 <body>
-  <h1>Attiva il tuo abbonamento</h1>
-  <p>Inizia ora con 7 giorni di prova gratuita.</p>
-  <button id="subscribeBtn">Abbonati</button>
+  <div class="topbar">
+  <div></div>
+  <div class="lang-wrap">
+    <label id="langLabel" for="langSelect">Lingua</label>
+    <select id="langSelect">
+      <option value="it">Italiano</option>
+      <option value="en">English</option>
+      <option value="fr">Français</option>
+      <option value="es">Español</option>
+    </select>
+  </div>
+</div>
+
+<h1 data-i18n="title">Attiva il tuo abbonamento</h1>
+<p data-i18n="subtitle">Inizia ora con 7 giorni di prova gratuita.</p>
+<button id="subscribeBtn" data-i18n="cta">Abbonati</button>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -31,12 +62,95 @@
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo" // <--- usa la tua chiave pubblica anonima (non la secret!)
     );
 
+    const SUPPORTED_LANGS = ["it","en","fr","es"];
+let currentLang = "it";
+
+const TRANSLATIONS = {
+  it:{
+    language:"Lingua",
+    title:"Attiva il tuo abbonamento",
+    subtitle:"Inizia ora con 7 giorni di prova gratuita.",
+    cta:"Abbonati",
+    must_login:"Devi essere loggato per abbonarti.",
+    pay_err:"Errore durante la creazione del pagamento"
+  },
+  en:{
+    language:"Language",
+    title:"Activate your subscription",
+    subtitle:"Start now with a 7-day free trial.",
+    cta:"Subscribe",
+    must_login:"You must be logged in to subscribe.",
+    pay_err:"Error creating the checkout"
+  },
+  fr:{
+    language:"Langue",
+    title:"Activez votre abonnement",
+    subtitle:"Commencez maintenant avec 7 jours d’essai gratuit.",
+    cta:"S’abonner",
+    must_login:"Vous devez être connecté pour vous abonner.",
+    pay_err:"Erreur lors de la création du paiement"
+  },
+  es:{
+    language:"Idioma",
+    title:"Activa tu suscripción",
+    subtitle:"Empieza ahora con 7 días de prueba gratis.",
+    cta:"Suscribirse",
+    must_login:"Debes iniciar sesión para suscribirte.",
+    pay_err:"Error al crear el pago"
+  }
+};
+
+function normalizeLang(raw){
+  const s=(raw||"").toLowerCase();
+  if (s.startsWith("it")) return "it";
+  if (s.startsWith("fr")) return "fr";
+  if (s.startsWith("es")) return "es";
+  return "en";
+}
+function t(key){
+  const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+  return (dict && dict[key]) || (TRANSLATIONS.en && TRANSLATIONS.en[key]) || key;
+}
+function setLang(lang, persist=true){
+  currentLang = SUPPORTED_LANGS.includes(normalizeLang(lang)) ? normalizeLang(lang) : "en";
+  document.documentElement.lang = currentLang;
+  if (persist) localStorage.setItem("wf_lang", currentLang);
+
+  const sel = document.getElementById("langSelect");
+  if (sel) sel.value = currentLang;
+
+  applyTranslations();
+
+  // aggiorna lang in URL senza reload (utile se copi/incolli link)
+  const url = new URL(window.location.href);
+  url.searchParams.set("lang", currentLang);
+  history.replaceState(null, "", url.toString());
+}
+function initLanguage(){
+  const qp = new URLSearchParams(window.location.search);
+  const langFromUrl = qp.get("lang");
+  const saved = localStorage.getItem("wf_lang");
+  const auto  = normalizeLang(navigator.language||"");
+  setLang(langFromUrl || saved || auto, !saved);
+
+  const sel = document.getElementById("langSelect");
+  if (sel) sel.addEventListener("change", e => setLang(e.target.value, true));
+}
+function applyTranslations(){
+  const langLbl = document.getElementById("langLabel");
+  if (langLbl) langLbl.textContent = t("language");
+
+  document.querySelectorAll("[data-i18n]").forEach(el=>{
+    el.textContent = t(el.getAttribute("data-i18n"));
+  });
+}
+initLanguage();
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      alert("Devi essere loggato per abbonarti.");
-      window.location.href = "/login.html";
-    }
+  alert(t("must_login"));
+  window.location.href = `/login.html?lang=${currentLang}`;
+}
 
     const email = user.email;
 
@@ -54,7 +168,7 @@
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert("Errore durante la creazione del pagamento");
+        alert(t("pay_err"));
         console.error(data);
       }
     });
