@@ -11,14 +11,61 @@
     input { width: 100%; padding: 12px; margin-top: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 1em; }
     button { width: 100%; padding: 12px; margin-top: 20px; background-color: #b00; color: white; border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer; }
     button:hover { background-color: #800000; }
+    .topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin-bottom: 12px;
+}
+
+.lang-wrap{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.lang-wrap label{
+  margin:0;
+  font-size:0.9em;
+  color:#555;
+  font-weight:500;
+}
+
+.lang-wrap select{
+  padding:6px 10px;
+  border-radius:10px;
+  border:1px solid #ccc;
+  background:#fff;
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div class="container">
-  <h1>Completa il tuo Profilo</h1>
-  <input type="text" id="ristorante" placeholder="Nome del ristorante">
-  <button onclick="salvaNomeRistorante()">Salva e continua</button>
+
+  <div class="topbar">
+    <div></div>
+    <div class="lang-wrap">
+      <label id="langLabel" for="langSelect">Lingua</label>
+      <select id="langSelect">
+        <option value="it">Italiano</option>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+      </select>
+    </div>
+  </div>
+
+  <h1 id="pageTitle" data-i18n="title">Completa il tuo Profilo</h1>
+
+  <input type="text" id="ristorante"
+         placeholder="Nome del ristorante"
+         data-i18n-placeholder="restaurant_ph">
+
+  <button id="saveBtn" onclick="salvaNomeRistorante()" data-i18n="save_continue">
+    Salva e continua
+  </button>
 </div>
 
 <script>
@@ -27,32 +74,145 @@
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const { data: { user }, error } = await sb.auth.getUser();
-    if (error || !user) {
-      alert("Non sei autenticato. Ritorna alla homepage.");
-      window.location.href = "/";
-    }
+    // ==========================
+// i18n (Setup Ristorante)
+// ==========================
+const SUPPORTED_LANGS = ["it","en","fr","es"];
+let currentLang = "it";
+let RESTAURANT_ID = null;
 
-<!-- Dentro <script> (sostituisci la funzione window.salvaNomeRistorante) -->
+const TRANSLATIONS = {
+  it:{
+    language:"Lingua",
+    title:"Completa il tuo Profilo",
+    restaurant_ph:"Nome del ristorante",
+    save_continue:"Salva e continua",
+    not_auth:"Non sei autenticato. Ritorna alla homepage.",
+    enter_name:"Inserisci il nome del ristorante.",
+    user_not_auth:"Utente non autenticato.",
+    save_err:"Errore nel salvataggio: "
+  },
+  en:{
+    language:"Language",
+    title:"Complete your profile",
+    restaurant_ph:"Restaurant name",
+    save_continue:"Save and continue",
+    not_auth:"You are not authenticated. Go back to the homepage.",
+    enter_name:"Please enter the restaurant name.",
+    user_not_auth:"User not authenticated.",
+    save_err:"Save error: "
+  },
+  fr:{
+    language:"Langue",
+    title:"Complétez votre profil",
+    restaurant_ph:"Nom du restaurant",
+    save_continue:"Enregistrer et continuer",
+    not_auth:"Vous n’êtes pas authentifié. Retour à l’accueil.",
+    enter_name:"Veuillez saisir le nom du restaurant.",
+    user_not_auth:"Utilisateur non authentifié.",
+    save_err:"Erreur d’enregistrement : "
+  },
+  es:{
+    language:"Idioma",
+    title:"Completa tu perfil",
+    restaurant_ph:"Nombre del restaurante",
+    save_continue:"Guardar y continuar",
+    not_auth:"No estás autenticado. Vuelve a la página principal.",
+    enter_name:"Introduce el nombre del restaurante.",
+    user_not_auth:"Usuario no autenticado.",
+    save_err:"Error al guardar: "
+  }
+};
+
+function normalizeLang(raw){
+  const s=(raw||"").toLowerCase();
+  if (s.startsWith("it")) return "it";
+  if (s.startsWith("fr")) return "fr";
+  if (s.startsWith("es")) return "es";
+  return "en";
+}
+function t(key){
+  const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+  return (dict && dict[key]) || (TRANSLATIONS.en && TRANSLATIONS.en[key]) || key;
+}
+
+function applyTranslations(){
+  const langLbl = document.getElementById("langLabel");
+  if (langLbl) langLbl.textContent = t("language");
+
+  document.querySelectorAll("[data-i18n]").forEach(el=>{
+    el.textContent = t(el.getAttribute("data-i18n"));
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(el=>{
+    el.setAttribute("placeholder", t(el.getAttribute("data-i18n-placeholder")));
+  });
+
+  document.title = t("title");
+}
+
+function setLang(lang, persist=true){
+  currentLang = SUPPORTED_LANGS.includes(normalizeLang(lang)) ? normalizeLang(lang) : "en";
+  document.documentElement.lang = currentLang;
+
+  if (persist){
+    localStorage.setItem("wf_lang", currentLang);
+    if (RESTAURANT_ID) localStorage.setItem(`wf_lang_${RESTAURANT_ID}`, currentLang);
+  }
+
+  const sel = document.getElementById("langSelect");
+  if (sel) sel.value = currentLang;
+
+  applyTranslations();
+
+  // aggiorna URL ?lang= senza reload (utile se copi link)
+  const url = new URL(window.location.href);
+  url.searchParams.set("lang", currentLang);
+  history.replaceState(null, "", url.toString());
+}
+
+function initLanguage(){
+  const qp = new URLSearchParams(window.location.search);
+  const langFromUrl = qp.get("lang");
+
+  const perRest = RESTAURANT_ID ? localStorage.getItem(`wf_lang_${RESTAURANT_ID}`) : null;
+  const saved = perRest || localStorage.getItem("wf_lang");
+  const auto  = normalizeLang(navigator.language||"");
+
+  setLang(langFromUrl || saved || auto, !saved);
+
+  const sel = document.getElementById("langSelect");
+  if (sel){
+    sel.addEventListener("change", e => setLang(e.target.value, true));
+  }
+}
+
+const { data: { user }, error } = await sb.auth.getUser();
+if (error || !user) {
+  alert(t("not_auth"));
+  window.location.href = `/?lang=${currentLang}`;
+  return;
+}
+
+RESTAURANT_ID = user.id;
+initLanguage(); // ✅ ora che abbiamo l'id, prendiamo wf_lang_<id>
+
 window.salvaNomeRistorante = async function () {
   const nome = document.getElementById("ristorante").value;
-  if (!nome) return alert("Inserisci il nome del ristorante.");
+  if (!nome) return alert(t("enter_name"));
 
   const { data: { user }, error: userError } = await sb.auth.getUser();
-  if (userError || !user) {
-    return alert("Utente non autenticato.");
-  }
+  if (userError || !user) return alert(t("user_not_auth"));
+  // salva lingua anche per ristorante (sync con admin/dashboard)
+localStorage.setItem(`wf_lang_${user.id}`, currentLang);
 
-  const { error: insertError } = await sb
-    .from("ristoranti")
-    .insert([{ id: user.id, nome, email: user.email }]);
+const { error: insertError } = await sb
+  .from("ristoranti")
+  .insert([{ id: user.id, nome, email: user.email }]);
 
-  if (insertError) {
-    return alert("Errore nel salvataggio: " + insertError.message);
-  }
+if (insertError) return alert(t("save_err") + insertError.message);
 
   // ✅ Reindirizza all'abbonamento, non a Stripe
-  window.location.href = `abbonamento.html?ristorante_id=${user.id}`;
+  window.location.href = `abbonamento.html?ristorante_id=${user.id}&lang=${currentLang}`;
 };
 
   });
