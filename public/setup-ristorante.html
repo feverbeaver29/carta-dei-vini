@@ -197,8 +197,8 @@ RESTAURANT_ID = user.id;
 initLanguage(); // ✅ ora che abbiamo l'id, prendiamo wf_lang_<id>
 
 window.salvaNomeRistorante = async function () {
-  const nome = document.getElementById("ristorante").value;
-  if (!nome) return alert(t("enter_name"));
+const nome = document.getElementById("ristorante").value.trim();
+if (!nome) return alert(t("enter_name"));
 
   const { data: { user }, error: userError } = await sb.auth.getUser();
   if (userError || !user) return alert(t("user_not_auth"));
