@@ -492,6 +492,13 @@ function applyTranslations(){
     const key = el.getAttribute("data-i18n-aria");
     el.setAttribute("aria-label", t(key));
   });
+
+  // back link (testo + href sempre coerenti)
+const back = document.getElementById("backToDashboard");
+if (back && RESTAURANT_ID) {
+  back.textContent = t("back_dashboard");
+  back.href = `dashboard.html?ristorante_id=${RESTAURANT_ID}&lang=${currentLang}`;
+}
 }
 
     document.addEventListener("DOMContentLoaded", async () => {
