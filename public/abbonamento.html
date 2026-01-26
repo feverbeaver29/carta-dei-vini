@@ -58,83 +58,110 @@
     .field-error { color: #b00; font-size: .85em; margin-top: 4px; display:none; }
     .invalid input { border-color: #b00; }
     .invalid .field-error { display:block; }
+    .topbar{  display:flex;  justify-content:space-between;  align-items:center;  gap:12px;  margin-bottom: 10px;}
+    #backToDashboard{  font-size: 0.85em;  color: #b00;  text-decoration: none;}
+    #backToDashboard:hover{ text-decoration: underline; }
+    .lang-wrap{  display:flex;  align-items:center;  gap:8px;}
+    .lang-wrap label{  margin:0;  font-size: 0.9em;  color:#555;}
+    .lang-wrap select{  padding:6px 10px;  border-radius:10px;  border:1px solid #ccc;  background:#fff;}
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Gestione Abbonamento</h1>
+<div class="container">
+
+  <div class="topbar">
+    <a href="dashboard.html" id="backToDashboard">← Torna alla Dashboard</a>
+
+    <div class="lang-wrap">
+      <label id="langLabel" for="langSelect">Lingua</label>
+      <select id="langSelect">
+        <option value="it">Italiano</option>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+      </select>
+    </div>
+  </div>
+
+  <h1 id="pageTitle">Gestione Abbonamento</h1>
+
     <div id="statusTrial" style="margin-bottom: 1rem; color: #555;"></div>
 
     <!-- ▼ Piano cards -->
     <div class="piani">
       <div id="pianoBase" class="piano">
-        <h2>Piano Base - 14,99€/mese</h2>
-        <ul>
-          <li>Accesso completo alla carta dei vini digitale</li>
-          <li>Sommelier artificiale attivo (consigli illimitati)</li>
-          <li>Personalizzazione base di colori e font</li>
-          <li>Logo o nome del ristorante visibile</li>
-          <li>Lingue supportate: 🇮🇹 Italiano, 🇬🇧 Inglese</li>
-        </ul>
-        <p style="margin-top: 1em; font-size: 0.9em; color: #999;">Funzionalità avanzate disponibili nel piano PRO</p>
-        <button id="passaBase" class="btn" style="display:none">Attiva Piano Base</button>
+        <h2 data-i18n="base_title">Piano Base - 14,99€/mese</h2>
+          <ul>
+            <li data-i18n="base_li1">Accesso completo alla carta dei vini digitale</li>
+            <li data-i18n="base_li2">Sommelier artificiale attivo (consigli illimitati)</li>
+            <li data-i18n="base_li3">Personalizzazione base di colori e font</li>
+            <li data-i18n="base_li4">Logo o nome del ristorante visibile</li>
+            <li data-i18n="base_li5">Lingue supportate: 🇮🇹 Italiano, 🇬🇧 Inglese</li>
+          </ul>
+          <p data-i18n="base_note" style="margin-top: 1em; font-size: 0.9em; color: #999;">
+            Funzionalità avanzate disponibili nel piano PRO
+          </p>
+          <button id="passaBase" class="btn" style="display:none" data-i18n="activate_base">Attiva Piano Base</button>
+
       </div>
 
       <div id="pianoPro" class="piano">
-        <h2>Piano PRO - 29,99€/mese</h2>
-        <ul>
-          <li>Tutte le funzionalità del piano base</li>
-          <li>Logo personalizzato del sommelier</li>
-          <li>Selezione del numero di vini da consigliare</li>
-          <li>Possibilità di spingere vini in evidenza</li>
-          <li>Caricamento carta dei vini tramite OCR (PDF o immagine)</li>
-          <li>Supporto multilingua completo: 🇫🇷 🇩🇪 🇪🇸 🇨🇳</li>
-          <li>Branding avanzato e stile personalizzato</li>
-        </ul>
-        <button id="passaPro" class="btn" style="display:none">Passa al Piano PRO</button>
+        <h2 data-i18n="pro_title">Piano PRO - 29,99€/mese</h2>
+          <ul>
+            <li data-i18n="pro_li1">Tutte le funzionalità del piano base</li>
+            <li data-i18n="pro_li2">Logo personalizzato del sommelier</li>
+            <li data-i18n="pro_li3">Selezione del numero di vini da consigliare</li>
+            <li data-i18n="pro_li4">Possibilità di spingere vini in evidenza</li>
+            <li data-i18n="pro_li5">Caricamento carta dei vini tramite OCR (PDF o immagine)</li>
+            <li data-i18n="pro_li6">Supporto multilingua completo: 🇫🇷 🇩🇪 🇪🇸 🇨🇳</li>
+            <li data-i18n="pro_li7">Branding avanzato e stile personalizzato</li>
+          </ul>
+          <button id="passaPro" class="btn" style="display:none" data-i18n="switch_to_pro">Passa al Piano PRO</button>
+
       </div>
     </div>
 
-    <button id="annullaAbbonamento" class="btn cancel">Annulla abbonamento</button>
+    <button id="annullaAbbonamento" class="btn cancel" data-i18n="cancel_subscription">Annulla abbonamento</button>
   </div>
 
   <!-- ▼ MODAL: Dati fatturazione -->
   <div id="b2bModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal" role="document">
       <header>
-        <h3 id="modalTitle">Dati fatturazione (solo aziende)</h3>
-        <button id="closeModal" aria-label="Chiudi">×</button>
+        <h3 id="modalTitle" data-i18n="modal_title">Dati fatturazione (solo aziende)</h3>
+          <button id="closeModal" aria-label="Chiudi" data-i18n-aria="close">×</button>
+
       </header>
       <div class="content">
         <div class="field" id="fBusinessName">
-          <label for="businessName">Ragione sociale*</label>
-          <input id="businessName" placeholder="OSTERIA SRL" autocomplete="organization" />
-          <div class="field-error">Obbligatorio.</div>
+          <label for="businessName" data-i18n="business_name">Ragione sociale*</label>
+          <input id="businessName" placeholder="OSTERIA SRL" autocomplete="organization" data-i18n-placeholder="business_name_ph" />
+          <div class="field-error" data-i18n="required">Obbligatorio.</div>
         </div>
 
         <div class="field" id="fVat">
-          <label for="vat">Partita IVA* <small>(IT###########)</small></label>
+          <label for="vat" data-i18n="vat_label">Partita IVA* <small>(IT###########)</small></label>
           <input id="vat" placeholder="IT12345678901" autocomplete="off" />
-          <div class="field-error">Formato atteso: IT + 11 cifre.</div>
+          <div class="field-error" data-i18n="vat_err">Formato atteso: IT + 11 cifre.</div>
         </div>
 
         <div class="grid">
           <div class="field" id="fSdi">
-            <label for="sdi">Codice SDI <small>(oppure PEC)</small></label>
+            <label for="sdi" data-i18n="sdi_label">Codice SDI <small>(oppure PEC)</small></label>
             <input id="sdi" maxlength="7" placeholder="ABCDEF1" autocomplete="off" />
-            <div class="field-error">Deve avere 7 caratteri.</div>
+            <div class="field-error" data-i18n="sdi_err">Deve avere 7 caratteri.</div>
           </div>
           <div class="field" id="fPec">
-            <label for="pec">PEC <small>(oppure SDI)</small></label>
+            <label for="pec" data-i18n="pec_label">PEC <small>(oppure SDI)</small></label>
             <input id="pec" type="email" placeholder="amministrazione@pec.azienda.it" />
-            <div class="field-error">Inserisci una PEC valida.</div>
+            <div class="field-error" data-i18n="pec_err">Inserisci una PEC valida.</div>
           </div>
         </div>
-        <p class="hint">* Campi obbligatori. Inserisci <b>SDI</b> <em>oppure</em> <b>PEC</b>.</p>
+        <p class="hint" data-i18n="modal_hint">* Campi obbligatori. Inserisci <b>SDI</b> <em>oppure</em> <b>PEC</b>.</p>
       </div>
       <footer>
-        <button class="btn secondary" id="cancelModal">Annulla</button>
-        <button class="btn" id="continueModal">Continua</button>
+        <button class="btn secondary" id="cancelModal" data-i18n="modal_cancel">Annulla</button>
+        <button class="btn" id="continueModal" data-i18n="modal_continue">Continua</button>
       </footer>
     </div>
   </div>
@@ -150,12 +177,331 @@
     let RESTAURANT_ID;
     let SELECTED_PLAN = null;
 
+    // ==========================
+// i18n (Abbonamento)
+// ==========================
+const SUPPORTED_LANGS = ["it","en","fr","es"];
+let currentLang = "it";
+
+const TRANSLATIONS = {
+  it: {
+    language: "Lingua",
+    back_dashboard: "← Torna alla Dashboard",
+    page_title: "Gestione Abbonamento",
+
+    base_title: "Piano Base - 14,99€/mese",
+    base_li1: "Accesso completo alla carta dei vini digitale",
+    base_li2: "Sommelier artificiale attivo (consigli illimitati)",
+    base_li3: "Personalizzazione base di colori e font",
+    base_li4: "Logo o nome del ristorante visibile",
+    base_li5: "Lingue supportate: 🇮🇹 Italiano, 🇬🇧 Inglese",
+    base_note: "Funzionalità avanzate disponibili nel piano PRO",
+    activate_base: "Attiva Piano Base",
+
+    pro_title: "Piano PRO - 29,99€/mese",
+    pro_li1: "Tutte le funzionalità del piano base",
+    pro_li2: "Logo personalizzato del sommelier",
+    pro_li3: "Selezione del numero di vini da consigliare",
+    pro_li4: "Possibilità di spingere vini in evidenza",
+    pro_li5: "Caricamento carta dei vini tramite OCR (PDF o immagine)",
+    pro_li6: "Supporto multilingua completo: 🇫🇷 🇩🇪 🇪🇸 🇨🇳",
+    pro_li7: "Branding avanzato e stile personalizzato",
+    switch_to_pro: "Passa al Piano PRO",
+
+    cancel_subscription: "Annulla abbonamento",
+
+    // Stati
+    choose_plan_title: "Scegli il tuo piano per continuare",
+    no_active: "⚠️ Nessun abbonamento attivo.",
+    active_sub: "✅ Hai un abbonamento attivo.",
+
+    // Modal
+    modal_title: "Dati fatturazione (solo aziende)",
+    close: "Chiudi",
+    business_name: "Ragione sociale*",
+    business_name_ph: "OSTERIA SRL",
+    vat_label: "Partita IVA* <small>(IT###########)</small>",
+    sdi_label: "Codice SDI <small>(oppure PEC)</small>",
+    pec_label: "PEC <small>(oppure SDI)</small>",
+    required: "Obbligatorio.",
+    vat_err: "Formato atteso: IT + 11 cifre.",
+    sdi_err: "Deve avere 7 caratteri.",
+    pec_err: "Inserisci una PEC valida.",
+    modal_hint: "* Campi obbligatori. Inserisci <b>SDI</b> <em>oppure</em> <b>PEC</b>.",
+    modal_cancel: "Annulla",
+    modal_continue: "Continua",
+
+    // JS alerts / confirm / btn
+    err_user_email: "Errore nel recupero dell'email dell'utente.",
+    wait: "Attendi…",
+    err_checkout: "Errore nella creazione del checkout.",
+    network_err: "Errore di rete. Riprova.",
+    confirm_cancel: "Sei sicuro di voler annullare l'abbonamento?",
+    cancel_ok: "Abbonamento annullato correttamente.",
+    err_generic: "Errore generico"
+  },
+
+  en: {
+    language: "Language",
+    back_dashboard: "← Back to Dashboard",
+    page_title: "Subscription",
+
+    base_title: "Base Plan - €14.99/month",
+    base_li1: "Full access to the digital wine list",
+    base_li2: "AI sommelier enabled (unlimited suggestions)",
+    base_li3: "Basic customization (colors & fonts)",
+    base_li4: "Restaurant logo or name visible",
+    base_li5: "Supported languages: 🇮🇹 Italian, 🇬🇧 English",
+    base_note: "Advanced features are available in the PRO plan",
+    activate_base: "Activate Base Plan",
+
+    pro_title: "PRO Plan - €29.99/month",
+    pro_li1: "All Base plan features",
+    pro_li2: "Custom sommelier logo",
+    pro_li3: "Choose how many wines to recommend",
+    pro_li4: "Ability to push featured wines",
+    pro_li5: "Upload wine list via OCR (PDF or image)",
+    pro_li6: "Full multilingual support: 🇫🇷 🇩🇪 🇪🇸 🇨🇳",
+    pro_li7: "Advanced branding and custom styling",
+    switch_to_pro: "Switch to PRO Plan",
+
+    cancel_subscription: "Cancel subscription",
+
+    choose_plan_title: "Choose your plan to continue",
+    no_active: "⚠️ No active subscription.",
+    active_sub: "✅ You have an active subscription.",
+
+    modal_title: "Billing details (businesses only)",
+    close: "Close",
+    business_name: "Business name*",
+    business_name_ph: "OSTERIA SRL",
+    vat_label: "VAT number* <small>(IT###########)</small>",
+    sdi_label: "SDI code <small>(or PEC)</small>",
+    pec_label: "PEC email <small>(or SDI)</small>",
+    required: "Required.",
+    vat_err: "Expected format: IT + 11 digits.",
+    sdi_err: "Must be 7 characters.",
+    pec_err: "Enter a valid PEC email.",
+    modal_hint: "* Required fields. Enter <b>SDI</b> <em>or</em> <b>PEC</b>.",
+    modal_cancel: "Cancel",
+    modal_continue: "Continue",
+
+    err_user_email: "Error retrieving the user's email.",
+    wait: "Please wait…",
+    err_checkout: "Error creating checkout.",
+    network_err: "Network error. Please try again.",
+    confirm_cancel: "Are you sure you want to cancel the subscription?",
+    cancel_ok: "Subscription canceled successfully.",
+    err_generic: "Generic error"
+  },
+
+  fr: {
+    language: "Langue",
+    back_dashboard: "← Retour au tableau de bord",
+    page_title: "Abonnement",
+
+    base_title: "Forfait Base - 14,99€/mois",
+    base_li1: "Accès complet à la carte des vins digitale",
+    base_li2: "Sommelier IA actif (conseils illimités)",
+    base_li3: "Personnalisation de base (couleurs et polices)",
+    base_li4: "Logo ou nom du restaurant visible",
+    base_li5: "Langues prises en charge : 🇮🇹 Italien, 🇬🇧 Anglais",
+    base_note: "Les fonctionnalités avancées sont disponibles dans le forfait PRO",
+    activate_base: "Activer le forfait Base",
+
+    pro_title: "Forfait PRO - 29,99€/mois",
+    pro_li1: "Toutes les fonctionnalités du forfait Base",
+    pro_li2: "Logo du sommelier personnalisé",
+    pro_li3: "Choix du nombre de vins à recommander",
+    pro_li4: "Possibilité de mettre en avant des vins",
+    pro_li5: "Import de la carte via OCR (PDF ou image)",
+    pro_li6: "Support multilingue complet : 🇫🇷 🇩🇪 🇪🇸 🇨🇳",
+    pro_li7: "Branding avancé et style personnalisé",
+    switch_to_pro: "Passer au forfait PRO",
+
+    cancel_subscription: "Annuler l’abonnement",
+
+    choose_plan_title: "Choisissez votre forfait pour continuer",
+    no_active: "⚠️ Aucun abonnement actif.",
+    active_sub: "✅ Vous avez un abonnement actif.",
+
+    modal_title: "Détails de facturation (entreprises uniquement)",
+    close: "Fermer",
+    business_name: "Raison sociale*",
+    business_name_ph: "OSTERIA SRL",
+    vat_label: "N° TVA* <small>(IT###########)</small>",
+    sdi_label: "Code SDI <small>(ou PEC)</small>",
+    pec_label: "E-mail PEC <small>(ou SDI)</small>",
+    required: "Obligatoire.",
+    vat_err: "Format attendu : IT + 11 chiffres.",
+    sdi_err: "Doit contenir 7 caractères.",
+    pec_err: "Saisissez un e-mail PEC valide.",
+    modal_hint: "* Champs obligatoires. Saisissez <b>SDI</b> <em>ou</em> <b>PEC</b>.",
+    modal_cancel: "Annuler",
+    modal_continue: "Continuer",
+
+    err_user_email: "Erreur lors de la récupération de l’e-mail de l’utilisateur.",
+    wait: "Patientez…",
+    err_checkout: "Erreur lors de la création du paiement.",
+    network_err: "Erreur réseau. Réessayez.",
+    confirm_cancel: "Êtes-vous sûr de vouloir annuler l’abonnement ?",
+    cancel_ok: "Abonnement annulé avec succès.",
+    err_generic: "Erreur générique"
+  },
+
+  es: {
+    language: "Idioma",
+    back_dashboard: "← Volver al panel",
+    page_title: "Suscripción",
+
+    base_title: "Plan Base - 14,99€/mes",
+    base_li1: "Acceso completo a la carta de vinos digital",
+    base_li2: "Sumiller IA activo (recomendaciones ilimitadas)",
+    base_li3: "Personalización básica (colores y fuentes)",
+    base_li4: "Logo o nombre del restaurante visible",
+    base_li5: "Idiomas compatibles: 🇮🇹 Italiano, 🇬🇧 Inglés",
+    base_note: "Las funciones avanzadas están disponibles en el plan PRO",
+    activate_base: "Activar Plan Base",
+
+    pro_title: "Plan PRO - 29,99€/mes",
+    pro_li1: "Todas las funciones del plan Base",
+    pro_li2: "Logo del sumiller personalizado",
+    pro_li3: "Elige cuántos vinos recomendar",
+    pro_li4: "Posibilidad de destacar vinos",
+    pro_li5: "Subida de carta mediante OCR (PDF o imagen)",
+    pro_li6: "Soporte multilingüe completo: 🇫🇷 🇩🇪 🇪🇸 🇨🇳",
+    pro_li7: "Branding avanzado y estilo personalizado",
+    switch_to_pro: "Cambiar al Plan PRO",
+
+    cancel_subscription: "Cancelar suscripción",
+
+    choose_plan_title: "Elige tu plan para continuar",
+    no_active: "⚠️ No hay suscripción activa.",
+    active_sub: "✅ Tienes una suscripción activa.",
+
+    modal_title: "Datos de facturación (solo empresas)",
+    close: "Cerrar",
+    business_name: "Razón social*",
+    business_name_ph: "OSTERIA SRL",
+    vat_label: "NIF/IVA* <small>(IT###########)</small>",
+    sdi_label: "Código SDI <small>(o PEC)</small>",
+    pec_label: "Correo PEC <small>(o SDI)</small>",
+    required: "Obligatorio.",
+    vat_err: "Formato esperado: IT + 11 dígitos.",
+    sdi_err: "Debe tener 7 caracteres.",
+    pec_err: "Introduce un correo PEC válido.",
+    modal_hint: "* Campos obligatorios. Introduce <b>SDI</b> <em>o</em> <b>PEC</b>.",
+    modal_cancel: "Cancelar",
+    modal_continue: "Continuar",
+
+    err_user_email: "Error al obtener el email del usuario.",
+    wait: "Espera…",
+    err_checkout: "Error al crear el checkout.",
+    network_err: "Error de red. Inténtalo de nuevo.",
+    confirm_cancel: "¿Seguro que quieres cancelar la suscripción?",
+    cancel_ok: "Suscripción cancelada correctamente.",
+    err_generic: "Error genérico"
+  }
+};
+
+function normalizeLang(raw){
+  const s = (raw || "").toLowerCase();
+  if (s.startsWith("it")) return "it";
+  if (s.startsWith("fr")) return "fr";
+  if (s.startsWith("es")) return "es";
+  return "en";
+}
+
+function t(key){
+  const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+  return (dict && dict[key]) || (TRANSLATIONS.en && TRANSLATIONS.en[key]) || key;
+}
+
+function setLang(lang, persist=true){
+  currentLang = SUPPORTED_LANGS.includes(normalizeLang(lang)) ? normalizeLang(lang) : "en";
+  document.documentElement.lang = currentLang;
+
+  if (persist){
+    localStorage.setItem("wf_lang", currentLang);
+    if (typeof RESTAURANT_ID === "string" && RESTAURANT_ID){
+      localStorage.setItem(`wf_lang_${RESTAURANT_ID}`, currentLang);
+    }
+  }
+
+  const sel = document.getElementById("langSelect");
+  if (sel) sel.value = currentLang;
+
+  applyTranslations();
+}
+
+function initLanguage(){
+  const qp = new URLSearchParams(window.location.search);
+  const langFromUrl = qp.get("lang");
+
+  const perRest = (typeof RESTAURANT_ID === "string" && RESTAURANT_ID)
+    ? localStorage.getItem(`wf_lang_${RESTAURANT_ID}`)
+    : null;
+
+  const saved = perRest || localStorage.getItem("wf_lang");
+  const auto  = normalizeLang(navigator.language || "");
+
+  setLang(langFromUrl || saved || auto, !saved);
+
+  const sel = document.getElementById("langSelect");
+  if (sel){
+    sel.addEventListener("change", (e) => setLang(e.target.value, true));
+  }
+
+  // link back coerente
+  const back = document.getElementById("backToDashboard");
+  if (back && RESTAURANT_ID){
+    back.href = `dashboard.html?ristorante_id=${RESTAURANT_ID}&lang=${currentLang}`;
+    back.textContent = t("back_dashboard");
+  }
+}
+
+function applyTranslations(){
+  // title + h1
+  document.title = t("page_title");
+  const h1 = document.getElementById("pageTitle");
+  if (h1) h1.textContent = t("page_title");
+
+  // label lingua
+  const langLbl = document.getElementById("langLabel");
+  if (langLbl) langLbl.textContent = t("language");
+
+  // data-i18n (testi semplici)
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    // alcune stringhe contengono HTML (small/b/em)
+    if (key === "vat_label" || key === "sdi_label" || key === "pec_label" || key === "modal_hint") {
+      el.innerHTML = t(key);
+    } else {
+      el.textContent = t(key);
+    }
+  });
+
+  // placeholders
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+    const key = el.getAttribute("data-i18n-placeholder");
+    el.setAttribute("placeholder", t(key));
+  });
+
+  // aria-label
+  document.querySelectorAll("[data-i18n-aria]").forEach(el => {
+    const key = el.getAttribute("data-i18n-aria");
+    el.setAttribute("aria-label", t(key));
+  });
+}
+
     document.addEventListener("DOMContentLoaded", async () => {
       try {
         const { data: { user }, error } = await sb.auth.getUser();
         if (error || !user) return window.location.href = "/login.html";
         RESTAURANT_ID = user.id;
+        initLanguage();          // <-- qui, ora che RESTAURANT_ID esiste
         mostraPianoUtente();
+
       } catch (err) {
         console.error("Errore nel caricamento utente:", err);
         return window.location.href = "/login.html";
@@ -184,7 +530,7 @@
       const trialText = document.getElementById("statusTrial");
 
       if (!subscription_status) {
-        document.querySelector("h1").textContent = "Scegli il tuo piano per continuare";
+        document.getElementById("pageTitle").textContent = t("choose_plan_title");
         trialText.style.display = "none";
         document.getElementById("passaBase").style.display = "inline-block";
         document.getElementById("passaPro").style.display = "inline-block";
@@ -195,7 +541,7 @@
       }
 
       if (subscription_status === "canceled") {
-        trialText.textContent = "⚠️ Nessun abbonamento attivo.";
+        trialText.textContent = t("no_active");
         document.getElementById("passaBase").style.display = "inline-block";
         document.getElementById("passaPro").style.display = "inline-block";
         bindPlanButtons();
@@ -203,7 +549,7 @@
       }
 
       if (subscription_status === "active") {
-        trialText.textContent = "✅ Hai un abbonamento attivo.";
+        trialText.textContent = t("active_sub");
       }
 
       if (subscription_plan === "pro") {
@@ -259,10 +605,10 @@
 
       // Call backend (stessa logica di prima)
       const { data: { user }, error } = await sb.auth.getUser();
-      if (error || !user || !user.email) return alert("Errore nel recupero dell'email dell'utente.");
+      if (error || !user || !user.email) return alert(t("err_user_email"));
 
       const btn = document.getElementById('continueModal');
-      btn.disabled = true; btn.textContent = 'Attendi…';
+      btn.disabled = true; btn.textContent = t("wait");
       try {
         const res = await fetch("/api/create-checkout", {
           method: "POST",
@@ -273,18 +619,18 @@
         if (res.ok && json.url) {
           window.location.href = json.url;
         } else {
-          alert(json.error || "Errore nella creazione del checkout.");
+          alert(json.error || t("err_checkout"));
           console.error(json);
-          btn.disabled = false; btn.textContent = 'Continua';
+          btn.disabled = false; btn.textContent = t("modal_continue");
         }
       } catch (e) {
-        alert('Errore di rete. Riprova.');
-        btn.disabled = false; btn.textContent = 'Continua';
+        alert(t("network_err"));
+        btn.disabled = false; btn.textContent = t("modal_continue");
       }
     }
 
     document.getElementById("annullaAbbonamento").addEventListener("click", async () => {
-      const confirmCancel = confirm("Sei sicuro di voler annullare l'abbonamento?");
+      const confirmCancel = confirm(t("confirm_cancel"));
       if (!confirmCancel) return;
 
       const res = await fetch("https://ldunvbftxhbtuyabgxwh.supabase.co/functions/v1/cancel-subscription", {
@@ -294,8 +640,8 @@
       });
 
       const result = await res.json();
-      if (!res.ok) return alert("Errore: " + (result.error || "Errore generico"));
-      alert("Abbonamento annullato correttamente.");
+      if (!res.ok) return alert("Errore: " + (result.error || t("err_generic")));
+      alert(t("cancel_ok"));
       window.location.reload();
     });
   </script>
