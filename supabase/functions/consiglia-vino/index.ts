@@ -16,7 +16,7 @@ const norm = (s: string) =>
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://www.winesfever.com",
+  "Access-Control-Allow-Origin": "https://www.wineinapp.com",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, apikey, x-client-info",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
