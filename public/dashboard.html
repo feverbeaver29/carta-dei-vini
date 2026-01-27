@@ -918,7 +918,7 @@ background: rgba(255,255,255,.92);
 
         <!-- Anteprima URL -->
         <div id="slugPreview" class="slug-preview">
-          URL: <span id="slugPreviewUrl">https://www.winesfever.com/</span>
+          URL: <span id="slugPreviewUrl">https://www.wineinapp.com/</span>
         </div>
             <label for="displayName">Nome da visualizzare</label>
             <input type="text" id="displayName">
@@ -2283,7 +2283,7 @@ const checkSlugBtn = document.getElementById("checkSlugBtn");
 const displayNameInput = document.getElementById("displayName");
 
 function renderSlugPreview(s) {
-  const base = "https://www.winesfever.com/";
+  const base = "https://www.wineinapp.com/";
   slugPreviewUrl.textContent = s ? base + s : base;
 }
 
@@ -2817,7 +2817,7 @@ if (showCarta) initCartaQuickActions();
       const popup = document.getElementById('qrPopup');
       const container = document.getElementById('qrCodeContainer');
       container.innerHTML = '';
-      const base = "https://www.winesfever.com";
+      const base = "https://www.wineinapp.com/";
       const url = window.RISTORANTE_SLUG
         ? `${base}/${window.RISTORANTE_SLUG}`                 // es. /osteria-pippo
         : `${base}/carta.html?ristorante_id=${RESTAURANT_ID}`; // fallback
