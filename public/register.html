@@ -379,7 +379,7 @@ function applyTranslations(){
     if (!privacyAccepted) return alert(t("must_accept"))
     if (password !== confirmPassword) return alert(t("pw_not_match"))
 
-const emailRedirectTo = `${window.location.origin}/login.html?confirmed=1&lang=${currentLang}`;
+const emailRedirectTo = `${window.location.origin}/login.html?lang=${currentLang}`;
 
 const { data, error } = await sb.auth.signUp({
   email,

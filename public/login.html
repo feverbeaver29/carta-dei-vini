@@ -329,34 +329,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     return null;
   }
 
-const confirmedUser = await handleEmailConfirmCallback();
-if (confirmedUser) {
-  // salva lingua per questo ristorante (ok tenerlo)
-  localStorage.setItem(`wf_lang_${confirmedUser.id}`, currentLang);
+  const confirmedUser = await handleEmailConfirmCallback();
+  if (confirmedUser) {
+    const { data: ristoData, error: ristoError } = await sb
+      .from("ristoranti")
+      .select("subscription_status")
+      .eq("id", confirmedUser.id)
+      .single();
 
-  // (opzionale) precompila email
-  if (confirmedUser.email) {
-    document.getElementById("email").value = confirmedUser.email;
+    localStorage.setItem(`wf_lang_${confirmedUser.id}`, currentLang);
+
+    if (ristoError) {
+      alert(t("sub_check_err"));
+      return;
+    }
+
+    if (!ristoData || ristoData.subscription_status !== "active") {
+      window.location.href = `abbonamento.html?lang=${currentLang}`;
+    } else {
+      window.location.href = `dashboard.html?ristorante_id=${confirmedUser.id}&lang=${currentLang}`;
+    }
+    return;
   }
-
-  // IMPORTANTISSIMO: non autologgare e non redirectare su abbonamento/dashboard
-  await sb.auth.signOut();
-
-  // pulisci URL ma mantieni confirmed=1 e lang
-  const qp = new URLSearchParams(window.location.search);
-  qp.set("confirmed", "1");
-  qp.set("lang", currentLang);
-  history.replaceState(null, "", window.location.pathname + "?" + qp.toString());
-
-  // mostra messaggio “Email confermata”
-  const box = document.getElementById("successMessage");
-  if (box) {
-    box.style.display = "block";
-    box.textContent = "✅ Email confermata. Ora effettua il login per continuare.";
-  }
-
-  return;
-}
 
     window.login = async function () {
       const email = document.getElementById('email').value;
