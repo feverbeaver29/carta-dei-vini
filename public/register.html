@@ -379,12 +379,12 @@ function applyTranslations(){
     if (!privacyAccepted) return alert(t("must_accept"))
     if (password !== confirmPassword) return alert(t("pw_not_match"))
 
-    const { data, error } = await sb.auth.signUp({
+const emailRedirectTo = `${window.location.origin}/login.html?lang=${currentLang}`;
+
+const { data, error } = await sb.auth.signUp({
   email,
   password,
-  options: {
-    emailRedirectTo: "https://www.wineinapp.com/login.html"
-  }
+  options: { emailRedirectTo }
 });
 
     if (error) return alert(t("reg_err") + error.message)

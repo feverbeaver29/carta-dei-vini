@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - Wine's Fever</title>
+  <title>Login - Wine in App</title>
   <style>
     body {
       background-color: #fff9f4;
@@ -162,7 +162,7 @@
     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Icon">
     <span data-i18n="login_google">Accedi con Google</span>
   </div>
-  <footer data-i18n="footer">© 2025 Wine's Fever - Tutti i diritti riservati</footer>
+  <footer data-i18n="footer">© 2025 Wine in App - Tutti i diritti riservati</footer>
 
 </div>
 
@@ -186,7 +186,7 @@ const TRANSLATIONS = {
     remember:"Ricordati di me",
     login_btn:"Accedi",
     login_google:"Accedi con Google",
-    footer:"© 2025 Wine's Fever - Tutti i diritti riservati",
+    footer:"© 2025 Wine in App - Tutti i diritti riservati",
     fill_all:"Compila tutti i campi.",
     login_err:"Errore login: ",
     google_err:"Errore login con Google: ",
@@ -203,7 +203,7 @@ const TRANSLATIONS = {
     remember:"Remember me",
     login_btn:"Log in",
     login_google:"Continue with Google",
-    footer:"© 2025 Wine's Fever - All rights reserved",
+    footer:"© 2025 Wine in App - All rights reserved",
     fill_all:"Please fill in all fields.",
     login_err:"Login error: ",
     google_err:"Google login error: ",
@@ -220,7 +220,7 @@ const TRANSLATIONS = {
     remember:"Se souvenir de moi",
     login_btn:"Se connecter",
     login_google:"Continuer avec Google",
-    footer:"© 2025 Wine's Fever - Tous droits réservés",
+    footer:"© 2025 Wine in App - Tous droits réservés",
     fill_all:"Veuillez remplir tous les champs.",
     login_err:"Erreur de connexion : ",
     google_err:"Erreur Google : ",
@@ -237,7 +237,7 @@ const TRANSLATIONS = {
     remember:"Recuérdame",
     login_btn:"Entrar",
     login_google:"Continuar con Google",
-    footer:"© 2025 Wine's Fever - Todos los derechos reservados",
+    footer:"© 2025 Wine in App - Todos los derechos reservados",
     fill_all:"Completa todos los campos.",
     login_err:"Error de inicio de sesión: ",
     google_err:"Error con Google: ",
@@ -295,12 +295,63 @@ function applyTranslations(){
     field.type = field.type === "password" ? "text" : "password";
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
-    const params = new URLSearchParams(window.location.search);
-    initLanguage();
-if (params.get("checkout") === "success") {
-  document.getElementById("successMessage").style.display = "block";
-}
+document.addEventListener("DOMContentLoaded", async () => {
+  initLanguage();
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("checkout") === "success") {
+    document.getElementById("successMessage").style.display = "block";
+  }
+
+  async function handleEmailConfirmCallback() {
+    const hash = window.location.hash.startsWith("#")
+      ? window.location.hash.slice(1)
+      : "";
+    const hp = new URLSearchParams(hash);
+    const access_token = hp.get("access_token");
+    const refresh_token = hp.get("refresh_token");
+
+    if (access_token && refresh_token) {
+      const { data, error } = await sb.auth.setSession({ access_token, refresh_token });
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+      if (!error && data?.user) return data.user;
+    }
+
+    const qp = new URLSearchParams(window.location.search);
+    const code = qp.get("code");
+    if (code) {
+      const { data, error } = await sb.auth.exchangeCodeForSession(code);
+      qp.delete("code");
+      history.replaceState(null, "", window.location.pathname + (qp.toString() ? `?${qp}` : ""));
+      if (!error && data?.user) return data.user;
+    }
+
+    return null;
+  }
+
+  const confirmedUser = await handleEmailConfirmCallback();
+  if (confirmedUser) {
+    const { data: ristoData, error: ristoError } = await sb
+      .from("ristoranti")
+      .select("subscription_status")
+      .eq("id", confirmedUser.id)
+      .single();
+
+    localStorage.setItem(`wf_lang_${confirmedUser.id}`, currentLang);
+
+    if (ristoError) {
+      alert(t("sub_check_err"));
+      return;
+    }
+
+    if (!ristoData || ristoData.subscription_status !== "active") {
+      window.location.href = `abbonamento.html?lang=${currentLang}`;
+    } else {
+      window.location.href = `dashboard.html?ristorante_id=${confirmedUser.id}&lang=${currentLang}`;
+    }
+    return;
+  }
+
     window.login = async function () {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
