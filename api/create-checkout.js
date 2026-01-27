@@ -1,5 +1,5 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const YOUR_DOMAIN = "https://www.winesfever.com";
+const YOUR_DOMAIN = "https://www.wineinapp.com";
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") {
