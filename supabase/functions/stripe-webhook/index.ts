@@ -192,7 +192,7 @@ async function ficCreateAndSend(invoicePayload: {
       },
       currency: { id: (invoicePayload.currency || "EUR").toUpperCase() },
       items_list: [item],
-      visible_subject: "Abbonamento Wine's Fever",
+      visible_subject: "Abbonamento Wine in App",
       payments_list: [
         {
           amount: Number(gross.toFixed(2)),
