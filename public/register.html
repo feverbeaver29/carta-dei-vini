@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Registrazione - Wine's Fever</title>
+  <title>Registrazione - Wine in App</title>
   <link href="https://fonts.googleapis.com/css2?family=Quicksand&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
   <style>
@@ -183,7 +183,7 @@
     </div>
 
     <div class="message" id="messageBox"></div>
-    <footer data-i18n="footer">© 2025 Wine's Fever - Tutti i diritti riservati</footer>
+    <footer data-i18n="footer">© 2025 Wine in App - Tutti i diritti riservati</footer>
   </div>
 
 <script>
@@ -208,7 +208,7 @@ let currentLang = "it";
     privacy_html:'Accetto la <a href="privacy.html" target="_blank">Privacy Policy</a>',
     register_btn:"Registrati",
     register_google:"Registrati con Google",
-    footer:"© 2025 Wine's Fever - Tutti i diritti riservati",
+    footer:"© 2025 Wine in App - Tutti i diritti riservati",
     pw_short:"Password troppo corta",
     pw_mid:"Aggiungi almeno una maiuscola e un numero",
     pw_ok:"Password sicura",
@@ -233,7 +233,7 @@ let currentLang = "it";
     privacy_html:'I accept the <a href="privacy.html" target="_blank">Privacy Policy</a>',
     register_btn:"Sign up",
     register_google:"Continue with Google",
-    footer:"© 2025 Wine's Fever - All rights reserved",
+    footer:"© 2025 Wine in App - All rights reserved",
     pw_short:"Password too short",
     pw_mid:"Add at least one uppercase letter and one number",
     pw_ok:"Strong password",
@@ -258,7 +258,7 @@ pw_hint:"",
     privacy_html:'J’accepte la <a href="privacy.html" target="_blank">Politique de confidentialité</a>',
     register_btn:"S’inscrire",
     register_google:"Continuer avec Google",
-    footer:"© 2025 Wine's Fever - Tous droits réservés",
+    footer:"© 2025 Wine in App - Tous droits réservés",
     pw_short:"Mot de passe trop court",
     pw_mid:"Ajoutez au moins une majuscule et un chiffre",
     pw_ok:"Mot de passe sécurisé",
@@ -283,7 +283,7 @@ pw_hint:"",
     privacy_html:'Acepto la <a href="privacy.html" target="_blank">Política de privacidad</a>',
     register_btn:"Registrarse",
     register_google:"Continuar con Google",
-    footer:"© 2025 Wine's Fever - Todos los derechos reservados",
+    footer:"© 2025 Wine in App - Todos los derechos reservados",
     pw_short:"Contraseña demasiado corta",
     pw_mid:"Añade al menos una mayúscula y un número",
     pw_ok:"Contraseña segura",
@@ -379,7 +379,14 @@ function applyTranslations(){
     if (!privacyAccepted) return alert(t("must_accept"))
     if (password !== confirmPassword) return alert(t("pw_not_match"))
 
-    const { data, error } = await sb.auth.signUp({ email, password });
+    const { data, error } = await sb.auth.signUp({
+  email,
+  password,
+  options: {
+    emailRedirectTo: "https://www.wineinapp.com/login.html"
+  }
+});
+
     if (error) return alert(t("reg_err") + error.message)
 
     const userId = data.user.id;
