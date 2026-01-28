@@ -450,11 +450,11 @@ try {
 
     const { error: updateErr } = await supabase
       .from("ristoranti")
-      .update({
-        subscription_status: "canceled",
-        subscription_plan: null,
-        stripe_customer_id: null,
-      })
+.update({
+  subscription_status: "canceled",
+  subscription_plan: null,
+  // stripe_customer_id: NON TOCCARLO
+})
       .eq("id", risto.id);
 
     if (updateErr) {
@@ -602,28 +602,35 @@ if (!risto) {
 
       console.log("🧾 Invoice salvata:", invoice.number || invoice.id);
 
-      // Crea e invia fattura su FIC
-      await ficCreateAndSend({
-        description: lineDescription,
-        currency,
-        subtotal_cent: subtotal,
-        client: {
-          name: invName || invEmail,
-          vat_number: invVatClean || null,
-          sdi: invSdi || null,
-          pec: invPec || null,
-          address: invAddress || null,
-          email: invEmail || null,
-        },
-      });
+// Crea e invia fattura su FIC (non deve bloccare il webhook)
+try {
+  await ficCreateAndSend({
+    description: lineDescription,
+    currency,
+    subtotal_cent: subtotal,
+    client: {
+      name: invName || invEmail,
+      vat_number: invVatClean || null,
+      sdi: invSdi || null,
+      pec: invPec || null,
+      address: invAddress || null,
+      email: invEmail || null,
+    },
+  });
 
-      console.log(
-        "✅ Fattura creata/inviata su Fatture in Cloud:",
-        invoice.number || invoice.id
-      );
-    } catch (e) {
-      console.error("❌ Errore invoice.finalized:", e);
-    }
+  console.log("✅ Fattura creata/inviata su Fatture in Cloud:", invoice.number || invoice.id);
+} catch (e: any) {
+  const status = e?.response?.status;
+  const code = e?.response?.data?.error?.code;
+  const msg = e?.response?.data?.error?.message || e?.message;
+
+  // Licenza scaduta → log e stop, ma webhook OK
+  if (status === 403 && code === "LICENSE_EXPIRED") {
+    console.warn("⚠️ FIC: licenza scaduta. Salto invio fattura.", { status, code, msg });
+  } else {
+    console.error("❌ FIC error (non blocco webhook):", { status, code, msg });
+  }
+}
   }
 
   return new Response("ok", { status: 200 });
