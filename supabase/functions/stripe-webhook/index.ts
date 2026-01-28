@@ -474,71 +474,83 @@ try {
       const currency = (invoice.currency || "eur").toString().toUpperCase();
       const subtotal = Number(invoice.subtotal ?? 0);
 
-// Periodo dalla prima linea (se presente)
-let period_start: string | null = null;
-let period_end: string | null = null;
-const firstLine = invoice.lines?.data?.[0];
+      // Periodo dalla prima linea (se presente)
+      let period_start: string | null = null;
+      let period_end: string | null = null;
+      const firstLine = invoice.lines?.data?.[0];
 
-if (firstLine?.period) {
-  period_start = new Date(firstLine.period.start * 1000).toISOString();
-  period_end = new Date(firstLine.period.end * 1000).toISOString();
-}
+      if (firstLine?.period) {
+        period_start = new Date(firstLine.period.start * 1000).toISOString();
+        period_end = new Date(firstLine.period.end * 1000).toISOString();
+      }
 
-const lineDescription =
-  firstLine?.description ||
-  `Abbonamento ${firstLine?.plan?.nickname || ""}`.trim();
+      const lineDescription =
+        firstLine?.description ||
+        `Abbonamento ${firstLine?.plan?.nickname || ""}`.trim();
 
-// ✅ 0) Prova a recuperare ristorante_id dalla subscription metadata (flusso per ID)
-let ristoranteIdInv: string | null = null;
+      // ✅ 0) Prova a recuperare ristorante_id dalla subscription metadata
+      let ristoranteIdInv: string | null = null;
 
-try {
-  if (invoice.subscription) {
-    const sub = await stripe.subscriptions.retrieve(invoice.subscription as string);
-    const rid = (sub as any)?.metadata?.ristorante_id;
-    if (typeof rid === "string" && rid.trim()) ristoranteIdInv = rid.trim();
-  }
-} catch (e) {
-  console.warn("⚠️ Impossibile recuperare subscription metadata:", (e as any)?.message);
-}
+      try {
+        if (invoice.subscription) {
+          const sub = await stripe.subscriptions.retrieve(
+            invoice.subscription as string
+          );
+          const rid = (sub as any)?.metadata?.ristorante_id;
+          if (typeof rid === "string" && rid.trim()) ristoranteIdInv = rid.trim();
+        }
+      } catch (e) {
+        console.warn(
+          "⚠️ Impossibile recuperare subscription metadata:",
+          (e as any)?.message
+        );
+      }
 
-// ✅ 1) Cerca ristorante: prima per ID, poi fallback
-let risto: any = null;
+      // ✅ 1) Cerca ristorante: prima per ID, poi fallback
+      let risto: any = null;
 
-if (ristoranteIdInv) {
-  const byId = await supabase
-    .from("ristoranti")
-    .select("id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan")
-    .eq("id", ristoranteIdInv)
-    .maybeSingle();
-  risto = byId.data || null;
-}
+      if (ristoranteIdInv) {
+        const byId = await supabase
+          .from("ristoranti")
+          .select(
+            "id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan"
+          )
+          .eq("id", ristoranteIdInv)
+          .maybeSingle();
+        risto = byId.data || null;
+      }
 
-if (!risto) {
-  const byStripeId = await supabase
-    .from("ristoranti")
-    .select("id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan")
-    .eq("stripe_customer_id", invoice.customer as string)
-    .maybeSingle();
-  risto = byStripeId.data || null;
-}
+      if (!risto) {
+        const byStripeId = await supabase
+          .from("ristoranti")
+          .select(
+            "id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan"
+          )
+          .eq("stripe_customer_id", invoice.customer as string)
+          .maybeSingle();
+        risto = byStripeId.data || null;
+      }
 
-if (!risto && invoice.customer_email) {
-  const byEmail = await supabase
-    .from("ristoranti")
-    .select("id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan")
-    .eq("email", invoice.customer_email)
-    .maybeSingle();
-  risto = byEmail.data || null;
-}
+      if (!risto && invoice.customer_email) {
+        const byEmail = await supabase
+          .from("ristoranti")
+          .select(
+            "id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan"
+          )
+          .eq("email", invoice.customer_email)
+          .maybeSingle();
+        risto = byEmail.data || null;
+      }
 
-if (!risto) {
-  console.error("❌ Nessun ristorante trovato (invoice.finalized)", {
-    ristoranteIdInv,
-    customer: invoice.customer,
-    email: invoice.customer_email,
-  });
-  // Non blocco il webhook
-}
+      if (!risto) {
+        console.error("❌ Nessun ristorante trovato (invoice.finalized)", {
+          ristoranteIdInv,
+          customer: invoice.customer,
+          email: invoice.customer_email,
+        });
+        // Non blocco il webhook
+      }
+
       // Dati snapshot dall'invoice
       const invName = invoice.customer_name || risto?.ragione_sociale || null;
       const invAddress = invoice.customer_address || risto?.indirizzo_json || null;
@@ -561,11 +573,11 @@ if (!risto) {
       let invPec = risto?.pec || null;
       try {
         if ((!invSdi || !invPec) && invoice.customer) {
-          const cust = await stripe.customers.retrieve(
-            invoice.customer as string
-          );
+          const cust = await stripe.customers.retrieve(invoice.customer as string);
           if (cust && typeof cust === "object") {
-            invSdi = cleanSdi(invSdi || (cust as any).metadata?.codice_destinatario);
+            invSdi = cleanSdi(
+              invSdi || (cust as any).metadata?.codice_destinatario
+            );
             invPec = invPec || (cust as any).metadata?.pec || null;
           }
         }
@@ -602,38 +614,47 @@ if (!risto) {
 
       console.log("🧾 Invoice salvata:", invoice.number || invoice.id);
 
-// Crea e invia fattura su FIC (non deve bloccare il webhook)
-try {
-  await ficCreateAndSend({
-    description: lineDescription,
-    currency,
-    subtotal_cent: subtotal,
-    client: {
-      name: invName || invEmail,
-      vat_number: invVatClean || null,
-      sdi: invSdi || null,
-      pec: invPec || null,
-      address: invAddress || null,
-      email: invEmail || null,
-    },
-  });
+      // Crea e invia fattura su FIC (non deve bloccare il webhook)
+      try {
+        await ficCreateAndSend({
+          description: lineDescription,
+          currency,
+          subtotal_cent: subtotal,
+          client: {
+            name: invName || invEmail,
+            vat_number: invVatClean || null,
+            sdi: invSdi || null,
+            pec: invPec || null,
+            address: invAddress || null,
+            email: invEmail || null,
+          },
+        });
 
-  console.log("✅ Fattura creata/inviata su Fatture in Cloud:", invoice.number || invoice.id);
-} catch (e: any) {
-  const status = e?.response?.status;
-  const code = e?.response?.data?.error?.code;
-  const msg = e?.response?.data?.error?.message || e?.message;
+        console.log(
+          "✅ Fattura creata/inviata su Fatture in Cloud:",
+          invoice.number || invoice.id
+        );
+      } catch (e: any) {
+        const status = e?.response?.status;
+        const code = e?.response?.data?.error?.code;
+        const msg = e?.response?.data?.error?.message || e?.message;
 
-  // Licenza scaduta → log e stop, ma webhook OK
-  if (status === 403 && code === "LICENSE_EXPIRED") {
-    console.warn("⚠️ FIC: licenza scaduta. Salto invio fattura.", { status, code, msg });
-  } else {
-    console.error("❌ FIC error (non blocco webhook):", { status, code, msg });
+        // Licenza scaduta → log e stop, ma webhook OK
+        if (status === 403 && code === "LICENSE_EXPIRED") {
+          console.warn("⚠️ FIC: licenza scaduta. Salto invio fattura.", {
+            status,
+            code,
+            msg,
+          });
+        } else {
+          console.error("❌ FIC error (non blocco webhook):", {
+            status,
+            code,
+            msg,
+          });
+        }
+      }
+    } catch (e) {
+      console.error("❌ Errore invoice.finalized:", e);
+    }
   }
-}
-  }
-
-  return new Response("ok", { status: 200 });
-});
-
-
