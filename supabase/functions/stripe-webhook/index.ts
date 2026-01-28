@@ -257,6 +257,7 @@ serve(async (req) => {
 
 const det = session.customer_details || {};
 let email = session.customer_email || det.email || null;
+email = typeof email === "string" ? email.trim().toLowerCase() : null;
 
 const rawRistoranteId =
   session.client_reference_id || session.metadata?.ristorante_id || null;
@@ -351,29 +352,27 @@ if (!risto) {
     const indirizzo = det.address || customer?.address || null;
 
     // Piano dalla subscription creata dalla sessione
-    let selectedPlan = "base";
-    try {
-      if (session.subscription) {
-        const sub = await stripe.subscriptions.retrieve(
-          session.subscription as string
-        );
-        const firstItem = sub.items?.data?.[0];
-        const priceId = firstItem?.price?.id;
-        selectedPlan =
-          priceId === "price_1RiFLtRWDcfnUagZp0bIKnOL" ? "pro" : "base";
-      }
-    } catch (e) {
-      console.warn(
-        "⚠️ Impossibile leggere subscription dalla session:",
-        (e as any)?.message
-      );
-    }
+let selectedPlan = session.metadata?.plan || "base";
+let subStatus: string = "active";
+
+try {
+  if (session.subscription) {
+    const sub = await stripe.subscriptions.retrieve(session.subscription as string);
+    subStatus = sub.status || "active";
+
+    const firstItem = sub.items?.data?.[0];
+    const priceId = firstItem?.price?.id;
+    selectedPlan = priceId === "price_1RiFLtRWDcfnUagZp0bIKnOL" ? "pro" : "base";
+  }
+} catch (e) {
+  console.warn("⚠️ Impossibile leggere subscription dalla session:", (e as any)?.message);
+}
 
     const { error: updateErr } = await supabase
       .from("ristoranti")
       .update({
         stripe_customer_id: customerId,
-        subscription_status: "active",
+        subscription_status: subStatus,
         subscription_plan: selectedPlan,
         ragione_sociale: ragioneSociale,
         indirizzo_json: indirizzo || null,
@@ -475,17 +474,15 @@ if (!risto) {
       const currency = (invoice.currency || "eur").toString().toUpperCase();
       const subtotal = Number(invoice.subtotal ?? 0);
 
-      // Periodo dalla prima linea (se presente)
-      let period_start: string | null = null;
-      let period_end: string | null = null;
-      const firstLine = invoice.lines?.data?.[0];
-      if (firstLine?.period) {
-        period_start = new Date(firstLine.period.start * 1000).toISOString();
-        period_end = new Date(firstLine.period.end * 1000).toISOString();
-      }
-      const lineDescription =
-        firstLine?.description ||
-        `Abbonamento ${firstLine?.plan?.nickname || ""}`.trim();
+// Periodo dalla prima linea (se presente)
+let period_start: string | null = null;
+let period_end: string | null = null;
+const firstLine = invoice.lines?.data?.[0];
+
+if (firstLine?.period) {
+  period_start = new Date(firstLine.period.start * 1000).toISOString();
+  period_end = new Date(firstLine.period.end * 1000).toISOString();
+}
 
 const lineDescription =
   firstLine?.description ||
@@ -510,9 +507,7 @@ let risto: any = null;
 if (ristoranteIdInv) {
   const byId = await supabase
     .from("ristoranti")
-    .select(
-      "id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan"
-    )
+    .select("id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan")
     .eq("id", ristoranteIdInv)
     .maybeSingle();
   risto = byId.data || null;
@@ -521,9 +516,7 @@ if (ristoranteIdInv) {
 if (!risto) {
   const byStripeId = await supabase
     .from("ristoranti")
-    .select(
-      "id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan"
-    )
+    .select("id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan")
     .eq("stripe_customer_id", invoice.customer as string)
     .maybeSingle();
   risto = byStripeId.data || null;
@@ -532,9 +525,7 @@ if (!risto) {
 if (!risto && invoice.customer_email) {
   const byEmail = await supabase
     .from("ristoranti")
-    .select(
-      "id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan"
-    )
+    .select("id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan")
     .eq("email", invoice.customer_email)
     .maybeSingle();
   risto = byEmail.data || null;
@@ -546,9 +537,8 @@ if (!risto) {
     customer: invoice.customer,
     email: invoice.customer_email,
   });
-  // Non blocco il webhook: salvo fattura senza ristorante_id
+  // Non blocco il webhook
 }
-
       // Dati snapshot dall'invoice
       const invName = invoice.customer_name || risto?.ragione_sociale || null;
       const invAddress = invoice.customer_address || risto?.indirizzo_json || null;
