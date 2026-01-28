@@ -6,10 +6,9 @@ module.exports = async (req, res) => {
 
   const { plan, email, businessName, vat, sdi, pec, ristorante_id } = req.body;
 
-  // 🔒 se vuoi davvero flusso per ID, rendilo obbligatorio
-if (!ristorante_id) {
-  console.warn("⚠️ Checkout senza ristorante_id, userò fallback email nel webhook", { email });
-}
+  if (!ristorante_id) {
+    console.warn("⚠️ Checkout senza ristorante_id, userò fallback email nel webhook", { email });
+  }
 
   const priceMap = {
     base: "price_1RiFO4RWDcfnUagZw1Z12VEj",
@@ -17,21 +16,11 @@ if (!ristorante_id) {
   };
   const selectedPrice = priceMap[plan];
 
-  // ===== Validazioni B2B obbligatorie =====
-  if (!selectedPrice || !email) {
-    return res.status(400).send({ error: "Dati mancanti (plan/email)." });
-  }
-  if (!businessName) {
-    return res.status(400).send({ error: "Ragione sociale obbligatoria." });
-  }
-  if (!vat) {
-    return res.status(400).send({ error: "Partita IVA obbligatoria." });
-  }
-  if (!sdi && !pec) {
-    return res.status(400).send({ error: "Serve Codice SDI oppure PEC." });
-  }
+  if (!selectedPrice || !email) return res.status(400).send({ error: "Dati mancanti (plan/email)." });
+  if (!businessName) return res.status(400).send({ error: "Ragione sociale obbligatoria." });
+  if (!vat) return res.status(400).send({ error: "Partita IVA obbligatoria." });
+  if (!sdi && !pec) return res.status(400).send({ error: "Serve Codice SDI oppure PEC." });
 
-  // Normalizza P.IVA: IT + 11 cifre
   const normVat = String(vat).replace(/\s+/g, "").toUpperCase();
   const vatWithCountry = normVat.startsWith("IT") ? normVat : `IT${normVat}`;
   if (!/^IT\d{11}$/.test(vatWithCountry)) {
@@ -39,75 +28,59 @@ if (!ristorante_id) {
   }
 
   try {
-    // 1) Trova o crea il Customer
     let customer = (await stripe.customers.list({ email, limit: 1 })).data[0];
 
+    const customerMetadata = {
+      codice_destinatario: sdi || "",
+      pec: pec || "",
+      ristorante_id: ristorante_id || "",
+    };
+
     if (customer) {
-      await stripe.customers.update(customer.id, {
-        name: businessName,
-        email,
-        metadata: {
-          codice_destinatario: sdi || "",
-          pec: pec || ""
-        }
-      });
+      await stripe.customers.update(customer.id, { name: businessName, email, metadata: customerMetadata });
     } else {
-      customer = await stripe.customers.create({
-        name: businessName,
-        email,
-        metadata: {
-          codice_destinatario: sdi || "",
-          pec: pec || ""
-        }
-      });
+      customer = await stripe.customers.create({ name: businessName, email, metadata: customerMetadata });
     }
 
-    // 2) Garantisci che la P.IVA sia presente sul Customer (blocca i privati)
     const taxIds = await stripe.customers.listTaxIds(customer.id, { limit: 100 });
     const alreadyHasVat = taxIds.data.find(
       t => t.type === "eu_vat" && String(t.value).toUpperCase() === vatWithCountry
     );
     if (!alreadyHasVat) {
       try {
-        await stripe.customers.createTaxId(customer.id, {
-          type: "eu_vat",
-          value: vatWithCountry
-        });
-      } catch (e) {
+        await stripe.customers.createTaxId(customer.id, { type: "eu_vat", value: vatWithCountry });
+      } catch {
         return res.status(400).send({ error: "P.IVA rifiutata da Stripe. Controlla il numero." });
       }
     }
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    customer: customer.id,
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer: customer.id,
 
-    // ✅ QUI: aggancio forte al tuo DB
-    client_reference_id: ristorante_id,
-    metadata: { ristorante_id, plan },
+      client_reference_id: ristorante_id || undefined,
+      metadata: { ristorante_id: ristorante_id || "", plan },
 
-    subscription_data: { metadata: { plan, ristorante_id } },
+      subscription_data: { metadata: { plan, ristorante_id: ristorante_id || "" } },
 
-    customer_update: { address: "auto", name: "auto" },
-    billing_address_collection: "required",
-    tax_id_collection: { enabled: true },
+      customer_update: { address: "auto", name: "auto" },
+      billing_address_collection: "required",
+      tax_id_collection: { enabled: true },
 
-    line_items: [{ price: selectedPrice, quantity: 1 }],
+      line_items: [{ price: selectedPrice, quantity: 1 }],
 
-    locale: "it",
-    success_url: `${YOUR_DOMAIN}/login.html?checkout=success`,
-    cancel_url: `${YOUR_DOMAIN}/abbonamento.html`,
-  });
+      locale: "it",
+      success_url: `${YOUR_DOMAIN}/login.html?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${YOUR_DOMAIN}/abbonamento.html`,
+    });
 
-  return res.status(200).json({ url: session.url });
+    return res.status(200).json({ url: session.url });
   } catch (err) {
     console.error("❌ Errore Stripe:", err.message, err);
-    return res.status(500).json({
-      error: err.message,
-      details: err.raw || err
-    });
+    return res.status(500).json({ error: err.message, details: err.raw || err });
   }
 };
+
 
 
 
