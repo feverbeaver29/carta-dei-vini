@@ -2,11 +2,14 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const YOUR_DOMAIN = "https://www.wineinapp.com";
 
 module.exports = async (req, res) => {
-  if (req.method !== "POST") {
-    return res.status(405).send({ error: "Method not allowed" });
-  }
+  if (req.method !== "POST") return res.status(405).send({ error: "Method not allowed" });
 
-  const { plan, email, businessName, vat, sdi, pec } = req.body;
+  const { plan, email, businessName, vat, sdi, pec, ristorante_id } = req.body;
+
+  // 🔒 se vuoi davvero flusso per ID, rendilo obbligatorio
+if (!ristorante_id) {
+  console.warn("⚠️ Checkout senza ristorante_id, userò fallback email nel webhook", { email });
+}
 
   const priceMap = {
     base: "price_1RiFO4RWDcfnUagZw1Z12VEj",
@@ -75,24 +78,28 @@ module.exports = async (req, res) => {
       }
     }
 
-    // 3) Crea la sessione di Checkout (solo con 'customer', niente 'customer_creation')
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
+  const session = await stripe.checkout.sessions.create({
+    mode: "subscription",
+    customer: customer.id,
 
-      customer: customer.id,
-      customer_update: { address: "auto", name: "auto" }, // aggiorna ciò che inserisce in checkout
-      billing_address_collection: "required",
-      tax_id_collection: { enabled: true }, // mantiene visibile/aggiornabile il campo P.IVA
+    // ✅ QUI: aggancio forte al tuo DB
+    client_reference_id: ristorante_id,
+    metadata: { ristorante_id, plan },
 
-      line_items: [{ price: selectedPrice, quantity: 1 }],
-      subscription_data: { metadata: { plan } },
+    subscription_data: { metadata: { plan, ristorante_id } },
 
-      locale: "it",
-      success_url: `${YOUR_DOMAIN}/login.html?checkout=success`,
-      cancel_url: `${YOUR_DOMAIN}/abbonamento.html`
-    });
+    customer_update: { address: "auto", name: "auto" },
+    billing_address_collection: "required",
+    tax_id_collection: { enabled: true },
 
-    return res.status(200).json({ url: session.url });
+    line_items: [{ price: selectedPrice, quantity: 1 }],
+
+    locale: "it",
+    success_url: `${YOUR_DOMAIN}/login.html?checkout=success`,
+    cancel_url: `${YOUR_DOMAIN}/abbonamento.html`,
+  });
+
+  return res.status(200).json({ url: session.url });
   } catch (err) {
     console.error("❌ Errore Stripe:", err.message, err);
     return res.status(500).json({

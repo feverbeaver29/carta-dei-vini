@@ -257,6 +257,7 @@ serve(async (req) => {
 
     const det = session.customer_details || {};
     let email = session.customer_email || det.email || null;
+    const ristoranteId =  session.client_reference_id ||  session.metadata?.ristorante_id ||  null;
 
     // prova a recuperare il Customer (senza bloccare il flusso)
     let customer: any = null;
@@ -277,26 +278,40 @@ serve(async (req) => {
 
     console.log("✅ Checkout completato per:", email, customerId);
 
-    // trova ristorante: case-insensitive per email
-    let { data: risto } = await supabase
-      .from("ristoranti")
-      .select("id")
-      .ilike("email", email || "")
-      .maybeSingle();
+// ✅ trova ristorante: PRIMA per ristoranteId, poi fallback
+let risto: { id: string } | null = null;
 
-    if (!risto && customerId) {
-      const byStripeId = await supabase
-        .from("ristoranti")
-        .select("id")
-        .eq("stripe_customer_id", customerId)
-        .maybeSingle();
-      risto = byStripeId.data || null;
-    }
+if (ristoranteId) {
+  const byId = await supabase
+    .from("ristoranti")
+    .select("id")
+    .eq("id", ristoranteId)
+    .maybeSingle();
+  risto = byId.data || null;
+}
 
-    if (!risto) {
-      console.error("❌ Nessun ristorante trovato per email:", email);
-      return new Response("Utente non trovato", { status: 404 });
-    }
+if (!risto && email) {
+  const byEmail = await supabase
+    .from("ristoranti")
+    .select("id")
+    .ilike("email", email)
+    .maybeSingle();
+  risto = byEmail.data || null;
+}
+
+if (!risto && customerId) {
+  const byStripeId = await supabase
+    .from("ristoranti")
+    .select("id")
+    .eq("stripe_customer_id", customerId)
+    .maybeSingle();
+  risto = byStripeId.data || null;
+}
+
+if (!risto) {
+  console.error("❌ Nessun ristorante trovato", { ristoranteId, email, customerId });
+  return new Response("Utente non trovato", { status: 404 });
+}
 
     // metadati FE dal Customer
     const codiceDestinatario = customer?.metadata?.codice_destinatario || null;
