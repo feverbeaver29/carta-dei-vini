@@ -658,3 +658,5 @@ try {
       console.error("❌ Errore invoice.finalized:", e);
     }
   }
+    return new Response("ok", { status: 200 });
+});
