@@ -620,7 +620,7 @@ if (back && RESTAURANT_ID) {
         const res = await fetch("/api/create-checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan: SELECTED_PLAN, email: user.email, businessName, vat, sdi, pec })
+          body: JSON.stringify({  plan: SELECTED_PLAN,  email: user.email,  businessName,  vat,  sdi,  pec,  ristorante_id: RESTAURANT_ID})
         });
         const json = await res.json();
         if (res.ok && json.url) {

@@ -255,9 +255,16 @@ serve(async (req) => {
     const session = event.data.object as any;
     const customerId = (session.customer as string) || null;
 
-    const det = session.customer_details || {};
-    let email = session.customer_email || det.email || null;
-    const ristoranteId =  session.client_reference_id ||  session.metadata?.ristorante_id ||  null;
+const det = session.customer_details || {};
+let email = session.customer_email || det.email || null;
+
+const rawRistoranteId =
+  session.client_reference_id || session.metadata?.ristorante_id || null;
+
+const ristoranteId =
+  typeof rawRistoranteId === "string" && rawRistoranteId.trim()
+    ? rawRistoranteId.trim()
+    : null;
 
     // prova a recuperare il Customer (senza bloccare il flusso)
     let customer: any = null;
@@ -281,6 +288,7 @@ serve(async (req) => {
 // ✅ trova ristorante: PRIMA per ristoranteId, poi fallback
 let risto: { id: string } | null = null;
 
+// 1) by ristoranteId (strong link)
 if (ristoranteId) {
   const byId = await supabase
     .from("ristoranti")
@@ -290,15 +298,17 @@ if (ristoranteId) {
   risto = byId.data || null;
 }
 
+// 2) fallback by email (email è UNIQUE → maybeSingle)
 if (!risto && email) {
   const byEmail = await supabase
     .from("ristoranti")
     .select("id")
-    .ilike("email", email)
+    .eq("email", email)
     .maybeSingle();
   risto = byEmail.data || null;
 }
 
+// 3) fallback by stripe_customer_id
 if (!risto && customerId) {
   const byStripeId = await supabase
     .from("ristoranti")
@@ -477,25 +487,67 @@ if (!risto) {
         firstLine?.description ||
         `Abbonamento ${firstLine?.plan?.nickname || ""}`.trim();
 
-      // Ristorante (per fallback)
-      let { data: risto } = await supabase
-        .from("ristoranti")
-        .select(
-          "id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan"
-        )
-        .eq("stripe_customer_id", invoice.customer as string)
-        .maybeSingle();
+const lineDescription =
+  firstLine?.description ||
+  `Abbonamento ${firstLine?.plan?.nickname || ""}`.trim();
 
-      if (!risto && invoice.customer_email) {
-        const byEmail = await supabase
-          .from("ristoranti")
-          .select(
-            "id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan"
-          )
-          .eq("email", invoice.customer_email)
-          .maybeSingle();
-        risto = byEmail.data || null;
-      }
+// ✅ 0) Prova a recuperare ristorante_id dalla subscription metadata (flusso per ID)
+let ristoranteIdInv: string | null = null;
+
+try {
+  if (invoice.subscription) {
+    const sub = await stripe.subscriptions.retrieve(invoice.subscription as string);
+    const rid = (sub as any)?.metadata?.ristorante_id;
+    if (typeof rid === "string" && rid.trim()) ristoranteIdInv = rid.trim();
+  }
+} catch (e) {
+  console.warn("⚠️ Impossibile recuperare subscription metadata:", (e as any)?.message);
+}
+
+// ✅ 1) Cerca ristorante: prima per ID, poi fallback
+let risto: any = null;
+
+if (ristoranteIdInv) {
+  const byId = await supabase
+    .from("ristoranti")
+    .select(
+      "id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan"
+    )
+    .eq("id", ristoranteIdInv)
+    .maybeSingle();
+  risto = byId.data || null;
+}
+
+if (!risto) {
+  const byStripeId = await supabase
+    .from("ristoranti")
+    .select(
+      "id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan"
+    )
+    .eq("stripe_customer_id", invoice.customer as string)
+    .maybeSingle();
+  risto = byStripeId.data || null;
+}
+
+if (!risto && invoice.customer_email) {
+  const byEmail = await supabase
+    .from("ristoranti")
+    .select(
+      "id, email, ragione_sociale, partita_iva, codice_destinatario, pec, indirizzo_json, subscription_plan"
+    )
+    .eq("email", invoice.customer_email)
+    .maybeSingle();
+  risto = byEmail.data || null;
+}
+
+if (!risto) {
+  console.error("❌ Nessun ristorante trovato (invoice.finalized)", {
+    ristoranteIdInv,
+    customer: invoice.customer,
+    email: invoice.customer_email,
+  });
+  // Non blocco il webhook: salvo fattura senza ristorante_id
+}
 
       // Dati snapshot dall'invoice
       const invName = invoice.customer_name || risto?.ragione_sociale || null;
