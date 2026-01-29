@@ -522,6 +522,37 @@ if (back && RESTAURANT_ID) {
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
     });
 
+    async function openCustomerPortal() {
+  const { data: { session }, error } = await sb.auth.getSession();
+  if (error || !session?.access_token) {
+    alert(t("err_generic"));
+    return;
+  }
+
+  try {
+    const res = await fetch("https://ldunvbftxhbtuyabgxwh.supabase.co/functions/v1/create-portal-session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({
+        return_path: `/abbonamento.html?lang=${currentLang}`
+      })
+    });
+
+    const json = await res.json();
+    if (res.ok && json.url) {
+      window.location.href = json.url;
+    } else {
+      alert(json.error || t("err_generic"));
+      console.error(json);
+    }
+  } catch (e) {
+    alert(t("network_err"));
+  }
+}
+
     async function mostraPianoUtente() {
       const { data, error } = await sb
         .from("ristoranti")
@@ -543,7 +574,7 @@ if (back && RESTAURANT_ID) {
         document.getElementById("passaPro").style.display = "inline-block";
         document.getElementById("annullaAbbonamento").style.display = "none";
         // Bind buttons to OPEN MODAL
-        bindPlanButtons();
+        bindPlanButtons("checkout");
         return;
       }
 
@@ -551,7 +582,7 @@ if (back && RESTAURANT_ID) {
         trialText.textContent = t("no_active");
         document.getElementById("passaBase").style.display = "inline-block";
         document.getElementById("passaPro").style.display = "inline-block";
-        bindPlanButtons();
+        bindPlanButtons("checkout");
         return;
       }
 
@@ -562,18 +593,28 @@ if (back && RESTAURANT_ID) {
       if (subscription_plan === "pro") {
         pro.classList.add("attivo");
         document.getElementById("passaBase").style.display = "inline-block";
-        bindPlanButtons();
+        bindPlanButtons("portal");
+
       } else {
         base.classList.add("attivo");
         document.getElementById("passaPro").style.display = "inline-block";
-        bindPlanButtons();
+        bindPlanButtons("portal");
       }
     }
 
-    function bindPlanButtons() {
-      document.getElementById("passaPro").onclick = () => openModal('pro');
-      document.getElementById("passaBase").onclick = () => openModal('base');
-    }
+    function bindPlanButtons(mode) {
+  const btnPro = document.getElementById("passaPro");
+  const btnBase = document.getElementById("passaBase");
+
+  if (mode === "portal") {
+    if (btnPro) btnPro.onclick = () => openCustomerPortal();
+    if (btnBase) btnBase.onclick = () => openCustomerPortal();
+  } else {
+    // mode === "checkout" (prima attivazione)
+    if (btnPro) btnPro.onclick = () => openModal('pro');
+    if (btnBase) btnBase.onclick = () => openModal('base');
+  }
+}
 
     function openModal(plan) {
       SELECTED_PLAN = plan;
@@ -636,21 +677,10 @@ if (back && RESTAURANT_ID) {
       }
     }
 
-    document.getElementById("annullaAbbonamento").addEventListener("click", async () => {
-      const confirmCancel = confirm(t("confirm_cancel"));
-      if (!confirmCancel) return;
+document.getElementById("annullaAbbonamento").addEventListener("click", async () => {
+  await openCustomerPortal();
+});
 
-      const res = await fetch("https://ldunvbftxhbtuyabgxwh.supabase.co/functions/v1/cancel-subscription", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: RESTAURANT_ID })
-      });
-
-      const result = await res.json();
-      if (!res.ok) return alert("Errore: " + (result.error || t("err_generic")));
-      alert(t("cancel_ok"));
-      window.location.reload();
-    });
   </script>
 </body>
 </html>

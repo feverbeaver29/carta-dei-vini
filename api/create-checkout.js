@@ -73,6 +73,19 @@ module.exports = async (req, res) => {
       success_url: `${YOUR_DOMAIN}/login.html?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${YOUR_DOMAIN}/abbonamento.html`,
     });
+    
+// ✅ AIRBAG: se esiste già una subscription attiva, NON creare un nuovo checkout
+const existingSubs = await stripe.subscriptions.list({
+  customer: customer.id,
+  status: "active",
+  limit: 1,
+});
+
+if (existingSubs.data.length > 0) {
+  return res.status(409).json({
+    error: "Hai già un abbonamento attivo. Usa Gestisci Abbonamento dal portale.",
+  });
+}
 
     return res.status(200).json({ url: session.url });
   } catch (err) {
