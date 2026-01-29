@@ -2,6 +2,12 @@ import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@12.14.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "https://www.wineinapp.com",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 const stripe = Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
   apiVersion: "2022-11-15",
 });
@@ -12,14 +18,24 @@ const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const SITE_URL = Deno.env.get("SITE_URL") || "https://www.wineinapp.com";
 
 serve(async (req) => {
+  if (req.method === "OPTIONS") {
+  return new Response("ok", { headers: corsHeaders });
+}
+
   if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405 });
+    return new Response(JSON.stringify({ error: "Method not allowed" }), { 
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
   }
 
   try {
     const authHeader = req.headers.get("Authorization") || "";
     if (!authHeader.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Missing Authorization header" }), { status: 401 });
+      return new Response(JSON.stringify({ error: "Missing Authorization header" }), { 
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
     }
 
     // 1) Verifica utente loggato (JWT Supabase)
@@ -50,7 +66,10 @@ serve(async (req) => {
       .single();
 
     if (ristoErr) {
-      return new Response(JSON.stringify({ error: "DB error", details: ristoErr.message }), { status: 500 });
+      return new Response(JSON.stringify({ error: "DB error", details: ristoErr.message }), { 
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
     }
 
     let customerId = risto?.stripe_customer_id as string | null;
@@ -86,7 +105,7 @@ serve(async (req) => {
     });
 
     return new Response(JSON.stringify({ url: session.url }), {
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (e) {
