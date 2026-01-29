@@ -1799,7 +1799,7 @@ window.addEventListener('popstate', (event) => {
 });
 
 async function loadRestaurantData() {
-const res = await fetch(`${SUPABASE_URL}/rest/v1/ristoranti?select=subscription_plan,sommelier_attivo,nome,font,palette_color,logo_url,logo_size,sommelier_url,sommelier_range,sommelier_boost_multi,name_size,name_color,name_bold,name_font,ordine_vini,ordine_categorie,ordine_sottocategorie,sommelier_gender&id=eq.${RESTAURANT_ID}`, {
+const res = await fetch(`${SUPABASE_URL}/rest/v1/ristoranti?select=subscription_plan,subscription_status,sommelier_attivo,nome,font,palette_color,logo_url,logo_size,sommelier_url,sommelier_range,sommelier_boost_multi,name_size,name_color,name_bold,name_font,ordine_vini,ordine_categorie,ordine_sottocategorie,sommelier_gender&id=eq.${RESTAURANT_ID}`, {
   headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
 });
 const data = await res.json();
@@ -1808,6 +1808,71 @@ if (!Array.isArray(data) || data.length === 0) {
   return;
 }
 ristorante = data[0];
+// 🔒 BLOCCO CARTA se abbonamento NON attivo
+const subStatus = (ristorante.subscription_status || "").toLowerCase();
+if (subStatus !== "active") {
+  // Mostro overlay e NON carico i vini
+  const overlay = document.createElement("div");
+  overlay.id = "subBlockedOverlay";
+  overlay.style.cssText = `
+    position: fixed; inset: 0; z-index: 99999;
+    display: flex; align-items: center; justify-content: center;
+    padding: 18px;
+    background: rgba(0,0,0,.65);
+    backdrop-filter: blur(6px);
+  `;
+
+  overlay.innerHTML = `
+    <div style="
+      max-width: 520px; width: 100%;
+      background: #fff; border-radius: 18px;
+      padding: 18px 18px 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      text-align: center;
+      font-family: inherit;
+    ">
+      <div style="font-size: 20px; font-weight: 700; margin-bottom: 6px;">Carta non disponibile</div>
+      <div style="font-size: 14px; color: #555; line-height: 1.4; margin-bottom: 14px;">
+        Il ristorante non ha un abbonamento attivo.
+      </div>
+
+      <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+        <button id="goHomeBtn" style="
+          padding: 10px 14px; border-radius: 12px;
+          border: 1px solid #ddd; background: #fafafa;
+          cursor: pointer; font-weight: 600;
+        ">Chiudi</button>
+
+        <!-- Questo bottone è utile se la carta la stai aprendo dalla dashboard (owner). -->
+        <button id="goSubBtn" style="
+          padding: 10px 14px; border-radius: 12px;
+          border: 0; background: #b00; color: #fff;
+          cursor: pointer; font-weight: 700;
+        ">Riattiva abbonamento</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // azioni
+  overlay.querySelector("#goHomeBtn").onclick = () => {
+    // se è un cliente che ha aperto la carta, torna indietro o chiudi overlay
+    try { history.length > 1 ? history.back() : (window.location.href = "/"); }
+    catch { window.location.href = "/"; }
+  };
+  overlay.querySelector("#goSubBtn").onclick = () => {
+    // porta l’owner alla pagina abbonamento
+    window.location.href = `abbonamento.html?lang=${(new URLSearchParams(location.search).get("lang") || "it")}`;
+  };
+
+  // blocco scroll dietro
+  document.documentElement.style.overflow = "hidden";
+  document.body.style.overflow = "hidden";
+
+  // IMPORTANTISSIMO: interrompi qui (niente vini, niente filtri)
+  throw new Error("Subscription not active: carta blocked");
+}
   const gender = ristorante?.sommelier_gender || "uomo";
 ristoranteSommelierURL = ristorante.sommelier_url || (gender === "donna" ? "sommelier_femmina.png" : "sommelier.png");
 // aggiorna avatar nel bottone (se già creato) e fallback
@@ -3303,8 +3368,18 @@ function pickBestLang() {
   }
 
   // 2) Poi procediamo come prima
-  await fetchCategoryOrder();
+await fetchCategoryOrder();
+
+try {
   await loadRestaurantData();
+} catch (e) {
+  // carta bloccata: fermo tutto senza rumore
+  console.warn(e);
+  requestAnimationFrame(() => {
+    document.documentElement.classList.remove('boot-loading');
+  });
+  return;
+}
 
   if (ristorante && RESTAURANT_ID) {
     await loadWineData();

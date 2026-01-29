@@ -2270,7 +2270,7 @@ if (!RESTAURANT_ID && user) {
 
 const { data: info } = await sb
   .from("ristoranti")
-  .select("nome, font, palette_color, logo_url, sommelier_url, sommelier_range, sommelier_boost_multi, logo_size, name_size, name_color, name_bold, name_font, ordine_vini, sommelier_attivo, sommelier_gender, subscription_plan, slug")
+  .select("nome, font, palette_color, logo_url, sommelier_url, sommelier_range, sommelier_boost_multi, logo_size, name_size, name_color, name_bold, name_font, ordine_vini, sommelier_attivo, sommelier_gender, subscription_plan, subscription_status, slug")
   .eq("id", RESTAURANT_ID)
   .single();
 
@@ -2398,6 +2398,8 @@ if (toggle) {
     document.getElementById("sommelierRange").value = info?.sommelier_range || "1-3";
     const gender = info?.sommelier_gender || "uomo";
     isPro = info?.subscription_plan === "pro";
+    window.SUBSCRIPTION_STATUS = (info?.subscription_status || "").toLowerCase();
+const isSubActive = () => window.SUBSCRIPTION_STATUS === "active";
     // Blocco accesso al pulsante boost
 if (isPro) {
   document.getElementById("boostLockIcon").style.display = "none";
@@ -2767,6 +2769,11 @@ function updatePreview() {
 }
 
 function goTo(path) {
+    if (path === "carta.html" && !isSubActive()) {
+    alert("Abbonamento non attivo: la carta è disabilitata. Riattiva l’abbonamento per usarla.");
+    window.location.href = `abbonamento.html?ristorante_id=${RESTAURANT_ID}&lang=${currentLang}`;
+    return;
+  }
   if (path === 'carta.html' && window.RISTORANTE_SLUG) {
     // URL bello
     window.location.href = `/${window.RISTORANTE_SLUG}`;
@@ -2814,6 +2821,10 @@ if (showCarta) initCartaQuickActions();
     }
 
     function showQRCode() {
+  if (!isSubActive()) {
+    alert("Abbonamento non attivo: QR disabilitato.");
+    return;
+  }
       const popup = document.getElementById('qrPopup');
       const container = document.getElementById('qrCodeContainer');
       container.innerHTML = '';
@@ -2836,6 +2847,10 @@ if (showCarta) initCartaQuickActions();
     }
 
 function downloadCartaPDF() {
+  if (!isSubActive()) {
+    alert("Abbonamento non attivo: download PDF disabilitato.");
+    return;
+  }
   const iframe = document.getElementById("previewFrame");
   if (!iframe || !iframe.contentWindow) {
     alert(t("preview_not_available"));
