@@ -116,7 +116,7 @@
             <li data-i18n="pro_li6">Supporto multilingua completo: 🇫🇷 🇩🇪 🇪🇸 🇨🇳</li>
             <li data-i18n="pro_li7">Branding avanzato e stile personalizzato</li>
           </ul>
-          <button id="passaPro" class="btn" style="display:none" data-i18n="switch_to_pro">Passa al Piano PRO</button>
+          <button id="passaPro" class="btn" style="display:none">Passa al Piano PRO</button>
 
       </div>
     </div>
@@ -207,6 +207,8 @@ const TRANSLATIONS = {
     pro_li6: "Supporto multilingua completo: 🇫🇷 🇩🇪 🇪🇸 🇨🇳",
     pro_li7: "Branding avanzato e stile personalizzato",
     switch_to_pro: "Passa al Piano PRO",
+    activate_pro: "Attiva Piano PRO",
+    switch_to_base: "Passa al Piano Base",
 
     cancel_subscription: "Annulla abbonamento",
 
@@ -292,7 +294,9 @@ const TRANSLATIONS = {
     network_err: "Network error. Please try again.",
     confirm_cancel: "Are you sure you want to cancel the subscription?",
     cancel_ok: "Subscription canceled successfully.",
-    err_generic: "Generic error"
+    err_generic: "Generic error",
+    activate_pro: "Activate PRO Plan",
+switch_to_base: "Switch to Base Plan",
   },
 
   fr: {
@@ -318,6 +322,8 @@ const TRANSLATIONS = {
     pro_li6: "Support multilingue complet : 🇫🇷 🇩🇪 🇪🇸 🇨🇳",
     pro_li7: "Branding avancé et style personnalisé",
     switch_to_pro: "Passer au forfait PRO",
+    activate_pro: "Activer le forfait PRO",
+switch_to_base: "Passer au forfait Base",
 
     cancel_subscription: "Annuler l’abonnement",
 
@@ -372,6 +378,8 @@ const TRANSLATIONS = {
     pro_li6: "Soporte multilingüe completo: 🇫🇷 🇩🇪 🇪🇸 🇨🇳",
     pro_li7: "Branding avanzado y estilo personalizado",
     switch_to_pro: "Cambiar al Plan PRO",
+    activate_pro: "Activar Plan PRO",
+switch_to_base: "Cambiar al Plan Base",
 
     cancel_subscription: "Cancelar suscripción",
 
@@ -566,6 +574,14 @@ async function mostraPianoUtente() {
   const base = document.getElementById("pianoBase");
   const pro = document.getElementById("pianoPro");
   const trialText = document.getElementById("statusTrial");
+  const btnBase = document.getElementById("passaBase");
+  const btnPro  = document.getElementById("passaPro");
+
+function setBtn(btn, key){
+  if (!btn) return;
+  btn.setAttribute("data-i18n", key);
+  btn.textContent = t(key); // aggiorno subito senza dipendere da applyTranslations()
+}
 
   // Nessuna subscription -> mostro scelta piani (CHECKOUT)
   if (!subscription_status) {
@@ -574,6 +590,8 @@ async function mostraPianoUtente() {
     document.getElementById("passaBase").style.display = "inline-block";
     document.getElementById("passaPro").style.display = "inline-block";
     document.getElementById("annullaAbbonamento").style.display = "none";
+    setBtn(btnBase, "activate_base");
+    setBtn(btnPro, "activate_pro");
     bindPlanButtons("checkout");
     return;
   }
@@ -584,6 +602,8 @@ async function mostraPianoUtente() {
     document.getElementById("passaBase").style.display = "inline-block";
     document.getElementById("passaPro").style.display = "inline-block";
     document.getElementById("annullaAbbonamento").style.display = "none";
+    setBtn(btnBase, "activate_base");
+    setBtn(btnPro, "activate_pro");
     bindPlanButtons("checkout");
     return;
   }
@@ -599,11 +619,13 @@ async function mostraPianoUtente() {
     pro.classList.add("attivo");
     document.getElementById("passaBase").style.display = "inline-block";
     document.getElementById("passaPro").style.display = "none";
+    setBtn(btnBase, "switch_to_base");
     bindPlanButtons("portal");
   } else {
     base.classList.add("attivo");
     document.getElementById("passaPro").style.display = "inline-block";
     document.getElementById("passaBase").style.display = "none";
+    setBtn(btnPro, "switch_to_pro");
     bindPlanButtons("portal");
   }
 }
