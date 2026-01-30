@@ -1154,6 +1154,10 @@ background: rgba(255,255,255,.92);
   <button type="button" role="menuitem" onclick="showQRCode(); toggleMoreMenu(false)">Scarica QR Code</button>
   <button type="button" role="menuitem" onclick="downloadCartaPDF(); toggleMoreMenu(false)">Scarica carta in PDF</button>
   <button type="button" role="menuitem" onclick="goTo('abbonamento.html'); toggleMoreMenu(false)">Gestisci abbonamento</button>
+
+  <button type="button" role="menuitem" onclick="goTo('account.html'); toggleMoreMenu(false)">Account</button>
+  <button type="button" role="menuitem" onclick="goTo('aiuto.html'); toggleMoreMenu(false)">Aiuto / FAQ</button>
+
   <button type="button" role="menuitem" onclick="logout();">Logout</button>
 </div>
 
@@ -1170,6 +1174,8 @@ background: rgba(255,255,255,.92);
 
   const TRANSLATIONS = {
     it: {
+      account: "Account",
+help_faq: "Aiuto / FAQ",
       language: "Lingua",
       dashboard_title: "{name} - Dashboard",
       restaurant_default: "Ristorante",
@@ -1290,6 +1296,8 @@ background: rgba(255,255,255,.92);
     },
 
     en: {
+      account: "Account",
+help_faq: "Help / FAQ",
       language: "Language",
       dashboard_title: "{name} - Dashboard",
       restaurant_default: "Restaurant",
@@ -1409,6 +1417,8 @@ background: rgba(255,255,255,.92);
     },
 
     fr: {
+      account: "Compte",
+help_faq: "Aide / FAQ",
       language: "Langue",
       dashboard_title: "{name} - Tableau de bord",
       restaurant_default: "Restaurant",
@@ -1528,6 +1538,8 @@ background: rgba(255,255,255,.92);
     },
 
     es: {
+      account: "Cuenta",
+help_faq: "Ayuda / FAQ",
       language: "Idioma",
       dashboard_title: "{name} - Panel",
       restaurant_default: "Restaurante",
@@ -1873,13 +1885,15 @@ background: rgba(255,255,255,.92);
     setText("#moreBtn .label", t("nav_more"));
 
     // more menu
-    const moreBtns = document.querySelectorAll("#moreMenu button");
-    if (moreBtns && moreBtns.length >= 4) {
-      moreBtns[0].textContent = t("download_qr");
-      moreBtns[1].textContent = t("download_pdf");
-      moreBtns[2].textContent = t("manage_subscription");
-      moreBtns[3].textContent = t("logout");
-    }
+const moreBtns = document.querySelectorAll("#moreMenu button");
+if (moreBtns && moreBtns.length >= 6) {
+  moreBtns[0].textContent = t("download_qr");
+  moreBtns[1].textContent = t("download_pdf");
+  moreBtns[2].textContent = t("manage_subscription");
+  moreBtns[3].textContent = t("account");
+  moreBtns[4].textContent = t("help_faq");
+  moreBtns[5].textContent = t("logout");
+}
 
     const removeLogoBtn = document.getElementById("removeLogoBtn");
     if (removeLogoBtn) removeLogoBtn.textContent = t("remove_logo");

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Aiuto - Wine in App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
+
+  <style>
+    *{ box-sizing:border-box; }
+    :root{
+      --bg:#F7F4EF; --card:#fff; --text:#1F2937; --muted:#6B7280; --border:#E6E2DA;
+      --accent:#6B1E2B; --accent-700:#4C1420; --accent-soft:#F3E7E9;
+      --radius:18px; --radius-pill:999px; --shadow:0 10px 30px rgba(17,24,39,.08);
+      --content:980px;
+    }
+    html,body{ margin:0; height:100%; background:var(--bg); color:var(--text); font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    .page-title{ background:#fff; border-bottom:1px solid #ddd; padding:10px 14px; }
+    .topbar{ max-width:var(--content); margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .topbar h1{ margin:0; font-family:'Playfair Display', serif; font-size:1.1em; }
+    .lang-switch{ display:flex; align-items:center; gap:8px; }
+    #langSelect{ padding:6px 8px; border-radius:10px; border:1px solid #ddd; background:#fff; }
+    main{ max-width:var(--content); margin:0 auto; padding:22px 16px 90px; display:flex; flex-direction:column; gap:12px; }
+    .card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; }
+    .hint{ color:var(--muted); font-size:0.95em; line-height:1.4; }
+    .faq{ border:1px solid var(--border); border-radius:16px; overflow:hidden; background:#fff; }
+    .faq button{
+      width:100%; text-align:left; background:#fff; border:0; padding:14px 14px;
+      cursor:pointer; font-weight:800; display:flex; justify-content:space-between; align-items:center;
+    }
+    .faq button:hover{ background:#fafafa; }
+    .faq .a{ display:none; padding:0 14px 14px; color:#374151; line-height:1.45; }
+    .faq.open .a{ display:block; }
+    .pill{
+      display:inline-block; padding:4px 10px; border-radius:999px;
+      background:var(--accent-soft); color:var(--accent); font-weight:800; font-size:0.8em;
+    }
+
+    .bottom-nav{
+      position:fixed; left:50%; transform:translateX(-50%);
+      bottom:10px; width:min(100% - 20px, var(--content));
+      backdrop-filter: blur(10px);
+      display:flex; justify-content: space-around;
+      padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+      z-index: 1800;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      background: rgba(255,255,255,.92);
+    }
+    .bn-item{
+      background:transparent; border:none; display:flex; flex-direction:column; align-items:center;
+      gap:4px; cursor:pointer; color:#333; font-size:0.72em; padding:6px 8px; border-radius:14px;
+    }
+    .bn-item.active{ color:var(--accent); background: rgba(107,30,43,.08); }
+    .bn-item .icon{ font-size:1.2em; line-height:1; }
+  </style>
+</head>
+
+<body>
+  <div class="page-title">
+    <div class="topbar">
+      <h1 id="pageTitle">Aiuto / FAQ</h1>
+      <div class="lang-switch">
+        <label id="langLabel" for="langSelect" style="font-weight:600;">Lingua</label>
+        <select id="langSelect">
+          <option value="it">Italiano</option>
+          <option value="en">English</option>
+          <option value="fr">Français</option>
+          <option value="es">Español</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <div class="card">
+      <div class="pill" id="quickTitle">Guida veloce</div>
+      <div class="hint" id="quickText" style="margin-top:10px;">
+        Qui trovi le domande più comuni. Se non trovi la risposta, scrivici e ti aiutiamo subito.
+      </div>
+      <div class="hint" id="contactText" style="margin-top:10px;">
+        Contatto: <strong>support@wineinapp.com</strong>
+      </div>
+    </div>
+
+    <div class="faq" data-id="1">
+      <button type="button"><span id="q1">Come cambio l’URL pubblico della carta?</span><span>+</span></button>
+      <div class="a" id="a1">
+        Vai in <strong>Dashboard → Nome o Logo → URL pubblico</strong>. Inserisci lo slug e premi <strong>Controlla</strong>, poi <strong>Salva</strong>.
+      </div>
+    </div>
+
+    <div class="faq" data-id="2">
+      <button type="button"><span id="q2">Come carico o rimuovo il logo?</span><span>+</span></button>
+      <div class="a" id="a2">
+        In <strong>Nome o Logo</strong> puoi caricare il logo. Se è già presente, trovi <strong>✕ Rimuovi logo</strong> sotto l’anteprima.
+      </div>
+    </div>
+
+    <div class="faq" data-id="3">
+      <button type="button"><span id="q3">Come ordino categorie e sottocategorie?</span><span>+</span></button>
+      <div class="a" id="a3">
+        In <strong>Ordina le voci</strong> premi <strong>Ordina Categorie</strong> o <strong>Ordina Sottocategorie</strong>, fai drag&drop nella carta (anteprima) e poi premi <strong>Salva Ordine</strong>.
+      </div>
+    </div>
+
+    <div class="faq" data-id="4">
+      <button type="button"><span id="q4">Perché non posso scaricare PDF o QR?</span><span>+</span></button>
+      <div class="a" id="a4">
+        Se l’abbonamento non è attivo, alcune funzioni (come PDF/QR) vengono bloccate. In quel caso ti appare il popup “Carta non disponibile”.
+      </div>
+    </div>
+
+    <div class="faq" data-id="5">
+      <button type="button"><span id="q5">Come cambio email o password?</span><span>+</span></button>
+      <div class="a" id="a5">
+        Vai in <strong>Altro → Account</strong>. Da lì puoi aggiornare email e password.
+      </div>
+    </div>
+  </main>
+
+  <div class="bottom-nav">
+    <button class="bn-item" type="button" onclick="goTo('dashboard.html')"><span class="icon">⚙️</span><span class="label" id="navDash">Dashboard</span></button>
+    <button class="bn-item" type="button" onclick="goTo('account.html')"><span class="icon">👤</span><span class="label" id="navAcc">Account</span></button>
+    <button class="bn-item active" type="button"><span class="icon">❓</span><span class="label" id="navHelp">Aiuto</span></button>
+  </div>
+
+<script>
+  const sb = window.supabase.createClient(
+    "https://ldunvbftxhbtuyabgxwh.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo"
+  );
+
+  const SUPPORTED = ["it","en","fr","es"];
+  let currentLang = "it";
+  let RESTAURANT_ID = null;
+
+  const TR = {
+    it:{
+      language:"Lingua",
+      help:"Aiuto / FAQ",
+      quick:"Guida veloce",
+      quick_text:"Qui trovi le domande più comuni. Se non trovi la risposta, scrivici e ti aiutiamo subito.",
+      contact:"Contatto: <strong>support@wineinapp.com</strong>",
+      q1:"Come cambio l’URL pubblico della carta?",
+      a1:"Vai in <strong>Dashboard → Nome o Logo → URL pubblico</strong>. Inserisci lo slug e premi <strong>Controlla</strong>, poi <strong>Salva</strong>.",
+      q2:"Come carico o rimuovo il logo?",
+      a2:"In <strong>Nome o Logo</strong> puoi caricare il logo. Se è già presente, trovi <strong>✕ Rimuovi logo</strong> sotto l’anteprima.",
+      q3:"Come ordino categorie e sottocategorie?",
+      a3:"In <strong>Ordina le voci</strong> premi <strong>Ordina Categorie</strong> o <strong>Ordina Sottocategorie</strong>, fai drag&drop nella carta (anteprima) e poi premi <strong>Salva Ordine</strong>.",
+      q4:"Perché non posso scaricare PDF o QR?",
+      a4:"Se l’abbonamento non è attivo, alcune funzioni (come PDF/QR) vengono bloccate. In quel caso ti appare il popup “Carta non disponibile”.",
+      q5:"Come cambio email o password?",
+      a5:"Vai in <strong>Altro → Account</strong>. Da lì puoi aggiornare email e password.",
+      nav_dash:"Dashboard",
+      nav_acc:"Account",
+      nav_help:"Aiuto",
+    },
+    en:{
+      language:"Language",
+      help:"Help / FAQ",
+      quick:"Quick guide",
+      quick_text:"Here are the most common questions. If you can’t find an answer, contact us and we’ll help you.",
+      contact:"Contact: <strong>support@wineinapp.com</strong>",
+      q1:"How do I change the public URL of the menu?",
+      a1:"Go to <strong>Dashboard → Name or Logo → Public URL</strong>. Enter the slug, click <strong>Check</strong>, then <strong>Save</strong>.",
+      q2:"How do I upload or remove the logo?",
+      a2:"In <strong>Name or Logo</strong> you can upload the logo. If it’s already set, you’ll see <strong>✕ Remove logo</strong> under the preview.",
+      q3:"How do I reorder categories and subcategories?",
+      a3:"In <strong>Reorder items</strong> click <strong>Reorder categories</strong> or <strong>Reorder subcategories</strong>, drag&drop in the preview, then click <strong>Save order</strong>.",
+      q4:"Why can’t I download PDF or QR?",
+      a4:"If the subscription isn’t active, some features (PDF/QR) are blocked. You’ll see the “Menu unavailable” popup.",
+      q5:"How do I change email or password?",
+      a5:"Go to <strong>More → Account</strong>. From there you can update email and password.",
+      nav_dash:"Dashboard",
+      nav_acc:"Account",
+      nav_help:"Help",
+    },
+    fr:{
+      language:"Langue",
+      help:"Aide / FAQ",
+      quick:"Guide rapide",
+      quick_text:"Voici les questions les plus fréquentes. Si vous ne trouvez pas la réponse, contactez-nous.",
+      contact:"Contact : <strong>support@wineinapp.com</strong>",
+      q1:"Comment changer l’URL publique de la carte ?",
+      a1:"Allez dans <strong>Dashboard → Nom ou logo → URL publique</strong>. Saisissez le slug, cliquez <strong>Vérifier</strong>, puis <strong>Enregistrer</strong>.",
+      q2:"Comment ajouter ou supprimer le logo ?",
+      a2:"Dans <strong>Nom ou logo</strong> vous pouvez téléverser le logo. S’il existe déjà, <strong>✕ Supprimer le logo</strong> apparaît sous l’aperçu.",
+      q3:"Comment réorganiser catégories et sous-catégories ?",
+      a3:"Dans <strong>Réorganiser</strong> cliquez sur <strong>Catégories</strong> ou <strong>Sous-catégories</strong>, faites glisser dans l’aperçu puis <strong>Enregistrer l’ordre</strong>.",
+      q4:"Pourquoi je ne peux pas télécharger PDF ou QR ?",
+      a4:"Si l’abonnement n’est pas actif, certaines fonctions (PDF/QR) sont bloquées. Vous verrez le popup correspondant.",
+      q5:"Comment changer email ou mot de passe ?",
+      a5:"Allez dans <strong>Plus → Compte</strong>. Vous pouvez y mettre à jour email et mot de passe.",
+      nav_dash:"Tableau",
+      nav_acc:"Compte",
+      nav_help:"Aide",
+    },
+    es:{
+      language:"Idioma",
+      help:"Ayuda / FAQ",
+      quick:"Guía rápida",
+      quick_text:"Aquí están las preguntas más comunes. Si no encuentras la respuesta, contáctanos y te ayudamos.",
+      contact:"Contacto: <strong>support@wineinapp.com</strong>",
+      q1:"¿Cómo cambio la URL pública de la carta?",
+      a1:"Ve a <strong>Dashboard → Nombre o logo → URL pública</strong>. Escribe el slug, pulsa <strong>Comprobar</strong> y luego <strong>Guardar</strong>.",
+      q2:"¿Cómo subo o quito el logo?",
+      a2:"En <strong>Nombre o logo</strong> puedes subir el logo. Si ya existe, verás <strong>✕ Quitar logo</strong> bajo la vista previa.",
+      q3:"¿Cómo reordeno categorías y subcategorías?",
+      a3:"En <strong>Reordenar</strong> pulsa <strong>Categorías</strong> o <strong>Subcategorías</strong>, arrastra en la vista previa y luego <strong>Guardar orden</strong>.",
+      q4:"¿Por qué no puedo descargar PDF o QR?",
+      a4:"Si la suscripción no está activa, algunas funciones (PDF/QR) se bloquean. Verás el popup correspondiente.",
+      q5:"¿Cómo cambio email o contraseña?",
+      a5:"Ve a <strong>Más → Cuenta</strong>. Allí puedes actualizar email y contraseña.",
+      nav_dash:"Panel",
+      nav_acc:"Cuenta",
+      nav_help:"Ayuda",
+    }
+  };
+
+  function t(k){ return (TR[currentLang] && TR[currentLang][k]) || TR.en[k] || k; }
+  function normLang(l){
+    const s=(l||"").toLowerCase();
+    if (s.startsWith("it")) return "it";
+    if (s.startsWith("fr")) return "fr";
+    if (s.startsWith("es")) return "es";
+    return "en";
+  }
+
+  function setLang(lang, persist=true){
+    currentLang = SUPPORTED.includes(normLang(lang)) ? normLang(lang) : "en";
+    document.documentElement.lang = currentLang;
+    if (persist){
+      localStorage.setItem("wf_lang", currentLang);
+      if (RESTAURANT_ID) localStorage.setItem(`wf_lang_${RESTAURANT_ID}`, currentLang);
+    }
+    applyTranslations();
+  }
+
+  function applyTranslations(){
+    document.title = `Wine in App - ${t("help")}`;
+    document.getElementById("pageTitle").textContent = t("help");
+    document.getElementById("langLabel").textContent = t("language");
+    document.getElementById("quickTitle").textContent = t("quick");
+    document.getElementById("quickText").textContent = t("quick_text");
+    document.getElementById("contactText").innerHTML = t("contact");
+
+    document.getElementById("q1").textContent = t("q1");
+    document.getElementById("a1").innerHTML = t("a1");
+    document.getElementById("q2").textContent = t("q2");
+    document.getElementById("a2").innerHTML = t("a2");
+    document.getElementById("q3").textContent = t("q3");
+    document.getElementById("a3").innerHTML = t("a3");
+    document.getElementById("q4").textContent = t("q4");
+    document.getElementById("a4").innerHTML = t("a4");
+    document.getElementById("q5").textContent = t("q5");
+    document.getElementById("a5").innerHTML = t("a5");
+
+    document.getElementById("navDash").textContent = t("nav_dash");
+    document.getElementById("navAcc").textContent  = t("nav_acc");
+    document.getElementById("navHelp").textContent = t("nav_help");
+
+    const sel = document.getElementById("langSelect");
+    if (sel) sel.value = currentLang;
+  }
+
+  function goTo(path){
+    const qs = new URLSearchParams();
+    if (RESTAURANT_ID) qs.set("ristorante_id", RESTAURANT_ID);
+    qs.set("lang", currentLang);
+    window.location.href = `${path}?${qs.toString()}`;
+  }
+
+  async function requireUser(){
+    const { data:{ user } } = await sb.auth.getUser();
+    if (!user) { window.location.href="/"; return null; }
+    return user;
+  }
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    const user = await requireUser();
+    if (!user) return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    RESTAURANT_ID = urlParams.get("ristorante_id") || user.id;
+
+    const saved = localStorage.getItem(`wf_lang_${RESTAURANT_ID}`) || localStorage.getItem("wf_lang") || normLang(navigator.language);
+    const qpLang = urlParams.get("lang");
+    setLang(qpLang || saved, true);
+
+    document.getElementById("langSelect").addEventListener("change", (e)=> setLang(e.target.value, true));
+
+    document.querySelectorAll(".faq").forEach(box=>{
+      const btn = box.querySelector("button");
+      btn.addEventListener("click", ()=>{
+        const open = box.classList.toggle("open");
+        btn.querySelector("span:last-child").textContent = open ? "−" : "+";
+      });
+    });
+  });
+</script>
+</body>
+</html>
