@@ -1911,6 +1911,9 @@ background: rgba(255,255,255,.92);
     if (!p) return;
     p.style.display = "none";
   }
+  function isSubActive() {
+  return (window.SUBSCRIPTION_STATUS || "").toLowerCase() === "active";
+}
   // bind popup buttons (once)
   (function bindSubPopup() {
     const p = document.getElementById("subPopup");
@@ -2920,11 +2923,12 @@ if (showCarta) initCartaQuickActions();
       if (doScroll) window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    function showQRCode() {
+function showQRCode() {
   if (!isSubActive()) {
     showNoSubPopup();
     return;
   }
+
       const popup = document.getElementById('qrPopup');
       const container = document.getElementById('qrCodeContainer');
       container.innerHTML = '';

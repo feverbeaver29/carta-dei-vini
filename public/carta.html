@@ -1476,6 +1476,23 @@ if (searchBtnInside && t.searchButton) {
 refreshSommelierBtnCopy();
 }
 
+function refreshSubBlockedOverlayText() {
+  const overlay = document.getElementById("subBlockedOverlay");
+  if (!overlay) return;
+
+  const tr = translations[currentLang] || translations.it;
+
+  const tEl = overlay.querySelector("#subBlockedTitle");
+  const mEl = overlay.querySelector("#subBlockedMsg");
+  const cBtn = overlay.querySelector("#goHomeBtn");
+  const rBtn = overlay.querySelector("#goSubBtn");
+
+  if (tEl) tEl.textContent = tr.subBlockedTitle;
+  if (mEl) mEl.textContent = tr.subBlockedMsg;
+  if (cBtn) cBtn.textContent = tr.subBlockedClose;
+  if (rBtn) rBtn.textContent = tr.subBlockedReactivate;
+}
+
 function aggiornaAltezzaNavbar() {
   const nav = document.querySelector("nav");
   const nameBlock = document.getElementById("restaurantName");
@@ -1904,6 +1921,7 @@ if (subStatus !== "active") {
   `;
 
   document.body.appendChild(overlay);
+  refreshSubBlockedOverlayText();
 
   // azioni
   overlay.querySelector("#goHomeBtn").onclick = () => {
@@ -2879,6 +2897,7 @@ window.addEventListener("message", async (event) => {
     if (!isPreview) localStorage.setItem("lang_pref", lang);
 
     applyTranslations();
+        refreshSubBlockedOverlayText();
     refreshFilterOptionsPreservingState();
 
     // stessa logica di rerender che usi in changeLanguage()
