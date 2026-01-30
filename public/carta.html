@@ -750,6 +750,12 @@ body.reordering #bottomBar{
 <script>
 const translations = {
   it: {
+    subBlockedTitle: "Carta non disponibile",
+    subBlockedMsg: "Il ristorante non ha un abbonamento attivo.",
+    subBlockedClose: "Chiudi",
+    subBlockedReactivate: "Riattiva abbonamento",
+    cardNotFound: "Carta non trovata. Verifica il link o chiedi al ristorante.",
+    printNoWines: "Non ci sono vini da stampare!",
     wineList: "Carta dei Vini",
     grape: "Uvaggio",
     price: "Prezzo",
@@ -788,6 +794,12 @@ const translations = {
     helperGlassMode: "🍷 Stai visualizzando solo i vini al calice",
   },
   en: {
+    subBlockedTitle: "Menu unavailable",
+    subBlockedMsg: "This restaurant doesn't have an active subscription.",
+    subBlockedClose: "Close",
+    subBlockedReactivate: "Reactivate subscription",
+    cardNotFound: "Menu not found. Check the link or ask the restaurant.",
+    printNoWines: "There are no wines to print!",
     wineList: "Wine List",
     grape: "Grape variety",
     price: "Price",
@@ -826,6 +838,12 @@ const translations = {
     helperGlassMode: "🍷 You are viewing only wines by the glass",
   },
   fr: {
+    subBlockedTitle: "Carte indisponible",
+    subBlockedMsg: "Le restaurant n’a pas d’abonnement actif.",
+    subBlockedClose: "Fermer",
+    subBlockedReactivate: "Réactiver l’abonnement",
+    cardNotFound: "Carte introuvable. Vérifiez le lien ou demandez au restaurant.",
+    printNoWines: "Aucun vin à imprimer !",
     wineList: "Carte des Vins",
     grape: "Cépage",
     price: "Prix",
@@ -863,6 +881,12 @@ sommelierBtnBadge: "Nouveauté",
 helperGlassMode: "🍷 Vous voyez uniquement les vins au verre",
   },
   de: {
+    subBlockedTitle: "Karte nicht verfügbar",
+    subBlockedMsg: "Das Restaurant hat kein aktives Abonnement.",
+    subBlockedClose: "Schließen",
+    subBlockedReactivate: "Abo reaktivieren",
+    cardNotFound: "Karte nicht gefunden. Prüfen Sie den Link oder fragen Sie das Restaurant.",
+    printNoWines: "Keine Weine zum Drucken!",
     wineList: "Weinkarte",
     grape: "Rebsorte",
     price: "Preis",
@@ -899,6 +923,12 @@ sommelierBtnBadge: "Neu",
 helperGlassMode: "🍷 Sie sehen nur Weine im Glas",
   },
   es: {
+    subBlockedTitle: "Carta no disponible",
+    subBlockedMsg: "El restaurante no tiene una suscripción activa.",
+    subBlockedClose: "Cerrar",
+    subBlockedReactivate: "Reactivar suscripción",
+    cardNotFound: "Carta no encontrada. Verifica el enlace o pregunta al restaurante.",
+    printNoWines: "¡No hay vinos para imprimir!",
     wineList: "Carta de Vinos",
     grape: "Variedad de uva",
     price: "Precio",
@@ -936,6 +966,12 @@ sommelierBtnBadge: "Novedad",
 helperGlassMode: "🍷 Estás viendo solo los vinos por copa",
   },
   zh: {
+    subBlockedTitle: "酒单不可用",
+    subBlockedMsg: "该餐厅没有有效订阅。",
+    subBlockedClose: "关闭",
+    subBlockedReactivate: "重新激活订阅",
+    cardNotFound: "未找到酒单。请检查链接或咨询餐厅。",
+    printNoWines: "没有可打印的葡萄酒！",
     wineList: "酒单",
     grape: "葡萄品种",
     price: "价格",
@@ -974,6 +1010,12 @@ helperGlassMode: "🍷 您正在查看仅按杯供应的葡萄酒",
   }
     ,
   ko: {
+    subBlockedTitle: "와인 리스트를 사용할 수 없습니다",
+    subBlockedMsg: "이 레스토랑에는 활성 구독이 없습니다.",
+    subBlockedClose: "닫기",
+    subBlockedReactivate: "구독 재활성화",
+    cardNotFound: "와인 리스트를 찾을 수 없습니다. 링크를 확인하거나 레스토랑에 문의하세요.",
+    printNoWines: "인쇄할 와인이 없습니다!",
     wineList: "와인 리스트",
     grape: "포도 품종",
     price: "가격",
@@ -1012,6 +1054,12 @@ sommelierBtn:      "와인 추천",
     helperGlassMode: "🍷 잔으로 제공되는 와인만 표시 중",
   },
   ru: {
+    subBlockedTitle: "Карта недоступна",
+    subBlockedMsg: "У ресторана нет активной подписки.",
+    subBlockedClose: "Закрыть",
+    subBlockedReactivate: "Возобновить подписку",
+    cardNotFound: "Карта не найдена. Проверьте ссылку или уточните у ресторана.",
+    printNoWines: "Нет вин для печати!",
     wineList: "Винная карта",
     grape: "Сорт винограда",
     price: "Цена",
@@ -1831,9 +1879,11 @@ if (subStatus !== "active") {
       text-align: center;
       font-family: inherit;
     ">
-      <div style="font-size: 20px; font-weight: 700; margin-bottom: 6px;">Carta non disponibile</div>
+      <div style="font-size: 20px; font-weight: 700; margin-bottom: 6px;">
+        ${(translations[currentLang] || translations.it).subBlockedTitle}
+      </div>
       <div style="font-size: 14px; color: #555; line-height: 1.4; margin-bottom: 14px;">
-        Il ristorante non ha un abbonamento attivo.
+        ${(translations[currentLang] || translations.it).subBlockedMsg}
       </div>
 
       <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
@@ -1841,14 +1891,14 @@ if (subStatus !== "active") {
           padding: 10px 14px; border-radius: 12px;
           border: 1px solid #ddd; background: #fafafa;
           cursor: pointer; font-weight: 600;
-        ">Chiudi</button>
+        ">${(translations[currentLang] || translations.it).subBlockedClose}</button>
 
         <!-- Questo bottone è utile se la carta la stai aprendo dalla dashboard (owner). -->
         <button id="goSubBtn" style="
           padding: 10px 14px; border-radius: 12px;
           border: 0; background: #b00; color: #fff;
           cursor: pointer; font-weight: 700;
-        ">Riattiva abbonamento</button>
+        ">${(translations[currentLang] || translations.it).subBlockedReactivate}</button>
       </div>
     </div>
   `;
@@ -2602,7 +2652,7 @@ function buildPrintableCarta() {
   const filtered = winesMatchFormats(wines, ids, map);
 
   if (!filtered || !filtered.length) {
-    alert("Non ci sono vini da stampare con i filtri attuali.");
+    alert((translations[currentLang] || translations.it).printNoWines);
     return null;
   }
 

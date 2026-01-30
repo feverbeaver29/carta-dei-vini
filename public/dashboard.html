@@ -1116,6 +1116,20 @@ background: rgba(255,255,255,.92);
   </div>
 </div>
 
+
+<!-- Popup Abbonamento non attivo -->
+<div id="subPopup" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:1200; align-items:center; justify-content:center; padding:18px;">
+  <div style="max-width:520px; width:100%; background:#fff; border-radius:18px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.25); text-align:center;">
+    <div id="subPopupTitle" style="font-size:20px; font-weight:700; margin-bottom:6px;">Carta non disponibile</div>
+    <div id="subPopupMsg" style="font-size:14px; color:#555; line-height:1.4; margin-bottom:14px;">
+      Il ristorante non ha un abbonamento attivo.
+    </div>
+    <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+      <button id="subPopupClose" type="button" style="padding:10px 14px; border-radius:12px; border:1px solid #ddd; background:#fafafa; cursor:pointer; font-weight:600;">Chiudi</button>
+      <button id="subPopupReactivate" type="button" style="padding:10px 14px; border-radius:12px; border:0; background:#b00; color:#fff; cursor:pointer; font-weight:700;">Riattiva abbonamento</button>
+    </div>
+  </div>
+</div>
 <!-- Bottom navigation (stile Canva) -->
 <div id="bottomNav" class="bottom-nav">
   <button id="bnCarta" class="bn-item active" type="button" onclick="showSettings('carta')">
@@ -1204,6 +1218,15 @@ background: rgba(255,255,255,.92);
       pro_only: "🔒 Disponibile solo per utenti PRO.",
       pro_only_html: "🔒 Disponibile solo per utenti <strong>PRO</strong>.",
       upgrade_now: "Passa ora al piano superiore",
+
+      sub_only_title: "Disponibile solo per utenti abbonati",
+      sub_only_short: "Solo per utenti abbonati",
+      sub_only_html: "🔒 Disponibile solo per utenti <strong>abbonati</strong>.",
+      subscribe_now: "Attiva ora un abbonamento",
+
+      sub_popup_title: "Carta non disponibile",
+      sub_popup_msg: "Il ristorante non ha un abbonamento attivo.",
+      reactivate_subscription: "Riattiva abbonamento",
 
       wines_to_recommend: "Numero di vini da consigliare",
       range_1_3: "Da 1 a 3",
@@ -1316,6 +1339,15 @@ background: rgba(255,255,255,.92);
       pro_only_html: "🔒 Available for <strong>PRO</strong> users only.",
       upgrade_now: "Upgrade now",
 
+      sub_only_title: "Available for subscribed users",
+      sub_only_short: "Subscribed users only",
+      sub_only_html: "🔒 Available for <strong>subscribed</strong> users only.",
+      subscribe_now: "Subscribe now",
+
+      sub_popup_title: "Menu unavailable",
+      sub_popup_msg: "This restaurant doesn't have an active subscription.",
+      reactivate_subscription: "Reactivate subscription",
+
       wines_to_recommend: "Number of wines to recommend",
       range_1_3: "From 1 to 3",
       range_3_5: "From 3 to 5",
@@ -1426,6 +1458,15 @@ background: rgba(255,255,255,.92);
       pro_only_html: "🔒 Disponible uniquement pour les utilisateurs <strong>PRO</strong>.",
       upgrade_now: "Passer à PRO",
 
+      sub_only_title: "Disponible pour les abonnés",
+      sub_only_short: "Abonnés uniquement",
+      sub_only_html: "🔒 Disponible uniquement pour les <strong>abonnés</strong>.",
+      subscribe_now: "S’abonner maintenant",
+
+      sub_popup_title: "Carte indisponible",
+      sub_popup_msg: "Le restaurant n’a pas d’abonnement actif.",
+      reactivate_subscription: "Réactiver l’abonnement",
+
       wines_to_recommend: "Nombre de vins à recommander",
       range_1_3: "De 1 à 3",
       range_3_5: "De 3 à 5",
@@ -1535,6 +1576,15 @@ background: rgba(255,255,255,.92);
       pro_only: "🔒 Disponible solo para usuarios PRO.",
       pro_only_html: "🔒 Disponible solo para usuarios <strong>PRO</strong>.",
       upgrade_now: "Mejorar a PRO",
+
+      sub_only_title: "Solo para usuarios suscritos",
+      sub_only_short: "Solo suscriptores",
+      sub_only_html: "🔒 Disponible solo para usuarios <strong>suscritos</strong>.",
+      subscribe_now: "Suscríbete ahora",
+
+      sub_popup_title: "Carta no disponible",
+      sub_popup_msg: "El restaurante no tiene una suscripción activa.",
+      reactivate_subscription: "Reactivar suscripción",
 
       wines_to_recommend: "Número de vinos a recomendar",
       range_1_3: "De 1 a 3",
@@ -1760,14 +1810,25 @@ background: rgba(255,255,255,.92);
     const imgWoman = document.querySelector('img[src="sommelier_femmina.png"]'); if (imgWoman) imgWoman.alt = t("sommelier_woman_alt");
 
     setText('label[for="sommelierLogoUpload"]', t("or_upload_custom_logo"));
-    const lockIcon = document.getElementById("lockIcon"); if (lockIcon) lockIcon.title = t("pro_only_title");
-    const boostLockIcon = document.getElementById("boostLockIcon"); if (boostLockIcon) boostLockIcon.title = t("pro_only_short");
+    const isActive = (window.SUBSCRIPTION_STATUS || "").toLowerCase() === "active";
+    const gate = isActive
+      ? { title: t("pro_only_title"), short: t("pro_only_short"), html: t("pro_only_html"), cta: t("upgrade_now") }
+      : { title: t("sub_only_title"), short: t("sub_only_short"), html: t("sub_only_html"), cta: t("subscribe_now") };
 
-    // pro tooltip
-    setHTML("#proTooltip", `${t("pro_only_html")} <a href="#" id="upgradeLink" style="color:#b00; text-decoration:underline;">${t("upgrade_now")}</a>`);
+    const lockIcon = document.getElementById("lockIcon"); if (lockIcon) lockIcon.title = gate.title;
+    const boostLockIcon = document.getElementById("boostLockIcon"); if (boostLockIcon) boostLockIcon.title = gate.short;
+
+    // pro/sub tooltip
+    setHTML("#proTooltip", `${gate.html} <a href="#" id="upgradeLink" style="color:#b00; text-decoration:underline;">${gate.cta}</a>`);
     if (typeof RESTAURANT_ID === "string" && RESTAURANT_ID) {
       const up = document.getElementById("upgradeLink");
       if (up) up.href = `abbonamento.html?ristorante_id=${RESTAURANT_ID}`;
+    }
+
+    // range lock tooltip (solo se presente)
+    const rangeLock = document.getElementById("rangeLockTooltip");
+    if (rangeLock && typeof RESTAURANT_ID === "string" && RESTAURANT_ID) {
+      rangeLock.innerHTML = `${gate.html} <a href="abbonamento.html?ristorante_id=${RESTAURANT_ID}" style="color:#b00; text-decoration:underline;">${gate.cta}</a>`;
     }
 
     const rangeStrong = document.querySelector('label[for="sommelierRange"] strong');
@@ -1787,7 +1848,7 @@ background: rgba(255,255,255,.92);
     const addBoostBtn = document.getElementById("addBoostBtn");
     if (addBoostBtn) addBoostBtn.textContent = `+ ${t("add_boost")}`;
 
-    setHTML("#boostLockTooltip", `${t("pro_only_html")} <a href="abbonamento.html" id="boostUpgradeLink" style="color:#b00; text-decoration:underline;">${t("upgrade_now")}</a>`);
+    setHTML("#boostLockTooltip", `${gate.html} <a href="abbonamento.html" id="boostUpgradeLink" style="color:#b00; text-decoration:underline;">${gate.cta}</a>`);
     if (typeof RESTAURANT_ID === "string" && RESTAURANT_ID) {
       const up2 = document.getElementById("boostUpgradeLink");
       if (up2) up2.href = `abbonamento.html?ristorante_id=${RESTAURANT_ID}`;
@@ -1829,10 +1890,49 @@ background: rgba(255,255,255,.92);
     // footer
     setText("footer", t("footer_rights"));
     applyFileTranslations();
+    // subscription popup
+    setText("#subPopupTitle", t("sub_popup_title"));
+    setText("#subPopupMsg", t("sub_popup_msg"));
+    setText("#subPopupClose", t("close"));
+    setText("#subPopupReactivate", t("reactivate_subscription"));
     document.querySelectorAll("#boostContainer input").forEach(inp => {
   inp.placeholder = t("search_wine_placeholder");
 });
   }
+
+
+  function showNoSubPopup() {
+    const p = document.getElementById("subPopup");
+    if (!p) return;
+    p.style.display = "flex";
+  }
+  function hideNoSubPopup() {
+    const p = document.getElementById("subPopup");
+    if (!p) return;
+    p.style.display = "none";
+  }
+  // bind popup buttons (once)
+  (function bindSubPopup() {
+    const p = document.getElementById("subPopup");
+    if (!p) return;
+
+    const closeBtn = document.getElementById("subPopupClose");
+    const reactBtn = document.getElementById("subPopupReactivate");
+
+    if (closeBtn) closeBtn.onclick = hideNoSubPopup;
+
+    if (reactBtn) reactBtn.onclick = () => {
+      const base = (typeof RESTAURANT_ID === "string" && RESTAURANT_ID)
+        ? `abbonamento.html?ristorante_id=${RESTAURANT_ID}&lang=${currentLang}`
+        : `abbonamento.html?lang=${currentLang}`;
+      window.location.href = base;
+    };
+
+    // click outside
+    p.addEventListener("click", (e) => {
+      if (e.target === p) hideNoSubPopup();
+    });
+  })();
 
   function bindCustomFileUI(inputId, btnId, nameId) {
   const input = document.getElementById(inputId);
@@ -2436,11 +2536,12 @@ if (!isPro) {
   sommelierRangeSelect.style.cursor = "not-allowed";
 
   const rangeTooltip = document.createElement("div");
+  rangeTooltip.id = "rangeLockTooltip";
   rangeTooltip.style.fontSize = "0.85em";
   rangeTooltip.style.color = "#555";
   rangeTooltip.style.marginTop = "4px";
-  rangeTooltip.innerHTML = `🔒 Disponibile solo per utenti <strong>PRO</strong>. 
-    <a href="abbonamento.html?ristorante_id=${RESTAURANT_ID}" style="color:#b00; text-decoration:underline;">Passa ora al piano superiore</a>`;
+  // contenuto tradotto in applyTranslations(), in base a subscription/pro
+  rangeTooltip.innerHTML = "";
 
   sommelierRangeLabel.insertAdjacentElement("afterend", rangeTooltip);
 }
@@ -2770,8 +2871,7 @@ function updatePreview() {
 
 function goTo(path) {
     if (path === "carta.html" && !isSubActive()) {
-    alert("Abbonamento non attivo: la carta è disabilitata. Riattiva l’abbonamento per usarla.");
-    window.location.href = `abbonamento.html?ristorante_id=${RESTAURANT_ID}&lang=${currentLang}`;
+    showNoSubPopup();
     return;
   }
   if (path === 'carta.html' && window.RISTORANTE_SLUG) {
@@ -2822,7 +2922,7 @@ if (showCarta) initCartaQuickActions();
 
     function showQRCode() {
   if (!isSubActive()) {
-    alert("Abbonamento non attivo: QR disabilitato.");
+    showNoSubPopup();
     return;
   }
       const popup = document.getElementById('qrPopup');
@@ -2848,7 +2948,7 @@ if (showCarta) initCartaQuickActions();
 
 function downloadCartaPDF() {
   if (!isSubActive()) {
-    alert("Abbonamento non attivo: download PDF disabilitato.");
+    showNoSubPopup();
     return;
   }
   const iframe = document.getElementById("previewFrame");
