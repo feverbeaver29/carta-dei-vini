@@ -1887,38 +1887,38 @@ if (subStatus !== "active") {
     backdrop-filter: blur(6px);
   `;
 
-  overlay.innerHTML = `
-    <div style="
-      max-width: 520px; width: 100%;
-      background: #fff; border-radius: 18px;
-      padding: 18px 18px 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.25);
-      text-align: center;
-      font-family: inherit;
-    ">
-      <div style="font-size: 20px; font-weight: 700; margin-bottom: 6px;">
-        ${(translations[currentLang] || translations.it).subBlockedTitle}
-      </div>
-      <div style="font-size: 14px; color: #555; line-height: 1.4; margin-bottom: 14px;">
-        ${(translations[currentLang] || translations.it).subBlockedMsg}
-      </div>
-
-      <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-        <button id="goHomeBtn" style="
-          padding: 10px 14px; border-radius: 12px;
-          border: 1px solid #ddd; background: #fafafa;
-          cursor: pointer; font-weight: 600;
-        ">${(translations[currentLang] || translations.it).subBlockedClose}</button>
-
-        <!-- Questo bottone è utile se la carta la stai aprendo dalla dashboard (owner). -->
-        <button id="goSubBtn" style="
-          padding: 10px 14px; border-radius: 12px;
-          border: 0; background: #b00; color: #fff;
-          cursor: pointer; font-weight: 700;
-        ">${(translations[currentLang] || translations.it).subBlockedReactivate}</button>
-      </div>
+overlay.innerHTML = `
+  <div style="
+    max-width: 520px; width: 100%;
+    background: #fff; border-radius: 18px;
+    padding: 18px 18px 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,25);
+    text-align: center;
+    font-family: inherit;
+  ">
+    <div id="subBlockedTitle" style="font-size: 20px; font-weight: 700; margin-bottom: 6px;">
+      ${(translations[currentLang] || translations.it).subBlockedTitle}
     </div>
-  `;
+
+    <div id="subBlockedMsg" style="font-size: 14px; color: #555; line-height: 1.4; margin-bottom: 14px;">
+      ${(translations[currentLang] || translations.it).subBlockedMsg}
+    </div>
+
+    <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+      <button id="goHomeBtn" style="
+        padding: 10px 14px; border-radius: 12px;
+        border: 1px solid #ddd; background: #fafafa;
+        cursor: pointer; font-weight: 600;
+      ">${(translations[currentLang] || translations.it).subBlockedClose}</button>
+
+      <button id="goSubBtn" style="
+        padding: 10px 14px; border-radius: 12px;
+        border: 0; background: #b00; color: #fff;
+        cursor: pointer; font-weight: 700;
+      ">${(translations[currentLang] || translations.it).subBlockedReactivate}</button>
+    </div>
+  </div>
+`;
 
   document.body.appendChild(overlay);
   refreshSubBlockedOverlayText();
