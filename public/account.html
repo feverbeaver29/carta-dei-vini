@@ -88,12 +88,21 @@
       <button class="pill-btn" data-tab="passTab" type="button" id="tabPass">Cambia password</button>
     </div>
 
-    <div class="card" id="emailTab">
-      <div class="hint" id="emailHint">
-        Inserisci la nuova email. Potrebbe arrivarti una mail di conferma (dipende dalle impostazioni di autenticazione).
-      </div>
-      <label for="newEmail" id="newEmailLbl">Nuova email</label>
-      <input id="newEmail" type="email" placeholder="nome@esempio.com" autocomplete="email"/>
+<div class="card" id="emailTab">
+  <div class="hint" id="authMethodsLine" style="margin-top:10px;">
+    Metodi di accesso: <strong id="authMethods">—</strong>
+  </div>
+
+  <div class="hint" id="currentEmailLine" style="margin-top:10px;">
+    La tua mail è <strong id="currentEmail">—</strong>
+  </div>
+
+  <div class="hint" id="emailHint" style="margin-top:10px;">
+    Inserisci la nuova email. Potrebbe arrivarti una mail di conferma (dipende dalle impostazioni di autenticazione).
+  </div>
+
+  <label for="newEmail" id="newEmailLbl">Nuova email</label>
+  <input id="newEmail" type="email" placeholder="nome@esempio.com" autocomplete="email"/>
 
       <button class="btn" id="saveEmailBtn" type="button">Aggiorna email</button>
       <div class="msg ok" id="emailOk">✅ Email aggiornata. Controlla la posta per eventuale conferma.</div>
@@ -101,19 +110,35 @@
     </div>
 
     <div class="card" id="passTab" style="display:none;">
-      <div class="hint" id="passHint">
-        Scegli una password sicura (almeno 8 caratteri). Se sei loggato, l’aggiornamento è immediato.
+      <div class="hint" id="oauthHint" style="display:none;">
+        Stai usando Google per accedere. Non hai una password “attuale”.
+        Puoi aggiungere una password per accedere anche con email e password.
       </div>
 
-      <label for="newPass" id="newPassLbl">Nuova password</label>
-      <input id="newPass" type="password" placeholder="••••••••" autocomplete="new-password"/>
+      <button class="btn" id="sendSetPasswordEmailBtn" type="button" style="display:none;">
+        Invia email per impostare una password
+      </button>
+      <div class="msg ok" id="setPassEmailOk">✅ Email inviata. Apri il link e imposta la password.</div>
+      <div class="msg err" id="setPassEmailErr">❌ Errore: </div>
 
-      <label for="newPass2" id="newPass2Lbl">Ripeti password</label>
-      <input id="newPass2" type="password" placeholder="••••••••" autocomplete="new-password"/>
+      <div id="classicPassBox">
+        <div class="hint" id="passHint">
+          Scegli una password sicura (almeno 8 caratteri). Se sei loggato, l’aggiornamento è immediato.
+        </div>
 
-      <button class="btn" id="savePassBtn" type="button">Aggiorna password</button>
-      <div class="msg ok" id="passOk">✅ Password aggiornata.</div>
-      <div class="msg err" id="passErr">❌ Errore: </div>
+        <label for="currPass" id="currPassLbl">Password attuale</label>
+        <input id="currPass" type="password" placeholder="••••••••" autocomplete="current-password"/>
+
+        <label for="newPass" id="newPassLbl">Nuova password</label>
+        <input id="newPass" type="password" placeholder="••••••••" autocomplete="new-password"/>
+
+        <label for="newPass2" id="newPass2Lbl">Ripeti password</label>
+        <input id="newPass2" type="password" placeholder="••••••••" autocomplete="new-password"/>
+
+        <button class="btn" id="savePassBtn" type="button">Aggiorna password</button>
+        <div class="msg ok" id="passOk">✅ Password aggiornata.</div>
+        <div class="msg err" id="passErr">❌ Errore: </div>
+      </div>
     </div>
   </main>
 
@@ -136,6 +161,11 @@
 
   const TR = {
     it:{
+      auth_methods: "Metodi di accesso:",
+      current_pass: "Password attuale",
+current_pass_required: "Inserisci la password attuale.",
+current_pass_wrong: "Password attuale non corretta.",
+      current_email_line: "La tua mail è",
       language:"Lingua",
       account:"Account",
       change_email:"Cambia email",
@@ -157,6 +187,11 @@
       nav_help:"Aiuto",
     },
     en:{
+      auth_methods: "Sign-in methods:",
+      current_pass: "Current password",
+current_pass_required: "Enter your current password.",
+current_pass_wrong: "Current password is incorrect.",
+      current_email_line: "Your email is",
       language:"Language",
       account:"Account",
       change_email:"Change email",
@@ -178,6 +213,11 @@
       nav_help:"Help",
     },
     fr:{
+      auth_methods: "Méthodes de connexion :",
+      current_pass: "Mot de passe actuel",
+current_pass_required: "Saisissez le mot de passe actuel.",
+current_pass_wrong: "Mot de passe actuel incorrect.",
+      current_email_line: "Votre email est",
       language:"Langue",
       account:"Compte",
       change_email:"Changer l’email",
@@ -199,6 +239,11 @@
       nav_help:"Aide",
     },
     es:{
+      auth_methods: "Métodos de acceso:",
+      current_pass: "Contraseña actual",
+current_pass_required: "Introduce la contraseña actual.",
+current_pass_wrong: "La contraseña actual no es correcta.",
+      current_email_line: "Tu email es",
       language:"Idioma",
       account:"Cuenta",
       change_email:"Cambiar email",
@@ -247,6 +292,7 @@
     document.getElementById("tabEmail").textContent = t("change_email");
     document.getElementById("tabPass").textContent  = t("change_password");
     document.getElementById("emailHint").textContent = t("email_hint");
+    document.getElementById("authMethodsLine").childNodes[0].textContent = t("auth_methods") + " ";
     document.getElementById("passHint").textContent  = t("pass_hint");
     document.getElementById("newEmailLbl").textContent = t("new_email");
     document.getElementById("saveEmailBtn").textContent = t("update_email");
@@ -258,9 +304,23 @@
     document.getElementById("navDash").textContent = t("nav_dash");
     document.getElementById("navAcc").textContent  = t("nav_acc");
     document.getElementById("navHelp").textContent = t("nav_help");
+    document.getElementById("currentEmailLine").childNodes[0].textContent = t("current_email_line") + " ";
+    document.getElementById("currPassLbl").textContent = t("current_pass");
     const sel = document.getElementById("langSelect");
     if (sel) sel.value = currentLang;
   }
+
+  function getProviders(user){
+  const ids = Array.isArray(user?.identities) ? user.identities : [];
+  const fromIdentities = ids.map(i => i.provider).filter(Boolean);
+  const fromMeta = Array.isArray(user?.app_metadata?.providers) ? user.app_metadata.providers : [];
+  const all = [...new Set([...fromIdentities, ...fromMeta])];
+  return all;
+}
+
+function hasProvider(user, p){
+  return getProviders(user).includes(p);
+}
 
   function goTo(path){
     const qs = new URLSearchParams();
@@ -276,7 +336,7 @@
   }
 
   function resetMsgs(){
-    ["emailOk","emailErr","passOk","passErr"].forEach(id => {
+    ["emailOk","emailErr","passOk","passErr","setPassEmailOk","setPassEmailErr"].forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
       el.style.display="none";
@@ -291,8 +351,18 @@
   }
 
   document.addEventListener("DOMContentLoaded", async () => {
+    
     const user = await requireUser();
+    const providers = getProviders(user);
+    const googleOnly = providers.includes("google") && !providers.includes("email");
+    const prettyProviders = (providers.length ? providers : ["email"]).map(p => p === "google" ? "Google" : (p === "email" ? "Email" : p));
+document.getElementById("authMethods").textContent = prettyProviders.join(", ");
+
+    const isGoogle = hasProvider(user, "google");
+    const isEmail = hasProvider(user, "email"); // spesso true se esiste identity email
+
     if (!user) return;
+    document.getElementById("currentEmail").textContent = user.email || "—";
 
     const urlParams = new URLSearchParams(window.location.search);
     RESTAURANT_ID = urlParams.get("ristorante_id") || user.id;
@@ -306,6 +376,26 @@
     });
 
     document.getElementById("langSelect").addEventListener("change", (e)=> setLang(e.target.value, true));
+
+    document.getElementById("sendSetPasswordEmailBtn").addEventListener("click", async () => {
+  resetMsgs();
+
+  const { data: userData } = await sb.auth.getUser();
+  const email = userData?.user?.email;
+  if (!email) return;
+
+  const redirectTo = `${window.location.origin}/account.html?mode=recovery&lang=${currentLang}`;
+
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) {
+    const e = document.getElementById("setPassEmailErr");
+    e.textContent = t("err_prefix") + (error.message || "Unknown");
+    e.style.display = "block";
+    return;
+  }
+
+  document.getElementById("setPassEmailOk").style.display = "block";
+});
 
     document.getElementById("saveEmailBtn").addEventListener("click", async () => {
       resetMsgs();
@@ -322,33 +412,132 @@
       document.getElementById("emailOk").style.display="block";
     });
 
-    document.getElementById("savePassBtn").addEventListener("click", async () => {
-      resetMsgs();
-      const p1 = document.getElementById("newPass").value || "";
-      const p2 = document.getElementById("newPass2").value || "";
-      if (p1.length < 8){
-        const e = document.getElementById("passErr");
-        e.textContent = t("err_prefix") + t("pass_short");
-        e.style.display="block";
-        return;
-      }
-      if (p1 !== p2){
-        const e = document.getElementById("passErr");
-        e.textContent = t("err_prefix") + t("pass_mismatch");
-        e.style.display="block";
-        return;
-      }
-      const { error } = await sb.auth.updateUser({ password: p1 });
-      if (error){
-        const e = document.getElementById("passErr");
-        e.textContent = t("err_prefix") + (error.message || "Unknown");
-        e.style.display="block";
-        return;
-      }
-      document.getElementById("passOk").style.display="block";
-      document.getElementById("newPass").value = "";
-      document.getElementById("newPass2").value = "";
-    });
+    const isRecoveryMode = urlParams.get("mode") === "recovery";
+if (googleOnly && !isRecoveryMode) {
+  document.getElementById("tabPass").textContent = "Aggiungi password";
+  document.getElementById("oauthHint").style.display = "block";
+  document.getElementById("sendSetPasswordEmailBtn").style.display = "inline-block";
+  document.getElementById("classicPassBox").style.display = "none";
+}
+
+if (isRecoveryMode) {
+  // 1) apri direttamente il tab password
+  showTab("passTab");
+  resetMsgs();
+
+  // 2) in recovery non serve password attuale
+  document.getElementById("currPassLbl").style.display = "none";
+  document.getElementById("currPass").style.display = "none";
+
+  // 3) mostra un hint chiaro e nascondi il bottone "invio email" (ormai sei già nel link)
+  document.getElementById("oauthHint").style.display = "block";
+  document.getElementById("sendSetPasswordEmailBtn").style.display = "none";
+  document.getElementById("classicPassBox").style.display = "block";
+}
+
+
+// ✅ Se siamo in recovery, permettiamo di impostare password SENZA password attuale
+if (isRecoveryMode) {
+  // trucco: clono il bottone per rimuovere eventuali vecchi listener
+  const oldBtn = document.getElementById("savePassBtn");
+  const newBtn = oldBtn.cloneNode(true);
+  oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+
+  newBtn.addEventListener("click", async () => {
+    resetMsgs();
+
+    const p1 = document.getElementById("newPass").value || "";
+    const p2 = document.getElementById("newPass2").value || "";
+
+    if (p1.length < 8) {
+      const e = document.getElementById("passErr");
+      e.textContent = t("err_prefix") + t("pass_short");
+      e.style.display = "block";
+      return;
+    }
+    if (p1 !== p2) {
+      const e = document.getElementById("passErr");
+      e.textContent = t("err_prefix") + t("pass_mismatch");
+      e.style.display = "block";
+      return;
+    }
+
+    const { error } = await sb.auth.updateUser({ password: p1 });
+    if (error) {
+      const e = document.getElementById("passErr");
+      e.textContent = t("err_prefix") + (error.message || "Unknown");
+      e.style.display = "block";
+      return;
+    }
+
+    document.getElementById("passOk").textContent = "✅ Password impostata. Ora puoi accedere anche con email e password.";
+    document.getElementById("passOk").style.display = "block";
+    document.getElementById("newPass").value = "";
+    document.getElementById("newPass2").value = "";
+  });
+
+} else if (!googleOnly) {
+  // ✅ Flusso normale: verifica password attuale + update password
+  document.getElementById("savePassBtn").addEventListener("click", async () => {
+    resetMsgs();
+
+    const curr = document.getElementById("currPass").value || "";
+    const p1 = document.getElementById("newPass").value || "";
+    const p2 = document.getElementById("newPass2").value || "";
+
+    if (!curr){
+      const e = document.getElementById("passErr");
+      e.textContent = t("err_prefix") + t("current_pass_required");
+      e.style.display = "block";
+      return;
+    }
+
+    if (p1.length < 8){
+      const e = document.getElementById("passErr");
+      e.textContent = t("err_prefix") + t("pass_short");
+      e.style.display="block";
+      return;
+    }
+    if (p1 !== p2){
+      const e = document.getElementById("passErr");
+      e.textContent = t("err_prefix") + t("pass_mismatch");
+      e.style.display="block";
+      return;
+    }
+
+    const { data: userData } = await sb.auth.getUser();
+    const email = userData?.user?.email;
+
+    if (!email){
+      const e = document.getElementById("passErr");
+      e.textContent = t("err_prefix") + "User email not found";
+      e.style.display="block";
+      return;
+    }
+
+    const { error: signErr } = await sb.auth.signInWithPassword({ email, password: curr });
+    if (signErr){
+      const e = document.getElementById("passErr");
+      e.textContent = t("err_prefix") + t("current_pass_wrong");
+      e.style.display="block";
+      return;
+    }
+
+    const { error } = await sb.auth.updateUser({ password: p1 });
+    if (error){
+      const e = document.getElementById("passErr");
+      e.textContent = t("err_prefix") + (error.message || "Unknown");
+      e.style.display="block";
+      return;
+    }
+
+    document.getElementById("passOk").style.display="block";
+    document.getElementById("currPass").value = "";
+    document.getElementById("newPass").value = "";
+    document.getElementById("newPass2").value = "";
+  });
+}
+
   });
 </script>
 </body>
