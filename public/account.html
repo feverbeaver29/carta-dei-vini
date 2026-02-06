@@ -354,7 +354,8 @@ function hasProvider(user, p){
     
     const user = await requireUser();
     const providers = getProviders(user);
-    const googleOnly = providers.includes("google") && !providers.includes("email");
+    const hasPassword = user?.user_metadata?.has_password === true;
+    const googleOnly = providers.includes("google") && !hasPassword;
     const prettyProviders = (providers.length ? providers : ["email"]).map(p => p === "google" ? "Google" : (p === "email" ? "Email" : p));
 document.getElementById("authMethods").textContent = prettyProviders.join(", ");
 
@@ -462,7 +463,7 @@ if (isRecoveryMode) {
       return;
     }
 
-    const { error } = await sb.auth.updateUser({ password: p1 });
+    const { error } = await sb.auth.updateUser({ password: p1, data: { has_password: true } });
     if (error) {
       const e = document.getElementById("passErr");
       e.textContent = t("err_prefix") + (error.message || "Unknown");
