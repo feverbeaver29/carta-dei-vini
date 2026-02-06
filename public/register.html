@@ -44,27 +44,31 @@
       border-radius: 8px;
       border: 1px solid #ccc;
       font-size: 1rem;
+      box-sizing: border-box;
     }
+
+    .password-wrapper { position: relative; }
     .toggle-password {
       position: absolute;
-      right: 12px;
+      right: 10px;
       top: 50%;
       transform: translateY(-50%);
       cursor: pointer;
+      background: transparent;
+      border: 0;
+      padding: 6px;
+      border-radius: 10px;
+      font-size: 18px;
+      line-height: 1;
     }
-    .password-wrapper {
-      position: relative;
-    }
+    .toggle-password:hover { background: rgba(17,24,39,.06); }
+
     .password-strength {
       font-size: 0.85em;
       color: #888;
       margin-top: 5px;
     }
-    .error {
-      color: #c00;
-      font-size: 0.9em;
-      margin-top: 5px;
-    }
+
     .btn, .google-btn {
       margin-top: 20px;
       width: 100%;
@@ -78,9 +82,14 @@
       background-color: #b00;
       color: white;
     }
-    .btn:hover {
-      background-color: #800000;
+    .btn:hover { background-color: #800000; }
+
+    .btn[disabled], .google-btn[aria-disabled="true"]{
+      opacity: .7;
+      cursor: not-allowed;
+      transform: none;
     }
+
     .google-btn {
       background-color: #4285F4;
       color: white;
@@ -88,98 +97,123 @@
       justify-content: center;
       align-items: center;
       gap: 10px;
+      user-select: none;
     }
-    .google-btn img {
-      width: 24px;
-    }
+    .google-btn img { width: 24px; }
+
     .message {
       margin-top: 15px;
       font-size: 0.95em;
       text-align: center;
     }
-    .privacy {
-      margin-top: 12px;
-      font-size: 0.85em;
-      text-align: center;
-    }
+
     .checkbox {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 8px;
       margin-top: 1rem;
+      font-size: 0.95em;
     }
+    .checkbox label { margin-top: 0; font-weight: 500; }
+
     footer {
       text-align: center;
       margin-top: 2rem;
       font-size: 0.85em;
       color: #aaa;
     }
+
     .topbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom: 10px;
-}
-.lang-wrap{
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-.lang-wrap label{ margin:0; font-size:0.9em; color:#555; font-weight:500; }
-.lang-wrap select{
-  padding:6px 10px;
-  border-radius:10px;
-  border:1px solid #ccc;
-  background:#fff;
-}
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom: 10px;
+    }
+    .lang-wrap{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .lang-wrap label{ margin:0; font-size:0.9em; color:#555; font-weight:500; }
+    .lang-wrap select{
+      padding:6px 10px;
+      border-radius:10px;
+      border:1px solid #ccc;
+      background:#fff;
+    }
+
+    .helper-links{
+      margin-top: 14px;
+      text-align: center;
+      font-size: .95em;
+    }
+    .helper-links a{
+      color:#b00;
+      font-weight:700;
+      text-decoration:none;
+    }
+    .helper-links a:hover{ text-decoration: underline; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="topbar">
-  <div></div>
-  <div class="lang-wrap">
-    <label id="langLabel" for="langSelect">Lingua</label>
-    <select id="langSelect">
-      <option value="it">Italiano</option>
-      <option value="en">English</option>
-      <option value="fr">Français</option>
-      <option value="es">Español</option>
-    </select>
-  </div>
-</div>
+      <div></div>
+      <div class="lang-wrap">
+        <label id="langLabel" for="langSelect">Lingua</label>
+        <select id="langSelect">
+          <option value="it">Italiano</option>
+          <option value="en">English</option>
+          <option value="fr">Français</option>
+          <option value="es">Español</option>
+        </select>
+      </div>
+    </div>
+
     <h1 data-i18n="title">Crea un account</h1>
-    <label for="email" data-i18n="email_lbl">Email *</label>
-    <input type="email" id="email" required data-i18n-placeholder="email_ph" placeholder="Email">
-    
-<label for="password" data-i18n="password_lbl">Password *</label>
-    <div class="password-wrapper">
-      <input type="password" id="password" minlength="6" required oninput="checkPasswordStrength()"
-       data-i18n-placeholder="password_ph" placeholder="Password">
-      <span class="toggle-password" onclick="toggleVisibility('password')">👁️</span>
-    </div>
-    <div class="password-strength" id="passwordStrength" data-i18n="pw_hint"></div>
 
-    <label for="confirmPassword" data-i18n="confirm_lbl">Conferma Password *</label>
-    <div class="password-wrapper">
-      <input type="password" id="confirmPassword" required data-i18n-placeholder="confirm_ph" placeholder="Conferma password">
-      <span class="toggle-password" onclick="toggleVisibility('confirmPassword')">👁️</span>
-    </div>
+    <!-- così Enter invia -->
+    <form id="regForm">
+      <label for="email" data-i18n="email_lbl">Email *</label>
+      <input type="email" id="email" required data-i18n-placeholder="email_ph" placeholder="Email" autocomplete="email">
 
-    <label for="ristorante" data-i18n="restaurant_lbl">Nome Ristorante *</label>
-    <input type="text" id="ristorante" required data-i18n-placeholder="restaurant_ph" placeholder="Nome ristorante">
+      <label for="password" data-i18n="password_lbl">Password *</label>
+      <div class="password-wrapper">
+        <input type="password" id="password" minlength="6" required oninput="checkPasswordStrength()"
+               data-i18n-placeholder="password_ph" placeholder="Password" autocomplete="new-password">
+        <button class="toggle-password" type="button" aria-label="Mostra/Nascondi password" data-target="password">👁️</button>
+      </div>
+      <div class="password-strength" id="passwordStrength" data-i18n="pw_hint"></div>
 
-    <div class="checkbox">
-      <input type="checkbox" id="acceptPrivacy" required>
-      <label for="acceptPrivacy" data-i18n="privacy_html">Accetto la <a href="privacy.html" target="_blank">Privacy Policy</a>
-      </label>
-    </div>
+      <label for="confirmPassword" data-i18n="confirm_lbl">Conferma Password *</label>
+      <div class="password-wrapper">
+        <input type="password" id="confirmPassword" required data-i18n-placeholder="confirm_ph"
+               placeholder="Conferma password" autocomplete="new-password">
+        <button class="toggle-password" type="button" aria-label="Mostra/Nascondi password" data-target="confirmPassword">👁️</button>
+      </div>
 
-    <button class="btn" onclick="register()" data-i18n="register_btn">Registrati</button>
+      <label for="ristorante" data-i18n="restaurant_lbl">Nome Ristorante *</label>
+      <input type="text" id="ristorante" required data-i18n-placeholder="restaurant_ph"
+             placeholder="Nome ristorante" autocomplete="organization">
 
-    <div class="google-btn" onclick="registerWithGoogle()">
+      <div class="checkbox">
+        <input type="checkbox" id="acceptPrivacy" required>
+        <label for="acceptPrivacy" data-i18n="privacy_html">
+          Accetto la <a href="privacy.html" target="_blank">Privacy Policy</a>
+        </label>
+      </div>
+
+      <button class="btn" id="registerBtn" type="submit" data-i18n="register_btn">Registrati</button>
+    </form>
+
+    <div class="google-btn" id="googleBtn" role="button" tabindex="0" onclick="registerWithGoogle()">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Icon">
       <span data-i18n="register_google">Registrati con Google</span>
+    </div>
+
+    <div class="helper-links">
+      <span data-i18n="have_account">Hai già un account?</span>
+      <a id="loginLink" href="login.html" data-i18n="go_login_inline">Accedi</a>
     </div>
 
     <div class="message" id="messageBox"></div>
@@ -191,171 +225,211 @@
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkdW52YmZ0eGhidHV5YWJneHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0NTMyOTYsImV4cCI6MjA2MjAyOTI5Nn0.0hjJASFktfHZHjVQzX9bq8xGBrf7o1Fya6lqnA2tvPo";
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // ==========================
-// i18n (Register)
-// ==========================
-const SUPPORTED_LANGS = ["it","en","fr","es"];
-let currentLang = "it";
+  // i18n
+  const SUPPORTED_LANGS = ["it","en","fr","es"];
+  let currentLang = "it";
 
   const TRANSLATIONS = {
-  it:{
-    language:"Lingua",
-    title:"Crea un account",
-    email_lbl:"Email *",
-    password_lbl:"Password *",
-    confirm_lbl:"Conferma Password *",
-    restaurant_lbl:"Nome Ristorante *",
-    privacy_html:'Accetto la <a href="privacy.html" target="_blank">Privacy Policy</a>',
-    register_btn:"Registrati",
-    register_google:"Registrati con Google",
-    footer:"© 2025 Wine in App - Tutti i diritti riservati",
-    pw_short:"Password troppo corta",
-    pw_mid:"Aggiungi almeno una maiuscola e un numero",
-    pw_ok:"Password sicura",
-    must_accept:"Devi accettare la Privacy Policy per continuare.",
-    pw_not_match:"Le password non coincidono.",
-    reg_err:"Errore registrazione: ",
-    save_rest_err:"Registrazione ok, ma errore nel salvare il nome del ristorante.",
-    google_err:"Errore con Google: ",
-    email_ph:"Inserisci la tua email",
-    password_ph:"Inserisci la password",
-    confirm_ph:"Conferma la password",
-    restaurant_ph:"Nome del ristorante",
-    pw_hint:"", // (può rimanere vuoto: lo riempiamo in checkPasswordStrength)
-  },
-  en:{
-    language:"Language",
-    title:"Create an account",
-    email_lbl:"Email *",
-    password_lbl:"Password *",
-    confirm_lbl:"Confirm password *",
-    restaurant_lbl:"Restaurant name *",
-    privacy_html:'I accept the <a href="privacy.html" target="_blank">Privacy Policy</a>',
-    register_btn:"Sign up",
-    register_google:"Continue with Google",
-    footer:"© 2025 Wine in App - All rights reserved",
-    pw_short:"Password too short",
-    pw_mid:"Add at least one uppercase letter and one number",
-    pw_ok:"Strong password",
-    must_accept:"You must accept the Privacy Policy to continue.",
-    pw_not_match:"Passwords do not match.",
-    reg_err:"Signup error: ",
-    save_rest_err:"Signup ok, but error saving the restaurant name.",
-    google_err:"Google error: ",
-    email_ph:"Enter your email",
-password_ph:"Enter your password",
-confirm_ph:"Confirm your password",
-restaurant_ph:"Restaurant name",
-pw_hint:"",
-  },
-  fr:{
-    language:"Langue",
-    title:"Créer un compte",
-    email_lbl:"E-mail *",
-    password_lbl:"Mot de passe *",
-    confirm_lbl:"Confirmer le mot de passe *",
-    restaurant_lbl:"Nom du restaurant *",
-    privacy_html:'J’accepte la <a href="privacy.html" target="_blank">Politique de confidentialité</a>',
-    register_btn:"S’inscrire",
-    register_google:"Continuer avec Google",
-    footer:"© 2025 Wine in App - Tous droits réservés",
-    pw_short:"Mot de passe trop court",
-    pw_mid:"Ajoutez au moins une majuscule et un chiffre",
-    pw_ok:"Mot de passe sécurisé",
-    must_accept:"Vous devez accepter la politique de confidentialité pour continuer.",
-    pw_not_match:"Les mots de passe ne correspondent pas.",
-    reg_err:"Erreur d’inscription : ",
-    save_rest_err:"Inscription ok, mais erreur lors de l’enregistrement du restaurant.",
-    google_err:"Erreur Google : ",
-    email_ph:"Saisissez votre e-mail",
-password_ph:"Saisissez votre mot de passe",
-confirm_ph:"Confirmez le mot de passe",
-restaurant_ph:"Nom du restaurant",
-pw_hint:"",
-  },
-  es:{
-    language:"Idioma",
-    title:"Crear una cuenta",
-    email_lbl:"Email *",
-    password_lbl:"Contraseña *",
-    confirm_lbl:"Confirmar contraseña *",
-    restaurant_lbl:"Nombre del restaurante *",
-    privacy_html:'Acepto la <a href="privacy.html" target="_blank">Política de privacidad</a>',
-    register_btn:"Registrarse",
-    register_google:"Continuar con Google",
-    footer:"© 2025 Wine in App - Todos los derechos reservados",
-    pw_short:"Contraseña demasiado corta",
-    pw_mid:"Añade al menos una mayúscula y un número",
-    pw_ok:"Contraseña segura",
-    must_accept:"Debes aceptar la Política de privacidad para continuar.",
-    pw_not_match:"Las contraseñas no coinciden.",
-    reg_err:"Error de registro: ",
-    save_rest_err:"Registro ok, pero error al guardar el restaurante.",
-    google_err:"Error con Google: ",
-    email_ph:"Introduce tu email",
-password_ph:"Introduce tu contraseña",
-confirm_ph:"Confirma la contraseña",
-restaurant_ph:"Nombre del restaurante",
-pw_hint:"",
+    it:{
+      language:"Lingua",
+      title:"Crea un account",
+      email_lbl:"Email *",
+      password_lbl:"Password *",
+      confirm_lbl:"Conferma Password *",
+      restaurant_lbl:"Nome Ristorante *",
+      privacy_html:'Accetto la <a href="privacy.html" target="_blank">Privacy Policy</a>',
+      register_btn:"Registrati",
+      register_google:"Registrati con Google",
+      footer:"© 2025 Wine in App - Tutti i diritti riservati",
+      pw_short:"Password troppo corta",
+      pw_mid:"Aggiungi almeno una maiuscola e un numero",
+      pw_ok:"Password sicura",
+      must_accept:"Devi accettare la Privacy Policy per continuare.",
+      pw_not_match:"Le password non coincidono.",
+      invalid_email:"Inserisci un’email valida.",
+      min_pw:"La password deve avere almeno 6 caratteri.",
+      reg_err:"Errore registrazione: ",
+      save_rest_err:"Registrazione ok, ma errore nel salvare il nome del ristorante.",
+      google_err:"Errore con Google: ",
+      email_ph:"Inserisci la tua email",
+      password_ph:"Inserisci la password",
+      confirm_ph:"Conferma la password",
+      restaurant_ph:"Nome del ristorante",
+      pw_hint:"",
+      email_exists_title:"Email già registrata",
+      email_exists_body:"Questa email è già associata a un account. Fai il login oppure usa un’altra email.",
+      go_login:"Vai al login",
+      have_account:"Hai già un account?",
+      go_login_inline:"Accedi",
+      creating:"Creazione account…"
+    },
+    en:{
+      language:"Language",
+      title:"Create an account",
+      email_lbl:"Email *",
+      password_lbl:"Password *",
+      confirm_lbl:"Confirm password *",
+      restaurant_lbl:"Restaurant name *",
+      privacy_html:'I accept the <a href="privacy.html" target="_blank">Privacy Policy</a>',
+      register_btn:"Sign up",
+      register_google:"Continue with Google",
+      footer:"© 2025 Wine in App - All rights reserved",
+      pw_short:"Password too short",
+      pw_mid:"Add at least one uppercase letter and one number",
+      pw_ok:"Strong password",
+      must_accept:"You must accept the Privacy Policy to continue.",
+      pw_not_match:"Passwords do not match.",
+      invalid_email:"Please enter a valid email.",
+      min_pw:"Password must be at least 6 characters.",
+      reg_err:"Signup error: ",
+      save_rest_err:"Signup ok, but error saving the restaurant name.",
+      google_err:"Google error: ",
+      email_ph:"Enter your email",
+      password_ph:"Enter your password",
+      confirm_ph:"Confirm your password",
+      restaurant_ph:"Restaurant name",
+      pw_hint:"",
+      email_exists_title:"Email already registered",
+      email_exists_body:"This email is already linked to an account. Please log in or use another email.",
+      go_login:"Go to login",
+      have_account:"Already have an account?",
+      go_login_inline:"Log in",
+      creating:"Creating account…"
+    },
+    fr:{
+      language:"Langue",
+      title:"Créer un compte",
+      email_lbl:"E-mail *",
+      password_lbl:"Mot de passe *",
+      confirm_lbl:"Confirmer le mot de passe *",
+      restaurant_lbl:"Nom du restaurant *",
+      privacy_html:'J’accepte la <a href="privacy.html" target="_blank">Politique de confidentialité</a>',
+      register_btn:"S’inscrire",
+      register_google:"Continuer avec Google",
+      footer:"© 2025 Wine in App - Tous droits réservés",
+      pw_short:"Mot de passe trop court",
+      pw_mid:"Ajoutez au moins une majuscule et un chiffre",
+      pw_ok:"Mot de passe sécurisé",
+      must_accept:"Vous devez accepter la politique de confidentialité pour continuer.",
+      pw_not_match:"Les mots de passe ne correspondent pas.",
+      invalid_email:"Veuillez saisir une adresse e-mail valide.",
+      min_pw:"Le mot de passe doit contenir au moins 6 caractères.",
+      reg_err:"Erreur d’inscription : ",
+      save_rest_err:"Inscription ok, mais erreur lors de l’enregistrement du restaurant.",
+      google_err:"Erreur Google : ",
+      email_ph:"Saisissez votre e-mail",
+      password_ph:"Saisissez votre mot de passe",
+      confirm_ph:"Confirmez le mot de passe",
+      restaurant_ph:"Nom du restaurant",
+      pw_hint:"",
+      email_exists_title:"E-mail déjà enregistré",
+      email_exists_body:"Cet e-mail est déjà associé à un compte. Connectez-vous ou utilisez une autre adresse.",
+      go_login:"Aller à la connexion",
+      have_account:"Vous avez déjà un compte ?",
+      go_login_inline:"Se connecter",
+      creating:"Création du compte…"
+    },
+    es:{
+      language:"Idioma",
+      title:"Crear una cuenta",
+      email_lbl:"Email *",
+      password_lbl:"Contraseña *",
+      confirm_lbl:"Confirmar contraseña *",
+      restaurant_lbl:"Nombre del restaurante *",
+      privacy_html:'Acepto la <a href="privacy.html" target="_blank">Política de privacidad</a>',
+      register_btn:"Registrarse",
+      register_google:"Continuar con Google",
+      footer:"© 2025 Wine in App - Todos los derechos reservados",
+      pw_short:"Contraseña demasiado corta",
+      pw_mid:"Añade al menos una mayúscula y un número",
+      pw_ok:"Contraseña segura",
+      must_accept:"Debes aceptar la Política de privacidad para continuar.",
+      pw_not_match:"Las contraseñas no coinciden.",
+      invalid_email:"Introduce un email válido.",
+      min_pw:"La contraseña debe tener al menos 6 caracteres.",
+      reg_err:"Error de registro: ",
+      save_rest_err:"Registro ok, pero error al guardar el restaurante.",
+      google_err:"Error con Google: ",
+      email_ph:"Introduce tu email",
+      password_ph:"Introduce tu contraseña",
+      confirm_ph:"Confirma la contraseña",
+      restaurant_ph:"Nombre del restaurante",
+      pw_hint:"",
+      email_exists_title:"Email ya registrado",
+      email_exists_body:"Este email ya está asociado a una cuenta. Inicia sesión o usa otro email.",
+      go_login:"Ir a inicio de sesión",
+      have_account:"¿Ya tienes una cuenta?",
+      go_login_inline:"Iniciar sesión",
+      creating:"Creando cuenta…"
+    }
+  };
+
+  function normalizeLang(raw){
+    const s=(raw||"").toLowerCase();
+    if (s.startsWith("it")) return "it";
+    if (s.startsWith("fr")) return "fr";
+    if (s.startsWith("es")) return "es";
+    return "en";
   }
-};
-
-function normalizeLang(raw){
-  const s=(raw||"").toLowerCase();
-  if (s.startsWith("it")) return "it";
-  if (s.startsWith("fr")) return "fr";
-  if (s.startsWith("es")) return "es";
-  return "en";
-}
-function t(key){
-  const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
-  return (dict && dict[key]) || (TRANSLATIONS.en && TRANSLATIONS.en[key]) || key;
-}
-function setLang(lang, persist=true){
-  currentLang = SUPPORTED_LANGS.includes(normalizeLang(lang)) ? normalizeLang(lang) : "en";
-  document.documentElement.lang = currentLang;
-  if (persist) localStorage.setItem("wf_lang", currentLang);
-  const sel = document.getElementById("langSelect");
-  if (sel) sel.value = currentLang;
-  applyTranslations();
-  checkPasswordStrength();
-}
-function initLanguage(){
-  const qp = new URLSearchParams(window.location.search);
-  const langFromUrl = qp.get("lang");
-  const saved = localStorage.getItem("wf_lang");
-  const auto  = normalizeLang(navigator.language||"");
-  setLang(langFromUrl || saved || auto, !saved);
-
-  const sel = document.getElementById("langSelect");
-  if (sel){
-    sel.addEventListener("change", e => setLang(e.target.value, true));
+  function t(key){
+    const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+    return (dict && dict[key]) || (TRANSLATIONS.en && TRANSLATIONS.en[key]) || key;
   }
-}
-function applyTranslations(){
-  const langLbl = document.getElementById("langLabel");
-  if (langLbl) langLbl.textContent = t("language");
+  function setLang(lang, persist=true){
+    currentLang = SUPPORTED_LANGS.includes(normalizeLang(lang)) ? normalizeLang(lang) : "en";
+    document.documentElement.lang = currentLang;
+    if (persist) localStorage.setItem("wf_lang", currentLang);
+    const sel = document.getElementById("langSelect");
+    if (sel) sel.value = currentLang;
+    applyTranslations();
+    checkPasswordStrength();
+    // aggiorna link login con lang
+    const loginLink = document.getElementById("loginLink");
+    if (loginLink) loginLink.href = `login.html?lang=${currentLang}`;
+  }
+  function initLanguage(){
+    const qp = new URLSearchParams(window.location.search);
+    const langFromUrl = qp.get("lang");
+    const saved = localStorage.getItem("wf_lang");
+    const auto  = normalizeLang(navigator.language||"");
+    setLang(langFromUrl || saved || auto, !saved);
 
-  document.querySelectorAll("[data-i18n]").forEach(el=>{
-    const key = el.getAttribute("data-i18n");
-    if (key === "pw_hint") return; // non sovrascrivere la strength dinamica
-    if (key === "privacy_html") el.innerHTML = t(key);
-    else el.textContent = t(key);
-  });
+    const sel = document.getElementById("langSelect");
+    if (sel){
+      sel.addEventListener("change", e => setLang(e.target.value, true));
+    }
+  }
+  function applyTranslations(){
+    const langLbl = document.getElementById("langLabel");
+    if (langLbl) langLbl.textContent = t("language");
 
-  document.querySelectorAll("[data-i18n-placeholder]").forEach(el=>{
-    el.setAttribute("placeholder", t(el.getAttribute("data-i18n-placeholder")));
-  });
-}
+    document.querySelectorAll("[data-i18n]").forEach(el=>{
+      const key = el.getAttribute("data-i18n");
+      if (key === "pw_hint") return;
+      if (key === "privacy_html") el.innerHTML = t(key);
+      else el.textContent = t(key);
+    });
 
-  function toggleVisibility(id) {
-    const field = document.getElementById(id);
-    field.type = field.type === "password" ? "text" : "password";
+    document.querySelectorAll("[data-i18n-placeholder]").forEach(el=>{
+      el.setAttribute("placeholder", t(el.getAttribute("data-i18n-placeholder")));
+    });
+  }
+
+  function showMsg(html, type="error"){
+    const box = document.getElementById("messageBox");
+    box.className = "message";
+    box.style.color = (type==="ok") ? "#0a7a3a" : "#c00";
+    box.innerHTML = html;
+  }
+  function escapeHtml(s){
+    return (s||"").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
 
   function checkPasswordStrength() {
     const password = document.getElementById('password').value;
     const strengthBox = document.getElementById('passwordStrength');
+    if (!password) { strengthBox.textContent = ""; return; }
+
     if (password.length < 6) {
       strengthBox.textContent = t("pw_short");
       strengthBox.style.color = "#c00";
@@ -368,54 +442,103 @@ function applyTranslations(){
     }
   }
 
+  function setLoading(isLoading){
+    const btn = document.getElementById("registerBtn");
+    const gbtn = document.getElementById("googleBtn");
+    if (!btn || !gbtn) return;
+
+    btn.disabled = isLoading;
+    btn.textContent = isLoading ? t("creating") : t("register_btn");
+    gbtn.setAttribute("aria-disabled", isLoading ? "true" : "false");
+    gbtn.style.pointerEvents = isLoading ? "none" : "auto";
+  }
+
   async function register() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
-    const ristorante = document.getElementById('ristorante').value;
+    showMsg("");
+    setLoading(true);
+
+    // leggi campi (FIX: prima erano usati senza essere definiti)
+    const email = (document.getElementById('email').value || "").trim();
+    const password = document.getElementById('password').value || "";
+    const confirmPassword = document.getElementById('confirmPassword').value || "";
+    const ristorante = (document.getElementById('ristorante').value || "").trim();
     const privacyAccepted = document.getElementById('acceptPrivacy').checked;
-    const messageBox = document.getElementById('messageBox');
 
-    if (!privacyAccepted) return alert(t("must_accept"))
-    if (password !== confirmPassword) return alert(t("pw_not_match"))
+    try {
+      if (!email || !/^\S+@\S+\.\S+$/.test(email)) { showMsg(t("invalid_email")); return; }
+      if (!password || password.length < 6) { showMsg(t("min_pw")); return; }
+      if (!ristorante || ristorante.length < 2) { showMsg(t("restaurant_ph")); return; }
+      if (!privacyAccepted) { showMsg(t("must_accept")); return; }
+      if (password !== confirmPassword) { showMsg(t("pw_not_match")); return; }
 
-const emailRedirectTo = `${window.location.origin}/login.html?lang=${currentLang}`;
+      const emailRedirectTo = `${window.location.origin}/login.html?lang=${currentLang}`;
+      const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo } });
 
-const { data, error } = await sb.auth.signUp({
-  email,
-  password,
-  options: { emailRedirectTo }
-});
+      if (error) {
+        const msg = (error.message||"").toLowerCase();
+        if (msg.includes("already") || msg.includes("registered") || msg.includes("exists")) {
+          showMsg(
+            `<b>${t("email_exists_title")}</b><br>${t("email_exists_body")}<br><br>
+             <a href="login.html?lang=${currentLang}" style="color:#b00;font-weight:700">${t("go_login")}</a>`
+          );
+          return;
+        }
+        showMsg(`${t("reg_err")}${escapeHtml(error.message)}`);
+        return;
+      }
 
-    if (error) return alert(t("reg_err") + error.message)
+      const userId = data.user.id;
+      localStorage.setItem(`wf_lang_${userId}`, currentLang);
 
-    const userId = data.user.id;
-    // salva lingua anche “per ristorante” (sync con dashboard/admin)
-localStorage.setItem(`wf_lang_${userId}`, currentLang);
-    const { error: insertError } = await sb.from('ristoranti').insert([
-      { id: userId, nome: ristorante, email: email }
-    ]);
-    if (insertError) return alert(t("save_rest_err"))
+      const { error: insertError } = await sb.from('ristoranti').insert([{ id: userId, nome: ristorante, email }]);
+      if (insertError) { showMsg(t("save_rest_err")); return; }
 
-window.location.href = `email-inviata.html?lang=${currentLang}`;
-
+      showMsg("✅ OK", "ok");
+      window.location.href = `email-inviata.html?lang=${currentLang}`;
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function registerWithGoogle() {
-    const { data, error } = await sb.auth.signInWithOAuth({
+    const gbtn = document.getElementById("googleBtn");
+    if (gbtn && gbtn.getAttribute("aria-disabled") === "true") return;
+
+    const { error } = await sb.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: window.location.origin + '/setup-ristorante.html'
-      }
+      options: { redirectTo: window.location.origin + '/setup-ristorante.html' }
     });
-    if (error) alert(t("google_err") + error.message);
+    if (error) showMsg(`${t("google_err")}${escapeHtml(error.message)}`);
   }
+
+  // 👁️ toggle show/hide password + change icon
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".toggle-password");
+    if (!btn) return;
+    const id = btn.getAttribute("data-target");
+    const field = document.getElementById(id);
+    if (!field) return;
+    const show = field.type === "password";
+    field.type = show ? "text" : "password";
+    btn.textContent = show ? "🙈" : "👁️";
+  });
+
   document.addEventListener("DOMContentLoaded", () => {
-  initLanguage();
-  applyTranslations();
-});
+    initLanguage();
+    applyTranslations();
+
+    // submit con Enter
+    const form = document.getElementById("regForm");
+    if (form) form.addEventListener("submit", (e) => { e.preventDefault(); register(); });
+
+    // Enter/Space sul bottone google
+    const gbtn = document.getElementById("googleBtn");
+    if (gbtn) {
+      gbtn.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); registerWithGoogle(); }
+      });
+    }
+  });
 </script>
 </body>
 </html>
-
-
