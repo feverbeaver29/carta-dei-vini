@@ -35,6 +35,33 @@
     input{
       width:100%; max-width:520px; padding:10px 12px; border-radius:12px; border:1px solid #ddd; background:#fff;
     }
+
+    /* Password eye toggle */
+.pw-wrap{
+  position: relative;
+  max-width: 520px;
+}
+.pw-wrap input{
+  padding-right: 46px; /* spazio per l’occhio */
+}
+.pw-toggle{
+  position:absolute;
+  right:10px;
+  top:50%;
+  transform:translateY(-50%);
+  border:0;
+  background:transparent;
+  cursor:pointer;
+  font-size:18px;
+  line-height:1;
+  color:#333;
+  padding:6px;
+  border-radius:10px;
+}
+.pw-toggle:hover{
+  background: rgba(17,24,39,.06);
+}
+
     .btn{
       margin-top:14px; background:var(--accent); color:#fff; border:0; border-radius:14px;
       padding:10px 14px; cursor:pointer; font-weight:700;
@@ -127,13 +154,22 @@
         </div>
 
         <label for="currPass" id="currPassLbl">Password attuale</label>
-        <input id="currPass" type="password" placeholder="••••••••" autocomplete="current-password"/>
+        <div class="pw-wrap">
+  <input id="currPass" type="password" placeholder="••••••••" autocomplete="current-password"/>
+  <button class="pw-toggle" type="button" aria-label="Mostra/Nascondi password" data-target="currPass">👁️</button>
+</div>
 
         <label for="newPass" id="newPassLbl">Nuova password</label>
-        <input id="newPass" type="password" placeholder="••••••••" autocomplete="new-password"/>
+        <div class="pw-wrap">
+  <input id="newPass" type="password" placeholder="••••••••" autocomplete="new-password"/>
+  <button class="pw-toggle" type="button" aria-label="Mostra/Nascondi password" data-target="newPass">👁️</button>
+</div>
 
         <label for="newPass2" id="newPass2Lbl">Ripeti password</label>
-        <input id="newPass2" type="password" placeholder="••••••••" autocomplete="new-password"/>
+        <div class="pw-wrap">
+  <input id="newPass2" type="password" placeholder="••••••••" autocomplete="new-password"/>
+  <button class="pw-toggle" type="button" aria-label="Mostra/Nascondi password" data-target="newPass2">👁️</button>
+</div>
 
         <button class="btn" id="savePassBtn" type="button">Aggiorna password</button>
         <div class="msg ok" id="passOk">✅ Password aggiornata.</div>
@@ -378,6 +414,19 @@ document.getElementById("authMethods").textContent = prettyProviders.join(", ");
 
     document.getElementById("langSelect").addEventListener("change", (e)=> setLang(e.target.value, true));
 
+    // 👁️ Toggle show/hide password (sempre)
+document.querySelectorAll(".pw-toggle").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const id = btn.getAttribute("data-target");
+    const input = document.getElementById(id);
+    if (!input) return;
+
+    const show = input.type === "password";
+    input.type = show ? "text" : "password";
+    btn.textContent = show ? "🙈" : "👁️";
+  });
+});
+
     document.getElementById("sendSetPasswordEmailBtn").addEventListener("click", async () => {
   resetMsgs();
 
@@ -429,6 +478,7 @@ if (isRecoveryMode) {
   // 2) in recovery non serve password attuale
   document.getElementById("currPassLbl").style.display = "none";
   document.getElementById("currPass").style.display = "none";
+  document.getElementById("currPass").closest(".pw-wrap").style.display = "none";
 
   // 3) mostra un hint chiaro e nascondi il bottone "invio email" (ormai sei già nel link)
   document.getElementById("oauthHint").style.display = "block";
