@@ -474,6 +474,15 @@
       const emailRedirectTo = `${window.location.origin}/login.html?lang=${currentLang}`;
       const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo } });
 
+      // Caso: Supabase non ritorna error, ma l'utente esiste già (o non crea un nuovo user)
+      if (!error && (!data || !data.user || !data.user.id)) {
+        showMsg(
+          `<b>${t("email_exists_title")}</b><br>${t("email_exists_body")}<br><br>
+          <a href="login.html?lang=${currentLang}" style="color:#b00;font-weight:700">${t("go_login")}</a>`
+        );
+        return;
+      }
+
       if (error) {
         const msg = (error.message||"").toLowerCase();
         if (msg.includes("already") || msg.includes("registered") || msg.includes("exists")) {
@@ -491,7 +500,19 @@
       localStorage.setItem(`wf_lang_${userId}`, currentLang);
 
       const { error: insertError } = await sb.from('ristoranti').insert([{ id: userId, nome: ristorante, email }]);
-      if (insertError) { showMsg(t("save_rest_err")); return; }
+      if (insertError) {
+      const msg = (insertError.message || "").toLowerCase();
+      // se fallisce perché esiste già (id/email)
+      if (msg.includes("duplicate") || msg.includes("already") || msg.includes("exists") || msg.includes("unique")) {
+        showMsg(
+          `<b>${t("email_exists_title")}</b><br>${t("email_exists_body")}<br><br>
+          <a href="login.html?lang=${currentLang}" style="color:#b00;font-weight:700">${t("go_login")}</a>`
+        );
+        return;
+      }
+      showMsg(`${t("save_rest_err")}<br><small>${escapeHtml(insertError.message)}</small>`);
+      return;
+    }
 
       showMsg("✅ OK", "ok");
       window.location.href = `email-inviata.html?lang=${currentLang}`;
