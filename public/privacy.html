@@ -523,6 +523,7 @@ function show(lang){
   Object.keys(btns).forEach(k => btns[k].classList.toggle("active", k === key));
   document.documentElement.lang = key;
   localStorage.setItem("wf_privacy_lang", key);
+  history.replaceState(null, "", `?lang=${key}`);
 }
 
 btnIt.addEventListener("click", ()=>show("it"));
@@ -530,8 +531,10 @@ btnEn.addEventListener("click", ()=>show("en"));
 btnFr.addEventListener("click", ()=>show("fr"));
 btnEs.addEventListener("click", ()=>show("es"));
 
+const qp = new URLSearchParams(window.location.search);
+const fromUrl = (qp.get("lang") || "").toLowerCase();
 const saved = localStorage.getItem("wf_privacy_lang");
-show(saved || "it");
+show(fromUrl || saved || "it");
   </script>
 </body>
 </html>

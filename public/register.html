@@ -386,6 +386,10 @@
     // aggiorna link login con lang
     const loginLink = document.getElementById("loginLink");
     if (loginLink) loginLink.href = `login.html?lang=${currentLang}`;
+    // aggiorna link privacy con lang (nel checkbox)
+document.querySelectorAll('a[href^="privacy.html"]').forEach(a => {
+  a.href = `privacy.html?lang=${currentLang}`;
+});
   }
   function initLanguage(){
     const qp = new URLSearchParams(window.location.search);
