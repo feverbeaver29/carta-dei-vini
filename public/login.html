@@ -162,6 +162,20 @@
     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Icon">
     <span data-i18n="login_google">Accedi con Google</span>
   </div>
+  <div style="margin-top:14px; text-align:center; font-size:0.95em;">
+  <a href="#" id="forgotPassLink" style="color:#b00; font-weight:700; text-decoration:none;" data-i18n="forgot_pass">Password dimenticata?</a>
+  <span style="margin:0 8px; color:#bbb;">•</span>
+  <a href="mailto:info@wineinapp.com" id="forgotEmailLink" style="color:#b00; font-weight:700; text-decoration:none;" data-i18n="forgot_email">Email dimenticata?</a>
+</div>
+
+<div id="resetBox" style="display:none; margin-top:14px; text-align:left;">
+  <label data-i18n="reset_lbl">Inserisci la tua email per ricevere il link di reset</label>
+  <input type="email" id="resetEmail" placeholder="Email" style="width:100%; padding:12px; margin-top:6px; border:1px solid #ccc; border-radius:8px; font-size:1em;">
+  <button id="resetBtn" style="width:100%; padding:12px; margin-top:12px; background:#b00; color:#fff; border:0; border-radius:8px; font-size:1.05em; cursor:pointer;" data-i18n="reset_btn">
+    Invia link di reset
+  </button>
+  <div id="resetMsg" style="margin-top:10px; font-size:.95em;"></div>
+</div>
   <footer data-i18n="footer">© 2025 Wine in App - Tutti i diritti riservati</footer>
 
 </div>
@@ -176,6 +190,12 @@ let currentLang = "it";
 
 const TRANSLATIONS = {
   it: {
+    forgot_pass:"Password dimenticata?",
+    forgot_email:"Email dimenticata?",
+    reset_lbl:"Inserisci la tua email per ricevere il link di reset",
+    reset_btn:"Invia link di reset",
+    reset_ok:"✅ Ti abbiamo inviato un’email con il link per reimpostare la password.",
+    reset_err:"Errore invio email: ",
     language:"Lingua",
     title:"Login",
     pay_success:"✅ Pagamento completato con successo. Effettua il login per accedere alla tua dashboard.",
@@ -193,6 +213,12 @@ const TRANSLATIONS = {
     sub_check_err:"Errore nel controllo abbonamento. Accesso bloccato."
   },
   en: {
+    forgot_pass:"Forgot password?",
+    forgot_email:"Forgot email?",
+    reset_lbl:"Enter your email to receive the reset link",
+    reset_btn:"Send reset link",
+    reset_ok:"✅ We sent you an email with a link to reset your password.",
+    reset_err:"Error sending email: ",
     language:"Language",
     title:"Login",
     pay_success:"✅ Payment completed successfully. Log in to access your dashboard.",
@@ -210,6 +236,12 @@ const TRANSLATIONS = {
     sub_check_err:"Error checking subscription. Access blocked."
   },
   fr: {
+    forgot_pass:"Mot de passe oublié ?",
+    forgot_email:"E-mail oublié ?",
+    reset_lbl:"Saisissez votre e-mail pour recevoir le lien de réinitialisation",
+    reset_btn:"Envoyer le lien",
+    reset_ok:"✅ Nous vous avons envoyé un e-mail avec un lien pour réinitialiser votre mot de passe.",
+    reset_err:"Erreur d’envoi : ",
     language:"Langue",
     title:"Connexion",
     pay_success:"✅ Paiement effectué avec succès. Connectez-vous pour accéder à votre tableau de bord.",
@@ -227,6 +259,12 @@ const TRANSLATIONS = {
     sub_check_err:"Erreur de vérification de l’abonnement. Accès bloqué."
   },
   es: {
+    forgot_pass:"¿Olvidaste tu contraseña?",
+    forgot_email:"¿Olvidaste tu email?",
+    reset_lbl:"Introduce tu email para recibir el enlace de restablecimiento",
+    reset_btn:"Enviar enlace",
+    reset_ok:"✅ Te enviamos un email con un enlace para restablecer tu contraseña.",
+    reset_err:"Error al enviar el email: ",
     language:"Idioma",
     title:"Iniciar sesión",
     pay_success:"✅ Pago completado con éxito. Inicia sesión para acceder a tu panel.",
@@ -297,6 +335,55 @@ function applyTranslations(){
 
 document.addEventListener("DOMContentLoaded", async () => {
   initLanguage();
+  // --- Password recovery (forgot password) ---
+const forgotLink = document.getElementById("forgotPassLink");
+const resetBox = document.getElementById("resetBox");
+const resetBtn = document.getElementById("resetBtn");
+const resetMsg = document.getElementById("resetMsg");
+
+if (forgotLink && resetBox) {
+  forgotLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    resetBox.style.display = (resetBox.style.display === "none" || !resetBox.style.display) ? "block" : "none";
+    // precompila se email già inserita sopra
+    const emailNow = (document.getElementById("email")?.value || "").trim();
+    if (emailNow) document.getElementById("resetEmail").value = emailNow;
+    resetMsg.textContent = "";
+  });
+}
+
+async function sendReset() {
+  const email = (document.getElementById("resetEmail").value || "").trim();
+  if (!email) return;
+
+  resetBtn.disabled = true;
+  resetBtn.style.opacity = "0.7";
+  resetMsg.style.color = "#333";
+  resetMsg.textContent = "";
+
+  try {
+    const redirectTo = `${window.location.origin}/account.html?mode=recovery&lang=${currentLang}`;
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) {
+      resetMsg.style.color = "#c00";
+      resetMsg.textContent = t("reset_err") + error.message;
+      return;
+    }
+    resetMsg.style.color = "#0a7a3a";
+    resetMsg.textContent = t("reset_ok");
+  } finally {
+    resetBtn.disabled = false;
+    resetBtn.style.opacity = "1";
+  }
+}
+
+if (resetBtn) resetBtn.addEventListener("click", sendReset);
+const resetEmailInput = document.getElementById("resetEmail");
+if (resetEmailInput) {
+  resetEmailInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); sendReset(); }
+  });
+}
 
   const params = new URLSearchParams(window.location.search);
   if (params.get("checkout") === "success") {
