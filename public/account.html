@@ -178,7 +178,7 @@
     </div>
   </main>
 
-  <div class="bottom-nav">
+  <div class="bottom-nav" id="bottomNav">
     <button class="bn-item" type="button" onclick="goTo('dashboard.html')"><span class="icon">⚙️</span><span class="label" id="navDash">Dashboard</span></button>
     <button class="bn-item active" type="button"><span class="icon">👤</span><span class="label" id="navAcc">Account</span></button>
     <button class="bn-item" type="button" onclick="goTo('aiuto.html')"><span class="icon">❓</span><span class="label" id="navHelp">Aiuto</span></button>
@@ -358,12 +358,16 @@ function hasProvider(user, p){
   return getProviders(user).includes(p);
 }
 
-  function goTo(path){
-    const qs = new URLSearchParams();
-    if (RESTAURANT_ID) qs.set("ristorante_id", RESTAURANT_ID);
-    qs.set("lang", currentLang);
-    window.location.href = `${path}?${qs.toString()}`;
-  }
+function goTo(path){
+  const urlParams = new URLSearchParams(window.location.search);
+  const isRecoveryMode = urlParams.get("mode") === "recovery";
+  if (isRecoveryMode) return; // in recovery blocca ogni navigazione
+
+  const qs = new URLSearchParams();
+  if (RESTAURANT_ID) qs.set("ristorante_id", RESTAURANT_ID);
+  qs.set("lang", currentLang);
+  window.location.href = `${path}?${qs.toString()}`;
+}
 
   function showTab(tabId){
     document.getElementById("emailTab").style.display = (tabId==="emailTab") ? "block":"none";
@@ -483,6 +487,8 @@ document.querySelectorAll(".pw-toggle").forEach(btn => {
     });
 
     const isRecoveryMode = urlParams.get("mode") === "recovery";
+    // BLOCCO: in recovery non si deve navigare in dashboard finché non imposti la password
+    let recoveryPasswordSet = false;
 if (googleOnly && !isRecoveryMode) {
   document.getElementById("tabPass").textContent = "Aggiungi password";
   document.getElementById("oauthHint").style.display = "block";
@@ -494,6 +500,12 @@ if (isRecoveryMode) {
   // 1) apri direttamente il tab password
   showTab("passTab");
   resetMsgs();
+  // UI minimale: in recovery mostriamo solo la sezione password
+document.getElementById("tabEmail").style.display = "none";
+document.getElementById("emailTab").style.display = "none";
+document.getElementById("tabs").style.display = "none"; // niente switch tabs
+const bn = document.getElementById("bottomNav");
+if (bn) bn.style.display = "none"; // niente menu sotto
 
   // 2) in recovery non serve password attuale
   document.getElementById("currPassLbl").style.display = "none";
@@ -542,6 +554,13 @@ if (isRecoveryMode) {
     }
 
     document.getElementById("passOk").textContent = "✅ Password impostata. Ora puoi accedere anche con email e password.";
+    recoveryPasswordSet = true;
+
+    // consigliato: termina la sessione recovery e manda al login
+    await sb.auth.signOut();
+    setTimeout(() => {
+      window.location.href = `login.html?lang=${currentLang}`;
+    }, 800);
     document.getElementById("passOk").style.display = "block";
     document.getElementById("newPass").value = "";
     document.getElementById("newPass2").value = "";
