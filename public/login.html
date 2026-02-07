@@ -53,7 +53,29 @@ select{  width:100%;  padding:11px 12px;  border:1px solid #d1d5db;  border-radi
 input:focus, select:focus{  border-color:#c7b8b0;  box-shadow:0 0 0 3px rgba(176,0,0,.08);}
 
 .password-wrapper{ position:relative; }
-.toggle-password{  position:absolute;  right:10px;  top:50%;  transform:translateY(-50%);  cursor:pointer;  border:0;  background:transparent;  padding:6px 8px;  border-radius:10px;  font-size:16px;  line-height:1;}
+.toggle-password{
+  position:absolute;
+  right:10px;
+  top:50%;
+  transform:translateY(-50%);
+  height:32px;
+  width:32px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  border:0;
+  background:transparent;
+  padding:0;
+  border-radius:10px;
+  font-size:16px;
+  line-height:1;
+}
+
+/* spazio per l'occhiolino dentro il campo */
+.password-wrapper input{
+  padding-right: 44px !important; /* lascia spazio al bottone */
+}
 .toggle-password:hover{ background:rgba(17,24,39,.06); }
 
 button, .google-btn{  width:100%;  padding:12px 14px;  margin-top:16px;  border:0;  border-radius:14px;  font-size:16px;  font-weight:750;  cursor:pointer;  transition:transform .15s ease, filter .15s ease;}
