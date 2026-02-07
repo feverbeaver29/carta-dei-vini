@@ -380,6 +380,23 @@ function hasProvider(user, p){
     });
   }
 
+  async function handleAuthCallbackFromHash() {
+  const hash = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : "";
+  if (!hash) return null;
+
+  const hp = new URLSearchParams(hash);
+  const access_token = hp.get("access_token");
+  const refresh_token = hp.get("refresh_token");
+
+  if (access_token && refresh_token) {
+    const { data, error } = await sb.auth.setSession({ access_token, refresh_token });
+    // pulisci hash (mantieni query)
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+    if (!error && data?.user) return data.user;
+  }
+  return null;
+}
+
   async function requireUser(){
     const { data:{ user } } = await sb.auth.getUser();
     if (!user) { window.location.href="/"; return null; }
@@ -388,7 +405,10 @@ function hasProvider(user, p){
 
   document.addEventListener("DOMContentLoaded", async () => {
     
-    const user = await requireUser();
+    // 1) se arrivi da email recovery con #access_token, crea sessione
+    const recoveredUser = await handleAuthCallbackFromHash();
+    // 2) ora prendi utente (se non c'è, redirect)
+    const user = recoveredUser || await requireUser();
     const providers = getProviders(user);
     const hasPassword = user?.user_metadata?.has_password === true;
     const googleOnly = providers.includes("google") && !hasPassword;
