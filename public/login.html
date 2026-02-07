@@ -5,128 +5,87 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Wine in App</title>
   <style>
-    body {
-      background-color: #fff9f4;
-      font-family: 'Segoe UI', Tahoma, sans-serif;
-      color: #333;
-      margin: 0;
-      padding: 20px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-    .container {
-      background: white;
-      padding: 40px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      width: 100%;
-      max-width: 400px;
-      text-align: center;
-    }
-    h1 {
-      color: #b00;
-      margin-bottom: 20px;
-    }
-    label {
-      display: block;
-      margin-top: 15px;
-      text-align: left;
-    }
-    .password-wrapper {
-      position: relative;
-    }
-    .password-wrapper input {
-      width: 100%;
-      padding: 12px;
-      margin-top: 5px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 1em;
-    }
-    .toggle-password {
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      cursor: pointer;
-    }
-    input[type="email"] {
-      width: 100%;
-      padding: 12px;
-      margin-top: 5px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 1em;
-    }
-    button, .google-btn {
-      width: 100%;
-      padding: 12px;
-      margin-top: 20px;
-      background-color: #b00;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 1.1em;
-      cursor: pointer;
-      transition: background 0.3s, transform 0.2s;
-      display: inline-block;
-    }
-    button:hover, .google-btn:hover {
-      background-color: #800000;
-      transform: translateY(-3px);
-    }
-    .google-btn {
-      background-color: #4285F4;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      text-align: center;
-    }
-    .google-btn img {
-      width: 24px;
-      height: 24px;
-    }
-    .remember {
-      text-align: left;
-      margin-top: 10px;
-      font-size: 0.9em;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    footer {
-      margin-top: 20px;
-      color: #aaa;
-      font-size: 0.9em;
-    }
-    .topbar{
+:root{  --bg:#fff9f4;  --card:#ffffff;  --border:#e6e2da;  --text:#1f2937;  --muted:#6b7280;  --brand:#b00;  --brand2:#800000;  --radius:16px;}
+
+*{box-sizing:border-box}
+body{  background:var(--bg);  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;  color:var(--text);  margin:0;
+  padding:24px 14px;            /* più aria e centratura */
   display:flex;
-  justify-content:space-between;
+  justify-content:center;
   align-items:center;
-  margin-bottom: 10px;
+  min-height:100vh;
 }
-.lang-wrap{
-  display:flex;
-  align-items:center;
-  gap:8px;
+
+.container{
+  background:var(--card);
+  padding:28px;                 /* meno “gigante” */
+  border-radius:var(--radius);
+  border:1px solid var(--border);
+  box-shadow:0 10px 28px rgba(0,0,0,.08);
+  width:100%;
+  max-width:420px;
 }
-.lang-wrap label{ margin:0; font-size:0.9em; color:#555; }
-.lang-wrap select{
-  padding:6px 10px;
-  border-radius:10px;
-  border:1px solid #ccc;
-  background:#fff;
+
+h1{
+  color:var(--brand);
+  margin:10px 0 16px;
+  font-size:28px;
+  letter-spacing:-.3px;
+  text-align:center;
 }
+
+label{
+  display:block;
+  margin-top:14px;
+  margin-bottom:6px;
+  text-align:left;
+  font-weight:650;
+  font-size:14px;
+  color:var(--text);
+}
+
+input[type="email"],
+.password-wrapper input,
+input[type="password"],
+input[type="text"],
+select{  width:100%;  padding:11px 12px;  border:1px solid #d1d5db;  border-radius:12px;  font-size:15px;  outline:none;  background:#fff;}
+
+input:focus, select:focus{  border-color:#c7b8b0;  box-shadow:0 0 0 3px rgba(176,0,0,.08);}
+
+.password-wrapper{ position:relative; }
+.toggle-password{  position:absolute;  right:10px;  top:50%;  transform:translateY(-50%);  cursor:pointer;  border:0;  background:transparent;  padding:6px 8px;  border-radius:10px;  font-size:16px;  line-height:1;}
+.toggle-password:hover{ background:rgba(17,24,39,.06); }
+
+button, .google-btn{  width:100%;  padding:12px 14px;  margin-top:16px;  border:0;  border-radius:14px;  font-size:16px;  font-weight:750;  cursor:pointer;  transition:transform .15s ease, filter .15s ease;}
+
+button{  background:var(--brand);  color:#fff;}
+button:hover{ filter:brightness(.95); transform:translateY(-1px); }
+button:active{ transform:translateY(0px); }
+
+.google-btn{  background:#4285F4;  color:#fff;  display:flex;  align-items:center;  justify-content:center;  gap:10px;  user-select:none;}
+.google-btn:hover{ filter:brightness(.95); transform:translateY(-1px); }
+.google-btn img{ width:22px; height:22px; }
+
+.remember{  text-align:left;  margin-top:12px;  font-size:14px;  display:flex;  align-items:center;  gap:10px;  color:var(--text);}
+.remember input{ transform:translateY(1px); }
+
+footer{  margin-top:18px;  color:#9ca3af;  font-size:13px;  text-align:center;}
+
+.topbar{  display:flex;  align-items:center;  justify-content:flex-end;  gap:10px;  margin-bottom:6px;}
+.lang-wrap{  display:flex;  align-items:center;  gap:10px;}
+.lang-wrap label{ margin:0; font-size:13px; color:var(--muted); font-weight:600; }
+.lang-wrap select{ padding:8px 10px; border-radius:12px; }
+
+#resetBox{  margin-top:14px;  text-align:left;}
+#resetBox label{ margin-top:0; }
+#resetMsg{ margin-top:10px; font-size:14px; }
+
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div class="container">
 <div class="topbar">
-  <div></div>
   <div class="lang-wrap">
     <label id="langLabel" for="langSelect">Lingua</label>
     <select id="langSelect">
@@ -149,7 +108,7 @@
   <label data-i18n="password_lbl">Password <span style="color: red">*</span></label>
   <div class="password-wrapper">
     <input type="password" id="password" placeholder="Inserisci la password" data-i18n-placeholder="password_ph" required>
-    <span class="toggle-password" onclick="toggleVisibility('password')">👁️</span>
+    <button class="toggle-password" type="button" aria-label="Mostra/Nascondi password" onclick="toggleVisibility('password', this)">👁️</button>
   </div>
 
   <div class="remember">
@@ -162,10 +121,10 @@
     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Icon">
     <span data-i18n="login_google">Accedi con Google</span>
   </div>
-  <div style="margin-top:14px; text-align:center; font-size:0.95em;">
-  <a href="#" id="forgotPassLink" style="color:#b00; font-weight:700; text-decoration:none;" data-i18n="forgot_pass">Password dimenticata?</a>
-  <span style="margin:0 8px; color:#bbb;">•</span>
-  <a href="mailto:info@wineinapp.com" id="forgotEmailLink" style="color:#b00; font-weight:700; text-decoration:none;" data-i18n="forgot_email">Email dimenticata?</a>
+<div class="helper-links" style="margin-top:14px;">
+  <a href="#" id="forgotPassLink" data-i18n="forgot_pass">Password dimenticata?</a>
+  <span style="margin:0 10px; color:#c7c7c7;">•</span>
+  <a href="mailto:info@wineinapp.com" id="forgotEmailLink" data-i18n="forgot_email">Email dimenticata?</a>
 </div>
 
 <div id="resetBox" style="display:none; margin-top:14px; text-align:left;">
@@ -328,10 +287,12 @@ function applyTranslations(){
   });
 }
 
-  function toggleVisibility(id) {
-    const field = document.getElementById(id);
-    field.type = field.type === "password" ? "text" : "password";
-  }
+function toggleVisibility(id, btn) {
+  const field = document.getElementById(id);
+  const show = field.type === "password";
+  field.type = show ? "text" : "password";
+  if (btn) btn.textContent = show ? "🙈" : "👁️";
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
   initLanguage();

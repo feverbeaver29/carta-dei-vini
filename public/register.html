@@ -7,158 +7,175 @@
   <link href="https://fonts.googleapis.com/css2?family=Quicksand&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
   <style>
-    body {
-      background-color: #fff9f4;
-      font-family: 'Segoe UI', Tahoma, sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-    .container {
-      background: #ffffff;
-      padding: 40px;
-      border-radius: 14px;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-      max-width: 420px;
-      width: 100%;
-    }
-    h1 {
-      color: #b00;
-      margin-bottom: 1.2rem;
-      text-align: center;
-    }
-    label {
-      display: block;
-      margin-top: 1.2rem;
-      font-weight: 600;
-    }
-    input[type="email"],
-    input[type="password"],
-    input[type="text"] {
-      width: 100%;
-      padding: 12px;
-      margin-top: 6px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 1rem;
-      box-sizing: border-box;
-    }
+:root{
+  --bg:#fff9f4;
+  --card:#ffffff;
+  --border:#e6e2da;
+  --text:#1f2937;
+  --muted:#6b7280;
+  --brand:#b00;
+  --brand2:#800000;
+  --radius:16px;
+}
 
-    .password-wrapper { position: relative; }
-    .toggle-password {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      cursor: pointer;
-      background: transparent;
-      border: 0;
-      padding: 6px;
-      border-radius: 10px;
-      font-size: 18px;
-      line-height: 1;
-    }
-    .toggle-password:hover { background: rgba(17,24,39,.06); }
+*{box-sizing:border-box}
+body{
+  background:var(--bg);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  color:var(--text);
+  margin:0;
+  padding:24px 14px;            /* più aria e centratura */
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+}
 
-    .password-strength {
-      font-size: 0.85em;
-      color: #888;
-      margin-top: 5px;
-    }
+.container{
+  background:var(--card);
+  padding:28px;                 /* meno “gigante” */
+  border-radius:var(--radius);
+  border:1px solid var(--border);
+  box-shadow:0 10px 28px rgba(0,0,0,.08);
+  width:100%;
+  max-width:420px;
+}
 
-    .btn, .google-btn {
-      margin-top: 20px;
-      width: 100%;
-      padding: 12px;
-      font-size: 1.1em;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .btn {
-      background-color: #b00;
-      color: white;
-    }
-    .btn:hover { background-color: #800000; }
+h1{
+  color:var(--brand);
+  margin:10px 0 16px;
+  font-size:28px;
+  letter-spacing:-.3px;
+  text-align:center;
+}
 
-    .btn[disabled], .google-btn[aria-disabled="true"]{
-      opacity: .7;
-      cursor: not-allowed;
-      transform: none;
-    }
+label{
+  display:block;
+  margin-top:14px;
+  margin-bottom:6px;
+  text-align:left;
+  font-weight:650;
+  font-size:14px;
+  color:var(--text);
+}
 
-    .google-btn {
-      background-color: #4285F4;
-      color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
-      user-select: none;
-    }
-    .google-btn img { width: 24px; }
+input[type="email"],
+.password-wrapper input,
+input[type="password"],
+input[type="text"],
+select{
+  width:100%;
+  padding:11px 12px;
+  border:1px solid #d1d5db;
+  border-radius:12px;
+  font-size:15px;
+  outline:none;
+  background:#fff;
+}
 
-    .message {
-      margin-top: 15px;
-      font-size: 0.95em;
-      text-align: center;
-    }
+input:focus, select:focus{
+  border-color:#c7b8b0;
+  box-shadow:0 0 0 3px rgba(176,0,0,.08);
+}
 
-    .checkbox {
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      margin-top: 1rem;
-      font-size: 0.95em;
-    }
-    .checkbox label { margin-top: 0; font-weight: 500; }
+.password-wrapper{ position:relative; }
+.toggle-password{
+  position:absolute;
+  right:10px;
+  top:50%;
+  transform:translateY(-50%);
+  cursor:pointer;
+  border:0;
+  background:transparent;
+  padding:6px 8px;
+  border-radius:10px;
+  font-size:16px;
+  line-height:1;
+}
+.toggle-password:hover{ background:rgba(17,24,39,.06); }
 
-    footer {
-      text-align: center;
-      margin-top: 2rem;
-      font-size: 0.85em;
-      color: #aaa;
-    }
+button, .google-btn{
+  width:100%;
+  padding:12px 14px;
+  margin-top:16px;
+  border:0;
+  border-radius:14px;
+  font-size:16px;
+  font-weight:750;
+  cursor:pointer;
+  transition:transform .15s ease, filter .15s ease;
+}
 
-    .topbar{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom: 10px;
-    }
-    .lang-wrap{
-      display:flex;
-      align-items:center;
-      gap:8px;
-    }
-    .lang-wrap label{ margin:0; font-size:0.9em; color:#555; font-weight:500; }
-    .lang-wrap select{
-      padding:6px 10px;
-      border-radius:10px;
-      border:1px solid #ccc;
-      background:#fff;
-    }
+button{
+  background:var(--brand);
+  color:#fff;
+}
+button:hover{ filter:brightness(.95); transform:translateY(-1px); }
+button:active{ transform:translateY(0px); }
 
-    .helper-links{
-      margin-top: 14px;
-      text-align: center;
-      font-size: .95em;
-    }
-    .helper-links a{
-      color:#b00;
-      font-weight:700;
-      text-decoration:none;
-    }
-    .helper-links a:hover{ text-decoration: underline; }
+.google-btn{
+  background:#4285F4;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  user-select:none;
+}
+.google-btn:hover{ filter:brightness(.95); transform:translateY(-1px); }
+.google-btn img{ width:22px; height:22px; }
+
+.remember{
+  text-align:left;
+  margin-top:12px;
+  font-size:14px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  color:var(--text);
+}
+.remember input{ transform:translateY(1px); }
+
+footer{
+  margin-top:18px;
+  color:#9ca3af;
+  font-size:13px;
+  text-align:center;
+}
+
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+  margin-bottom:6px;
+}
+.lang-wrap{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.lang-wrap label{ margin:0; font-size:13px; color:var(--muted); font-weight:600; }
+.lang-wrap select{ padding:8px 10px; border-radius:12px; }
+
+#resetBox{
+  margin-top:14px;
+  text-align:left;
+}
+#resetBox label{ margin-top:0; }
+#resetMsg{ margin-top:10px; font-size:14px; }
+.password-strength{ font-size:13px; color:var(--muted); margin-top:6px; }
+.checkbox{ display:flex; align-items:flex-start; gap:10px; margin-top:14px; font-size:14px; color:var(--text); }
+.checkbox label{ margin:0; font-weight:600; }
+.checkbox input{ margin-top:3px; }
+.helper-links{ margin-top:14px; text-align:center; font-size:14px; color:var(--muted); }
+.helper-links a{ color:var(--brand); font-weight:800; text-decoration:none; }
+.helper-links a:hover{ text-decoration:underline; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="topbar">
-      <div></div>
       <div class="lang-wrap">
         <label id="langLabel" for="langSelect">Lingua</label>
         <select id="langSelect">
