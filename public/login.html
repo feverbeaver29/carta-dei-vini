@@ -340,6 +340,8 @@ const forgotLink = document.getElementById("forgotPassLink");
 const resetBox = document.getElementById("resetBox");
 const resetBtn = document.getElementById("resetBtn");
 const resetMsg = document.getElementById("resetMsg");
+let resetInFlight = false;
+let resetCooldownUntil = 0;
 
 if (forgotLink && resetBox) {
   forgotLink.addEventListener("click", (e) => {
@@ -352,10 +354,23 @@ if (forgotLink && resetBox) {
   });
 }
 
-async function sendReset() {
+async function sendReset(e) {
+  if (e) e.preventDefault();
+
+  const now = Date.now();
+  if (resetInFlight) return;
+
+  if (now < resetCooldownUntil) {
+    const sec = Math.ceil((resetCooldownUntil - now) / 1000);
+    resetMsg.style.color = "#c00";
+    resetMsg.textContent = `Aspetta ${sec}s prima di riprovare.`;
+    return;
+  }
+
   const email = (document.getElementById("resetEmail").value || "").trim();
   if (!email) return;
 
+  resetInFlight = true;
   resetBtn.disabled = true;
   resetBtn.style.opacity = "0.7";
   resetMsg.style.color = "#333";
@@ -364,16 +379,38 @@ async function sendReset() {
   try {
     const redirectTo = `${window.location.origin}/account.html?mode=recovery&lang=${currentLang}`;
     const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+
     if (error) {
+      // Se è rate limit, blocca più a lungo
+      if (String(error.status) === "429" || /too many requests/i.test(error.message)) {
+        resetCooldownUntil = Date.now() + 60_000; // 60s
+      } else {
+        resetCooldownUntil = Date.now() + 10_000; // 10s
+      }
+
       resetMsg.style.color = "#c00";
       resetMsg.textContent = t("reset_err") + error.message;
       return;
     }
+
+    // Anche se ok, cooldown per evitare spam
+    resetCooldownUntil = Date.now() + 30_000; // 30s
     resetMsg.style.color = "#0a7a3a";
     resetMsg.textContent = t("reset_ok");
   } finally {
-    resetBtn.disabled = false;
-    resetBtn.style.opacity = "1";
+    resetInFlight = false;
+
+    // Se siamo in cooldown, tieni disabilitato fino a fine cooldown
+    const remaining = resetCooldownUntil - Date.now();
+    if (remaining > 0) {
+      setTimeout(() => {
+        resetBtn.disabled = false;
+        resetBtn.style.opacity = "1";
+      }, remaining);
+    } else {
+      resetBtn.disabled = false;
+      resetBtn.style.opacity = "1";
+    }
   }
 }
 
@@ -381,7 +418,10 @@ if (resetBtn) resetBtn.addEventListener("click", sendReset);
 const resetEmailInput = document.getElementById("resetEmail");
 if (resetEmailInput) {
   resetEmailInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") { e.preventDefault(); sendReset(); }
+    if (e.key === "Enter") { 
+  e.preventDefault(); 
+  resetBtn?.click(); 
+}
   });
 }
 
