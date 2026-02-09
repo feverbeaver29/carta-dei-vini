@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wine's Fever</title>
+  <meta name="description" content="La carta dei vini digitale con AI per ristoranti. Personalizzabile, elegante, smart.">
+  <meta property="og:title" content="Wine's Fever">
+  <meta property="og:description" content="La carta dei vini intelligente per il tuo ristorante.">
+  <meta property="og:image" content="https://www.wineinapp.com//preview.jpg"> <!-- cambia URL con uno tuo -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.wineinapp.com/"> <!-- cambia URL -->
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Quicksand&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent: #b00;
+      --bg: #fff9f4;
+      --text: #333;
+      --light: #fafafa;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0; padding: 0;
+    }
+
+    body {
+      font-family: 'Quicksand', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    header {
+      background: #fff;
+      padding: 2em 1em 1em;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+    }
+
+    header img {
+      max-width: 90%;
+      height: auto;
+    }
+
+#logo {
+  max-height: 200px;
+  max-width: 500px;
+  width: auto;
+  height: auto;
+}
+    .nav-buttons {
+      margin-top: 1.5em;
+    }
+
+    .nav-buttons a {
+      margin: 0 10px;
+      background: var(--accent);
+      color: white;
+      padding: 0.7em 1.4em;
+      border-radius: 24px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    .nav-buttons a:hover {
+      background: #800000;
+    }
+
+    .section {
+      padding: 3em 1em;
+      max-width: 1100px;
+      margin: auto;
+    }
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2em;
+  margin-top: 2em;
+}
+
+
+    .feature {
+      background: white;
+      padding: 1.5em;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .feature h3 {
+      color: var(--accent);
+      margin-bottom: 0.5em;
+      font-size: 1.2em;
+    }
+
+    .feature p {
+      font-size: 0.95em;
+    }
+
+    .mockup {
+      margin: 3em auto;
+      text-align: center;
+    }
+
+    .mockup iframe {
+      width: 360px;
+      height: 640px;
+      border: 2px solid #ccc;
+      border-radius: 24px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+.phone-frame {
+  display: inline-block;
+  padding: 14px 12px;
+  border-radius: 40px;
+  background: #222;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.phone-frame::before {
+  content: '';
+  width: 50px;
+  height: 6px;
+  background: #555;
+  border-radius: 8px;
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.screen {
+  border-radius: 32px;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  background: white;
+}
+
+.screen iframe {
+  display: block;
+  border: none;
+  width: 360px;
+  height: 640px;
+  max-width: 100%;
+  max-height: 75vh;
+}
+
+    .pricing {
+      background: var(--light);
+      border-top: 1px solid #eee;
+    }
+
+    .plan {
+      background: white;
+      padding: 1.5em;
+      border-radius: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      text-align: center;
+    }
+
+    .pricing .plans {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2em;
+      justify-content: center;
+      margin-top: 2em;
+    }
+
+    .plan h3 {
+      font-size: 1.4em;
+      margin-bottom: 0.5em;
+      color: var(--accent);
+    }
+
+    .plan ul {
+      text-align: left;
+      margin: 1em 0;
+      padding-left: 1.2em;
+    }
+
+    .plan ul li {
+      margin-bottom: 0.5em;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2em 1em;
+      font-size: 0.9em;
+      color: #999;
+    }
+
+    @media (max-width: 600px) {
+      header h1 { font-size: 2em; }
+      .mockup iframe { width: 90%; height: 500px; }
+  .phone-frame {
+    width: 90vw;
+    height: 80vh;
+    border-radius: 36px;
+    padding: 10px 5px;
+  }
+
+  .screen {
+    border-radius: 28px;
+  }
+    .screen iframe {
+    width: 100%;
+    height: 75vh;
+  }
+
+  .phone-frame::before {
+    width: 40px;
+    height: 4px;
+    top: 8px;
+  }
+  #logo {
+  max-height: 150px;
+  max-width: 300px;
+}
+.feature {
+  padding: 1em;
+}
+
+.feature h3 {
+  font-size: 1em;
+  margin-bottom: 0.4em;
+}
+
+.feature p {
+  font-size: 0.85em;
+  line-height: 1.4;
+}
+
+}
+  </style>
+</head>
+<body>
+  <header>
+    <img src="logo.PNG" alt="Logo Wine's Fever - carta vini digitale" id="logo" class="logo">
+    <div class="nav-buttons">
+      <a href="login.html">Login</a>
+      <a href="register.html">Registrati</a>
+    </div>
+  </header>
+
+  <section class="section">
+    <h2 style="text-align:center; font-size: 1.8em;">Perché scegliere Wine’s Fever?</h2>
+    <div class="features">
+      <div class="feature">
+        <h3>🍷 Sommelier Virtuale</h3>
+        <p>Consiglia i vini perfetti in base ai piatti scelti. AI integrata nella tua carta.</p>
+      </div>
+      <div class="feature">
+        <h3>🎨 Personalizzazione Totale</h3>
+        <p>Colori, font, logo, nome ristorante: tutto personalizzabile live.</p>
+      </div>
+      <div class="feature">
+        <h3>📲 QR Code Dinamico</h3>
+        <p>Un QR elegante e pronto da stampare, collegato alla tua carta aggiornata.</p>
+      </div>
+      <div class="feature">
+        <h3>📥 Importazione Smart</h3>
+        <p>Carica la tua carta da PDF o immagine. L’AI fa il resto (piano PRO).</p>
+      </div>
+      <div class="feature">
+        <h3>🔀 Ordine Intelligente</h3>
+        <p>Organizza i vini per annata, prezzo o nome. Anche per categorie e sottocategorie.</p>
+      </div>
+      <div class="feature">
+        <h3>🌍 Multilingua</h3>
+        <p>Offri la tua carta in 6 lingue (solo con piano PRO).</p>
+      </div>
+    </div>
+  </section>
+
+  <h2 style="text-align: center; font-size: 1.4em; margin-top: 3em;">Guarda la carta demo in azione</h2>
+<div class="mockup">
+  <div class="phone-frame">
+    <div class="screen">
+      <iframe src="carta.html?ristorante_id=fc28c874-b195-4660-9c78-c58d8dc3c092" title="Anteprima carta demo" loading="lazy"></iframe>
+    </div>
+  </div>
+</div>
+
+  <section class="section pricing">
+    <h2 style="text-align:center; font-size:1.6em;">Scegli il tuo piano</h2>
+    <div class="plans">
+      <div class="plan">
+        <h3>Piano Base</h3>
+        <p><strong>14,99€/mese</strong></p>
+        <ul>
+          <li>✔️ Carta digitale personalizzata</li>
+          <li>✔️ Sommelier AI incluso</li>
+          <li>✔️ QR Code dinamico</li>
+        </ul>
+      </div>
+      <div class="plan">
+        <h3>Piano PRO</h3>
+        <p><strong>29,99€/mese</strong></p>
+        <ul>
+          <li>✔️ Tutto del piano Base</li>
+          <li>✔️ OCR da PDF / Immagine</li>
+          <li>✔️ Branding avanzato</li>
+          <li>✔️ Multilingua completo</li>
+        </ul>
+      </div>
+    </div>
+<div class="nav-buttons" style="text-align: center; margin-top: 2em;">
+  <a href="login.html">Login</a>
+  <a href="register.html">Registrati</a>
+</div>
+
+  </section>
+
+  <footer>
+    © 2025 Wine's Fever – Tutti i diritti riservati
+  </footer>
+  <div id="cookie-banner" style="position: fixed; bottom: 0; background: #222; color: white; padding: 1em; width: 100%; text-align: center; z-index: 999;">
+  Usiamo cookie tecnici per migliorare la tua esperienza. <button onclick="this.parentElement.style.display='none'" style="margin-left:1em; padding:0.4em 1em;">OK</button>
+</div>
+</body>
+</html>
+
