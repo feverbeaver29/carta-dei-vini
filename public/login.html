@@ -52,14 +52,20 @@ select{  width:100%;  padding:11px 12px;  border:1px solid #d1d5db;  border-radi
 
 input:focus, select:focus{  border-color:#c7b8b0;  box-shadow:0 0 0 3px rgba(176,0,0,.08);}
 
-.password-wrapper{ position:relative; }
+.password-wrapper{
+  position:relative;
+  display:flex;
+  align-items:center;
+}
+
 .toggle-password{
   position:absolute;
-  right:10px;
-  top:50%;
-  transform:translateY(-50%);
-  height:32px;
-  width:32px;
+  right:8px;
+  top:0;
+  bottom:0;              /* <-- invece di top:50% */
+  margin:auto 0;         /* <-- centra perfettamente */
+  height:100%;           /* <-- stessa altezza dell’input */
+  width:44px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -72,9 +78,8 @@ input:focus, select:focus{  border-color:#c7b8b0;  box-shadow:0 0 0 3px rgba(176
   line-height:1;
 }
 
-/* spazio per l'occhiolino dentro il campo */
 .password-wrapper input{
-  padding-right: 44px !important; /* lascia spazio al bottone */
+  padding-right: 52px !important; /* un filo più di spazio per il bottone */
 }
 .toggle-password:hover{ background:rgba(17,24,39,.06); }
 
