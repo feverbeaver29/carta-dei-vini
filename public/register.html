@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Registrazione - Wine in App</title>
-  <link href="https://fonts.googleapis.com/css2?family=Quicksand&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
   <style>
 :root{
@@ -20,31 +19,35 @@
 
 *{box-sizing:border-box}
 body{
-  background:var(--bg);
+  background:
+  radial-gradient(1200px 600px at 20% -10%, rgba(176,0,0,.10), transparent 60%),
+  radial-gradient(900px 500px at 110% 10%, rgba(128,0,0,.08), transparent 55%),
+  var(--bg);
   font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
   color:var(--text);
   margin:0;
-  padding:24px 14px;            /* più aria e centratura */
   display:flex;
   justify-content:center;
   align-items:center;
-  min-height:100vh;
+  min-height: 100svh;
+  padding: max(18px, env(safe-area-inset-top)) 14px max(18px, env(safe-area-inset-bottom));
+  -webkit-text-size-adjust: 100%;
 }
 
 .container{
   background:var(--card);
-  padding:28px;                 /* meno “gigante” */
-  border-radius:var(--radius);
+  padding: clamp(18px, 4vw, 28px);
+  border-radius: 18px;
   border:1px solid var(--border);
-  box-shadow:0 10px 28px rgba(0,0,0,.08);
+  box-shadow: 0 18px 50px rgba(0,0,0,.10);
   width:100%;
-  max-width:420px;
+  max-width: 420px;
 }
 
 h1{
   color:var(--brand);
-  margin:10px 0 16px;
-  font-size:28px;
+  margin: 8px 0 14px;
+  font-size: clamp(22px, 5vw, 30px);
   letter-spacing:-.3px;
   text-align:center;
 }
@@ -55,7 +58,7 @@ label{
   margin-bottom:6px;
   text-align:left;
   font-weight:650;
-  font-size:14px;
+  font-size: 13.5px;
   color:var(--text);
 }
 
@@ -63,15 +66,7 @@ input[type="email"],
 .password-wrapper input,
 input[type="password"],
 input[type="text"],
-select{
-  width:100%;
-  padding:11px 12px;
-  border:1px solid #d1d5db;
-  border-radius:12px;
-  font-size:15px;
-  outline:none;
-  background:#fff;
-}
+select{  width:100%;  padding: 12px 12px;  border:1px solid #d1d5db;  border-radius:12px;  font-size: 16px;  outline:none;  background:#fff;}
 
 input:focus, select:focus{
   border-color:#c7b8b0;
@@ -111,14 +106,26 @@ input:focus, select:focus{
 
 button, .google-btn{
   width:100%;
+  min-height:46px;
   padding:12px 14px;
-  margin-top:16px;
+  margin-top:14px;
   border:0;
   border-radius:14px;
   font-size:16px;
-  font-weight:750;
+  font-weight:800;
   cursor:pointer;
-  transition:transform .15s ease, filter .15s ease;
+  transition:transform .12s ease, filter .12s ease, box-shadow .12s ease;
+  touch-action: manipulation;
+}
+
+button:active, .google-btn:active{
+  transform: translateY(1px) scale(0.99);
+}
+
+button:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+  transform:none;
 }
 
 button{
@@ -186,6 +193,28 @@ footer{
 .helper-links{ margin-top:14px; text-align:center; font-size:14px; color:var(--muted); }
 .helper-links a{ color:var(--brand); font-weight:800; text-decoration:none; }
 .helper-links a:hover{ text-decoration:underline; }
+
+.divider{
+  display:flex; align-items:center;
+  margin:14px 0 0;
+  color:var(--muted);
+  font-size:13px;
+}
+.divider::before, .divider::after{
+  content:"";
+  height:1px;
+  background: var(--border);
+  flex:1;
+}
+.divider span{ padding:0 10px; }
+
+.message{
+  margin-top:12px;
+  font-size:14px;
+  line-height:1.35;
+}
+.message a{ text-decoration:none; }
+.message a:hover{ text-decoration:underline; }
   </style>
 </head>
 <body>
@@ -237,7 +266,7 @@ footer{
 
       <button class="btn" id="registerBtn" type="submit" data-i18n="register_btn">Registrati</button>
     </form>
-
+<div class="divider"><span>oppure</span></div>
     <div class="google-btn" id="googleBtn" role="button" tabindex="0" onclick="registerWithGoogle()">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Icon">
       <span data-i18n="register_google">Registrati con Google</span>
