@@ -11,7 +11,7 @@
   <meta id="ogDescription" property="og:description" content="La carta dei vini digitale che fa sembrare il tuo ristorante più premium (e ti fa vendere meglio)." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.wineinapp.com/" />
-  <meta property="og:locale" content="it_IT" />
+  <meta id="ogLocale" property="og:locale" content="it_IT" />
 
   <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -182,12 +182,18 @@
       letter-spacing: .6px;
       line-height: 1;
     }
-    .hero-brand .payoff{
-      margin-top: 6px;
-      font-size: .98rem;
-      color: var(--muted);
-      font-weight: 700;
-    }
+.hero-brand .payoff{
+  margin-top: 6px;
+  font-size: clamp(.78rem, 2.7vw, .98rem);
+  color: var(--muted);
+  font-weight: 700;
+  white-space: nowrap;      /* mai a capo */
+  overflow: visible;        /* deve restare visibile */
+  letter-spacing: .1px;
+}
+@media (max-width: 360px){
+  .hero-brand .payoff{ font-size: .74rem; }
+}
 
     h1{
       font-family: "Playfair Display", serif;
@@ -815,6 +821,18 @@ html{ scroll-behavior: smooth; }
   }
 }
 
+/* --- Fix overflow mobile (no scroll orizzontale) --- */
+html, body { width: 100%; overflow-x: hidden; }
+.wrap { width: 100%; }
+.hero-grid, .grid-3, .plans, .proof-grid { min-width: 0; }
+.card, .plan, .stat, details { min-width: 0; }
+.phone, .screen, iframe { max-width: 100%; }
+@media (max-width: 380px){
+  .phone{
+    width: min(300px, 84vw);
+  }
+}
+.drawer, .drawer-backdrop { max-width: 100vw; }
   </style>
 </head>
 
@@ -837,7 +855,7 @@ html{ scroll-behavior: smooth; }
   <a class="nav-login" href="login.html" data-i18n="nav.login">Login</a>
 
   <!-- drawer -->
-  <div class="drawer" id="navPanel" aria-hidden="true">
+  <div class="drawer" id="navPanel" aria-hidden="true" tabindex="-1">
     <div class="drawer-head">
       <div class="drawer-title">WINA</div>
       <button class="drawer-close" id="drawerClose" aria-label="Close">×</button>
@@ -1691,20 +1709,37 @@ const navMore = document.getElementById("navMore");
 const drawer = document.getElementById("navPanel");
 const backdrop = document.getElementById("drawerBackdrop");
 const closeBtn = document.getElementById("drawerClose");
+if(drawer) drawer.inert = true;
 
 function openDrawer(){
   drawer.classList.add("open");
   backdrop.classList.add("open");
-  drawer.setAttribute("aria-hidden", "false");
-  backdrop.setAttribute("aria-hidden", "false");
+
+  drawer.removeAttribute("aria-hidden");
+  backdrop.removeAttribute("aria-hidden");
+
+  // accessibilità: abilita interazioni solo quando aperto
+  drawer.inert = false;
+
+  // porta focus nel drawer (così screen reader / tabbing è corretto)
+  drawer.focus();
+
   document.body.style.overflow = "hidden";
 }
 
 function closeDrawer(){
+  // 1) sposta focus fuori PRIMA di nascondere
+  if(navMore) navMore.focus();
+
+  // 2) disabilita focus/tab dentro drawer quando chiuso
+  drawer.inert = true;
+
   drawer.classList.remove("open");
   backdrop.classList.remove("open");
+
   drawer.setAttribute("aria-hidden", "true");
   backdrop.setAttribute("aria-hidden", "true");
+
   document.body.style.overflow = "";
 }
 
