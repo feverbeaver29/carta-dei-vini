@@ -3,15 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wine in App — Carta dei vini digitale</title>
 
-  <meta name="description" content="Wine in App (W.IN.A): carta dei vini digitale per ristoranti con sommelier AI, QR dinamico, personalizzazione completa e multilingua." />
+  <title>WINA — Digital Wine List for Restaurants</title>
+  <meta name="description" content="WINA: la carta dei vini digitale che sembra un’app. QR unico sempre aggiornato, mobile perfetta, multilingua e Sommelier AI per ristoranti." />
 
   <!-- Open Graph -->
-  <meta property="og:title" content="Wine in App — W.IN.A" />
-  <meta property="og:description" content="La carta dei vini digitale che sembra un’app: elegante, veloce, con sommelier AI." />
-  <!-- TODO: sostituisci con un tuo file preview e con il dominio definitivo -->
-  <meta property="og:image" content="/assets/logo-wina.png">
+  <meta property="og:title" content="WINA — Digital Wine List for Restaurants" />
+  <meta property="og:description" content="La carta dei vini digitale che fa sembrare il tuo ristorante più premium (e ti fa vendere meglio)." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.wineinapp.com/" />
 
@@ -35,7 +33,7 @@
       --radius: 20px;
       --radius-pill: 999px;
       --shadow: 0 12px 30px rgba(17,24,39,.10);
-      --content: 1080px;
+      --content: 1120px;
     }
 
     *{ box-sizing:border-box; margin:0; padding:0; }
@@ -50,7 +48,6 @@
 
     a{ color: inherit; text-decoration: none; }
     img{ max-width:100%; display:block; }
-
     .wrap{ max-width: var(--content); margin: 0 auto; padding: 0 18px; }
 
     /* Topbar */
@@ -65,18 +62,20 @@
       padding: 12px 0;
       gap: 14px;
     }
+
     .brand{
       display:flex; align-items:center; gap: 12px; min-width: 0;
     }
-    .brand-badge{
-      width: 40px; height: 40px;
-      border-radius: 14px;
+    .brand-mark{
+      width: 44px; height: 44px;
+      border-radius: 16px;
       background: linear-gradient(135deg, var(--accent), #9C2E3E);
-      box-shadow: 0 10px 20px rgba(107,30,43,.22);
+      box-shadow: 0 10px 22px rgba(107,30,43,.18);
       display:grid; place-items:center;
-      color:#fff; font-weight:800;
-      letter-spacing: .5px;
+      color:#fff; font-weight:900;
+      letter-spacing: .6px;
       flex: 0 0 auto;
+      user-select:none;
     }
     .brand-name{
       min-width:0;
@@ -85,7 +84,7 @@
     }
     .brand-name strong{
       font-family: "Playfair Display", serif;
-      font-size: 1.08rem;
+      font-size: 1.12rem;
       letter-spacing: .2px;
     }
     .brand-name span{
@@ -106,7 +105,7 @@
       border-radius: var(--radius-pill);
       border: 1px solid var(--border);
       background: rgba(255,255,255,.75);
-      font-weight: 700;
+      font-weight: 800;
       transition: transform .12s ease, background .2s ease, border-color .2s ease;
       white-space: nowrap;
     }
@@ -118,6 +117,34 @@
       box-shadow: 0 10px 22px rgba(107,30,43,.22);
     }
     .btn-primary:hover{ background: var(--accent-700); border-color: rgba(0,0,0,0); }
+
+    .lang{
+      display:inline-flex; align-items:center; gap: 8px;
+      padding: 10px 12px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.7);
+      font-weight: 800;
+      color: var(--text);
+    }
+    .lang select{
+      border: 0;
+      background: transparent;
+      font-weight: 800;
+      outline: none;
+      cursor:pointer;
+      color: var(--text);
+      appearance: none;
+      padding-right: 18px;
+    }
+    .lang .chev{
+      width: 0; height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid rgba(31,41,55,.55);
+      margin-left: -12px;
+      pointer-events:none;
+    }
 
     /* Hero */
     .hero{
@@ -136,26 +163,47 @@
       background: rgba(107,30,43,.08);
       border: 1px solid rgba(107,30,43,.18);
       color: var(--accent);
-      font-weight: 800;
+      font-weight: 900;
       width: fit-content;
       margin-bottom: 14px;
     }
+    .hero-brand{
+      margin-bottom: 14px;
+    }
+    .hero-brand .wina{
+      font-family: "Playfair Display", serif;
+      font-size: 2.15rem;
+      letter-spacing: .6px;
+      line-height: 1;
+    }
+    .hero-brand .payoff{
+      margin-top: 6px;
+      font-size: .98rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
     h1{
       font-family: "Playfair Display", serif;
-      font-size: clamp(2rem, 4.5vw, 3.1rem);
+      font-size: clamp(2rem, 4.5vw, 3.15rem);
       line-height: 1.06;
       letter-spacing: .2px;
       margin-bottom: 12px;
     }
     .sub{
       color: var(--muted);
-      font-size: 1.05rem;
+      font-size: 1.06rem;
       margin-bottom: 18px;
-      max-width: 58ch;
+      max-width: 62ch;
     }
-    .cta-row{ display:flex; gap: 10px; flex-wrap: wrap; margin: 14px 0 10px; }
+    .cta-row{ display:flex; gap: 10px; flex-wrap: wrap; margin: 14px 0 8px; }
+    .fineprint{
+      color: var(--muted);
+      font-size: .92rem;
+      margin-top: 6px;
+    }
     .micro{
-      margin-top: 10px;
+      margin-top: 12px;
       display:flex; gap:10px; flex-wrap: wrap;
       color: var(--muted);
       font-size: .92rem;
@@ -207,12 +255,12 @@
     .section{ padding: 46px 0; }
     .section h2{
       font-family: "Playfair Display", serif;
-      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      font-size: clamp(1.55rem, 3vw, 2.15rem);
       margin-bottom: 12px;
     }
     .section p.lead{
       color: var(--muted);
-      max-width: 78ch;
+      max-width: 82ch;
       margin-bottom: 18px;
       font-size: 1.02rem;
     }
@@ -235,10 +283,8 @@
       margin-bottom: 6px;
       display:flex; align-items:center; gap: 10px;
     }
-    .card p{
-      color: var(--text);
-      font-size: .95rem;
-    }
+    .card p{ color: var(--text); font-size: .95rem; }
+
     .pill{
       display:inline-flex; align-items:center; gap: 8px;
       padding: 8px 12px;
@@ -246,10 +292,47 @@
       background: rgba(107,30,43,.08);
       border: 1px solid rgba(107,30,43,.18);
       color: var(--accent);
-      font-weight: 800;
+      font-weight: 900;
       margin-bottom: 10px;
       width: fit-content;
     }
+
+    /* Social proof */
+    .proof-grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 14px;
+      align-items: stretch;
+    }
+    .quote{
+      font-size: 1.02rem;
+      color: var(--text);
+    }
+    .quote small{
+      display:block;
+      margin-top: 10px;
+      color: var(--muted);
+      font-weight: 800;
+    }
+    .stats{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .stat{
+      padding: 14px 14px 12px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(230,226,218,.95);
+      background: rgba(255,255,255,.78);
+      box-shadow: 0 10px 26px rgba(17,24,39,.05);
+    }
+    .stat b{
+      display:block;
+      font-size: 1.05rem;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    .stat span{ color: var(--muted); font-size: .94rem; }
 
     /* Pricing */
     .pricing{
@@ -263,17 +346,12 @@
       gap: 14px;
       margin-top: 14px;
     }
-    .plan{
-      padding: 18px;
+    .plan{ padding: 18px; }
+    .plan .row{
+      display:flex; align-items:flex-start; justify-content:space-between; gap: 10px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
     }
-    .plan .price{
-      font-size: 1.65rem;
-      font-weight: 900;
-      margin: 8px 0 12px;
-    }
-    .plan ul{ list-style: none; display:flex; flex-direction:column; gap: 8px; color: var(--text); }
-    .plan li{ display:flex; gap: 10px; align-items:flex-start; }
-    .plan li b{ color: var(--accent); }
     .tag{
       display:inline-flex;
       align-items:center;
@@ -281,11 +359,29 @@
       border-radius: var(--radius-pill);
       background: var(--accent-soft);
       color: var(--accent);
-      font-weight: 800;
+      font-weight: 900;
       font-size: .86rem;
       border: 1px solid rgba(107,30,43,.18);
       width: fit-content;
     }
+    .tag.reco{
+      background: rgba(107,30,43,.12);
+      border-color: rgba(107,30,43,.22);
+    }
+    .plan .price{
+      font-size: 1.75rem;
+      font-weight: 900;
+      margin: 8px 0 10px;
+    }
+    .plan .ideal{
+      color: var(--muted);
+      font-weight: 800;
+      font-size: .95rem;
+      margin-bottom: 12px;
+    }
+    .plan ul{ list-style: none; display:flex; flex-direction:column; gap: 8px; color: var(--text); }
+    .plan li{ display:flex; gap: 10px; align-items:flex-start; }
+    .plan li b{ color: var(--accent); }
 
     /* FAQ */
     details{
@@ -298,7 +394,7 @@
     details + details{ margin-top: 10px; }
     summary{
       cursor:pointer;
-      font-weight: 800;
+      font-weight: 900;
       color: var(--text);
       list-style: none;
     }
@@ -321,21 +417,20 @@
     @media (max-width: 940px){
       .hero-grid{ grid-template-columns: 1fr; }
       .phone{ width: min(420px, 96vw); }
+      .proof-grid{ grid-template-columns: 1fr; }
+      .stats{ grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 860px){
       .grid-3{ grid-template-columns: 1fr; }
       .plans{ grid-template-columns: 1fr; }
       .nav .btn{ padding: 9px 12px; }
+      .stats{ grid-template-columns: 1fr; }
     }
-
-    .logo-hero{ width:auto; margin-bottom:14px; display:block; }
-.logo-hero--word{ height:54px; }
-.logo-hero--compact{ height:44px; display:none; }
-
-@media (max-width: 520px){
-  .logo-hero--word{ display:none; }
-  .logo-hero--compact{ display:block; }
-}
+    @media (max-width: 520px){
+      .brand-name span{ display:none; }
+      .lang{ padding: 9px 10px; }
+      .lang select{ font-size: .95rem; }
+    }
   </style>
 </head>
 
@@ -343,19 +438,28 @@
   <!-- TOPBAR -->
   <div class="topbar">
     <div class="wrap topbar-inner">
-      <a class="brand" href="index.html" aria-label="Wine in App">
-        <div class="brand-badge" aria-hidden="true">
-          <img src="/assets/logo-mark.png" alt="Wine in App" style="width:26px; height:26px; object-fit:contain;">
-        </div>
+      <a class="brand" href="index.html" aria-label="WINA">
+        <div class="brand-mark" aria-hidden="true">W</div>
         <div class="brand-name">
-          <strong>Wine in App</strong>
-          <span>W.IN.A — carta vini digitale per ristoranti</span>
+          <strong>WINA</strong>
+          <span data-i18n="brand.payoff">Wine in App - Digital Wine List for Restaurants</span>
         </div>
       </a>
 
       <div class="nav">
-        <a class="btn" href="login.html">Login</a>
-        <a class="btn btn-primary" href="register.html">Registrati</a>
+        <label class="lang" aria-label="Language">
+          <span style="opacity:.85;">🌐</span>
+          <select id="langSelect">
+            <option value="it">IT</option>
+            <option value="en">EN</option>
+            <option value="es">ES</option>
+            <option value="fr">FR</option>
+          </select>
+          <span class="chev" aria-hidden="true"></span>
+        </label>
+
+        <a class="btn" href="login.html" data-i18n="nav.login">Login</a>
+        <a class="btn btn-primary" href="register.html" data-i18n="nav.signup">Registrati</a>
       </div>
     </div>
   </div>
@@ -364,26 +468,32 @@
   <header class="hero">
     <div class="wrap hero-grid">
       <div>
-        <div class="kicker">🍷 Sembra un’app. È la tua carta dei vini.</div>
-        <img class="logo-hero logo-hero--word" img src="/assets/logo-wordmark.png" alt="Wine in App">
-        <img class="logo-hero logo-hero--compact" img src="/assets/logo-wina.png" alt="WINA">
+        <div class="kicker" data-i18n="hero.kicker">🍷 Sembra un’app. È la tua carta dei vini.</div>
 
-        <h1>La carta dei vini digitale <span style="color:var(--accent)">più elegante</span> per il tuo ristorante.</h1>
-        <p class="sub">
-          Con <b>sommelier AI</b>, <b>QR dinamico</b>, <b>personalizzazione totale</b> e <b>multilingua</b>.
-          Tutto aggiornabile in 1 minuto dalla tua dashboard.
+        <div class="hero-brand" aria-label="WINA brand">
+          <div class="wina">WINA</div>
+          <div class="payoff" data-i18n="brand.payoff">Wine in App - Digital Wine List for Restaurants</div>
+        </div>
+
+        <h1 data-i18n="hero.h1">La carta vini digitale che fa sembrare il tuo ristorante <span style="color:var(--accent)">più premium</span> (e ti fa vendere meglio).</h1>
+
+        <p class="sub" data-i18n="hero.sub">
+          Un <b>QR unico</b> sempre aggiornato, una carta <b>perfetta su smartphone</b>, e un <b>Sommelier AI</b> che aiuta il cliente a scegliere (e a salire di fascia).
+          Tu aggiorni vini e prezzi in <b>1 minuto</b> dalla dashboard.
         </p>
 
         <div class="cta-row">
-          <a class="btn btn-primary" href="register.html">Provala gratis</a>
-          <a class="btn" href="#demo">Guarda la demo</a>
+          <a class="btn btn-primary" href="register.html" data-i18n="hero.ctaPrimary">Crea la tua carta ora</a>
+          <a class="btn" href="#demo" data-i18n="hero.ctaSecondary">Guarda la demo</a>
         </div>
 
+        <div class="fineprint" data-i18n="hero.fineprint">Attiva in 5 minuti. Se non ti piace, disattivi quando vuoi.</div>
+
         <div class="micro" aria-label="Punti di forza">
-          <span>⚡ Veloce su mobile</span>
-          <span>🎨 Branding premium</span>
-          <span>🤖 Suggerimenti AI</span>
-          <span>🌍 Multilingua</span>
+          <span data-i18n="hero.micro1">✅ Nessuna ristampa</span>
+          <span data-i18n="hero.micro2">⚡ Aggiornamenti in 1 minuto</span>
+          <span data-i18n="hero.micro3">📲 Mobile-first, super veloce</span>
+          <span data-i18n="hero.micro4">🌍 Multilingua per turisti</span>
         </div>
       </div>
 
@@ -399,61 +509,93 @@
   </header>
 
   <!-- HOW IT WORKS -->
-  <section class="section">
+  <section class="section" id="how">
     <div class="wrap">
-      <div class="pill">✨ Come funziona</div>
-      <h2>3 step, zero stress.</h2>
-      <p class="lead">Metti online la carta, aggiornala quando vuoi e rendi felici i clienti (anche stranieri).</p>
+      <div class="pill" data-i18n="how.pill">✨ Come funziona</div>
+      <h2 data-i18n="how.h2">3 step. Carta pronta oggi.</h2>
+      <p class="lead" data-i18n="how.lead">Parti in pochi minuti: carichi i vini (o importi), scegli lo stile, stampi un QR che non cambia mai.</p>
 
       <div class="grid-3">
         <div class="card">
-          <h3>1) Crea la tua carta</h3>
-          <p>Carichi vini e prezzi, organizzi categorie e sottocategorie, scegli stile e palette.</p>
+          <h3 data-i18n="how.c1t">1) Carica o importa la tua carta</h3>
+          <p data-i18n="how.c1p">Inserisci vini e prezzi, oppure importa da PDF/immagine (PRO).</p>
         </div>
         <div class="card">
-          <h3>2) Personalizza branding</h3>
-          <p>Nome o logo, font e colori: tutto “live”, come un sito su misura.</p>
+          <h3 data-i18n="how.c2t">2) Personalizza come un brand</h3>
+          <p data-i18n="how.c2p">Logo, colori e font: una carta che sembra fatta su misura.</p>
         </div>
         <div class="card">
-          <h3>3) Condividi con QR</h3>
-          <p>Un solo QR sempre aggiornato: la carta è pronta, bellissima, e funziona su qualsiasi smartphone.</p>
+          <h3 data-i18n="how.c3t">3) Stampa il QR e dimenticatene</h3>
+          <p data-i18n="how.c3p">Il QR resta uguale. Tu aggiorni tutto quando vuoi.</p>
         </div>
       </div>
     </div>
   </section>
 
   <!-- FEATURES -->
-  <section class="section">
+  <section class="section" id="features">
     <div class="wrap">
-      <div class="pill">🔥 Funzioni che fanno la differenza</div>
-      <h2>Premium, ma super semplice.</h2>
-      <p class="lead">Pensata per ristoratori. Amata dai clienti.</p>
+      <div class="pill" data-i18n="feat.pill">🔥 Funzioni che fanno la differenza</div>
+      <h2 data-i18n="feat.h2">Le funzioni che ti fanno dire “ok, questa è seria”.</h2>
+      <p class="lead" data-i18n="feat.lead">Meno frizioni al tavolo. Più ordine. Più vendite. Più immagine.</p>
 
       <div class="grid-3">
         <div class="card">
-          <h3>🤖 Sommelier Virtuale</h3>
-          <p>Il cliente scrive il piatto e riceve vini perfetti con motivazione (range personalizzabile).</p>
+          <h3 data-i18n="feat.f1t">🤖 Sommelier AI che vende meglio</h3>
+          <p data-i18n="feat.f1p">Il cliente scrive il piatto e riceve abbinamenti con motivazione (range prezzo configurabile).</p>
         </div>
         <div class="card">
-          <h3>🧩 Ordinamento e filtri</h3>
-          <p>Ordina per prezzo/nome/annata, gestisci ordine categorie e sottocategorie, e tieni la carta pulita.</p>
+          <h3 data-i18n="feat.f2t">🧩 Carta sempre ordinata</h3>
+          <p data-i18n="feat.f2p">Categorie, sottocategorie, filtri e ordinamenti: scegliere diventa facile.</p>
         </div>
         <div class="card">
-          <h3>🌍 Multilingua</h3>
-          <p>Riduci frizione con i turisti: carta tradotta e coerente, senza impazzire.</p>
+          <h3 data-i18n="feat.f3t">🌍 Multilingua senza sbatti</h3>
+          <p data-i18n="feat.f3p">Perfetta per turisti: esperienza premium e meno domande al personale.</p>
         </div>
+        <div class="card">
+          <h3 data-i18n="feat.f4t">📲 QR dinamico (stampalo una volta)</h3>
+          <p data-i18n="feat.f4p">Aggiorni carta e prezzi. Il QR resta lo stesso.</p>
+        </div>
+        <div class="card">
+          <h3 data-i18n="feat.f5t">🎨 Stile premium, leggibile</h3>
+          <p data-i18n="feat.f5p">Palette e font pensati per un look elegante e chiaro.</p>
+        </div>
+        <div class="card">
+          <h3 data-i18n="feat.f6t">🗂️ Dashboard semplice</h3>
+          <p data-i18n="feat.f6p">Aggiorni prezzi, annate, formati e disponibilità in 1 minuto.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
+  <!-- SOCIAL PROOF -->
+  <section class="section" id="proof">
+    <div class="wrap">
+      <div class="pill" data-i18n="proof.pill">⭐ Fiducia</div>
+      <h2 data-i18n="proof.h2">Quando il cliente capisce al volo, il servizio corre (e il vino si vende).</h2>
+      <p class="lead" data-i18n="proof.lead">Qui puoi mettere testimonianze reali appena inizi a raccoglierle. Intanto abbiamo impostato la sezione già “premium”.</p>
+
+      <div class="proof-grid">
         <div class="card">
-          <h3>📲 QR dinamico</h3>
-          <p>Stampi una volta. Aggiorni sempre. Il QR resta lo stesso, la carta cambia con te.</p>
+          <p class="quote" data-i18n="proof.q1">“Prima ristampavamo la carta ogni volta. Ora aggiorno dal telefono in un minuto e i turisti non mi fermano più al tavolo.”</p>
+          <small data-i18n="proof.q1a">— Ristorante (Italia)</small>
+          <div style="height:10px;"></div>
+          <p class="quote" data-i18n="proof.q2">“La carta è più ordinata e il Sommelier AI spinge i clienti a provare calici migliori. Effetto ‘wow’ immediato.”</p>
+          <small data-i18n="proof.q2a">— Osteria (Centro città)</small>
         </div>
-        <div class="card">
-          <h3>🎨 Stile “carta”</h3>
-          <p>Palette e font: look premium, leggibile, in linea col tuo locale.</p>
-        </div>
-        <div class="card">
-          <h3>🗂️ Gestione Admin</h3>
-          <p>Dashboard + admin per aggiornare vini, formati (0,375 / 1,5 / 3L), visibilità e altro.</p>
+        <div class="stats">
+          <div class="stat">
+            <b data-i18n="proof.s1t">QR stampato una volta</b>
+            <span data-i18n="proof.s1p">La carta cambia quando vuoi, ma il QR resta sempre lo stesso.</span>
+          </div>
+          <div class="stat">
+            <b data-i18n="proof.s2t">Meno domande ripetitive</b>
+            <span data-i18n="proof.s2p">Traduzioni + ordine + AI = clienti più autonomi.</span>
+          </div>
+          <div class="stat">
+            <b data-i18n="proof.s3t">Immagine più premium</b>
+            <span data-i18n="proof.s3p">Sembra un’app: al tavolo fa subito “ristorante curato”.</span>
+          </div>
         </div>
       </div>
     </div>
@@ -462,64 +604,104 @@
   <!-- PRICING -->
   <section class="section pricing" id="pricing">
     <div class="wrap">
-      <div class="pill">💳 Prezzi</div>
-      <h2>Scegli il tuo piano</h2>
-      <p class="lead">Parti leggero e passa a PRO quando vuoi.</p>
+      <div class="pill" data-i18n="price.pill">💳 Prezzi</div>
+      <h2 data-i18n="price.h2">Scegli il piano. Passi a PRO quando vuoi.</h2>
+      <p class="lead" data-i18n="price.lead">Parti leggero, ma con un risultato già premium.</p>
 
       <div class="plans">
         <div class="card plan">
-          <div class="tag">Base</div>
-          <div class="price">14,99€<span style="font-size:.95rem; color:var(--muted); font-weight:700;"> / mese</span></div>
+          <div class="row">
+            <div class="tag" data-i18n="price.baseTag">Per iniziare</div>
+            <div class="tag" style="background: rgba(255,255,255,.65);" data-i18n="price.baseName">Base</div>
+          </div>
+
+          <div class="price">14,99€<span style="font-size:.95rem; color:var(--muted); font-weight:800;" data-i18n="price.perMonth"> / mese</span></div>
+          <div class="ideal" data-i18n="price.baseIdeal">Ideale se vuoi una carta elegante + AI + QR sempre aggiornato.</div>
+
           <ul>
-            <li>✅ <span>Carta digitale personalizzata</span></li>
-            <li>✅ <span>Sommelier AI incluso</span></li>
-            <li>✅ <span>QR Code dinamico</span></li>
+            <li>✅ <span data-i18n="price.b1">Carta digitale personalizzata</span></li>
+            <li>✅ <span data-i18n="price.b2">Sommelier AI</span></li>
+            <li>✅ <span data-i18n="price.b3">QR dinamico</span></li>
           </ul>
+
           <div class="cta-row" style="margin-top:14px;">
-            <a class="btn btn-primary" href="register.html">Inizia</a>
-            <a class="btn" href="#demo">Vedi demo</a>
+            <a class="btn btn-primary" href="register.html" data-i18n="price.baseCta">Inizia ora</a>
+            <a class="btn" href="#demo" data-i18n="price.demoCta">Vedi demo</a>
           </div>
         </div>
 
         <div class="card plan" style="border-color: rgba(107,30,43,.22); box-shadow: 0 18px 44px rgba(107,30,43,.16);">
-          <div class="tag">PRO</div>
-          <div class="price">29,99€<span style="font-size:.95rem; color:var(--muted); font-weight:700;"> / mese</span></div>
+          <div class="row">
+            <div class="tag reco" data-i18n="price.proBadge">Consigliato</div>
+            <div class="tag reco" data-i18n="price.proName">PRO</div>
+          </div>
+
+          <div class="price">29,99€<span style="font-size:.95rem; color:var(--muted); font-weight:800;" data-i18n="price.perMonth"> / mese</span></div>
+          <div class="ideal" data-i18n="price.proIdeal">Ideale se vuoi partire veloce e avere tutto completo (import + multilingua).</div>
+
           <ul>
-            <li>✨ <span>Tutto del piano Base</span></li>
-            <li>✨ <span>Importazione smart (PDF/immagine)</span></li>
-            <li>✨ <span>Branding avanzato</span></li>
-            <li>✨ <span>Multilingua completo</span></li>
+            <li>✨ <span data-i18n="price.p1">Tutto del Base</span></li>
+            <li>✨ <span data-i18n="price.p2">Importazione smart (PDF/immagine)</span></li>
+            <li>✨ <span data-i18n="price.p3">Branding avanzato</span></li>
+            <li>✨ <span data-i18n="price.p4">Multilingua completo</span></li>
           </ul>
+
           <div class="cta-row" style="margin-top:14px;">
-            <a class="btn btn-primary" href="register.html">Passa a PRO</a>
-            <a class="btn" href="#faq">FAQ</a>
+            <a class="btn btn-primary" href="register.html" data-i18n="price.proCta">Passa a PRO</a>
+            <a class="btn" href="#faq" data-i18n="price.faqCta">FAQ</a>
           </div>
         </div>
       </div>
+
+      <div class="fineprint" style="margin-top:12px;" data-i18n="price.note">Puoi gestire e modificare l’abbonamento dal tuo account.</div>
     </div>
   </section>
 
   <!-- FAQ -->
   <section class="section" id="faq">
     <div class="wrap">
-      <div class="pill">❓ FAQ</div>
-      <h2>Domande veloci</h2>
-      <p class="lead">Se vuoi, poi la rendiamo una pagina dedicata (più SEO).</p>
+      <div class="pill" data-i18n="faq.pill">❓ FAQ</div>
+      <h2 data-i18n="faq.h2">Domande veloci</h2>
+      <p class="lead" data-i18n="faq.lead">Risposte rapide alle obiezioni più comuni.</p>
 
       <details>
-        <summary>Il QR cambia quando aggiorno la carta?</summary>
-        <p>No: l’idea è proprio che il QR resti sempre lo stesso (dinamico), mentre tu aggiorni vini, prezzi e stile dalla dashboard.</p>
+        <summary data-i18n="faq.q1">Serve scaricare un’app?</summary>
+        <p data-i18n="faq.a1">No: è una pagina super ottimizzata che si apre con il QR.</p>
       </details>
 
       <details>
-        <summary>Posso usare un link “bello” tipo /mio-ristorante?</summary>
-        <p>Sì: hai già la gestione dello <i>slug</i> in dashboard. Serve solo impostare il dominio definitivo nel codice e nel DNS.</p>
+        <summary data-i18n="faq.q2">Il QR cambia quando aggiorno la carta?</summary>
+        <p data-i18n="faq.a2">No: l’idea è proprio che il QR resti sempre lo stesso, mentre tu aggiorni vini, prezzi e stile dalla dashboard.</p>
       </details>
 
       <details>
-        <summary>La carta funziona bene su smartphone?</summary>
-        <p>Sì: è progettata mobile-first. La demo qui sopra è già la vista reale su schermo “telefono”.</p>
+        <summary data-i18n="faq.q3">Quanto tempo ci vuole per partire?</summary>
+        <p data-i18n="faq.a3">Dipende dalla quantità di vini: in genere in pochi minuti hai già una carta pronta.</p>
       </details>
+
+      <details>
+        <summary data-i18n="faq.q4">Posso disdire quando voglio?</summary>
+        <p data-i18n="faq.a4">Sì, puoi gestire tutto dal tuo account.</p>
+      </details>
+
+      <details>
+        <summary data-i18n="faq.q5">Posso usare logo e colori del mio ristorante?</summary>
+        <p data-i18n="faq.a5">Sì: branding e stile sono personalizzabili (e in PRO hai opzioni avanzate).</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="section" id="final-cta" style="padding-top: 10px;">
+    <div class="wrap">
+      <div class="card" style="padding: 18px;">
+        <h2 style="margin-bottom:8px;" data-i18n="final.h2">Pronto a far dire “wow” al tavolo?</h2>
+        <p class="lead" style="margin-bottom: 14px;" data-i18n="final.lead">Crea la tua carta in pochi minuti. Poi stampi un QR e non ci pensi più.</p>
+        <div class="cta-row" style="margin:0;">
+          <a class="btn btn-primary" href="register.html" data-i18n="final.cta">Crea la tua carta ora</a>
+          <a class="btn" href="#demo" data-i18n="final.cta2">Guarda la demo</a>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -527,23 +709,496 @@
   <footer>
     <div class="wrap footer-row">
       <div>
-        <b>© 2026 Wine in App (W.IN.A)</b><br/>
-        <span>La carta dei vini digitale con AI per ristoranti.</span>
+        <b>© 2026 WINA</b><br/>
+        <span data-i18n="brand.payoff">Wine in App - Digital Wine List for Restaurants</span>
       </div>
       <div class="cta-row" style="margin:0;">
-        <a class="btn" href="login.html">Login</a>
-        <a class="btn btn-primary" href="register.html">Registrati</a>
+        <a class="btn" href="login.html" data-i18n="nav.login">Login</a>
+        <a class="btn btn-primary" href="register.html" data-i18n="nav.signup">Registrati</a>
       </div>
     </div>
   </footer>
 
   <!-- Cookie banner (semplice) -->
   <div id="cookie-banner" style="position: fixed; bottom: 0; left: 0; right: 0; background: #111; color: #fff; padding: 12px 10px; text-align: center; z-index: 999;">
-    Usiamo cookie tecnici per migliorare la tua esperienza.
-    <button onclick="document.getElementById('cookie-banner').style.display='none'"
-      style="margin-left:10px; padding:8px 12px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.14); color:#fff; font-weight:800; cursor:pointer;">
+    <span data-i18n="cookie.text">Usiamo cookie tecnici per migliorare la tua esperienza.</span>
+    <button id="cookieOk"
+      style="margin-left:10px; padding:8px 12px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.14); color:#fff; font-weight:900; cursor:pointer;">
       OK
     </button>
   </div>
+
+  <script>
+    // ---- i18n (IT/EN/ES/FR) ----
+    const translations = {
+      it: {
+        "brand.payoff": "Wine in App - Digital Wine List for Restaurants",
+
+        "nav.login": "Login",
+        "nav.signup": "Registrati",
+
+        "hero.kicker": "🍷 Sembra un’app. È la tua carta dei vini.",
+        "hero.h1": "La carta vini digitale che fa sembrare il tuo ristorante <span style=\"color:var(--accent)\">più premium</span> (e ti fa vendere meglio).",
+        "hero.sub": "Un <b>QR unico</b> sempre aggiornato, una carta <b>perfetta su smartphone</b>, e un <b>Sommelier AI</b> che aiuta il cliente a scegliere (e a salire di fascia). Tu aggiorni vini e prezzi in <b>1 minuto</b> dalla dashboard.",
+        "hero.ctaPrimary": "Crea la tua carta ora",
+        "hero.ctaSecondary": "Guarda la demo",
+        "hero.fineprint": "Attiva in 5 minuti. Se non ti piace, disattivi quando vuoi.",
+        "hero.micro1": "✅ Nessuna ristampa",
+        "hero.micro2": "⚡ Aggiornamenti in 1 minuto",
+        "hero.micro3": "📲 Mobile-first, super veloce",
+        "hero.micro4": "🌍 Multilingua per turisti",
+
+        "how.pill": "✨ Come funziona",
+        "how.h2": "3 step. Carta pronta oggi.",
+        "how.lead": "Parti in pochi minuti: carichi i vini (o importi), scegli lo stile, stampi un QR che non cambia mai.",
+        "how.c1t": "1) Carica o importa la tua carta",
+        "how.c1p": "Inserisci vini e prezzi, oppure importa da PDF/immagine (PRO).",
+        "how.c2t": "2) Personalizza come un brand",
+        "how.c2p": "Logo, colori e font: una carta che sembra fatta su misura.",
+        "how.c3t": "3) Stampa il QR e dimenticatene",
+        "how.c3p": "Il QR resta uguale. Tu aggiorni tutto quando vuoi.",
+
+        "feat.pill": "🔥 Funzioni che fanno la differenza",
+        "feat.h2": "Le funzioni che ti fanno dire “ok, questa è seria”.",
+        "feat.lead": "Meno frizioni al tavolo. Più ordine. Più vendite. Più immagine.",
+        "feat.f1t": "🤖 Sommelier AI che vende meglio",
+        "feat.f1p": "Il cliente scrive il piatto e riceve abbinamenti con motivazione (range prezzo configurabile).",
+        "feat.f2t": "🧩 Carta sempre ordinata",
+        "feat.f2p": "Categorie, sottocategorie, filtri e ordinamenti: scegliere diventa facile.",
+        "feat.f3t": "🌍 Multilingua senza sbatti",
+        "feat.f3p": "Perfetta per turisti: esperienza premium e meno domande al personale.",
+        "feat.f4t": "📲 QR dinamico (stampalo una volta)",
+        "feat.f4p": "Aggiorni carta e prezzi. Il QR resta lo stesso.",
+        "feat.f5t": "🎨 Stile premium, leggibile",
+        "feat.f5p": "Palette e font pensati per un look elegante e chiaro.",
+        "feat.f6t": "🗂️ Dashboard semplice",
+        "feat.f6p": "Aggiorni prezzi, annate, formati e disponibilità in 1 minuto.",
+
+        "proof.pill": "⭐ Fiducia",
+        "proof.h2": "Quando il cliente capisce al volo, il servizio corre (e il vino si vende).",
+        "proof.lead": "Qui puoi mettere testimonianze reali appena inizi a raccoglierle. Intanto abbiamo impostato la sezione già “premium”.",
+        "proof.q1": "“Prima ristampavamo la carta ogni volta. Ora aggiorno dal telefono in un minuto e i turisti non mi fermano più al tavolo.”",
+        "proof.q1a": "— Ristorante (Italia)",
+        "proof.q2": "“La carta è più ordinata e il Sommelier AI spinge i clienti a provare calici migliori. Effetto ‘wow’ immediato.”",
+        "proof.q2a": "— Osteria (Centro città)",
+        "proof.s1t": "QR stampato una volta",
+        "proof.s1p": "La carta cambia quando vuoi, ma il QR resta sempre lo stesso.",
+        "proof.s2t": "Meno domande ripetitive",
+        "proof.s2p": "Traduzioni + ordine + AI = clienti più autonomi.",
+        "proof.s3t": "Immagine più premium",
+        "proof.s3p": "Sembra un’app: al tavolo fa subito “ristorante curato”.",
+
+        "price.pill": "💳 Prezzi",
+        "price.h2": "Scegli il piano. Passi a PRO quando vuoi.",
+        "price.lead": "Parti leggero, ma con un risultato già premium.",
+        "price.perMonth": " / mese",
+        "price.baseTag": "Per iniziare",
+        "price.baseName": "Base",
+        "price.baseIdeal": "Ideale se vuoi una carta elegante + AI + QR sempre aggiornato.",
+        "price.b1": "Carta digitale personalizzata",
+        "price.b2": "Sommelier AI",
+        "price.b3": "QR dinamico",
+        "price.baseCta": "Inizia ora",
+        "price.demoCta": "Vedi demo",
+        "price.proBadge": "Consigliato",
+        "price.proName": "PRO",
+        "price.proIdeal": "Ideale se vuoi partire veloce e avere tutto completo (import + multilingua).",
+        "price.p1": "Tutto del Base",
+        "price.p2": "Importazione smart (PDF/immagine)",
+        "price.p3": "Branding avanzato",
+        "price.p4": "Multilingua completo",
+        "price.proCta": "Passa a PRO",
+        "price.faqCta": "FAQ",
+        "price.note": "Puoi gestire e modificare l’abbonamento dal tuo account.",
+
+        "faq.pill": "❓ FAQ",
+        "faq.h2": "Domande veloci",
+        "faq.lead": "Risposte rapide alle obiezioni più comuni.",
+        "faq.q1": "Serve scaricare un’app?",
+        "faq.a1": "No: è una pagina super ottimizzata che si apre con il QR.",
+        "faq.q2": "Il QR cambia quando aggiorno la carta?",
+        "faq.a2": "No: l’idea è proprio che il QR resti sempre lo stesso, mentre tu aggiorni vini, prezzi e stile dalla dashboard.",
+        "faq.q3": "Quanto tempo ci vuole per partire?",
+        "faq.a3": "Dipende dalla quantità di vini: in genere in pochi minuti hai già una carta pronta.",
+        "faq.q4": "Posso disdire quando voglio?",
+        "faq.a4": "Sì, puoi gestire tutto dal tuo account.",
+        "faq.q5": "Posso usare logo e colori del mio ristorante?",
+        "faq.a5": "Sì: branding e stile sono personalizzabili (e in PRO hai opzioni avanzate).",
+
+        "final.h2": "Pronto a far dire “wow” al tavolo?",
+        "final.lead": "Crea la tua carta in pochi minuti. Poi stampi un QR e non ci pensi più.",
+        "final.cta": "Crea la tua carta ora",
+        "final.cta2": "Guarda la demo",
+
+        "cookie.text": "Usiamo cookie tecnici per migliorare la tua esperienza."
+      },
+
+      en: {
+        "brand.payoff": "Wine in App - Digital Wine List for Restaurants",
+
+        "nav.login": "Login",
+        "nav.signup": "Sign up",
+
+        "hero.kicker": "Sleek like an app. It’s your wine list.",
+        "hero.h1": "The digital wine list that makes your restaurant feel <span style=\"color:var(--accent)\">more premium</span> (and helps you sell more).",
+        "hero.sub": "One <b>single QR</b> that never changes, a wine list <b>perfect on mobile</b>, and an <b>AI Sommelier</b> that helps guests choose (and trade up). You update wines and prices in <b>1 minute</b> from your dashboard.",
+        "hero.ctaPrimary": "Create your wine list",
+        "hero.ctaSecondary": "View the demo",
+        "hero.fineprint": "Live in 5 minutes. If you don’t like it, cancel anytime.",
+        "hero.micro1": "✅ No reprints",
+        "hero.micro2": "⚡ Updates in 1 minute",
+        "hero.micro3": "📲 Mobile-first, blazing fast",
+        "hero.micro4": "🌍 Multilingual for tourists",
+
+        "how.pill": "✨ How it works",
+        "how.h2": "3 steps. Live today.",
+        "how.lead": "Get started in minutes: upload (or import), pick your style, print one QR code that never changes.",
+        "how.c1t": "1) Upload or import your list",
+        "how.c1p": "Insert wines and prices — or import from PDF/image (PRO).",
+        "how.c2t": "2) Brand it like a premium menu",
+        "how.c2p": "Logo, colors and fonts: it looks custom-made.",
+        "how.c3t": "3) Print the QR and forget about it",
+        "how.c3p": "The QR stays the same. Update anytime.",
+
+        "feat.pill": "🔥 Key features",
+        "feat.h2": "Features that make you say: “Okay, this is serious.”",
+        "feat.lead": "Less friction at the table. More order. More sales. Better image.",
+        "feat.f1t": "🤖 AI Sommelier that sells better",
+        "feat.f1p": "Guests type a dish and get pairings with a clear explanation (price range configurable).",
+        "feat.f2t": "🧩 Always organized",
+        "feat.f2p": "Categories, subcategories, filters and sorting: choosing becomes easy.",
+        "feat.f3t": "🌍 Multilingual, effortless",
+        "feat.f3p": "Perfect for tourists: premium experience and fewer questions for staff.",
+        "feat.f4t": "📲 Dynamic QR (print once)",
+        "feat.f4p": "Update wines and prices — the QR stays the same.",
+        "feat.f5t": "🎨 Premium, readable style",
+        "feat.f5p": "Palettes and fonts designed for an elegant, clear look.",
+        "feat.f6t": "🗂️ Simple dashboard",
+        "feat.f6p": "Update prices, vintages, formats and availability in 1 minute.",
+
+        "proof.pill": "⭐ Trust",
+        "proof.h2": "When guests understand fast, service flows (and wine sells).",
+        "proof.lead": "Add real testimonials as soon as you start collecting them — the section is ready and premium-looking.",
+        "proof.q1": "“We used to reprint the list all the time. Now I update from my phone in a minute and tourists stop interrupting the staff.”",
+        "proof.q1a": "— Restaurant (Italy)",
+        "proof.q2": "“The list is cleaner and the AI Sommelier nudges guests toward better glasses. Instant wow effect.”",
+        "proof.q2a": "— Trattoria (City center)",
+        "proof.s1t": "Print the QR once",
+        "proof.s1p": "Your list changes anytime — the QR stays the same.",
+        "proof.s2t": "Fewer repetitive questions",
+        "proof.s2p": "Translations + structure + AI = more self-serve guests.",
+        "proof.s3t": "More premium image",
+        "proof.s3p": "Feels like an app: instantly elevates the table experience.",
+
+        "price.pill": "💳 Pricing",
+        "price.h2": "Pick a plan. Upgrade to PRO anytime.",
+        "price.lead": "Start light — still look premium from day one.",
+        "price.perMonth": " / month",
+        "price.baseTag": "Best to start",
+        "price.baseName": "Base",
+        "price.baseIdeal": "Ideal if you want a sleek list + AI + always-updated QR.",
+        "price.b1": "Custom digital wine list",
+        "price.b2": "AI Sommelier",
+        "price.b3": "Dynamic QR",
+        "price.baseCta": "Start now",
+        "price.demoCta": "See demo",
+        "price.proBadge": "Recommended",
+        "price.proName": "PRO",
+        "price.proIdeal": "Ideal if you want to move fast and get everything (import + full multilingual).",
+        "price.p1": "Everything in Base",
+        "price.p2": "Smart import (PDF/image)",
+        "price.p3": "Advanced branding",
+        "price.p4": "Full multilingual",
+        "price.proCta": "Go PRO",
+        "price.faqCta": "FAQ",
+        "price.note": "Manage or change your subscription from your account.",
+
+        "faq.pill": "❓ FAQ",
+        "faq.h2": "Quick questions",
+        "faq.lead": "Fast answers to the most common objections.",
+        "faq.q1": "Do guests need to download an app?",
+        "faq.a1": "No: it’s a lightning-fast web page opened via QR.",
+        "faq.q2": "Does the QR change when I update the list?",
+        "faq.a2": "No: the QR stays the same while you update wines, prices and style from your dashboard.",
+        "faq.q3": "How long does it take to get started?",
+        "faq.a3": "It depends on your number of wines — usually you’re live in minutes.",
+        "faq.q4": "Can I cancel anytime?",
+        "faq.a4": "Yes, you can manage everything from your account.",
+        "faq.q5": "Can I use my logo and colors?",
+        "faq.a5": "Yes: branding and style are customizable (PRO includes advanced options).",
+
+        "final.h2": "Ready to make guests say “wow”?",
+        "final.lead": "Create your list in minutes. Print one QR and you’re done.",
+        "final.cta": "Create your wine list",
+        "final.cta2": "View the demo",
+
+        "cookie.text": "We use technical cookies to improve your experience."
+      },
+
+      es: {
+        "brand.payoff": "Wine in App - Digital Wine List for Restaurants",
+
+        "nav.login": "Login",
+        "nav.signup": "Registrarse",
+
+        "hero.kicker": "🍷 Parece una app. Es tu carta de vinos.",
+        "hero.h1": "La carta de vinos digital que hace que tu restaurante se vea <span style=\"color:var(--accent)\">más premium</span> (y te ayuda a vender más).",
+        "hero.sub": "Un <b>único QR</b> que no cambia nunca, una carta <b>perfecta en móvil</b>, y un <b>Sumiller IA</b> que ayuda al cliente a elegir (y a subir de gama). Actualizas vinos y precios en <b>1 minuto</b> desde tu panel.",
+        "hero.ctaPrimary": "Crea tu carta ahora",
+        "hero.ctaSecondary": "Ver la demo",
+        "hero.fineprint": "Activa en 5 minutos. Si no te gusta, cancela cuando quieras.",
+        "hero.micro1": "✅ Sin reimpresiones",
+        "hero.micro2": "⚡ Actualiza en 1 minuto",
+        "hero.micro3": "📲 Mobile-first, súper rápida",
+        "hero.micro4": "🌍 Multilingüe para turistas",
+
+        "how.pill": "✨ Cómo funciona",
+        "how.h2": "3 pasos. Lista hoy.",
+        "how.lead": "Empiezas en minutos: subes (o importas), eliges estilo, imprimes un QR que no cambia.",
+        "how.c1t": "1) Sube o importa tu carta",
+        "how.c1p": "Añade vinos y precios, o importa desde PDF/imagen (PRO).",
+        "how.c2t": "2) Personaliza como marca",
+        "how.c2p": "Logo, colores y tipografías: parece hecha a medida.",
+        "how.c3t": "3) Imprime el QR y olvídate",
+        "how.c3p": "El QR siempre es el mismo. Actualizas cuando quieras.",
+
+        "feat.pill": "🔥 Funciones clave",
+        "feat.h2": "Funciones que te hacen decir: “Ok, esto va en serio.”",
+        "feat.lead": "Menos fricción en mesa. Más orden. Más ventas. Mejor imagen.",
+        "feat.f1t": "🤖 Sumiller IA que vende mejor",
+        "feat.f1p": "El cliente escribe el plato y recibe maridajes con explicación (rango de precio configurable).",
+        "feat.f2t": "🧩 Siempre ordenada",
+        "feat.f2p": "Categorías, subcategorías, filtros y ordenación: elegir es fácil.",
+        "feat.f3t": "🌍 Multilingüe sin complicaciones",
+        "feat.f3p": "Perfecta para turistas: experiencia premium y menos preguntas al personal.",
+        "feat.f4t": "📲 QR dinámico (imprime una vez)",
+        "feat.f4p": "Cambias carta y precios. El QR no cambia.",
+        "feat.f5t": "🎨 Estilo premium y legible",
+        "feat.f5p": "Paletas y tipografías pensadas para un look elegante y claro.",
+        "feat.f6t": "🗂️ Panel simple",
+        "feat.f6p": "Actualiza precios, añadas, formatos y disponibilidad en 1 minuto.",
+
+        "proof.pill": "⭐ Confianza",
+        "proof.h2": "Cuando el cliente entiende rápido, el servicio fluye (y el vino se vende).",
+        "proof.lead": "Añade testimonios reales cuando los tengas — la sección ya está lista y se ve premium.",
+        "proof.q1": "“Antes reimprimíamos la carta cada vez. Ahora actualizo desde el móvil en un minuto y los turistas preguntan mucho menos.”",
+        "proof.q1a": "— Restaurante (Italia)",
+        "proof.q2": "“La carta está más ordenada y el Sumiller IA empuja a probar copas mejores. Efecto ‘wow’ inmediato.”",
+        "proof.q2a": "— Osteria (Centro)",
+        "proof.s1t": "Imprime el QR una vez",
+        "proof.s1p": "Tu carta cambia cuando quieras, pero el QR siempre es el mismo.",
+        "proof.s2t": "Menos preguntas repetitivas",
+        "proof.s2p": "Traducciones + orden + IA = clientes más autónomos.",
+        "proof.s3t": "Imagen más premium",
+        "proof.s3p": "Parece una app: mejora al instante la experiencia en mesa.",
+
+        "price.pill": "💳 Precios",
+        "price.h2": "Elige un plan. Pasa a PRO cuando quieras.",
+        "price.lead": "Empieza ligero — ya se verá premium desde el primer día.",
+        "price.perMonth": " / mes",
+        "price.baseTag": "Para empezar",
+        "price.baseName": "Base",
+        "price.baseIdeal": "Ideal si quieres una carta elegante + IA + QR siempre actualizado.",
+        "price.b1": "Carta digital personalizada",
+        "price.b2": "Sumiller IA",
+        "price.b3": "QR dinámico",
+        "price.baseCta": "Empezar",
+        "price.demoCta": "Ver demo",
+        "price.proBadge": "Recomendado",
+        "price.proName": "PRO",
+        "price.proIdeal": "Ideal si quieres ir rápido y tenerlo todo (importación + multilingüe completo).",
+        "price.p1": "Todo lo de Base",
+        "price.p2": "Importación smart (PDF/imagen)",
+        "price.p3": "Branding avanzado",
+        "price.p4": "Multilingüe completo",
+        "price.proCta": "Pasar a PRO",
+        "price.faqCta": "FAQ",
+        "price.note": "Gestiona o cambia tu suscripción desde tu cuenta.",
+
+        "faq.pill": "❓ FAQ",
+        "faq.h2": "Preguntas rápidas",
+        "faq.lead": "Respuestas rápidas a las dudas más comunes.",
+        "faq.q1": "¿Hay que descargar una app?",
+        "faq.a1": "No: es una página web muy rápida que se abre con el QR.",
+        "faq.q2": "¿El QR cambia cuando actualizo la carta?",
+        "faq.a2": "No: el QR se queda igual mientras actualizas vinos, precios y estilo desde tu panel.",
+        "faq.q3": "¿Cuánto se tarda en empezar?",
+        "faq.a3": "Depende de la cantidad de vinos: normalmente estás listo en minutos.",
+        "faq.q4": "¿Puedo cancelar cuando quiera?",
+        "faq.a4": "Sí, lo gestionas todo desde tu cuenta.",
+        "faq.q5": "¿Puedo usar mi logo y colores?",
+        "faq.a5": "Sí: el branding y el estilo son personalizables (PRO incluye opciones avanzadas).",
+
+        "final.h2": "¿Listo para que digan “wow” en la mesa?",
+        "final.lead": "Crea tu carta en minutos. Imprime un QR y listo.",
+        "final.cta": "Crea tu carta ahora",
+        "final.cta2": "Ver la demo",
+
+        "cookie.text": "Usamos cookies técnicas para mejorar tu experiencia."
+      },
+
+      fr: {
+        "brand.payoff": "Wine in App - Digital Wine List for Restaurants",
+
+        "nav.login": "Connexion",
+        "nav.signup": "S’inscrire",
+
+        "hero.kicker": "🍷 On dirait une app. C’est votre carte des vins.",
+        "hero.h1": "La carte des vins digitale qui rend votre restaurant <span style=\"color:var(--accent)\">plus premium</span> (et vous aide à mieux vendre).",
+        "hero.sub": "Un <b>QR unique</b> qui ne change jamais, une carte <b>parfaite sur smartphone</b>, et un <b>Sommelier IA</b> qui aide le client à choisir (et à monter en gamme). Vous mettez à jour vins et prix en <b>1 minute</b> depuis votre dashboard.",
+        "hero.ctaPrimary": "Créer ma carte",
+        "hero.ctaSecondary": "Voir la démo",
+        "hero.fineprint": "En ligne en 5 minutes. Si ça ne vous plaît pas, résiliez quand vous voulez.",
+        "hero.micro1": "✅ Zéro réimpression",
+        "hero.micro2": "⚡ Mise à jour en 1 minute",
+        "hero.micro3": "📲 Mobile-first, ultra rapide",
+        "hero.micro4": "🌍 Multilingue pour les touristes",
+
+        "how.pill": "✨ Comment ça marche",
+        "how.h2": "3 étapes. En ligne aujourd’hui.",
+        "how.lead": "Démarrez en quelques minutes : ajoutez (ou importez), choisissez le style, imprimez un QR qui ne change jamais.",
+        "how.c1t": "1) Ajoutez ou importez votre carte",
+        "how.c1p": "Saisissez vins et prix — ou importez depuis PDF/image (PRO).",
+        "how.c2t": "2) Personnalisez comme une marque",
+        "how.c2p": "Logo, couleurs et polices : rendu sur-mesure.",
+        "how.c3t": "3) Imprimez le QR et c’est tout",
+        "how.c3p": "Le QR reste le même. Vous mettez à jour quand vous voulez.",
+
+        "feat.pill": "🔥 Fonctionnalités clés",
+        "feat.h2": "Des fonctionnalités qui font dire : “Ok, c’est du sérieux.”",
+        "feat.lead": "Moins de friction en salle. Plus d’ordre. Plus de ventes. Meilleure image.",
+        "feat.f1t": "🤖 Sommelier IA qui vend mieux",
+        "feat.f1p": "Le client indique le plat et reçoit des accords expliqués (fourchette de prix configurable).",
+        "feat.f2t": "🧩 Toujours bien organisée",
+        "feat.f2p": "Catégories, sous-catégories, filtres et tri : choisir devient facile.",
+        "feat.f3t": "🌍 Multilingue sans prise de tête",
+        "feat.f3p": "Parfait pour les touristes : expérience premium, moins de questions au staff.",
+        "feat.f4t": "📲 QR dynamique (imprimé une fois)",
+        "feat.f4p": "Vous modifiez la carte et les prix, le QR ne change pas.",
+        "feat.f5t": "🎨 Style premium, lisible",
+        "feat.f5p": "Palettes et polices pensées pour un rendu élégant et clair.",
+        "feat.f6t": "🗂️ Dashboard simple",
+        "feat.f6p": "Prix, millésimes, formats, disponibilité : mise à jour en 1 minute.",
+
+        "proof.pill": "⭐ Confiance",
+        "proof.h2": "Quand le client comprend vite, le service s’accélère (et le vin se vend).",
+        "proof.lead": "Ajoutez des avis réels dès que vous en avez — la section est prête et déjà premium.",
+        "proof.q1": "“Avant on réimprimait la carte tout le temps. Maintenant je mets à jour en une minute et les touristes demandent beaucoup moins.”",
+        "proof.q1a": "— Restaurant (Italie)",
+        "proof.q2": "“La carte est plus claire et le Sommelier IA pousse vers de meilleurs verres. Effet wow immédiat.”",
+        "proof.q2a": "— Trattoria (Centre-ville)",
+        "proof.s1t": "QR imprimé une fois",
+        "proof.s1p": "Votre carte change quand vous voulez, le QR reste le même.",
+        "proof.s2t": "Moins de questions répétitives",
+        "proof.s2p": "Traductions + structure + IA = clients plus autonomes.",
+        "proof.s3t": "Image plus premium",
+        "proof.s3p": "On dirait une app : l’expérience en salle monte d’un niveau.",
+
+        "price.pill": "💳 Tarifs",
+        "price.h2": "Choisissez un plan. Passez en PRO quand vous voulez.",
+        "price.lead": "Commencez léger — rendu premium dès le premier jour.",
+        "price.perMonth": " / mois",
+        "price.baseTag": "Pour démarrer",
+        "price.baseName": "Base",
+        "price.baseIdeal": "Idéal si vous voulez une carte élégante + IA + QR toujours à jour.",
+        "price.b1": "Carte digitale personnalisée",
+        "price.b2": "Sommelier IA",
+        "price.b3": "QR dynamique",
+        "price.baseCta": "Démarrer",
+        "price.demoCta": "Voir démo",
+        "price.proBadge": "Recommandé",
+        "price.proName": "PRO",
+        "price.proIdeal": "Idéal si vous voulez aller vite et tout avoir (import + multilingue complet).",
+        "price.p1": "Tout du Base",
+        "price.p2": "Import smart (PDF/image)",
+        "price.p3": "Branding avancé",
+        "price.p4": "Multilingue complet",
+        "price.proCta": "Passer en PRO",
+        "price.faqCta": "FAQ",
+        "price.note": "Gérez ou modifiez votre abonnement depuis votre compte.",
+
+        "faq.pill": "❓ FAQ",
+        "faq.h2": "Questions rapides",
+        "faq.lead": "Des réponses rapides aux objections les plus fréquentes.",
+        "faq.q1": "Faut-il télécharger une app ?",
+        "faq.a1": "Non : c’est une page web ultra optimisée ouverte via QR.",
+        "faq.q2": "Le QR change-t-il quand je mets à jour la carte ?",
+        "faq.a2": "Non : le QR reste le même pendant que vous mettez à jour vins, prix et style depuis le dashboard.",
+        "faq.q3": "Combien de temps pour démarrer ?",
+        "faq.a3": "Selon le nombre de vins — en général, vous êtes en ligne en quelques minutes.",
+        "faq.q4": "Puis-je résilier quand je veux ?",
+        "faq.a4": "Oui, tout se gère depuis votre compte.",
+        "faq.q5": "Puis-je utiliser mon logo et mes couleurs ?",
+        "faq.a5": "Oui : branding et style sont personnalisables (options avancées en PRO).",
+
+        "final.h2": "Prêt à faire dire “wow” en salle ?",
+        "final.lead": "Créez votre carte en quelques minutes. Imprimez un QR et c’est parti.",
+        "final.cta": "Créer ma carte",
+        "final.cta2": "Voir la démo",
+
+        "cookie.text": "Nous utilisons des cookies techniques pour améliorer votre expérience."
+      }
+    };
+
+    function getLangFromUrl(){
+      const params = new URLSearchParams(window.location.search);
+      const q = (params.get("lang") || "").toLowerCase();
+      if(["it","en","es","fr"].includes(q)) return q;
+      return null;
+    }
+
+    function setLang(lang){
+      const dict = translations[lang] || translations.it;
+
+      document.documentElement.lang = lang;
+      localStorage.setItem("wina_lang", lang);
+
+      // translate nodes
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        const val = dict[key];
+        if(typeof val === "string"){
+          el.innerHTML = val;
+        }
+      });
+
+      // sync select
+      const sel = document.getElementById("langSelect");
+      if(sel && sel.value !== lang) sel.value = lang;
+
+      // keep login/register in same lang (query param)
+      const links = document.querySelectorAll('a[href$="login.html"], a[href$="register.html"]');
+      links.forEach(a => {
+        const href = a.getAttribute("href");
+        if(!href) return;
+        const base = href.split("?")[0];
+        a.setAttribute("href", base + "?lang=" + lang);
+      });
+    }
+
+    (function init(){
+      const saved = (localStorage.getItem("wina_lang") || "").toLowerCase();
+      const urlLang = getLangFromUrl();
+      const initial = urlLang || (["it","en","es","fr"].includes(saved) ? saved : "it");
+      setLang(initial);
+
+      const sel = document.getElementById("langSelect");
+      if(sel){
+        sel.value = initial;
+        sel.addEventListener("change", (e) => setLang(e.target.value));
+      }
+
+      const cookieBanner = document.getElementById("cookie-banner");
+      const cookieOk = document.getElementById("cookieOk");
+      const accepted = localStorage.getItem("wina_cookie_ok") === "1";
+      if(accepted && cookieBanner) cookieBanner.style.display = "none";
+      if(cookieOk){
+        cookieOk.addEventListener("click", () => {
+          localStorage.setItem("wina_cookie_ok", "1");
+          cookieBanner.style.display = "none";
+        });
+      }
+    })();
+  </script>
 </body>
 </html>

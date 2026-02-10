@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wine in App — Carta dei vini digitale</title>
+
+  <meta name="description" content="Wine in App (W.IN.A): carta dei vini digitale per ristoranti con sommelier AI, QR dinamico, personalizzazione completa e multilingua." />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Wine in App — W.IN.A" />
+  <meta property="og:description" content="La carta dei vini digitale che sembra un’app: elegante, veloce, con sommelier AI." />
+  <!-- TODO: sostituisci con un tuo file preview e con il dominio definitivo -->
+  <meta property="og:image" content="/assets/logo-wina.png">
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.wineinapp.com/" />
+
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg: #F7F4EF;
+      --card: #FFFFFF;
+      --text: #1F2937;
+      --muted: #6B7280;
+      --border: #E6E2DA;
+
+      --accent: #6B1E2B;      /* vino scuro */
+      --accent-700: #4C1420;
+      --accent-soft: #F3E7E9;
+
+      --radius: 20px;
+      --radius-pill: 999px;
+      --shadow: 0 12px 30px rgba(17,24,39,.10);
+      --content: 1080px;
+    }
+
+    *{ box-sizing:border-box; margin:0; padding:0; }
+    body{
+      font-family: "Quicksand", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(107,30,43,.14), transparent 60%),
+                  radial-gradient(900px 500px at 100% 0%, rgba(107,30,43,.10), transparent 55%),
+                  var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    a{ color: inherit; text-decoration: none; }
+    img{ max-width:100%; display:block; }
+
+    .wrap{ max-width: var(--content); margin: 0 auto; padding: 0 18px; }
+
+    /* Topbar */
+    .topbar{
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: blur(10px);
+      background: rgba(247,244,239,.78);
+      border-bottom: 1px solid rgba(230,226,218,.9);
+    }
+    .topbar-inner{
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 12px 0;
+      gap: 14px;
+    }
+    .brand{
+      display:flex; align-items:center; gap: 12px; min-width: 0;
+    }
+    .brand-badge{
+      width: 40px; height: 40px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent), #9C2E3E);
+      box-shadow: 0 10px 20px rgba(107,30,43,.22);
+      display:grid; place-items:center;
+      color:#fff; font-weight:800;
+      letter-spacing: .5px;
+      flex: 0 0 auto;
+    }
+    .brand-name{
+      min-width:0;
+      display:flex; flex-direction:column;
+      line-height:1.1;
+    }
+    .brand-name strong{
+      font-family: "Playfair Display", serif;
+      font-size: 1.08rem;
+      letter-spacing: .2px;
+    }
+    .brand-name span{
+      font-size: .86rem;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .nav{
+      display:flex; align-items:center; gap: 10px;
+      flex: 0 0 auto;
+    }
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding: 10px 14px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.75);
+      font-weight: 700;
+      transition: transform .12s ease, background .2s ease, border-color .2s ease;
+      white-space: nowrap;
+    }
+    .btn:hover{ transform: translateY(-1px); background:#fff; border-color: rgba(107,30,43,.25); }
+    .btn-primary{
+      background: var(--accent);
+      color:#fff;
+      border-color: rgba(0,0,0,0);
+      box-shadow: 0 10px 22px rgba(107,30,43,.22);
+    }
+    .btn-primary:hover{ background: var(--accent-700); border-color: rgba(0,0,0,0); }
+
+    /* Hero */
+    .hero{
+      padding: 44px 0 10px;
+    }
+    .hero-grid{
+      display:grid;
+      grid-template-columns: 1.2fr .9fr;
+      gap: 26px;
+      align-items: center;
+    }
+    .kicker{
+      display:inline-flex; align-items:center; gap: 8px;
+      padding: 8px 12px;
+      border-radius: var(--radius-pill);
+      background: rgba(107,30,43,.08);
+      border: 1px solid rgba(107,30,43,.18);
+      color: var(--accent);
+      font-weight: 800;
+      width: fit-content;
+      margin-bottom: 14px;
+    }
+    h1{
+      font-family: "Playfair Display", serif;
+      font-size: clamp(2rem, 4.5vw, 3.1rem);
+      line-height: 1.06;
+      letter-spacing: .2px;
+      margin-bottom: 12px;
+    }
+    .sub{
+      color: var(--muted);
+      font-size: 1.05rem;
+      margin-bottom: 18px;
+      max-width: 58ch;
+    }
+    .cta-row{ display:flex; gap: 10px; flex-wrap: wrap; margin: 14px 0 10px; }
+    .micro{
+      margin-top: 10px;
+      display:flex; gap:10px; flex-wrap: wrap;
+      color: var(--muted);
+      font-size: .92rem;
+    }
+    .micro span{
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 8px 10px;
+      border-radius: var(--radius-pill);
+      background: rgba(255,255,255,.6);
+      border: 1px solid rgba(230,226,218,.9);
+    }
+
+    /* Phone mock */
+    .phone-wrap{
+      display:flex; justify-content:center; align-items:center;
+    }
+    .phone{
+      width: min(380px, 92vw);
+      border-radius: 44px;
+      padding: 14px 12px;
+      background: #1a1a1a;
+      box-shadow: 0 18px 50px rgba(0,0,0,.28);
+      position: relative;
+      overflow: hidden;
+    }
+    .phone:before{
+      content:"";
+      width: 54px; height: 6px;
+      background: rgba(255,255,255,.22);
+      border-radius: 10px;
+      position:absolute;
+      top: 10px; left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+    }
+    .screen{
+      border-radius: 34px;
+      overflow:hidden;
+      background: #fff;
+    }
+    .screen iframe{
+      display:block;
+      width: 100%;
+      height: min(72vh, 680px);
+      border: 0;
+    }
+
+    /* Sections */
+    .section{ padding: 46px 0; }
+    .section h2{
+      font-family: "Playfair Display", serif;
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      margin-bottom: 12px;
+    }
+    .section p.lead{
+      color: var(--muted);
+      max-width: 78ch;
+      margin-bottom: 18px;
+      font-size: 1.02rem;
+    }
+
+    .grid-3{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .card{
+      background: rgba(255,255,255,.78);
+      border: 1px solid rgba(230,226,218,.95);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 26px rgba(17,24,39,.06);
+      padding: 16px 16px 14px;
+    }
+    .card h3{
+      font-size: 1.05rem;
+      color: var(--accent);
+      margin-bottom: 6px;
+      display:flex; align-items:center; gap: 10px;
+    }
+    .card p{
+      color: var(--text);
+      font-size: .95rem;
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap: 8px;
+      padding: 8px 12px;
+      border-radius: var(--radius-pill);
+      background: rgba(107,30,43,.08);
+      border: 1px solid rgba(107,30,43,.18);
+      color: var(--accent);
+      font-weight: 800;
+      margin-bottom: 10px;
+      width: fit-content;
+    }
+
+    /* Pricing */
+    .pricing{
+      background: rgba(255,255,255,.55);
+      border-top: 1px solid rgba(230,226,218,.95);
+      border-bottom: 1px solid rgba(230,226,218,.95);
+    }
+    .plans{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .plan{
+      padding: 18px;
+    }
+    .plan .price{
+      font-size: 1.65rem;
+      font-weight: 900;
+      margin: 8px 0 12px;
+    }
+    .plan ul{ list-style: none; display:flex; flex-direction:column; gap: 8px; color: var(--text); }
+    .plan li{ display:flex; gap: 10px; align-items:flex-start; }
+    .plan li b{ color: var(--accent); }
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      padding: 6px 10px;
+      border-radius: var(--radius-pill);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: .86rem;
+      border: 1px solid rgba(107,30,43,.18);
+      width: fit-content;
+    }
+
+    /* FAQ */
+    details{
+      background: rgba(255,255,255,.78);
+      border: 1px solid rgba(230,226,218,.95);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      box-shadow: 0 10px 26px rgba(17,24,39,.05);
+    }
+    details + details{ margin-top: 10px; }
+    summary{
+      cursor:pointer;
+      font-weight: 800;
+      color: var(--text);
+      list-style: none;
+    }
+    summary::-webkit-details-marker{ display:none; }
+    details p{ color: var(--muted); margin-top: 10px; }
+
+    footer{
+      padding: 26px 0 34px;
+      color: var(--muted);
+      font-size: .92rem;
+    }
+    .footer-row{
+      display:flex; justify-content:space-between; align-items:center; gap: 12px;
+      border-top: 1px solid rgba(230,226,218,.95);
+      padding-top: 18px;
+      flex-wrap: wrap;
+    }
+
+    /* Responsive */
+    @media (max-width: 940px){
+      .hero-grid{ grid-template-columns: 1fr; }
+      .phone{ width: min(420px, 96vw); }
+    }
+    @media (max-width: 860px){
+      .grid-3{ grid-template-columns: 1fr; }
+      .plans{ grid-template-columns: 1fr; }
+      .nav .btn{ padding: 9px 12px; }
+    }
+
+    .logo-hero{ width:auto; margin-bottom:14px; display:block; }
+.logo-hero--word{ height:54px; }
+.logo-hero--compact{ height:44px; display:none; }
+
+@media (max-width: 520px){
+  .logo-hero--word{ display:none; }
+  .logo-hero--compact{ display:block; }
+}
+  </style>
+</head>
+
+<body>
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="index.html" aria-label="Wine in App">
+        <div class="brand-badge" aria-hidden="true">
+          <img src="/assets/logo-mark.png" alt="Wine in App" style="width:26px; height:26px; object-fit:contain;">
+        </div>
+        <div class="brand-name">
+          <strong>Wine in App</strong>
+          <span>W.IN.A — carta vini digitale per ristoranti</span>
+        </div>
+      </a>
+
+      <div class="nav">
+        <a class="btn" href="login.html">Login</a>
+        <a class="btn btn-primary" href="register.html">Registrati</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="kicker">🍷 Sembra un’app. È la tua carta dei vini.</div>
+        <img class="logo-hero logo-hero--word" img src="/assets/logo-wordmark.png" alt="Wine in App">
+        <img class="logo-hero logo-hero--compact" img src="/assets/logo-wina.png" alt="WINA">
+
+        <h1>La carta dei vini digitale <span style="color:var(--accent)">più elegante</span> per il tuo ristorante.</h1>
+        <p class="sub">
+          Con <b>sommelier AI</b>, <b>QR dinamico</b>, <b>personalizzazione totale</b> e <b>multilingua</b>.
+          Tutto aggiornabile in 1 minuto dalla tua dashboard.
+        </p>
+
+        <div class="cta-row">
+          <a class="btn btn-primary" href="register.html">Provala gratis</a>
+          <a class="btn" href="#demo">Guarda la demo</a>
+        </div>
+
+        <div class="micro" aria-label="Punti di forza">
+          <span>⚡ Veloce su mobile</span>
+          <span>🎨 Branding premium</span>
+          <span>🤖 Suggerimenti AI</span>
+          <span>🌍 Multilingua</span>
+        </div>
+      </div>
+
+      <div class="phone-wrap" id="demo">
+        <div class="phone" aria-label="Demo carta vini">
+          <div class="screen">
+            <!-- Demo: puoi cambiare ristorante_id con uno “demo” -->
+            <iframe src="carta.html?ristorante_id=fc28c874-b195-4660-9c78-c58d8dc3c092" title="Anteprima carta demo" loading="lazy"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- HOW IT WORKS -->
+  <section class="section">
+    <div class="wrap">
+      <div class="pill">✨ Come funziona</div>
+      <h2>3 step, zero stress.</h2>
+      <p class="lead">Metti online la carta, aggiornala quando vuoi e rendi felici i clienti (anche stranieri).</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <h3>1) Crea la tua carta</h3>
+          <p>Carichi vini e prezzi, organizzi categorie e sottocategorie, scegli stile e palette.</p>
+        </div>
+        <div class="card">
+          <h3>2) Personalizza branding</h3>
+          <p>Nome o logo, font e colori: tutto “live”, come un sito su misura.</p>
+        </div>
+        <div class="card">
+          <h3>3) Condividi con QR</h3>
+          <p>Un solo QR sempre aggiornato: la carta è pronta, bellissima, e funziona su qualsiasi smartphone.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section">
+    <div class="wrap">
+      <div class="pill">🔥 Funzioni che fanno la differenza</div>
+      <h2>Premium, ma super semplice.</h2>
+      <p class="lead">Pensata per ristoratori. Amata dai clienti.</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <h3>🤖 Sommelier Virtuale</h3>
+          <p>Il cliente scrive il piatto e riceve vini perfetti con motivazione (range personalizzabile).</p>
+        </div>
+        <div class="card">
+          <h3>🧩 Ordinamento e filtri</h3>
+          <p>Ordina per prezzo/nome/annata, gestisci ordine categorie e sottocategorie, e tieni la carta pulita.</p>
+        </div>
+        <div class="card">
+          <h3>🌍 Multilingua</h3>
+          <p>Riduci frizione con i turisti: carta tradotta e coerente, senza impazzire.</p>
+        </div>
+
+        <div class="card">
+          <h3>📲 QR dinamico</h3>
+          <p>Stampi una volta. Aggiorni sempre. Il QR resta lo stesso, la carta cambia con te.</p>
+        </div>
+        <div class="card">
+          <h3>🎨 Stile “carta”</h3>
+          <p>Palette e font: look premium, leggibile, in linea col tuo locale.</p>
+        </div>
+        <div class="card">
+          <h3>🗂️ Gestione Admin</h3>
+          <p>Dashboard + admin per aggiornare vini, formati (0,375 / 1,5 / 3L), visibilità e altro.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="section pricing" id="pricing">
+    <div class="wrap">
+      <div class="pill">💳 Prezzi</div>
+      <h2>Scegli il tuo piano</h2>
+      <p class="lead">Parti leggero e passa a PRO quando vuoi.</p>
+
+      <div class="plans">
+        <div class="card plan">
+          <div class="tag">Base</div>
+          <div class="price">14,99€<span style="font-size:.95rem; color:var(--muted); font-weight:700;"> / mese</span></div>
+          <ul>
+            <li>✅ <span>Carta digitale personalizzata</span></li>
+            <li>✅ <span>Sommelier AI incluso</span></li>
+            <li>✅ <span>QR Code dinamico</span></li>
+          </ul>
+          <div class="cta-row" style="margin-top:14px;">
+            <a class="btn btn-primary" href="register.html">Inizia</a>
+            <a class="btn" href="#demo">Vedi demo</a>
+          </div>
+        </div>
+
+        <div class="card plan" style="border-color: rgba(107,30,43,.22); box-shadow: 0 18px 44px rgba(107,30,43,.16);">
+          <div class="tag">PRO</div>
+          <div class="price">29,99€<span style="font-size:.95rem; color:var(--muted); font-weight:700;"> / mese</span></div>
+          <ul>
+            <li>✨ <span>Tutto del piano Base</span></li>
+            <li>✨ <span>Importazione smart (PDF/immagine)</span></li>
+            <li>✨ <span>Branding avanzato</span></li>
+            <li>✨ <span>Multilingua completo</span></li>
+          </ul>
+          <div class="cta-row" style="margin-top:14px;">
+            <a class="btn btn-primary" href="register.html">Passa a PRO</a>
+            <a class="btn" href="#faq">FAQ</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section" id="faq">
+    <div class="wrap">
+      <div class="pill">❓ FAQ</div>
+      <h2>Domande veloci</h2>
+      <p class="lead">Se vuoi, poi la rendiamo una pagina dedicata (più SEO).</p>
+
+      <details>
+        <summary>Il QR cambia quando aggiorno la carta?</summary>
+        <p>No: l’idea è proprio che il QR resti sempre lo stesso (dinamico), mentre tu aggiorni vini, prezzi e stile dalla dashboard.</p>
+      </details>
+
+      <details>
+        <summary>Posso usare un link “bello” tipo /mio-ristorante?</summary>
+        <p>Sì: hai già la gestione dello <i>slug</i> in dashboard. Serve solo impostare il dominio definitivo nel codice e nel DNS.</p>
+      </details>
+
+      <details>
+        <summary>La carta funziona bene su smartphone?</summary>
+        <p>Sì: è progettata mobile-first. La demo qui sopra è già la vista reale su schermo “telefono”.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="wrap footer-row">
+      <div>
+        <b>© 2026 Wine in App (W.IN.A)</b><br/>
+        <span>La carta dei vini digitale con AI per ristoranti.</span>
+      </div>
+      <div class="cta-row" style="margin:0;">
+        <a class="btn" href="login.html">Login</a>
+        <a class="btn btn-primary" href="register.html">Registrati</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Cookie banner (semplice) -->
+  <div id="cookie-banner" style="position: fixed; bottom: 0; left: 0; right: 0; background: #111; color: #fff; padding: 12px 10px; text-align: center; z-index: 999;">
+    Usiamo cookie tecnici per migliorare la tua esperienza.
+    <button onclick="document.getElementById('cookie-banner').style.display='none'"
+      style="margin-left:10px; padding:8px 12px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.14); color:#fff; font-weight:800; cursor:pointer;">
+      OK
+    </button>
+  </div>
+</body>
+</html>
