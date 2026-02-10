@@ -180,15 +180,18 @@
     letter-spacing: .6px;
     line-height: 1;
   }
-  .hero-brand .payoff{
-    margin-top: 6px;
-    font-size: clamp(.78rem, 2.7vw, .98rem);
-    color: var(--muted);
-    font-weight: 700;
-    white-space: nowrap;
-    overflow: visible;
-    letter-spacing: .1px;
-  }
+.hero-brand .payoff{
+  margin-top: 6px;
+  font-size: clamp(.78rem, 2.7vw, .98rem);
+  color: var(--muted);
+  font-weight: 700;
+  letter-spacing: .1px;
+
+  /* FIX mobile */
+  white-space: normal;
+  max-width: 100%;
+  text-wrap: balance;
+}
 
   h1{
     font-family: "Playfair Display", serif;
@@ -686,14 +689,21 @@
       height: 520px; /* leggermente meno del tuo 560 */
     }
 
-    /* Bottoni più comodi e full-width */
-    .cta-row{
-      flex-direction: column;
-      align-items: center;
-    }
-    .cta-row .btn{
-      width: min(340px, 92vw);
-    }
+  /* Bottoni: mai oltre i margini reali della wrap */
+  .cta-row{
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+  .cta-row .btn{
+    width: 100%;
+    max-width: 340px;
+  }
+
+  /* (opzionale ma consigliato) evita micro-sforamenti da 1-2px su alcuni browser */
+  .card, .plan, .stat, details{
+    max-width: 100%;
+  }
     .nav .btn{
       width: 48%;
       justify-content: center;
@@ -735,6 +745,10 @@
     h1{
       font-size: 1.9rem;     /* più premium, meno urlato */
       line-height: 1.08;
+      text-wrap: balance;
+  max-width: 22ch;     /* forza una colonna più “editoriale” */
+  margin-left: auto;
+  margin-right: auto;
     }
     .hero-brand .wina{ font-size: 1.85rem; }
     .hero-brand .payoff{ font-size: .95rem; }
@@ -755,6 +769,10 @@
 
   @media (max-width: 360px){
     .hero-brand .payoff{ font-size: .74rem; }
+      h1{
+    max-width: 20ch;   /* un filo più stretto su 360 */
+    font-size: 1.78rem;
+  }
   }
 
   /* Safe-area iPhone (notch) */
