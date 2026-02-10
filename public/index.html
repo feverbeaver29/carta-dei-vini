@@ -447,18 +447,18 @@
     /* --- Extra mobile polish --- */
 @media (max-width: 700px){
   .topbar-inner{
-    flex-wrap: wrap;
+    flex-wrap: nowrap;     /* NON andare a capo */
     gap: 10px;
   }
   .brand{
-    width: 100%;
-    justify-content: center;
+    width: auto;           /* non 100% */
+    justify-content: flex-start;
   }
   .nav{
-    width: 100%;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 8px;
+    width: auto;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    gap: 10px;
   }
   .nav .btn, .lang{
     width: auto;
@@ -644,21 +644,6 @@ html{ scroll-behavior: smooth; }
   cursor: pointer;
 }
 
-.nav-panel{
-  position: absolute;
-  right: 0;
-  top: 48px;
-  width: 210px;
-  padding: 12px;
-  border-radius: 16px;
-  border: 1px solid rgba(230,226,218,.95);
-  background: rgba(255,255,255,.90);
-  box-shadow: 0 18px 44px rgba(17,24,39,.14);
-  display: none;
-}
-
-.nav-panel.open{ display:block; }
-
 .nav-row{
   display:flex;
   align-items:center;
@@ -696,42 +681,199 @@ html{ scroll-behavior: smooth; }
 /* Mobile: togli qualunque vecchio .lang grande */
 .lang{ display:none !important; }
 
+/* ===== Topbar 3-col layout ===== */
+.topbar-3{
+  display:grid;
+  grid-template-columns: 44px 1fr 64px; /* menu | brand | login */
+  align-items:center;
+}
+.brand-center{
+  justify-self:center;
+}
+.brand-center .brand-name span{ display:none; } /* niente payoff in topbar mobile */
+.nav-login{
+  justify-self:end;
+  font-weight: 900;
+  color: rgba(31,41,55,.78);
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(230,226,218,.95);
+  background: rgba(255,255,255,.55);
+}
+.nav-login:hover{ background:#fff; }
+
+/* Drawer */
+.drawer{
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: min(320px, 86vw);
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(10px);
+  border-right: 1px solid rgba(230,226,218,.95);
+  box-shadow: 0 30px 80px rgba(17,24,39,.18);
+  transform: translateX(-105%);
+  transition: transform .26s ease;
+  z-index: 1000;
+  padding: 14px;
+  display:flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.drawer.open{ transform: translateX(0); }
+
+.drawer-backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(17,24,39,.35);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .22s ease;
+  z-index: 999;
+}
+.drawer-backdrop.open{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.drawer-head{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  padding: 6px 4px 10px;
+  border-bottom: 1px solid rgba(230,226,218,.75);
+}
+.drawer-title{
+  font-family: "Playfair Display", serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+.drawer-close{
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(230,226,218,.95);
+  background: rgba(255,255,255,.65);
+  font-size: 22px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.drawer-block{
+  background: rgba(255,255,255,.7);
+  border: 1px solid rgba(230,226,218,.95);
+  border-radius: 16px;
+  padding: 12px;
+}
+.drawer-row{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.drawer-links{
+  display:flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.drawer-link{
+  padding: 12px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(230,226,218,.95);
+  background: rgba(255,255,255,.65);
+  font-weight: 900;
+}
+.drawer-link:hover{ background:#fff; }
+
+.drawer-cta{
+  margin-top: auto;
+}
+.drawer-cta .btn{
+  width: 100%;
+  justify-content: center;
+}
+
+.drawer-footer{
+  color: var(--muted);
+  font-size: .9rem;
+  padding-top: 10px;
+  border-top: 1px solid rgba(230,226,218,.75);
+}
+
+/* su desktop: torna normale (drawer solo mobile) */
+@media (min-width: 860px){
+  .topbar-3{
+    display:flex;
+    justify-content: space-between;
+  }
+  .nav-login{
+    border-radius: var(--radius-pill);
+    padding: 10px 14px;
+  }
+}
+
   </style>
 </head>
 
 <body>
   <!-- TOPBAR -->
   <div class="topbar">
-    <div class="wrap topbar-inner">
-      <a class="brand" href="?lang=it" aria-label="WINA">
-        <div class="brand-mark" aria-hidden="true">W</div>
-        <div class="brand-name">
-          <strong>WINA</strong>
-          <span data-i18n="brand.payoff">Wine in App - Digital Wine List for Restaurants</span>
-        </div>
-      </a>
+<div class="wrap topbar-inner topbar-3">
+  <!-- LEFT: menu -->
+  <button class="nav-icon" id="navMore" aria-label="Menu">☰</button>
 
-      <div class="nav">
-        <button class="nav-icon" id="navMore" aria-label="Menu">⋯</button>
+  <!-- CENTER: brand -->
+  <a class="brand brand-center" href="?lang=it" aria-label="WINA">
+    <div class="brand-mark" aria-hidden="true">W</div>
+    <div class="brand-name">
+      <strong>WINA</strong>
+    </div>
+  </a>
 
-        <div class="nav-panel" id="navPanel" aria-hidden="true">
-          <div class="nav-row">
-            <span class="nav-label" data-i18n="nav.lang">Lingua</span>
-            <select id="langSelect" class="nav-select">
-              <option value="it">IT</option>
-              <option value="en">EN</option>
-              <option value="es">ES</option>
-              <option value="fr">FR</option>
-            </select>
-          </div>
+  <!-- RIGHT: login -->
+  <a class="nav-login" href="login.html" data-i18n="nav.login">Login</a>
 
-          <div class="nav-actions">
-            <a class="btn btn-ghost" href="login.html" data-i18n="nav.login">Login</a>
-            <a class="btn btn-primary btn-compact" href="register.html" data-i18n="nav.signup">Registrati</a>
-          </div>
-        </div>
+  <!-- drawer -->
+  <div class="drawer" id="navPanel" aria-hidden="true">
+    <div class="drawer-head">
+      <div class="drawer-title">WINA</div>
+      <button class="drawer-close" id="drawerClose" aria-label="Close">×</button>
+    </div>
+
+    <div class="drawer-block">
+      <div class="drawer-row">
+        <span class="nav-label" data-i18n="nav.lang">Lingua</span>
+        <select id="langSelect" class="nav-select">
+          <option value="it">IT</option>
+          <option value="en">EN</option>
+          <option value="es">ES</option>
+          <option value="fr">FR</option>
+        </select>
       </div>
     </div>
+
+    <div class="drawer-links">
+      <a class="drawer-link" href="#demo" data-i18n="nav.demo">Guarda la demo</a>
+      <a class="drawer-link" href="#how" data-i18n="nav.how">Come funziona</a>
+      <a class="drawer-link" href="#features" data-i18n="nav.benefits">Vantaggi</a>
+      <a class="drawer-link" href="#pricing" data-i18n="nav.pricing">Prezzi</a>
+      <a class="drawer-link" href="#faq" data-i18n="nav.faq">FAQ</a>
+    </div>
+
+    <div class="drawer-cta">
+      <a class="btn btn-primary" href="register.html" data-i18n="nav.signup">Registrati</a>
+    </div>
+
+    <div class="drawer-footer">
+      <span data-i18n="brand.payoff">Wine in App - Digital Wine List for Restaurants</span>
+    </div>
+  </div>
+
+  <div class="drawer-backdrop" id="drawerBackdrop" aria-hidden="true"></div>
+</div>
   </div>
 
   <!-- HERO -->
@@ -1003,6 +1145,12 @@ html{ scroll-behavior: smooth; }
     // ---- i18n (IT/EN/ES/FR) ----
     const translations = {
       it: {
+        "nav.lang": "Lingua",
+        "nav.demo": "Guarda la demo",
+        "nav.how": "Come funziona",
+        "nav.benefits": "Vantaggi",
+        "nav.pricing": "Prezzi",
+        "nav.faq": "FAQ",
         "brand.payoff": "Wine in App - Digital Wine List for Restaurants",
         "meta.title": "WINA — Wine in App",
         "meta.description": "WINA: la carta dei vini digitale che sembra un’app. QR unico sempre aggiornato, mobile perfetta, multilingua e Sommelier AI per ristoranti.",
@@ -1109,6 +1257,12 @@ html{ scroll-behavior: smooth; }
       },
 
       en: {
+        "nav.lang": "Language",
+        "nav.demo": "View demo",
+        "nav.how": "How it works",
+        "nav.benefits": "Benefits",
+        "nav.pricing": "Pricing",
+        "nav.faq": "FAQ",
         "brand.payoff": "Wine in App - Digital Wine List for Restaurants",
         "meta.title": "WINA — Wine in App",
         "meta.description": "WINA: a digital wine list that feels like an app. One QR that never changes, mobile-perfect, multilingual and an AI Sommelier for restaurants.",
@@ -1215,6 +1369,12 @@ html{ scroll-behavior: smooth; }
       },
 
       es: {
+        "nav.lang": "Idioma",
+        "nav.demo": "Ver demo",
+        "nav.how": "Cómo funciona",
+        "nav.benefits": "Ventajas",
+        "nav.pricing": "Precios",
+        "nav.faq": "FAQ",
         "brand.payoff": "Wine in App - Digital Wine List for Restaurants",
         "meta.title": "WINA — Wine in App",
         "meta.description": "WINA: carta de vinos digital que parece una app. Un QR que no cambia, perfecta en móvil, multilingüe y Sumiller IA para restaurantes.",
@@ -1321,6 +1481,12 @@ html{ scroll-behavior: smooth; }
       },
 
       fr: {
+        "nav.lang": "Langue",
+        "nav.demo": "Voir la démo",
+        "nav.how": "Comment ça marche",
+        "nav.benefits": "Avantages",
+        "nav.pricing": "Tarifs",
+        "nav.faq": "FAQ",
         "brand.payoff": "Wine in App - Digital Wine List for Restaurants",
         "meta.title": "WINA — Wine in App",
         "meta.description": "WINA : carte des vins digitale qui ressemble à une app. Un QR unique, parfaite sur mobile, multilingue et Sommelier IA pour restaurants.",
@@ -1520,22 +1686,41 @@ html{ scroll-behavior: smooth; }
         });
       }
 
-      // menu mobile (⋯)
-      const navMore = document.getElementById("navMore");
-      const navPanel = document.getElementById("navPanel");
-      if(navMore && navPanel){
-        navMore.addEventListener("click", () => {
-          navPanel.classList.toggle("open");
-          navPanel.setAttribute("aria-hidden", navPanel.classList.contains("open") ? "false" : "true");
-        });
+// drawer mobile (☰)
+const navMore = document.getElementById("navMore");
+const drawer = document.getElementById("navPanel");
+const backdrop = document.getElementById("drawerBackdrop");
+const closeBtn = document.getElementById("drawerClose");
 
-        document.addEventListener("click", (e) => {
-          if(!navPanel.contains(e.target) && e.target !== navMore){
-            navPanel.classList.remove("open");
-            navPanel.setAttribute("aria-hidden", "true");
-          }
-        });
-      }
+function openDrawer(){
+  drawer.classList.add("open");
+  backdrop.classList.add("open");
+  drawer.setAttribute("aria-hidden", "false");
+  backdrop.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+}
+
+function closeDrawer(){
+  drawer.classList.remove("open");
+  backdrop.classList.remove("open");
+  drawer.setAttribute("aria-hidden", "true");
+  backdrop.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+
+if(navMore && drawer && backdrop){
+  navMore.addEventListener("click", openDrawer);
+  backdrop.addEventListener("click", closeDrawer);
+}
+if(closeBtn){
+  closeBtn.addEventListener("click", closeDrawer);
+}
+
+// chiudi drawer quando clicchi un link interno (demo/how/...)
+document.querySelectorAll(".drawer-link").forEach(a=>{
+  a.addEventListener("click", closeDrawer);
+});
+
     })();
   </script>
 </body>
