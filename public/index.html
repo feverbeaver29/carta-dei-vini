@@ -147,9 +147,15 @@
     }
 
     /* Hero */
-    .hero{
-      padding: 44px 0 10px;
-    }
+.hero{
+  padding: 34px 0 10px;
+}
+
+@media (max-width: 520px){
+  .hero{
+    padding: 18px 0 6px;
+  }
+}
     .hero-grid{
       display:grid;
       grid-template-columns: 1.2fr .9fr;
@@ -221,7 +227,7 @@
       display:flex; justify-content:center; align-items:center;
     }
     .phone{
-      width: min(380px, 92vw);
+      width: min(340px, 88vw);
       border-radius: 44px;
       padding: 14px 12px;
       background: #1a1a1a;
@@ -430,6 +436,13 @@
       .brand-name span{ display:none; }
       .lang{ padding: 9px 10px; }
       .lang select{ font-size: .95rem; }
+        .phone{
+    width: min(320px, 86vw);
+    border-radius: 38px;
+  }
+  .screen iframe{
+    height: 520px; /* leggermente meno del tuo 560 */
+  }
     }
     /* --- Extra mobile polish --- */
 @media (max-width: 700px){
@@ -476,12 +489,30 @@
   .cta-row{
     justify-content: center;
   }
+    .wrap{
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* centra davvero il testo hero */
+  .hero-grid > div:first-child{
+    text-align: center;
+  }
+
+  /* ma i “pill / cards” restano a sinistra (più leggibile) */
+  #how .wrap, #features .wrap, #pricing .wrap, #faq .wrap{
+    text-align: left;
+  }
 }
 
 @media (max-width: 520px){
   /* Bottoni più comodi e full-width */
+  .cta-row{
+    flex-direction: column;
+    align-items: center;
+  }
   .cta-row .btn{
-    width: 100%;
+    width: min(340px, 92vw);
   }
   .nav .btn{
     width: 48%;
@@ -526,6 +557,92 @@ html{ scroll-behavior: smooth; }
 .hide-section{
   display: none !important;
 }
+
+/* ---------- Mobile premium header ---------- */
+.topbar-inner{
+  padding: 10px 0;              /* meno alta */
+}
+
+.brand-mark{
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+}
+
+.brand-name strong{
+  font-size: 1.02rem;           /* leggermente più piccolo */
+}
+
+.lang{
+  padding: 8px 10px;
+}
+
+/* la nav non deve contenere i bottoni auth */
+.nav .btn{
+  display: none;
+}
+
+/* su mobile rendiamo header ancora più slim */
+@media (max-width: 520px){
+  .topbar-inner{ padding: 8px 0; }
+  .brand{ gap: 10px; }
+  .brand-mark{ width: 36px; height: 36px; }
+}
+
+/* Auth buttons sotto il brand (non nella navbar) */
+.hero-auth{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  margin: 10px 0 14px;
+}
+
+.btn-ghost{
+  background: rgba(255,255,255,.55);
+}
+
+.btn-compact{
+  padding: 10px 14px;
+}
+
+/* su mobile: più piccoli e meno “soffocanti” */
+@media (max-width: 520px){
+  .hero-auth{
+    justify-content: center;
+    margin-top: 8px;
+    margin-bottom: 12px;
+  }
+  .hero-auth .btn{
+    padding: 9px 12px;
+    font-size: .95rem;
+  }
+}
+
+@media (max-width: 520px){
+  h1{
+    font-size: 1.9rem;     /* più premium, meno urlato */
+    line-height: 1.08;
+  }
+
+  .hero-brand .wina{
+    font-size: 1.85rem;
+  }
+
+  .hero-brand .payoff{
+    font-size: .95rem;
+  }
+
+  .kicker{
+    font-size: .93rem;
+    padding: 7px 10px;
+  }
+
+  .sub{
+    font-size: .98rem;
+    line-height: 1.55;
+    max-width: 38ch;       /* più “colonna” su mobile */
+  }
+}
   </style>
 </head>
 
@@ -552,9 +669,6 @@ html{ scroll-behavior: smooth; }
           </select>
           <span class="chev" aria-hidden="true"></span>
         </label>
-
-        <a class="btn" href="login.html" data-i18n="nav.login">Login</a>
-        <a class="btn btn-primary" href="register.html" data-i18n="nav.signup">Registrati</a>
       </div>
     </div>
   </div>
@@ -568,6 +682,11 @@ html{ scroll-behavior: smooth; }
         <div class="hero-brand" aria-label="WINA brand">
           <div class="wina">WINA</div>
           <div class="payoff" data-i18n="brand.payoff">Wine in App - Digital Wine List for Restaurants</div>
+        </div>
+
+        <div class="hero-auth" aria-label="Accesso">
+          <a class="btn btn-ghost" href="login.html" data-i18n="nav.login">Login</a>
+          <a class="btn btn-primary btn-compact" href="register.html" data-i18n="nav.signup">Registrati</a>
         </div>
 
         <h1 data-i18n="hero.h1">La carta vini digitale che fa sembrare il tuo ristorante <span style="color:var(--accent)">più premium</span> (e ti fa vendere meglio).</h1>
@@ -663,7 +782,7 @@ html{ scroll-behavior: smooth; }
     </div>
   </section>
 
-  <!-- SOCIAL PROOF -->
+  <!-- SOCIAL PROOF
   <section class="section hide-section" id="proof">
     <div class="wrap">
       <div class="pill" data-i18n="proof.pill">⭐ Fiducia</div>
@@ -695,6 +814,7 @@ html{ scroll-behavior: smooth; }
       </div>
     </div>
   </section>
+   -->
 
   <!-- PRICING -->
   <section class="section pricing" id="pricing">
@@ -1262,6 +1382,10 @@ html{ scroll-behavior: smooth; }
       const dict = translations[lang] || translations.it;
 
       document.documentElement.lang = lang;
+      const ogLocales = { it: "it_IT", en: "en_US", es: "es_ES", fr: "fr_FR" };
+      const ogL = document.getElementById("ogLocale");
+      if (ogL) ogL.setAttribute("content", ogLocales[lang] || "it_IT");
+
       localStorage.setItem("wina_lang", lang);
 
       // --- dynamic title/meta/og per lingua ---
