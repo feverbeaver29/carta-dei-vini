@@ -589,22 +589,6 @@ html{ scroll-behavior: smooth; }
   .brand-mark{ width: 36px; height: 36px; }
 }
 
-/* Auth buttons sotto il brand (non nella navbar) */
-.hero-auth{
-  display:flex;
-  gap:10px;
-  align-items:center;
-  margin: 10px 0 14px;
-}
-
-.btn-ghost{
-  background: rgba(255,255,255,.55);
-}
-
-.btn-compact{
-  padding: 10px 14px;
-}
-
 /* su mobile: più piccoli e meno “soffocanti” */
 @media (max-width: 520px){
   .hero-auth{
@@ -643,6 +627,75 @@ html{ scroll-behavior: smooth; }
     max-width: 38ch;       /* più “colonna” su mobile */
   }
 }
+/* ===== Layout A: topbar minimal + panel ===== */
+.nav{
+  position: relative;
+}
+
+.nav-icon{
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(230,226,218,.95);
+  background: rgba(255,255,255,.55);
+  font-weight: 900;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.nav-panel{
+  position: absolute;
+  right: 0;
+  top: 48px;
+  width: 210px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(230,226,218,.95);
+  background: rgba(255,255,255,.90);
+  box-shadow: 0 18px 44px rgba(17,24,39,.14);
+  display: none;
+}
+
+.nav-panel.open{ display:block; }
+
+.nav-row{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.nav-label{
+  font-weight: 900;
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+.nav-select{
+  border: 1px solid rgba(230,226,218,.95);
+  background: rgba(255,255,255,.8);
+  border-radius: 12px;
+  padding: 8px 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.nav-actions{
+  display:flex;
+  gap: 8px;
+}
+
+.nav-actions .btn{
+  flex: 1;
+  padding: 9px 10px;
+  font-size: .95rem;
+}
+
+/* Mobile: togli qualunque vecchio .lang grande */
+.lang{ display:none !important; }
+
   </style>
 </head>
 
@@ -659,16 +712,24 @@ html{ scroll-behavior: smooth; }
       </a>
 
       <div class="nav">
-        <label class="lang" aria-label="Language">
-          <span style="opacity:.85;">🌐</span>
-          <select id="langSelect">
-            <option value="it">IT</option>
-            <option value="en">EN</option>
-            <option value="es">ES</option>
-            <option value="fr">FR</option>
-          </select>
-          <span class="chev" aria-hidden="true"></span>
-        </label>
+        <button class="nav-icon" id="navMore" aria-label="Menu">⋯</button>
+
+        <div class="nav-panel" id="navPanel" aria-hidden="true">
+          <div class="nav-row">
+            <span class="nav-label" data-i18n="nav.lang">Lingua</span>
+            <select id="langSelect" class="nav-select">
+              <option value="it">IT</option>
+              <option value="en">EN</option>
+              <option value="es">ES</option>
+              <option value="fr">FR</option>
+            </select>
+          </div>
+
+          <div class="nav-actions">
+            <a class="btn btn-ghost" href="login.html" data-i18n="nav.login">Login</a>
+            <a class="btn btn-primary btn-compact" href="register.html" data-i18n="nav.signup">Registrati</a>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -682,11 +743,6 @@ html{ scroll-behavior: smooth; }
         <div class="hero-brand" aria-label="WINA brand">
           <div class="wina">WINA</div>
           <div class="payoff" data-i18n="brand.payoff">Wine in App - Digital Wine List for Restaurants</div>
-        </div>
-
-        <div class="hero-auth" aria-label="Accesso">
-          <a class="btn btn-ghost" href="login.html" data-i18n="nav.login">Login</a>
-          <a class="btn btn-primary btn-compact" href="register.html" data-i18n="nav.signup">Registrati</a>
         </div>
 
         <h1 data-i18n="hero.h1">La carta vini digitale che fa sembrare il tuo ristorante <span style="color:var(--accent)">più premium</span> (e ti fa vendere meglio).</h1>
@@ -1461,6 +1517,23 @@ html{ scroll-behavior: smooth; }
         cookieOk.addEventListener("click", () => {
           localStorage.setItem("wina_cookie_ok", "1");
           cookieBanner.style.display = "none";
+        });
+      }
+
+      // menu mobile (⋯)
+      const navMore = document.getElementById("navMore");
+      const navPanel = document.getElementById("navPanel");
+      if(navMore && navPanel){
+        navMore.addEventListener("click", () => {
+          navPanel.classList.toggle("open");
+          navPanel.setAttribute("aria-hidden", navPanel.classList.contains("open") ? "false" : "true");
+        });
+
+        document.addEventListener("click", (e) => {
+          if(!navPanel.contains(e.target) && e.target !== navMore){
+            navPanel.classList.remove("open");
+            navPanel.setAttribute("aria-hidden", "true");
+          }
         });
       }
     })();
