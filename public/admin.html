@@ -210,6 +210,33 @@ h1 {    font-size: 1.3em;  }
   align-items:center;
   gap:12px;
 }
+/* OCR import bar (sopra H1) */
+.ocr-import{
+  max-width:600px;
+  margin:0 auto 8px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.ocr-btn{
+  margin-top:0;
+  width:100%;
+  padding:0.85em 1em;
+  border-radius:12px;
+  background:#111;
+  color:#fff;
+  font-weight:700;
+}
+
+.ocr-btn:hover{ opacity:0.92; }
+
+.ocr-hint{
+  font-size:0.85em;
+  color:#444;
+  text-align:center;
+}
+
 .topbar #backToDashboard{ margin-bottom:0; }
 .lang-wrap{ display:flex; align-items:center; gap:8px; }
 .lang-wrap label{ margin:0; font-size:0.9em; }
@@ -234,6 +261,17 @@ h1 {    font-size: 1.3em;  }
       <option value="es">Español</option>
     </select>
   </div>
+</div>
+
+<!-- OCR Import (solo PRO) -->
+<div id="ocrImportWrap" class="ocr-import" style="display:none;">
+  <button id="importWineCardBtn" class="ocr-btn" type="button">
+    📥 Importa carta vini (PRO)
+  </button>
+  <input id="importWineCardFile" type="file"
+         accept="application/pdf,image/*"
+         style="display:none;" />
+  <div id="ocrImportHint" class="ocr-hint"></div>
 </div>
 
 <h1>Gestione Carta dei Vini</h1>
@@ -361,6 +399,9 @@ let currentLang = "it";
 
 const TRANSLATIONS = {
   it: {
+    import_btn: "📥 Importa carta vini (PRO)",
+import_hint_pro: "Carica PDF o foto della carta vini e importa i vini più velocemente.",
+import_hint_upgrade: "Funzione disponibile solo per PRO.",
     glass_lbl: "Calice",
     language: "Lingua",
     back_dashboard: "← Torna alla Dashboard",
@@ -412,6 +453,9 @@ const TRANSLATIONS = {
     saved_updated: "Vino aggiornato"
   },
   en: {
+    import_btn: "📥 Import wine list (PRO)",
+import_hint_pro: "Upload a PDF or photo and import wines faster.",
+import_hint_upgrade: "This feature is available only on PRO.",
     glass_lbl: "Glass",
     language: "Language",
     back_dashboard: "← Back to Dashboard",
@@ -463,6 +507,9 @@ const TRANSLATIONS = {
     saved_updated: "Wine updated"
   },
 fr: {
+  import_btn: "📥 Importer la carte des vins (PRO)",
+import_hint_pro: "Télécharge un PDF ou une photo pour importer les vins plus vite.",
+import_hint_upgrade: "Fonction disponible uniquement en PRO.",
   glass_lbl: "Verre",
   back_dashboard: "← Retour au tableau de bord",
   page_title: "Gestion de la carte des vins",
@@ -526,6 +573,9 @@ fr: {
 },
 
 es: {
+  import_btn: "📥 Importar carta de vinos (PRO)",
+import_hint_pro: "Sube un PDF o una foto y importa los vinos más rápido.",
+import_hint_upgrade: "Función disponible solo para PRO.",
   glass_lbl: "Copa",
   back_dashboard: "← Volver al panel",
   page_title: "Gestión de la carta de vinos",
@@ -820,6 +870,28 @@ async function fetchUserIfNeeded() {
   CURRENT_PLAN = data?.subscription_plan || "base";
 }
 
+function updateOcrImportUI(){
+  const wrap = document.getElementById("ocrImportWrap");
+  const btn  = document.getElementById("importWineCardBtn");
+  const hint = document.getElementById("ocrImportHint");
+  if (!wrap || !btn || !hint) return;
+
+  // Mostra la barra sempre, ma attiva solo se PRO
+  wrap.style.display = "flex";
+
+  const isPro = (String(CURRENT_PLAN || "").toLowerCase() === "pro");
+  btn.textContent = t("import_btn");
+  if (isPro){
+    btn.disabled = false;
+    btn.style.opacity = "1";
+    hint.textContent = t("import_hint_pro");
+  } else {
+    btn.disabled = true;
+    btn.style.opacity = "0.55";
+    hint.textContent = t("import_hint_upgrade");
+  }
+}
+
 let winesData = [], editIndex = null;
 let currentPage = 1;
 let currentCatalogTemplateId = null;   // null = vino NON scelto dal catalogo
@@ -1090,6 +1162,7 @@ function fillFormById(id) {
 
 async function loadWines() {
   await fetchUserIfNeeded();
+    updateOcrImportUI();
   const res = await fetch(`${SUPABASE_URL}/rest/v1/wines?ristorante_id=eq.${RESTAURANT_ID}`, {
     headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
   });
@@ -1629,6 +1702,182 @@ document.addEventListener('click', (e) => {
   if (e.target === input || box.contains(e.target)) return;
   clearNomeSuggestions();
 });
+// ==========================
+// OCR IMPORT (PRO) - UI + Upload + Call Edge Function
+// ==========================
+const OCR_BUCKET = "ocr-imports"; // <-- crea questo bucket in Supabase Storage
+
+function isProPlan(){
+  return (String(CURRENT_PLAN || "").toLowerCase() === "pro");
+}
+
+async function uploadImportFileToStorage(file){
+  // path unico
+  const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+  const path = `${RESTAURANT_ID}/${Date.now()}_${safeName}`;
+
+  const { data, error } = await sb.storage
+    .from(OCR_BUCKET)
+    .upload(path, file, { upsert: false, contentType: file.type || undefined });
+
+  if (error) throw error;
+  return data.path; // storage path
+}
+
+function ensureOcrResultsPanel(){
+  let panel = document.getElementById("ocrResultsPanel");
+  if (panel) return panel;
+
+  // lo mettiamo sopra al form, dentro .admin-panel, all’inizio
+  const adminPanel = document.querySelector(".admin-panel");
+  panel = document.createElement("div");
+  panel.id = "ocrResultsPanel";
+  panel.style = "display:none; border:1px solid #ddd; border-radius:14px; padding:12px; margin-bottom:12px; background:#fff;";
+
+  panel.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+      <strong>Import OCR</strong>
+      <button id="ocrClosePanelBtn" type="button" style="margin-top:0; padding:6px 10px; border-radius:10px; background:#eee; color:#111;">Chiudi</button>
+    </div>
+    <div id="ocrResultsMeta" style="margin-top:8px; font-size:0.9em; color:#444;"></div>
+    <div id="ocrResultsList" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;"></div>
+  `;
+
+  adminPanel.prepend(panel);
+
+  panel.querySelector("#ocrClosePanelBtn").onclick = () => {
+    panel.style.display = "none";
+  };
+
+  return panel;
+}
+
+function renderOcrResults(items){
+  const panel = ensureOcrResultsPanel();
+  const meta  = panel.querySelector("#ocrResultsMeta");
+  const list  = panel.querySelector("#ocrResultsList");
+
+  panel.style.display = "block";
+  meta.textContent = `Righe trovate: ${items.length}. Clicca “Usa” per riempire il form.`;
+
+  list.innerHTML = "";
+
+  items.slice(0, 200).forEach((it, idx) => {
+    const name = (it.nome || it.name || "").trim();
+    const price = (it.prezzo || it.price || "").trim();
+    const grapes = (it.uvaggio || it.grapes || "").trim();
+    const conf = (typeof it.confidence === "number") ? Math.round(it.confidence * 100) : null;
+
+    const row = document.createElement("div");
+    row.style = "border:1px solid #eee; border-radius:12px; padding:10px; display:flex; justify-content:space-between; gap:10px; align-items:flex-start;";
+
+    row.innerHTML = `
+      <div style="min-width:0;">
+        <div style="font-weight:700; word-break:break-word;">${name || "(senza nome)"}</div>
+        <div style="font-size:0.85em; color:#555; margin-top:3px;">
+          ${price ? `Prezzo: <strong>${price}</strong>` : `Prezzo: —`}
+          ${grapes ? ` · Uvaggio: ${grapes}` : ``}
+          ${conf !== null ? ` · Conf: ${conf}%` : ``}
+        </div>
+      </div>
+      <div style="flex:0 0 auto; display:flex; gap:8px;">
+        <button type="button" style="margin-top:0; padding:6px 10px; border-radius:10px;" data-use="${idx}">Usa</button>
+      </div>
+    `;
+
+    row.querySelector('button[data-use]').onclick = () => {
+      // Riempio solo i campi che hai chiesto: nome, prezzo (bott. 0,75), uvaggio
+      const nomeInput = document.getElementById("nome_completo");
+      const prezzoInput = document.getElementById("prezzo");
+      const uvInput = document.getElementById("uvaggio");
+      if (nomeInput) nomeInput.value = name || "";
+      if (prezzoInput) prezzoInput.value = (price || "").replace(/[^\d,.\-]/g,"").replace(",","."); // semplice
+      if (uvInput) uvInput.value = grapes || "";
+
+      // scrolla al form
+      nomeInput?.scrollIntoView({ behavior:"smooth", block:"center" });
+    };
+
+    list.appendChild(row);
+  });
+}
+
+async function callOcrEdgeFunction(storagePath){
+  // Edge Function che creeremo: /functions/v1/ocr-wine-import
+  const url = `${FUNCTIONS_BASE}/ocr-wine-import`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_API_KEY
+    },
+    body: JSON.stringify({
+      ristorante_id: RESTAURANT_ID,
+      storage_bucket: OCR_BUCKET,
+      storage_path: storagePath,
+      lang: currentLang
+    })
+  });
+
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(txt || "OCR function error");
+  }
+  return await res.json();
+}
+
+async function handleOcrImportFlow(file){
+  if (!isProPlan()){
+    showMessage(t("import_hint_upgrade"), false);
+    return;
+  }
+  if (!file) return;
+
+  // limiti base (puoi cambiarli)
+  const MAX_MB = 25;
+  if (file.size > MAX_MB * 1024 * 1024){
+    showMessage(`File troppo grande (max ${MAX_MB}MB)`, false);
+    return;
+  }
+
+  showMessage("Caricamento file…");
+  const storagePath = await uploadImportFileToStorage(file);
+
+  showMessage("Analisi OCR in corso…");
+  const data = await callOcrEdgeFunction(storagePath);
+
+  // ci aspettiamo: { items: [...] }
+  const items = Array.isArray(data?.items) ? data.items : [];
+  if (!items.length){
+    showMessage("Nessuna riga vino trovata. Prova con una foto più nitida o un PDF diverso.", false);
+    return;
+  }
+
+  showMessage("OCR completato ✅");
+  renderOcrResults(items);
+}
+
+// wiring button
+document.getElementById("importWineCardBtn")?.addEventListener("click", () => {
+  if (!isProPlan()) return;
+  document.getElementById("importWineCardFile")?.click();
+});
+
+document.getElementById("importWineCardFile")?.addEventListener("change", async (e) => {
+  const file = e.target.files?.[0];
+  // reset input per permettere reupload stesso file
+  e.target.value = "";
+  try{
+    await fetchUserIfNeeded(); // ensure RESTAURANT_ID + CURRENT_PLAN
+    updateOcrImportUI();
+    await handleOcrImportFlow(file);
+  } catch(err){
+    console.error(err);
+    showMessage("Errore import OCR: " + (err?.message || err), false);
+  }
+});
+
 </script>
 </body>
 </html>
