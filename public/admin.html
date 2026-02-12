@@ -1810,7 +1810,8 @@ async function callOcrEdgeFunction(storagePath){
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "apikey": SUPABASE_API_KEY
+      "apikey": SUPABASE_API_KEY,
+      "Authorization": `Bearer ${token}`
     },
     body: JSON.stringify({
       ristorante_id: RESTAURANT_ID,
