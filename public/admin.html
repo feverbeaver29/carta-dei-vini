@@ -1852,6 +1852,9 @@ async function handleOcrImportFlow(file){
 
   // ci aspettiamo: { items: [...] }
   const items = Array.isArray(data?.items) ? data.items : [];
+  if (data?.raw_ocr_preview) {
+  console.log("RAW OCR PREVIEW:\n", data.raw_ocr_preview);
+}
   if (!items.length){
     showMessage("Nessuna riga vino trovata. Prova con una foto più nitida o un PDF diverso.", false);
     return;

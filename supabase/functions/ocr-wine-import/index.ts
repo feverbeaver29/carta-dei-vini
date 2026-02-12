@@ -231,54 +231,63 @@ function extractWineItemsFromText(text: string) {
 
   const items: any[] = [];
 
-  const priceRe = /(\d{1,3}(?:[.,]\d{1,2})?)\s*(€)?\b/;
+const yearRe = /\b(19|20)\d{2}\b/g;
 
-  for (const raw of lines) {
-    const l = raw;
+// prezzo valido: preferisci numero seguito da € oppure numero alla fine riga
+const priceCandidatesRe = /(?<!\d)(\d{1,3}(?:[.,]\d{1,2})?)(?=\s*€|\s*$)/g;
 
-    // filtri “header” comuni (puoi aggiungere parole)
-    const lower = l.toLowerCase();
-    if (
-      lower === "rossi" || lower === "bianchi" || lower.includes("bollicine") ||
-      lower.includes("spumanti") || lower.includes("vini") ||
-      lower.includes("calice") && l.length < 20
-    ) continue;
+function pickPrice(line: string): string | null {
+  // 1) se c’è "25€" o "25 €" prendi quello (più affidabile)
+  const euroMatch = line.match(/(?<!\d)(\d{1,3}(?:[.,]\d{1,2})?)(?=\s*€)/);
+  if (euroMatch) return euroMatch[1];
 
-    const m = l.match(priceRe);
-    if (!m) continue;
+  // 2) altrimenti prendi l’ultimo numero “da prezzo” a fine riga
+  const matches = [...line.matchAll(priceCandidatesRe)].map(m => m[1]);
+  if (!matches.length) return null;
 
-    const price = m[1];
+  // escludi valori che sembrano anni (anche se qui dovrebbe già essere ok)
+  const filtered = matches.filter(v => {
+    const n = parseFloat(v.replace(",", "."));
+    return !(n >= 1900 && n <= 2099);
+  });
+  if (!filtered.length) return null;
 
-    // nome = linea senza prezzo e simboli
-    let name = l.replace(priceRe, "").replace(/[€•·\-–—]+/g, " ").trim();
-    if (name.length < 3) continue;
+  return filtered[filtered.length - 1];
+}
 
-    // uvaggio: (qualcosa) se contiene virgole, %, o parole tipiche
-    let grapes = "";
-    const par = l.match(/\(([^)]+)\)/);
-    if (par) {
-      const cand = par[1].trim();
-      if (/[%,]/.test(cand) || cand.split(" ").length <= 6) grapes = cand;
-    } else {
-      // oppure dopo " - " o " / " se sembra uvaggio
-      const dashSplit = l.split(" - ");
-      if (dashSplit.length >= 2) {
-        const tail = dashSplit[dashSplit.length - 1].trim();
-        if (/[%,]/.test(tail) && tail.length <= 40) grapes = tail;
-      }
-    }
+for (const raw of lines) {
+  let l = raw;
 
-    const confidence =
-      (m ? 0.7 : 0.4) + (grapes ? 0.1 : 0) + (name.length > 6 ? 0.1 : 0);
+  // rimuovi gli anni per evitare che finiscano nel nome
+  l = l.replace(yearRe, "").replace(/\s+/g, " ").trim();
 
-    items.push({
-      nome: name,
-      prezzo: price,
-      uvaggio: grapes,
-      confidence: Math.min(0.95, confidence),
-      raw_line: raw,
-    });
-  }
+  const price = pickPrice(l);
+  if (!price) continue;
+
+  // nome = togli prezzo (euro o fine riga) + pulizia simboli
+  let name = l
+    .replace(new RegExp(`${price.replace(".", "\\.").replace(",", "\\,")}\\s*€?\\s*$`), "")
+    .replace(/[€•·]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // evita righe “spezzate” tipo "DOCG  Cantina Villa..."
+  if (name.length < 4) continue;
+  if (/^docg\b/i.test(name) || /^cantina\b/i.test(name)) continue;
+
+  // uvaggio: per ora lasciamo vuoto (meglio che inventarlo)
+  const grapes = "";
+
+  const confidence = 0.85; // saliamo un po' ora che il prezzo è più affidabile
+
+  items.push({
+    nome: name,
+    prezzo: price,
+    uvaggio: grapes,
+    confidence,
+    raw_line: raw,
+  });
+}
 
   return items;
 }
@@ -405,6 +414,7 @@ if (req.method === "OPTIONS") {
           const t = r.fullTextAnnotation?.text;
           if (t) combinedText += `\n${t}`;
         }
+        const raw_ocr_text = combinedText;
       }
 
       items = extractWineItemsFromText(combinedText);
@@ -412,6 +422,7 @@ if (req.method === "OPTIONS") {
       // image sync
       const v = await visionImageOCR(gToken, bytes);
       const text = v?.responses?.[0]?.fullTextAnnotation?.text ?? "";
+      const raw_ocr_text = text;
       items = extractWineItemsFromText(text);
     }
 
@@ -436,9 +447,14 @@ if (req.method === "OPTIONS") {
       updated_at: new Date().toISOString(),
     }).eq("id", jobId);
 
-    return new Response(JSON.stringify({ job_id: jobId, items }), {
+return new Response(JSON.stringify({
+  job_id: jobId,
+  items,
+  raw_ocr_preview: rawOcrText.slice(0, 2000) // solo primi 2000 caratteri
+}), {
   headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
 });
+
   } catch (err: any) {
     console.error(err);
     return new Response(`OCR import error: ${err?.message ?? err}`, { status: 500, headers: corsHeaders(origin) });
