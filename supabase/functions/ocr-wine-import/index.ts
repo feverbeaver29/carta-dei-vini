@@ -30,6 +30,9 @@ const GOOGLE_SERVICE_ACCOUNT_JSON = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON")!
 const GCS_BUCKET_NAME = Deno.env.get("GCS_BUCKET_NAME")!;
 const GCS_INPUT_PREFIX = Deno.env.get("GCS_INPUT_PREFIX") ?? "input/";
 const GCS_OUTPUT_PREFIX = Deno.env.get("GCS_OUTPUT_PREFIX") ?? "output/";
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
+const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL") ?? "gpt-4o-mini";
+const OPENAI_MAX_CHARS = parseInt(Deno.env.get("OPENAI_MAX_CHARS") ?? "12000", 10);
 
 // --------------------
 // Helpers: base64url + JWT sign (RS256) for Google OAuth
@@ -216,6 +219,86 @@ async function visionPollOperation(token: string, opName: string) {
   throw new Error("Vision operation timeout (troppo lento).");
 }
 
+async function openaiExtractWinesFromText(ocrText: string) {
+  if (!OPENAI_API_KEY) return [];
+
+  const text = ocrText.slice(0, OPENAI_MAX_CHARS);
+
+  const schema = {
+    name: "wine_import",
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        items: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              nome: { type: "string" },
+              annata: { type: "string" },
+              produttore: { type: "string" },
+              localita: { type: "string" },
+              uvaggio: { type: "string" },
+              prezzo_bicchiere: { type: "string" },
+              prezzo_bottiglia: { type: "string" },
+            },
+            required: ["nome"],
+          },
+        },
+      },
+      required: ["items"],
+    },
+  };
+
+  const prompt = `
+Sei un assistente che estrae vini da testo OCR di una carta vini.
+Regole:
+- Non inventare. Se un campo non è presente, lascia stringa vuota.
+- Prezzi: se trovi due prezzi, il più basso è calice e il più alto è bottiglia.
+- Ignora intestazioni e categorie (es: "VINI ROSSI ITALIANI").
+- "produttore/cantina" e "località" possono essere su righe separate: assegnale ai vini fino a quando cambiano.
+- Mantieni 'nome' pulito (senza prezzi, senza annate attaccate in modo strano).
+Restituisci SOLO JSON conforme allo schema.
+TESTO OCR:
+${text}
+`;
+
+  const res = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: OPENAI_MODEL,
+      input: prompt,
+      // Structured Outputs / JSON schema
+      response_format: {
+        type: "json_schema",
+        json_schema: schema,
+      },
+      temperature: 0,
+    }),
+  });
+
+  if (!res.ok) throw new Error(`OpenAI error: ${await res.text()}`);
+  const data = await res.json();
+
+  // Responses API: trovi il testo JSON in output[0].content[0].text (tipico)
+  const outText =
+    data?.output?.[0]?.content?.[0]?.text ??
+    data?.output_text ??
+    "";
+
+  if (!outText) return [];
+
+  const parsed = JSON.parse(outText);
+  const items = Array.isArray(parsed?.items) ? parsed.items : [];
+  return items;
+}
+
 // --------------------
 // Parsing: estrai righe vino (semplice ma robusto)
 // --------------------
@@ -232,8 +315,10 @@ function extractWineItemsFromText(text: string) {
   const items: any[] = [];
 
   const yearRe = /\b(19|20)\d{2}\b/g;
-  const euroLineRe = /^€\s*\d{1,3}(?:[.,]\d{1,2})?$/; // riga solo prezzo tipo "€40" o "€ 35,5"
+  const euroLineRe = /^€\s*\d{1,3}(?:[.,]\d{1,2})?$/;
   const numRe = /(?<!\d)(\d{1,3}(?:[.,]\d{1,2})?)(?!\d)/g;
+
+  const producerKeywords = /\b(tenuta|cantina|azienda|societ[aà]|podere|fattoria|vigne|vigneti|vini|agricola)\b/i;
 
   function toNum(v: string) {
     return parseFloat(v.replace(",", "."));
@@ -246,9 +331,42 @@ function extractWineItemsFromText(text: string) {
       lower.includes("bottiglia") ||
       lower.includes("al calice") ||
       lower.includes("emilia") ||
-      lower.includes("romagna")
+      lower.includes("romagna") ||
+      lower.includes("italiani") ||
+      lower.includes("italiane")
     ) return "";
     return s;
+  }
+
+  function looksLikeLocation(s: string) {
+    // es: "Torriana (RN)" oppure "... (Brisighella (RA)"
+    if (/\([A-Z]{2}\)/.test(s) && s.length <= 40) return true;
+    return false;
+  }
+
+  function extractLocationFromLine(s: string): string {
+    // prende l’ultima parentesi con provincia, se c’è
+    const m = s.match(/([^()]*)\(([A-Z]{2})\)\s*$/);
+    if (m) return `${m[1].trim()} (${m[2]})`.trim();
+    // fallback: tutta la riga se sembra location
+    return s.trim();
+  }
+
+  function looksLikeProducer(s: string) {
+    // no numeri, no euro, abbastanza corto, oppure contiene keyword
+    const hasNums = /[0-9]/.test(s);
+    const hasEuro = s.includes("€");
+    if (hasNums || hasEuro) return false;
+
+    if (producerKeywords.test(s)) return true;
+
+    // tipo: "Filippo Manetti - Vigne di San Lorenzo ..."
+    if (s.includes(" - ") && s.length <= 80) return true;
+
+    // riga solo testo medio-corta
+    if (s.split(" ").length <= 8 && s.length <= 45) return true;
+
+    return false;
   }
 
   function isPriceOnlyLine(s: string) {
@@ -264,7 +382,6 @@ function extractWineItemsFromText(text: string) {
   }
 
   function extractInlinePrices(line: string) {
-    // torna bottle/glass se nella stessa riga ci sono numeri “da prezzo”
     const cleaned = line.replace(yearRe, " ").replace(/\s+/g, " ").trim();
 
     const nums = [...cleaned.matchAll(numRe)]
@@ -296,9 +413,51 @@ function extractWineItemsFromText(text: string) {
     return out;
   }
 
-  // “pending” per gestire nome/uvaggio/prezzo su righe diverse
+  // pending state
   let pendingName = "";
   let pendingGrapes = "";
+  let pendingProducer = "";
+  let pendingLocation = "";
+
+  // per gestire 2 righe prezzo consecutive (calice + bottiglia)
+  let pendingPriceQueue: string[] = [];
+
+  function finalizeWithPrices(priceA: string, priceB?: string) {
+    if (!pendingName) return;
+
+    const finalName = pendingName.replace(yearRe, " ").replace(/\s+/g, " ").trim();
+    if (finalName.length < 3) return;
+
+    // se 2 prezzi: calice=min, bottiglia=max
+    const p1 = toNum(priceA);
+    const p2 = priceB ? toNum(priceB) : NaN;
+
+    let bottle = priceA;
+    let glass = "";
+
+    if (priceB && Number.isFinite(p1) && Number.isFinite(p2)) {
+      const min = Math.min(p1, p2);
+      const max = Math.max(p1, p2);
+      glass = String(min).replace(".", ","); // se vuoi comma
+      bottle = String(max).replace(".", ",");
+    }
+
+    items.push({
+      nome: finalName,
+      uvaggio: pendingGrapes || "",
+      produttore: pendingProducer || "",
+      localita: pendingLocation || "",
+      prezzo: bottle,
+      prezzo_bicchiere: glass,
+      confidence: 0.85,
+      raw_line: `${pendingProducer} | ${pendingLocation} | ${pendingName} | ${pendingGrapes} | ${priceA}${priceB ? " | " + priceB : ""}`,
+    });
+
+    // reset vino + prezzi + uvaggio (ma NON resettiamo producer/location: restano “attivi” finché non cambiano)
+    pendingName = "";
+    pendingGrapes = "";
+    pendingPriceQueue = [];
+  }
 
   for (const raw0 of lines) {
     const raw = normalizeLine(raw0);
@@ -309,45 +468,52 @@ function extractWineItemsFromText(text: string) {
 
     const lower = raw.toLowerCase();
 
-    // ignora righe location tipo "Torriana (RN)" ecc (facoltativo)
-    if (/\([A-Z]{2}\)/.test(raw) && raw.length <= 25) continue;
-
-    // 1) Se riga è SOLO prezzo, assegnalo al pending e crea item
-    if (isPriceOnlyLine(raw)) {
-      if (!pendingName) continue; // se non abbiamo un vino in pending, ignoriamo
-      const price = raw.replace("€", "").trim();
-
-      const finalName = pendingName.replace(yearRe, " ").replace(/\s+/g, " ").trim();
-      if (finalName.length >= 3) {
-        items.push({
-          nome: finalName,
-          prezzo: price,
-          prezzo_bicchiere: "",
-          uvaggio: pendingGrapes || "",
-          confidence: 0.85,
-          raw_line: `${pendingName} | ${pendingGrapes} | ${raw}`,
-        });
-      }
-
-      // reset pending dopo aver “chiuso” il vino
-      pendingName = "";
-      pendingGrapes = "";
+    // 1) location su righe intermedie (non vino)
+    if (looksLikeLocation(raw)) {
+      pendingLocation = extractLocationFromLine(raw);
       continue;
     }
 
-    // 2) Se riga sembra “uvaggio” (una parola, niente prezzi, niente anni)
-    // esempio: "Sangiovese"
+    // 2) producer/cantina su righe intermedie (non vino)
+    // se la riga contiene anche una location in coda, separiamola
+    if (looksLikeProducer(raw)) {
+      // prova a separare "... (RA)" come location
+      if (/\([A-Z]{2}\)\s*$/.test(raw)) {
+        pendingLocation = extractLocationFromLine(raw);
+        const before = raw.replace(/\([^)]*\([A-Z]{2}\)\)\s*$/, "").trim(); // gestisce doppia parentesi sporca
+        pendingProducer = before || pendingProducer;
+      } else {
+        pendingProducer = raw;
+      }
+      continue;
+    }
+
+    // 3) uvaggio (una parola/2 parole, no numeri, no euro)
     const hasNums = /[0-9]/.test(raw);
     const hasEuro = raw.includes("€");
     if (!hasNums && !hasEuro && raw.split(" ").length <= 3 && raw.length <= 25) {
-      // evita di prendere come uvaggio parole tipo "Cantina"
       if (!/^cantina\b/i.test(raw) && !/^docg\b/i.test(raw)) {
         pendingGrapes = raw;
         continue;
       }
     }
 
-    // 3) Se riga contiene già prezzo + testo (formato "Campiume 2019 €40")
+    // 4) prezzo su riga dedicata: mettilo in coda
+    if (isPriceOnlyLine(raw)) {
+      const p = raw.replace("€", "").trim();
+      if (!pendingName) continue;
+
+      pendingPriceQueue.push(p);
+
+      // se arrivano 2 prezzi consecutivi, chiudiamo con calice+bottiglia
+      if (pendingPriceQueue.length >= 2) {
+        finalizeWithPrices(pendingPriceQueue[0], pendingPriceQueue[1]);
+      }
+      // se ne arriva solo uno, non chiudiamo subito: magari il secondo arriva dopo
+      continue;
+    }
+
+    // 5) riga con prezzi inline (nome + 1/2 prezzi nella stessa riga)
     const { bottle, glass } = extractInlinePrices(raw);
     if (bottle) {
       let name = raw.replace(yearRe, " ").trim();
@@ -355,23 +521,36 @@ function extractWineItemsFromText(text: string) {
       if (name.length >= 3 && !/^cantina\b/i.test(name) && !/^docg\b/i.test(name)) {
         items.push({
           nome: name,
+          uvaggio: pendingGrapes || "",
+          produttore: pendingProducer || "",
+          localita: pendingLocation || "",
           prezzo: bottle,
           prezzo_bicchiere: glass || "",
-          uvaggio: pendingGrapes || "",
           confidence: 0.85,
           raw_line: raw,
         });
         pendingName = "";
         pendingGrapes = "";
+        pendingPriceQueue = [];
         continue;
       }
     }
 
-    // 4) Altrimenti considerala come “possibile nome vino” in pending
-    // (es: "Campiume 2019")
+    // 6) Se arriva una nuova riga “nome vino”, e avevamo 1 solo prezzo in coda, chiudiamo con quello
+    if (pendingName && pendingPriceQueue.length === 1) {
+      finalizeWithPrices(pendingPriceQueue[0]);
+    }
+
+    // 7) set pendingName (possibile vino)
     if (!/^cantina\b/i.test(lower) && !/^docg\b/i.test(lower)) {
       pendingName = raw;
+      pendingPriceQueue = []; // reset coda prezzi perché nuovo vino
     }
+  }
+
+  // flush finale: se rimane un prezzo singolo
+  if (pendingName && pendingPriceQueue.length === 1) {
+    finalizeWithPrices(pendingPriceQueue[0]);
   }
 
   return items;
@@ -503,6 +682,23 @@ let rawOcrText = "";
       }
       rawOcrText = combinedText;
       items = extractWineItemsFromText(combinedText);
+            // AI refine/fallback (solo se serve)
+      if (items.length < 3 && OPENAI_API_KEY) {
+        const aiItems = await openaiExtractWinesFromText(rawOcrText);
+        if (aiItems.length) {
+          // mappiamo ai campi che usa il tuo frontend
+          items = aiItems.map((x: any) => ({
+            nome: x.nome || "",
+            uvaggio: x.uvaggio || "",
+            produttore: x.produttore || "",
+            localita: x.localita || "",
+            prezzo: x.prezzo_bottiglia || "",
+            prezzo_bicchiere: x.prezzo_bicchiere || "",
+            confidence: 0.9,
+            raw_line: "openai",
+          }));
+        }
+      }
 
     } else {
       // image sync
@@ -510,6 +706,21 @@ let rawOcrText = "";
       const text = v?.responses?.[0]?.fullTextAnnotation?.text ?? "";
       rawOcrText = text;
       items = extractWineItemsFromText(text);
+            if (items.length < 3 && OPENAI_API_KEY) {
+        const aiItems = await openaiExtractWinesFromText(rawOcrText);
+        if (aiItems.length) {
+          items = aiItems.map((x: any) => ({
+            nome: x.nome || "",
+            uvaggio: x.uvaggio || "",
+            produttore: x.produttore || "",
+            localita: x.localita || "",
+            prezzo: x.prezzo_bottiglia || "",
+            prezzo_bicchiere: x.prezzo_bicchiere || "",
+            confidence: 0.9,
+            raw_line: "openai",
+          }));
+        }
+      }
     }
 
     // 6) Salva items in DB (facoltativo ma utile)
