@@ -300,6 +300,7 @@ serve(async (req) => {
 if (req.method === "OPTIONS") {
   return new Response("ok", { headers: corsHeaders(origin) });
 }
+let rawOcrText = "";
   try {
     if (req.method !== "POST") {
       return new Response("Method not allowed", { status: 405, headers: corsHeaders(origin) });
@@ -415,6 +416,7 @@ if (req.method === "OPTIONS") {
           if (t) combinedText += `\n${t}`;
         }
         const raw_ocr_text = combinedText;
+        const items = extractWineItemsFromText(combinedText);
       }
 
       items = extractWineItemsFromText(combinedText);
