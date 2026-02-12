@@ -2,6 +2,25 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
+const allowedOrigins = new Set([
+  "https://www.wineinapp.com",
+  "https://wineinapp.com",
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+]);
+
+function corsHeaders(origin: string | null) {
+  const o = origin && allowedOrigins.has(origin) ? origin : "https://www.wineinapp.com";
+  return {
+    "Access-Control-Allow-Origin": o,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "authorization, apikey, content-type",
+    "Access-Control-Allow-Credentials": "true",
+    "Vary": "Origin",
+  };
+}
+
 // --------------------
 // Env
 // --------------------
@@ -268,20 +287,24 @@ function extractWineItemsFromText(text: string) {
 // Main
 // --------------------
 serve(async (req) => {
+  const origin = req.headers.get("origin");
+if (req.method === "OPTIONS") {
+  return new Response("ok", { headers: corsHeaders(origin) });
+}
   try {
     if (req.method !== "POST") {
-      return new Response("Method not allowed", { status: 405 });
+      return new Response("Method not allowed", { status: 405, headers: corsHeaders(origin) });
     }
 
     const authHeader = req.headers.get("Authorization") ?? "";
     if (!authHeader.startsWith("Bearer ")) {
-      return new Response("Missing Authorization Bearer token", { status: 401 });
+      return new Response("Missing Authorization Bearer token", { status: 401, headers: corsHeaders(origin) });
     }
 
     const { ristorante_id, storage_bucket, storage_path } = await req.json();
 
     if (!ristorante_id || !storage_bucket || !storage_path) {
-      return new Response("Missing params", { status: 400 });
+      return new Response("Missing params", { status: 400, headers: corsHeaders(origin) });
     }
 
     // Supabase admin client (service role)
@@ -294,7 +317,7 @@ serve(async (req) => {
       authHeader.replace("Bearer ", ""),
     );
     if (userErr || !userData?.user?.id) {
-      return new Response("Invalid user session", { status: 401 });
+      return new Response("Invalid user session", { status: 401, headers: corsHeaders(origin) });
     }
     const userId = userData.user.id;
 
@@ -304,13 +327,13 @@ serve(async (req) => {
       .eq("id", ristorante_id)
       .single();
 
-    if (ristoErr || !risto) return new Response("Ristorante not found", { status: 404 });
-    if (risto.owner_id !== userId) return new Response("Forbidden", { status: 403 });
+    if (ristoErr || !risto) return new Response("Ristorante not found", { status: 404, headers: corsHeaders(origin) });
+    if (risto.owner_id !== userId) return new Response("Forbidden", { status: 403, headers: corsHeaders(origin) });
 
     const plan = String(risto.subscription_plan ?? "").toLowerCase();
     const status = String(risto.subscription_status ?? "").toLowerCase();
     if (plan !== "pro" || (status && status !== "active")) {
-      return new Response("PRO required", { status: 402 });
+      return new Response("PRO required", { status: 402, headers: corsHeaders(origin) });
     }
 
     // 2) Crea job
@@ -414,10 +437,10 @@ serve(async (req) => {
     }).eq("id", jobId);
 
     return new Response(JSON.stringify({ job_id: jobId, items }), {
-      headers: { "Content-Type": "application/json" },
-    });
+  headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
+});
   } catch (err: any) {
     console.error(err);
-    return new Response(`OCR import error: ${err?.message ?? err}`, { status: 500 });
+    return new Response(`OCR import error: ${err?.message ?? err}`, { status: 500, headers: corsHeaders(origin) });
   }
 });
