@@ -227,83 +227,151 @@ function extractWineItemsFromText(text: string) {
   const lines = text
     .split(/\r?\n/)
     .map(normalizeLine)
-    .filter((l) => l.length >= 3);
+    .filter((l) => l.length >= 1);
 
   const items: any[] = [];
 
   const yearRe = /\b(19|20)\d{2}\b/g;
-
-  // numeri tipo 25, 25€, 3,50, 3.50
+  const euroLineRe = /^€\s*\d{1,3}(?:[.,]\d{1,2})?$/; // riga solo prezzo tipo "€40" o "€ 35,5"
   const numRe = /(?<!\d)(\d{1,3}(?:[.,]\d{1,2})?)(?!\d)/g;
 
   function toNum(v: string) {
     return parseFloat(v.replace(",", "."));
   }
 
-  function pickPrices(line: string) {
+  function cleanHeader(s: string) {
+    const lower = s.toLowerCase();
+    if (
+      lower.includes("vini") ||
+      lower.includes("bottiglia") ||
+      lower.includes("al calice") ||
+      lower.includes("emilia") ||
+      lower.includes("romagna")
+    ) return "";
+    return s;
+  }
+
+  function isPriceOnlyLine(s: string) {
+    const t = s.replace(/\s+/g, " ").trim();
+    if (euroLineRe.test(t)) return true;
+
+    // anche "40" da solo (senza €)
+    if (/^\d{1,3}(?:[.,]\d{1,2})?$/.test(t)) {
+      const n = toNum(t);
+      return n >= 1 && n <= 500;
+    }
+    return false;
+  }
+
+  function extractInlinePrices(line: string) {
+    // torna bottle/glass se nella stessa riga ci sono numeri “da prezzo”
     const cleaned = line.replace(yearRe, " ").replace(/\s+/g, " ").trim();
 
     const nums = [...cleaned.matchAll(numRe)]
       .map((m) => m[1])
       .map((s) => ({ raw: s, n: toNum(s) }))
       .filter((x) => Number.isFinite(x.n))
-      .filter((x) => x.n >= 1)
-      .filter((x) => x.n <= 500)
+      .filter((x) => x.n >= 1 && x.n <= 500)
       .filter((x) => !(x.n >= 1900 && x.n <= 2099));
 
-    if (!nums.length) return { bottle: null as string | null, glass: null as string | null, cleaned };
+    if (!nums.length) return { bottle: null as string | null, glass: null as string | null };
 
     const sorted = [...nums].sort((a, b) => a.n - b.n);
-    const bottle = sorted[sorted.length - 1].raw;
-    const glass = sorted.length >= 2 ? sorted[0].raw : null;
-
-    return { bottle, glass, cleaned };
+    return {
+      bottle: sorted[sorted.length - 1].raw,
+      glass: sorted.length >= 2 ? sorted[0].raw : null,
+    };
   }
 
-  const removeOne = (s: string, p: string | null) => {
-    if (!p) return s;
-    const esc = p.replace(".", "\\.").replace(",", "\\,");
-    return s.replace(new RegExp(`\\b${esc}\\b\\s*€?`, "g"), " ");
-  };
+  function removePriceTokens(name: string, bottle: string | null, glass: string | null) {
+    const removeOne = (s: string, p: string | null) => {
+      if (!p) return s;
+      const esc = p.replace(".", "\\.").replace(",", "\\,");
+      return s.replace(new RegExp(`€?\\s*\\b${esc}\\b\\s*€?`, "g"), " ");
+    };
+    let out = name;
+    out = removeOne(out, bottle);
+    out = removeOne(out, glass);
+    out = out.replace(/[€•·]+/g, " ").replace(/\s+/g, " ").trim();
+    return out;
+  }
 
-  for (const raw of lines) {
+  // “pending” per gestire nome/uvaggio/prezzo su righe diverse
+  let pendingName = "";
+  let pendingGrapes = "";
+
+  for (const raw0 of lines) {
+    const raw = normalizeLine(raw0);
+    if (!raw) continue;
+
+    const filtered = cleanHeader(raw);
+    if (!filtered) continue;
+
     const lower = raw.toLowerCase();
 
-    // filtra intestazioni (categorie)
-    if (
-      lower === "bollicine" ||
-      lower === "vini bianchi" ||
-      lower === "vini rossi" ||
-      lower === "passiti" ||
-      lower.includes("la carta dei vini") ||
-      lower === "bottiglia" ||
-      lower === "al calice"
-    ) continue;
+    // ignora righe location tipo "Torriana (RN)" ecc (facoltativo)
+    if (/\([A-Z]{2}\)/.test(raw) && raw.length <= 25) continue;
 
-    const { bottle, glass, cleaned } = pickPrices(raw);
-    if (!bottle) continue;
+    // 1) Se riga è SOLO prezzo, assegnalo al pending e crea item
+    if (isPriceOnlyLine(raw)) {
+      if (!pendingName) continue; // se non abbiamo un vino in pending, ignoriamo
+      const price = raw.replace("€", "").trim();
 
-    let name = cleaned;
-    name = removeOne(name, bottle);
-    name = removeOne(name, glass);
+      const finalName = pendingName.replace(yearRe, " ").replace(/\s+/g, " ").trim();
+      if (finalName.length >= 3) {
+        items.push({
+          nome: finalName,
+          prezzo: price,
+          prezzo_bicchiere: "",
+          uvaggio: pendingGrapes || "",
+          confidence: 0.85,
+          raw_line: `${pendingName} | ${pendingGrapes} | ${raw}`,
+        });
+      }
 
-    name = name
-      .replace(/[€•·]+/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
+      // reset pending dopo aver “chiuso” il vino
+      pendingName = "";
+      pendingGrapes = "";
+      continue;
+    }
 
-    // evita righe spezzate o rumorose
-    if (name.length < 6) continue;
-    if (/^docg\b/i.test(name) || /^cantina\b/i.test(name)) continue;
+    // 2) Se riga sembra “uvaggio” (una parola, niente prezzi, niente anni)
+    // esempio: "Sangiovese"
+    const hasNums = /[0-9]/.test(raw);
+    const hasEuro = raw.includes("€");
+    if (!hasNums && !hasEuro && raw.split(" ").length <= 3 && raw.length <= 25) {
+      // evita di prendere come uvaggio parole tipo "Cantina"
+      if (!/^cantina\b/i.test(raw) && !/^docg\b/i.test(raw)) {
+        pendingGrapes = raw;
+        continue;
+      }
+    }
 
-    items.push({
-      nome: name,
-      prezzo: bottle,                // bottiglia
-      prezzo_bicchiere: glass || "", // calice
-      uvaggio: "",
-      confidence: 0.85,
-      raw_line: raw,
-    });
+    // 3) Se riga contiene già prezzo + testo (formato "Campiume 2019 €40")
+    const { bottle, glass } = extractInlinePrices(raw);
+    if (bottle) {
+      let name = raw.replace(yearRe, " ").trim();
+      name = removePriceTokens(name, bottle, glass);
+      if (name.length >= 3 && !/^cantina\b/i.test(name) && !/^docg\b/i.test(name)) {
+        items.push({
+          nome: name,
+          prezzo: bottle,
+          prezzo_bicchiere: glass || "",
+          uvaggio: pendingGrapes || "",
+          confidence: 0.85,
+          raw_line: raw,
+        });
+        pendingName = "";
+        pendingGrapes = "";
+        continue;
+      }
+    }
+
+    // 4) Altrimenti considerala come “possibile nome vino” in pending
+    // (es: "Campiume 2019")
+    if (!/^cantina\b/i.test(lower) && !/^docg\b/i.test(lower)) {
+      pendingName = raw;
+    }
   }
 
   return items;
