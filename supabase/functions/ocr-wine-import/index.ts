@@ -231,63 +231,80 @@ function extractWineItemsFromText(text: string) {
 
   const items: any[] = [];
 
-const yearRe = /\b(19|20)\d{2}\b/g;
+  const yearRe = /\b(19|20)\d{2}\b/g;
 
-// prezzo valido: preferisci numero seguito da € oppure numero alla fine riga
-const priceCandidatesRe = /(?<!\d)(\d{1,3}(?:[.,]\d{1,2})?)(?=\s*€|\s*$)/g;
+  // numeri tipo 25, 25€, 3,50, 3.50
+  const numRe = /(?<!\d)(\d{1,3}(?:[.,]\d{1,2})?)(?!\d)/g;
 
-function pickPrice(line: string): string | null {
-  // 1) se c’è "25€" o "25 €" prendi quello (più affidabile)
-  const euroMatch = line.match(/(?<!\d)(\d{1,3}(?:[.,]\d{1,2})?)(?=\s*€)/);
-  if (euroMatch) return euroMatch[1];
+  function toNum(v: string) {
+    return parseFloat(v.replace(",", "."));
+  }
 
-  // 2) altrimenti prendi l’ultimo numero “da prezzo” a fine riga
-  const matches = [...line.matchAll(priceCandidatesRe)].map(m => m[1]);
-  if (!matches.length) return null;
+  function pickPrices(line: string) {
+    const cleaned = line.replace(yearRe, " ").replace(/\s+/g, " ").trim();
 
-  // escludi valori che sembrano anni (anche se qui dovrebbe già essere ok)
-  const filtered = matches.filter(v => {
-    const n = parseFloat(v.replace(",", "."));
-    return !(n >= 1900 && n <= 2099);
-  });
-  if (!filtered.length) return null;
+    const nums = [...cleaned.matchAll(numRe)]
+      .map((m) => m[1])
+      .map((s) => ({ raw: s, n: toNum(s) }))
+      .filter((x) => Number.isFinite(x.n))
+      .filter((x) => x.n >= 1)
+      .filter((x) => x.n <= 500)
+      .filter((x) => !(x.n >= 1900 && x.n <= 2099));
 
-  return filtered[filtered.length - 1];
-}
+    if (!nums.length) return { bottle: null as string | null, glass: null as string | null, cleaned };
 
-for (const raw of lines) {
-  let l = raw;
+    const sorted = [...nums].sort((a, b) => a.n - b.n);
+    const bottle = sorted[sorted.length - 1].raw;
+    const glass = sorted.length >= 2 ? sorted[0].raw : null;
 
-  // rimuovi gli anni per evitare che finiscano nel nome
-  l = l.replace(yearRe, "").replace(/\s+/g, " ").trim();
+    return { bottle, glass, cleaned };
+  }
 
-  const price = pickPrice(l);
-  if (!price) continue;
+  const removeOne = (s: string, p: string | null) => {
+    if (!p) return s;
+    const esc = p.replace(".", "\\.").replace(",", "\\,");
+    return s.replace(new RegExp(`\\b${esc}\\b\\s*€?`, "g"), " ");
+  };
 
-  // nome = togli prezzo (euro o fine riga) + pulizia simboli
-  let name = l
-    .replace(new RegExp(`${price.replace(".", "\\.").replace(",", "\\,")}\\s*€?\\s*$`), "")
-    .replace(/[€•·]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  for (const raw of lines) {
+    const lower = raw.toLowerCase();
 
-  // evita righe “spezzate” tipo "DOCG  Cantina Villa..."
-  if (name.length < 4) continue;
-  if (/^docg\b/i.test(name) || /^cantina\b/i.test(name)) continue;
+    // filtra intestazioni (categorie)
+    if (
+      lower === "bollicine" ||
+      lower === "vini bianchi" ||
+      lower === "vini rossi" ||
+      lower === "passiti" ||
+      lower.includes("la carta dei vini") ||
+      lower === "bottiglia" ||
+      lower === "al calice"
+    ) continue;
 
-  // uvaggio: per ora lasciamo vuoto (meglio che inventarlo)
-  const grapes = "";
+    const { bottle, glass, cleaned } = pickPrices(raw);
+    if (!bottle) continue;
 
-  const confidence = 0.85; // saliamo un po' ora che il prezzo è più affidabile
+    let name = cleaned;
+    name = removeOne(name, bottle);
+    name = removeOne(name, glass);
 
-  items.push({
-    nome: name,
-    prezzo: price,
-    uvaggio: grapes,
-    confidence,
-    raw_line: raw,
-  });
-}
+    name = name
+      .replace(/[€•·]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // evita righe spezzate o rumorose
+    if (name.length < 6) continue;
+    if (/^docg\b/i.test(name) || /^cantina\b/i.test(name)) continue;
+
+    items.push({
+      nome: name,
+      prezzo: bottle,                // bottiglia
+      prezzo_bicchiere: glass || "", // calice
+      uvaggio: "",
+      confidence: 0.85,
+      raw_line: raw,
+    });
+  }
 
   return items;
 }
@@ -415,16 +432,15 @@ let rawOcrText = "";
           const t = r.fullTextAnnotation?.text;
           if (t) combinedText += `\n${t}`;
         }
-        const raw_ocr_text = combinedText;
-        const items = extractWineItemsFromText(combinedText);
       }
-
+      rawOcrText = combinedText;
       items = extractWineItemsFromText(combinedText);
+
     } else {
       // image sync
       const v = await visionImageOCR(gToken, bytes);
       const text = v?.responses?.[0]?.fullTextAnnotation?.text ?? "";
-      const raw_ocr_text = text;
+      rawOcrText = text;
       items = extractWineItemsFromText(text);
     }
 
