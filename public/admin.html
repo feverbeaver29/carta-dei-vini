@@ -1805,6 +1805,8 @@ function renderOcrResults(items){
 async function callOcrEdgeFunction(storagePath){
   // Edge Function che creeremo: /functions/v1/ocr-wine-import
   const url = `${FUNCTIONS_BASE}/ocr-wine-import`;
+  const { data: sess } = await sb.auth.getSession();
+  const token = sess?.session?.access_token;
 
   const res = await fetch(url, {
     method: "POST",
