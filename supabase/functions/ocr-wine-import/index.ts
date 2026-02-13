@@ -33,6 +33,7 @@ const GCS_OUTPUT_PREFIX = Deno.env.get("GCS_OUTPUT_PREFIX") ?? "output/";
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
 const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL") ?? "gpt-4o-mini";
 const OPENAI_MAX_CHARS = parseInt(Deno.env.get("OPENAI_MAX_CHARS") ?? "12000", 10);
+const MAX_OCR_CHARS = parseInt(Deno.env.get("MAX_OCR_CHARS") ?? "120000", 10);
 
 // --------------------
 // Helpers: base64url + JWT sign (RS256) for Google OAuth
@@ -246,11 +247,11 @@ function chunkNumberedText(numberedLines: string[], maxChars: number, overlapLin
       i++;
     }
 
-    const end = i; // exclusive
+    const end = i;
     chunks.push({ start, end, text: buf.join("\n") });
 
-    // overlap per mantenere contesto tra chunk
-    i = Math.max(end - overlapLines, 0);
+    const next = Math.max(end - overlapLines, 0);
+    i = (next <= start) ? end : next; // ✅ overlap ma sempre progresso
   }
 
   return chunks;
@@ -769,20 +770,31 @@ let rawOcrText = "";
         n.endsWith(".json")
       );
 
-      let combinedText = "";
-      for (const objName of files) {
-        const outBytes = await gcsDownload(gToken, GCS_BUCKET_NAME, objName);
-        const jsonText = new TextDecoder().decode(outBytes);
-        const parsed = JSON.parse(jsonText);
+let combinedText = "";
+for (const objName of files) {
+  const outBytes = await gcsDownload(gToken, GCS_BUCKET_NAME, objName);
+  const parsed = JSON.parse(new TextDecoder().decode(outBytes));
 
-        // Vision output: { responses: [...] }
-        const responses = parsed.responses ?? [];
-        for (const r of responses) {
-          const t = r.fullTextAnnotation?.text;
-          if (t) combinedText += `\n${t}`;
-        }
-      }
-      rawOcrText = combinedText;
+  const responses = parsed.responses ?? [];
+  for (const r of responses) {
+    const t = r.fullTextAnnotation?.text;
+    if (!t) continue;
+
+    // ✅ stop se supero limite
+    if (combinedText.length + t.length + 1 > MAX_OCR_CHARS) {
+      combinedText += "\n" + t.slice(0, Math.max(0, MAX_OCR_CHARS - combinedText.length - 1));
+      break;
+    }
+
+    combinedText += "\n" + t;
+  }
+
+  // ✅ interrompi anche il loop esterno
+  if (combinedText.length >= MAX_OCR_CHARS) break;
+}
+
+rawOcrText = combinedText;
+
 // 1) parser “a regole” (fallback)
 const ruleItems = extractWineItemsFromText(rawOcrText);
 
