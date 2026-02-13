@@ -1702,6 +1702,16 @@ document.addEventListener('click', (e) => {
   if (e.target === input || box.contains(e.target)) return;
   clearNomeSuggestions();
 });
+
+function escapeHtml(str){
+  return String(str ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 // ==========================
 // OCR IMPORT (PRO) - UI + Upload + Call Edge Function
 // ==========================
