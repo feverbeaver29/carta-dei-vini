@@ -288,7 +288,8 @@ async function openaiExtractWinesFromText(ocrText: string) {
               notes: { type: ["string", "null"] },
               localita: { type: ["string", "null"] },
             },
-            required: ["wine_name", "confidence", "source_lines"],
+            required: [  "section",  "producer",  "wine_name",  "vintage",  "grapes",  "price_bottle_eur",  "price_glass_eur",  "currency",  "confidence",  "source_lines",  "notes",  "localita",],
+
           },
         },
       },
