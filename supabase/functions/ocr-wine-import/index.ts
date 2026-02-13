@@ -250,7 +250,7 @@ function chunkNumberedText(numberedLines: string[], maxChars: number, overlapLin
     chunks.push({ start, end, text: buf.join("\n") });
 
     // overlap per mantenere contesto tra chunk
-    i = Math.max(end - overlapLines, end);
+    i = Math.max(end - overlapLines, 0);
   }
 
   return chunks;
@@ -258,7 +258,7 @@ function chunkNumberedText(numberedLines: string[], maxChars: number, overlapLin
 
 async function openaiExtractWinesFromText(ocrText: string) {
   if (!OPENAI_API_KEY) return [];
-
+  try {
   const { lines, numberedText } = buildNumberedLines(ocrText);
   const numberedLines = numberedText.split("\n");
 
@@ -285,6 +285,7 @@ async function openaiExtractWinesFromText(ocrText: string) {
               confidence: { type: "number" },
               source_lines: { type: "array", items: { type: "integer" } },
               notes: { type: ["string", "null"] },
+              localita: { type: ["string", "null"] },
             },
             required: ["wine_name", "confidence", "source_lines"],
           },
@@ -307,6 +308,7 @@ Regole anti-allucinazione:
 - Se un campo non è presente o non sei sicuro: null.
 - Ogni item deve includere source_lines (numeri di riga Lxxxx usati).
 - Se un prezzo sembra dubbio (es. “8O” invece di “80”), metti null e spiega in notes.
+- Se vedi due prezzi consecutivi e ci sono due vini “aperti” senza prezzo subito prima, trattali come prezzi di due vini diversi (in ordine).
 
 Regole di collegamento righe:
 - Il produttore/cantina e/o località possono stare su righe separate: restano “attivi” finché non cambiano.
@@ -330,11 +332,18 @@ ${c.text}
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: OPENAI_MODEL,
-        input: prompt,
-        response_format: { type: "json_schema", json_schema: schema },
-        temperature: 0,
-      }),
+  model: OPENAI_MODEL,
+  input: prompt,
+  text: {
+    format: {
+      type: "json_schema",
+      name: schema.name,
+      schema: schema.schema,
+      strict: true,
+    },
+  },
+  temperature: 0,
+}),
     });
 
     if (!res.ok) throw new Error(`OpenAI error: ${await res.text()}`);
@@ -386,6 +395,10 @@ ${c.text}
   }
 
   return deduped;
+    } catch (e) {
+    console.error("OpenAI extract failed:", e);
+    return []; // IMPORTANTISSIMO: fallback pulito
+  }
 }
 
 // --------------------
