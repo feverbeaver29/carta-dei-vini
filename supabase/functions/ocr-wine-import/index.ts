@@ -219,10 +219,48 @@ async function visionPollOperation(token: string, opName: string) {
   throw new Error("Vision operation timeout (troppo lento).");
 }
 
+function buildNumberedLines(ocrText: string) {
+  const lines = ocrText
+    .split(/\r?\n/)
+    .map((s) => s.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+
+  const numbered = lines.map((l, i) => `L${String(i + 1).padStart(4, "0")}: ${l}`);
+  return { lines, numberedText: numbered.join("\n") };
+}
+
+function chunkNumberedText(numberedLines: string[], maxChars: number, overlapLines = 12) {
+  const chunks: { start: number; end: number; text: string }[] = [];
+  let i = 0;
+
+  while (i < numberedLines.length) {
+    let size = 0;
+    const start = i;
+    const buf: string[] = [];
+
+    while (i < numberedLines.length) {
+      const add = numberedLines[i].length + 1;
+      if (size + add > maxChars && buf.length) break;
+      buf.push(numberedLines[i]);
+      size += add;
+      i++;
+    }
+
+    const end = i; // exclusive
+    chunks.push({ start, end, text: buf.join("\n") });
+
+    // overlap per mantenere contesto tra chunk
+    i = Math.max(end - overlapLines, end);
+  }
+
+  return chunks;
+}
+
 async function openaiExtractWinesFromText(ocrText: string) {
   if (!OPENAI_API_KEY) return [];
 
-  const text = ocrText.slice(0, OPENAI_MAX_CHARS);
+  const { lines, numberedText } = buildNumberedLines(ocrText);
+  const numberedLines = numberedText.split("\n");
 
   const schema = {
     name: "wine_import",
@@ -236,15 +274,19 @@ async function openaiExtractWinesFromText(ocrText: string) {
             type: "object",
             additionalProperties: false,
             properties: {
-              nome: { type: "string" },
-              annata: { type: "string" },
-              produttore: { type: "string" },
-              localita: { type: "string" },
-              uvaggio: { type: "string" },
-              prezzo_bicchiere: { type: "string" },
-              prezzo_bottiglia: { type: "string" },
+              section: { type: ["string", "null"] },
+              producer: { type: ["string", "null"] },
+              wine_name: { type: "string" },
+              vintage: { type: ["integer", "null"] },
+              grapes: { type: ["array", "null"], items: { type: "string" } },
+              price_bottle_eur: { type: ["number", "null"] },
+              price_glass_eur: { type: ["number", "null"] },
+              currency: { type: ["string", "null"] },
+              confidence: { type: "number" },
+              source_lines: { type: "array", items: { type: "integer" } },
+              notes: { type: ["string", "null"] },
             },
-            required: ["nome"],
+            required: ["wine_name", "confidence", "source_lines"],
           },
         },
       },
@@ -252,51 +294,98 @@ async function openaiExtractWinesFromText(ocrText: string) {
     },
   };
 
-  const prompt = `
-Sei un assistente che estrae vini da testo OCR di una carta vini.
-Regole:
-- Non inventare. Se un campo non è presente, lascia stringa vuota.
-- Prezzi: se trovi due prezzi, il più basso è calice e il più alto è bottiglia.
-- Ignora intestazioni e categorie (es: "VINI ROSSI ITALIANI").
-- "produttore/cantina" e "località" possono essere su righe separate: assegnale ai vini fino a quando cambiano.
-- Mantieni 'nome' pulito (senza prezzi, senza annate attaccate in modo strano).
-Restituisci SOLO JSON conforme allo schema.
-TESTO OCR:
-${text}
+  const chunks = chunkNumberedText(numberedLines, OPENAI_MAX_CHARS);
+
+  const all: any[] = [];
+  for (const c of chunks) {
+    const prompt = `
+Ruolo:
+Sei un data extractor. Converti testo OCR di una carta vini in dati strutturati. Non interpretare creativamente.
+
+Regole anti-allucinazione:
+- Non inventare produttori, annate, uvaggi, prezzi.
+- Se un campo non è presente o non sei sicuro: null.
+- Ogni item deve includere source_lines (numeri di riga Lxxxx usati).
+- Se un prezzo sembra dubbio (es. “8O” invece di “80”), metti null e spiega in notes.
+
+Regole di collegamento righe:
+- Il produttore/cantina e/o località possono stare su righe separate: restano “attivi” finché non cambiano.
+- Un vino può essere su più righe (nome, annata, uvaggio, prezzi).
+- Annata: numero 1900–2099.
+- Prezzi: se trovi due prezzi chiaramente associati allo stesso vino, mappa min->price_glass_eur e max->price_bottle_eur.
+- Se trovi prezzi su righe separate e ci sono più vini senza prezzo prima di quei prezzi, assegna i prezzi in ordine ai vini (NON calice/bottiglia).
+- section: se vedi intestazioni tipo “VINI ROSSI”, “BIANCHI”, ecc.
+
+Output:
+Restituisci SOLO JSON valido conforme allo schema.
+
+TESTO OCR (con linee numerate):
+${c.text}
 `;
 
-  const res = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${OPENAI_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: OPENAI_MODEL,
-      input: prompt,
-      // Structured Outputs / JSON schema
-      response_format: {
-        type: "json_schema",
-        json_schema: schema,
+    const res = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
       },
-      temperature: 0,
-    }),
+      body: JSON.stringify({
+        model: OPENAI_MODEL,
+        input: prompt,
+        response_format: { type: "json_schema", json_schema: schema },
+        temperature: 0,
+      }),
+    });
+
+    if (!res.ok) throw new Error(`OpenAI error: ${await res.text()}`);
+    const data = await res.json();
+
+    const outText =
+      data?.output?.[0]?.content?.[0]?.text ??
+      data?.output_text ??
+      "";
+
+    if (!outText) continue;
+
+    const parsed = JSON.parse(outText);
+    const items = Array.isArray(parsed?.items) ? parsed.items : [];
+    all.push(...items);
+  }
+
+  // Dedup semplice
+  const norm = (s: any) => String(s ?? "").trim().toLowerCase();
+  const seen = new Set<string>();
+  const deduped: any[] = [];
+  for (const it of all) {
+    const key = [
+      norm(it.producer),
+      norm(it.wine_name),
+      String(it.vintage ?? ""),
+      String(it.price_bottle_eur ?? ""),
+      String(it.price_glass_eur ?? ""),
+    ].join("|");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(it);
+  }
+
+  // (opzionale) ordina per prima source line
+  deduped.sort((a, b) => {
+    const am = Math.min(...(a.source_lines ?? [999999]));
+    const bm = Math.min(...(b.source_lines ?? [999999]));
+    return am - bm;
   });
 
-  if (!res.ok) throw new Error(`OpenAI error: ${await res.text()}`);
-  const data = await res.json();
+  // aggiungo source_text utile (non obbligatorio)
+  for (const it of deduped) {
+    const src = (it.source_lines ?? [])
+      .map((n: number) => lines[n - 1])
+      .filter(Boolean)
+      .join(" | ");
+    it._source_text = src;
+  }
 
-  // Responses API: trovi il testo JSON in output[0].content[0].text (tipico)
-  const outText =
-    data?.output?.[0]?.content?.[0]?.text ??
-    data?.output_text ??
-    "";
-
-  if (!outText) return [];
-
-  const parsed = JSON.parse(outText);
-  const items = Array.isArray(parsed?.items) ? parsed.items : [];
-  return items;
+  return deduped;
 }
 
 // --------------------
@@ -681,46 +770,88 @@ let rawOcrText = "";
         }
       }
       rawOcrText = combinedText;
-      items = extractWineItemsFromText(combinedText);
-            // AI refine/fallback (solo se serve)
-      if (items.length < 3 && OPENAI_API_KEY) {
-        const aiItems = await openaiExtractWinesFromText(rawOcrText);
-        if (aiItems.length) {
-          // mappiamo ai campi che usa il tuo frontend
-          items = aiItems.map((x: any) => ({
-            nome: x.nome || "",
-            uvaggio: x.uvaggio || "",
-            produttore: x.produttore || "",
-            localita: x.localita || "",
-            prezzo: x.prezzo_bottiglia || "",
-            prezzo_bicchiere: x.prezzo_bicchiere || "",
-            confidence: 0.9,
-            raw_line: "openai",
-          }));
-        }
-      }
+// 1) parser “a regole” (fallback)
+const ruleItems = extractWineItemsFromText(rawOcrText);
+
+// 2) OpenAI (sempre)
+let aiItems: any[] = [];
+if (OPENAI_API_KEY) {
+  aiItems = await openaiExtractWinesFromText(rawOcrText);
+}
+
+// 3) Se OpenAI ha risultati, usa quelli (più completi). Altrimenti fallback.
+if (aiItems.length) {
+  // Mappa ai campi del tuo frontend
+  items = aiItems.map((x: any) => {
+    const producer = (x.producer ?? "").trim();
+    const wineName = (x.wine_name ?? "").trim();
+    const nome = [producer, wineName].filter(Boolean).join(" - ");
+
+    const annata = x.vintage ? String(x.vintage) : "";
+    const uvaggio = Array.isArray(x.grapes) ? x.grapes.join(", ") : "";
+    const prezzoB = x.price_bottle_eur != null ? String(x.price_bottle_eur).replace(".", ",") : "";
+    const prezzoG = x.price_glass_eur != null ? String(x.price_glass_eur).replace(".", ",") : "";
+
+    return {
+      nome,
+      annata,
+      uvaggio,
+      prezzo: prezzoB,
+      prezzo_bicchiere: prezzoG,
+      produttore: producer,
+      localita: (x.localita ?? "").trim?.() ?? "",
+      section: x.section ?? "",
+      confidence: typeof x.confidence === "number" ? x.confidence : 0.85,
+      raw_line: x._source_text || "openai",
+    };
+  });
+} else {
+  items = ruleItems;
+}
 
     } else {
       // image sync
       const v = await visionImageOCR(gToken, bytes);
       const text = v?.responses?.[0]?.fullTextAnnotation?.text ?? "";
       rawOcrText = text;
-      items = extractWineItemsFromText(text);
-            if (items.length < 3 && OPENAI_API_KEY) {
-        const aiItems = await openaiExtractWinesFromText(rawOcrText);
-        if (aiItems.length) {
-          items = aiItems.map((x: any) => ({
-            nome: x.nome || "",
-            uvaggio: x.uvaggio || "",
-            produttore: x.produttore || "",
-            localita: x.localita || "",
-            prezzo: x.prezzo_bottiglia || "",
-            prezzo_bicchiere: x.prezzo_bicchiere || "",
-            confidence: 0.9,
-            raw_line: "openai",
-          }));
-        }
-      }
+// 1) parser “a regole” (fallback)
+const ruleItems = extractWineItemsFromText(rawOcrText);
+
+// 2) OpenAI (sempre)
+let aiItems: any[] = [];
+if (OPENAI_API_KEY) {
+  aiItems = await openaiExtractWinesFromText(rawOcrText);
+}
+
+// 3) Se OpenAI ha risultati, usa quelli (più completi). Altrimenti fallback.
+if (aiItems.length) {
+  // Mappa ai campi del tuo frontend
+  items = aiItems.map((x: any) => {
+    const producer = (x.producer ?? "").trim();
+    const wineName = (x.wine_name ?? "").trim();
+    const nome = [producer, wineName].filter(Boolean).join(" - ");
+
+    const annata = x.vintage ? String(x.vintage) : "";
+    const uvaggio = Array.isArray(x.grapes) ? x.grapes.join(", ") : "";
+    const prezzoB = x.price_bottle_eur != null ? String(x.price_bottle_eur).replace(".", ",") : "";
+    const prezzoG = x.price_glass_eur != null ? String(x.price_glass_eur).replace(".", ",") : "";
+
+    return {
+      nome,
+      annata,
+      uvaggio,
+      prezzo: prezzoB,
+      prezzo_bicchiere: prezzoG,
+      produttore: producer,
+      localita: (x.localita ?? "").trim?.() ?? "",
+      section: x.section ?? "",
+      confidence: typeof x.confidence === "number" ? x.confidence : 0.85,
+      raw_line: x._source_text || "openai",
+    };
+  });
+} else {
+  items = ruleItems;
+}
     }
 
     // 6) Salva items in DB (facoltativo ma utile)
