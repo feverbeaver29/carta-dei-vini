@@ -245,6 +245,86 @@ h1 {    font-size: 1.3em;  }
   border-radius:10px;
   border:1px solid #ccc;
 }
+
+/* ==========================
+   OCR Loading Overlay
+   ========================== */
+#ocrLoadingOverlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(17,17,17,0.55);
+  backdrop-filter: blur(2px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+}
+
+#ocrLoadingOverlay.is-open{ display:flex; }
+
+.ocr-loading-box{
+  width: min(420px, calc(100vw - 32px));
+  background: #fff;
+  border-radius: 18px;
+  padding: 18px 18px 16px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.18);
+  border: 1px solid rgba(0,0,0,0.08);
+  text-align: center;
+}
+
+.ocr-loading-title{
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: #111;
+  margin-bottom: 6px;
+}
+
+.ocr-loading-sub{
+  font-size: 0.88rem;
+  color: #555;
+  margin-bottom: 12px;
+}
+
+.ocr-spinner{
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 4px solid rgba(0,0,0,0.12);
+  border-top-color: rgba(176,0,0,0.85);
+  margin: 6px auto 12px;
+  animation: ocrSpin 0.9s linear infinite;
+}
+
+@keyframes ocrSpin{
+  to{ transform: rotate(360deg); }
+}
+
+.ocr-progress{
+  height: 10px;
+  background: #eee;
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 10px 0 8px;
+}
+.ocr-progress > div{
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #b00, #111);
+  border-radius: 999px;
+  transition: width 220ms ease;
+}
+
+.ocr-percent{
+  font-weight: 800;
+  color: #111;
+  font-size: 0.95rem;
+}
+
+.ocr-lock-hint{
+  font-size: 0.78rem;
+  color: #666;
+  margin-top: 6px;
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
 </head>
@@ -1863,31 +1943,47 @@ async function handleOcrImportFlow(file){
   }
   if (!file) return;
 
-  // limiti base (puoi cambiarli)
   const MAX_MB = 25;
   if (file.size > MAX_MB * 1024 * 1024){
     showMessage(`File troppo grande (max ${MAX_MB}MB)`, false);
     return;
   }
 
-  showMessage("Caricamento file…");
-  const storagePath = await uploadImportFileToStorage(file);
+  try {
+    openOcrOverlay(2, "Caricamento file…");
 
-  showMessage("Analisi OCR in corso…");
-  const data = await callOcrEdgeFunction(storagePath);
+    // Upload
+    const storagePath = await uploadImportFileToStorage(file);
+    setOcrOverlay(18, "Analisi OCR in corso…");
+    startSimulatedProgress(92);
 
-  // ci aspettiamo: { items: [...] }
-  const items = Array.isArray(data?.items) ? data.items : [];
-  if (data?.raw_ocr_preview) {
-  console.log("RAW OCR PREVIEW:\n", data.raw_ocr_preview);
-}
-  if (!items.length){
-    showMessage("Nessuna riga vino trovata. Prova con una foto più nitida o un PDF diverso.", false);
-    return;
+    // Chiamata Edge Function (può metterci un po’)
+    const data = await callOcrEdgeFunction(storagePath);
+
+    // Finito
+    stopSimulatedProgress();
+    setOcrOverlay(100, "Completato ✅");
+
+    const items = Array.isArray(data?.items) ? data.items : [];
+    if (data?.raw_ocr_preview) console.log("RAW OCR PREVIEW:\n", data.raw_ocr_preview);
+
+    // piccola pausa per far vedere 100%
+    setTimeout(() => closeOcrOverlay(), 450);
+
+    if (!items.length){
+      showMessage("Nessuna riga vino trovata. Prova con una foto più nitida o un PDF diverso.", false);
+      return;
+    }
+
+    showMessage("OCR completato ✅");
+    renderOcrResults(items);
+
+  } catch (err){
+    stopSimulatedProgress();
+    closeOcrOverlay();
+    console.error(err);
+    showMessage("Errore import OCR: " + (err?.message || err), false);
   }
-
-  showMessage("OCR completato ✅");
-  renderOcrResults(items);
 }
 
 // wiring button
@@ -1910,6 +2006,75 @@ document.getElementById("importWineCardFile")?.addEventListener("change", async 
   }
 });
 
+// ==========================
+// OCR Loading Overlay helpers
+// ==========================
+let ocrSimTimer = null;
+let ocrPct = 0;
+
+function openOcrOverlay(startPct = 0, subText = "Stiamo leggendo la carta vini…") {
+  const ov = document.getElementById("ocrLoadingOverlay");
+  if (!ov) return;
+
+  ocrPct = Math.max(0, Math.min(100, startPct));
+  document.getElementById("ocrLoadingPct").textContent = String(ocrPct);
+  document.getElementById("ocrLoadingBar").style.width = `${ocrPct}%`;
+  document.getElementById("ocrLoadingSub").textContent = subText;
+
+  ov.classList.add("is-open");
+  ov.setAttribute("aria-hidden", "false");
+
+  // blocca scroll
+  document.body.style.overflow = "hidden";
+}
+
+function setOcrOverlay(pct, subText) {
+  const ov = document.getElementById("ocrLoadingOverlay");
+  if (!ov || !ov.classList.contains("is-open")) return;
+
+  ocrPct = Math.max(0, Math.min(100, Math.round(pct)));
+  document.getElementById("ocrLoadingPct").textContent = String(ocrPct);
+  document.getElementById("ocrLoadingBar").style.width = `${ocrPct}%`;
+  if (subText) document.getElementById("ocrLoadingSub").textContent = subText;
+}
+
+function closeOcrOverlay() {
+  const ov = document.getElementById("ocrLoadingOverlay");
+  if (!ov) return;
+
+  ov.classList.remove("is-open");
+  ov.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+  stopSimulatedProgress();
+}
+
+function startSimulatedProgress(target = 92) {
+  stopSimulatedProgress();
+  ocrSimTimer = setInterval(() => {
+    // avanza lentamente e “a scatti”, senza mai arrivare al 100 finché non finisce davvero
+    const bump = (ocrPct < 40) ? 3 : (ocrPct < 70 ? 2 : 1);
+    const next = Math.min(target, ocrPct + bump);
+    if (next !== ocrPct) setOcrOverlay(next);
+    if (ocrPct >= target) stopSimulatedProgress();
+  }, 650);
+}
+
+function stopSimulatedProgress() {
+  if (ocrSimTimer) clearInterval(ocrSimTimer);
+  ocrSimTimer = null;
+}
+
 </script>
+<!-- OCR Loading Overlay -->
+<div id="ocrLoadingOverlay" aria-hidden="true">
+  <div class="ocr-loading-box" role="dialog" aria-modal="true" aria-label="OCR Loading">
+    <div class="ocr-loading-title">Import OCR in corso</div>
+    <div id="ocrLoadingSub" class="ocr-loading-sub">Stiamo leggendo la carta vini…</div>
+    <div class="ocr-spinner"></div>
+    <div class="ocr-progress"><div id="ocrLoadingBar"></div></div>
+    <div class="ocr-percent"><span id="ocrLoadingPct">0</span>%</div>
+    <div class="ocr-lock-hint">Non chiudere la pagina finché non termina.</div>
+  </div>
+</div>
 </body>
 </html>
