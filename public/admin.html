@@ -1777,8 +1777,17 @@ function renderOcrResults(items){
     row.style = "border:1px solid #eee; border-radius:12px; padding:10px; display:flex; justify-content:space-between; gap:10px; align-items:flex-start;";
 
     const produttore = (it.produttore || "").trim();
-    const nomeVino = (it.nome || "").trim();
-    const fullName = [produttore, nomeVino].filter(Boolean).join(" - ");
+const nomeVino = (it.nome || "").trim();
+
+// ✅ se nomeVino contiene già il produttore all'inizio, non lo riaggiungo
+const nomeNorm = nomeVino.toLowerCase();
+const prodNorm = produttore.toLowerCase();
+const alreadyHasProducer =
+  produttore && (nomeNorm === prodNorm || nomeNorm.startsWith(prodNorm + " - "));
+
+const fullName = alreadyHasProducer
+  ? nomeVino
+  : [produttore, nomeVino].filter(Boolean).join(" - ");
 
     const annata = (it.annata || "").trim();
     const prezzoB = (it.prezzo || "").trim();
@@ -1801,14 +1810,19 @@ function renderOcrResults(items){
     `;
 
     row.querySelector(".btn-usa").onclick = () => {
-      document.getElementById("nome_completo").value = fullName;
-      document.getElementById("annata").value = annata;
-      document.getElementById("prezzo").value = prezzoB;
-      document.getElementById("prezzo_bicchiere").value = prezzoG;
-      document.getElementById("uvaggio").value = uvaggio;
+  document.getElementById("nome_completo").value = fullName;
+  document.getElementById("annata").value = annata;
+  document.getElementById("prezzo").value = prezzoB;
+  document.getElementById("prezzo_bicchiere").value = prezzoG;
+  document.getElementById("uvaggio").value = uvaggio;
 
-      document.getElementById("nome_completo")?.scrollIntoView({ behavior:"smooth", block:"center" });
-    };
+  // ✅ categoria solo se il campo è vuoto (così non sovrascrive)
+  const catEl = document.getElementById("categoria");
+  const section = (it.section || "").trim();
+  if (catEl && !catEl.value.trim() && section) catEl.value = section;
+
+  document.getElementById("nome_completo")?.scrollIntoView({ behavior:"smooth", block:"center" });
+};
 
     list.appendChild(row);
   });
