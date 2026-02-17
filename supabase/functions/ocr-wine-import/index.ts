@@ -208,13 +208,21 @@ async function visionAsyncPdfOCR(
   return await res.json(); // { name: "operations/..." }
 }
 
-async function visionPollOperation(token: string, opName: string) {
+async function visionPollOperation(
+  token: string,
+  opName: string,
+  onTick?: (i: number, max: number) => Promise<void> | void,
+) {
   const url = `https://vision.googleapis.com/v1/${opName}`;
-  for (let i = 0; i < 60; i++) { // ~60 * 2s = 2 minuti
+  const MAX = 60;
+
+  for (let i = 0; i < MAX; i++) {
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) throw new Error(`Vision poll error: ${await res.text()}`);
     const data = await res.json();
     if (data.done) return data;
+
+    if (onTick) await onTick(i + 1, MAX);
     await new Promise((r) => setTimeout(r, 2000));
   }
   throw new Error("Vision operation timeout (troppo lento).");
@@ -257,7 +265,10 @@ function chunkNumberedText(numberedLines: string[], maxChars: number, overlapLin
   return chunks;
 }
 
-async function openaiExtractWinesFromText(ocrText: string) {
+async function openaiExtractWinesFromText(
+  ocrText: string,
+  onChunk?: (done: number, total: number) => Promise<void> | void,
+) {
   if (!OPENAI_API_KEY) return [];
   try {
   const { lines, numberedText } = buildNumberedLines(ocrText);
@@ -299,9 +310,13 @@ async function openaiExtractWinesFromText(ocrText: string) {
 
   const chunks = chunkNumberedText(numberedLines, OPENAI_MAX_CHARS);
 
-  const all: any[] = [];
-  for (const c of chunks) {
-    const prompt = `
+const all: any[] = [];
+for (let idx = 0; idx < chunks.length; idx++) {
+  const c = chunks[idx];
+
+  if (onChunk) await onChunk(idx, chunks.length); // prima del chunk
+
+  const prompt = `
 Ruolo:
 Sei un data extractor. Converti testo OCR di una carta vini in dati strutturati. Non interpretare creativamente.
 
@@ -327,41 +342,43 @@ TESTO OCR (con linee numerate):
 ${c.text}
 `;
 
-    const res = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-  model: OPENAI_MODEL,
-  input: prompt,
-  text: {
-    format: {
-      type: "json_schema",
-      name: schema.name,
-      schema: schema.schema,
-      strict: true,
+const res = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
     },
-  },
-  temperature: 0,
-}),
-    });
+    body: JSON.stringify({
+      model: OPENAI_MODEL,
+      input: prompt,
+      text: {
+        format: {
+          type: "json_schema",
+          name: schema.name,
+          schema: schema.schema,
+          strict: true,
+        },
+      },
+      temperature: 0,
+    }),
+  });
 
-    if (!res.ok) throw new Error(`OpenAI error: ${await res.text()}`);
-    const data = await res.json();
+  if (!res.ok) throw new Error(`OpenAI error: ${await res.text()}`);
+  const data = await res.json();
 
-    const outText =
-      data?.output?.[0]?.content?.[0]?.text ??
-      data?.output_text ??
-      "";
+  const outText =
+    data?.output?.[0]?.content?.[0]?.text ??
+    data?.output_text ??
+    "";
 
-    if (!outText) continue;
+  if (!outText) continue;
 
-    const parsed = JSON.parse(outText);
-    const items = Array.isArray(parsed?.items) ? parsed.items : [];
-    all.push(...items);
-  }
+  const parsed = JSON.parse(outText);
+  const items = Array.isArray(parsed?.items) ? parsed.items : [];
+  all.push(...items);
+
+  if (onChunk) await onChunk(idx + 1, chunks.length); // dopo il chunk
+}
 
   // Dedup semplice
   const norm = (s: any) => String(s ?? "").trim().toLowerCase();
@@ -669,6 +686,18 @@ if (req.method === "OPTIONS") {
   return new Response("ok", { headers: corsHeaders(origin) });
 }
 let rawOcrText = "";
+let jobId = "";
+let supabase: any = null;
+async function setJobProgress(supabase: any, jobId: string, progress: number, status?: string) {
+  const patch: any = {
+    progress: Math.max(0, Math.min(100, Math.round(progress))),
+    updated_at: new Date().toISOString(),
+  };
+  if (status) patch.status = status;
+
+  const { error } = await supabase.from("ocr_import_jobs").update(patch).eq("id", jobId);
+  if (error) console.warn("Job progress update warning:", error.message);
+}
   try {
     if (req.method !== "POST") {
       return new Response("Method not allowed", { status: 405, headers: corsHeaders(origin) });
@@ -679,14 +708,14 @@ let rawOcrText = "";
       return new Response("Missing Authorization Bearer token", { status: 401, headers: corsHeaders(origin) });
     }
 
-    const { ristorante_id, storage_bucket, storage_path } = await req.json();
+    const { ristorante_id, storage_bucket, storage_path, job_id } = await req.json();
 
-    if (!ristorante_id || !storage_bucket || !storage_path) {
-      return new Response("Missing params", { status: 400, headers: corsHeaders(origin) });
-    }
+if (!ristorante_id || !storage_bucket || !storage_path) {
+  return new Response("Missing params", { status: 400, headers: corsHeaders(origin) });
+}
 
     // Supabase admin client (service role)
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // 1) Verifica utente e piano PRO via DB (owner_id = auth.uid)
     //    Recuperiamo user id dal token usando getUser
@@ -714,20 +743,36 @@ let rawOcrText = "";
       return new Response("PRO required", { status: 402, headers: corsHeaders(origin) });
     }
 
-    // 2) Crea job
-    const { data: jobIns, error: jobErr } = await supabase
-      .from("ocr_import_jobs")
-      .insert({
-        ristorante_id,
-        status: "processing",
-        file_bucket: storage_bucket,
-        file_path: storage_path,
-      })
-      .select("id")
-      .single();
+// jobId: se arriva dal client lo uso, altrimenti fallback come prima
+jobId = String(job_id || "").trim();
 
-    if (jobErr) throw new Error(`DB job insert error: ${jobErr.message}`);
-    const jobId = jobIns.id as string;
+if (!jobId) {
+  const { data: jobIns, error: jobErr } = await supabase
+    .from("ocr_import_jobs")
+    .insert({
+      ristorante_id,
+      status: "processing",
+      progress: 5,
+      file_bucket: storage_bucket,
+      file_path: storage_path,
+    })
+    .select("id")
+    .single();
+
+  if (jobErr) throw new Error(`DB job insert error: ${jobErr.message}`);
+  jobId = jobIns.id as string;
+} else {
+  // allineo lo stato iniziale
+  await supabase.from("ocr_import_jobs")
+    .update({
+      status: "processing",
+      progress: 15,
+      file_bucket: storage_bucket,
+      file_path: storage_path,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", jobId);
+}
 
     // 3) Scarica file da Supabase Storage
     const { data: fileRes, error: dlErr } = await supabase
@@ -739,6 +784,7 @@ let rawOcrText = "";
 
     const arrayBuf = await fileRes.arrayBuffer();
     const bytes = new Uint8Array(arrayBuf);
+    await setJobProgress(supabase, jobId, 25, "processing");
     const mime = fileRes.type || "";
 
     // 4) Google token (Vision + GCS scope)
@@ -746,6 +792,7 @@ let rawOcrText = "";
       "https://www.googleapis.com/auth/cloud-vision",
       "https://www.googleapis.com/auth/devstorage.read_write",
     ]);
+    await setJobProgress(supabase, jobId, 32, "processing");
 
     let items: any[] = [];
 
@@ -756,14 +803,20 @@ let rawOcrText = "";
       const gcsOutputPrefix = `${GCS_OUTPUT_PREFIX}${ristorante_id}/${jobId}/`;
 
       await gcsUpload(gToken, GCS_BUCKET_NAME, gcsInputObject, bytes, "application/pdf");
+      await setJobProgress(supabase, jobId, 40, "processing");
 
       const gcsInputUri = `gs://${GCS_BUCKET_NAME}/${gcsInputObject}`;
       const gcsOutputUri = `gs://${GCS_BUCKET_NAME}/${gcsOutputPrefix}`;
 
       const op = await visionAsyncPdfOCR(gToken, gcsInputUri, gcsOutputUri);
+      await setJobProgress(supabase, jobId, 48, "processing");
       const opName = op.name as string;
 
-      await visionPollOperation(gToken, opName);
+      await visionPollOperation(gToken, opName, async (i, max) => {
+  // da 48% a 70% durante il polling
+  const pct = 48 + Math.round((i / max) * (70 - 48));
+  await setJobProgress(supabase, jobId, pct, "processing");
+});
 
       // list output objects
       const listed = await gcsList(gToken, GCS_BUCKET_NAME, gcsOutputPrefix);
@@ -772,7 +825,13 @@ let rawOcrText = "";
       );
 
 let combinedText = "";
-for (const objName of files) {
+for (let i = 0; i < files.length; i++) {
+  const objName = files[i];
+
+  // download output JSON: da 70% a 78%
+  const pct = 70 + Math.round(((i) / Math.max(files.length, 1)) * (78 - 70));
+  await setJobProgress(supabase, jobId, pct, "processing");
+
   const outBytes = await gcsDownload(gToken, GCS_BUCKET_NAME, objName);
   const parsed = JSON.parse(new TextDecoder().decode(outBytes));
 
@@ -781,7 +840,6 @@ for (const objName of files) {
     const t = r.fullTextAnnotation?.text;
     if (!t) continue;
 
-    // ✅ stop se supero limite
     if (combinedText.length + t.length + 1 > MAX_OCR_CHARS) {
       combinedText += "\n" + t.slice(0, Math.max(0, MAX_OCR_CHARS - combinedText.length - 1));
       break;
@@ -790,11 +848,11 @@ for (const objName of files) {
     combinedText += "\n" + t;
   }
 
-  // ✅ interrompi anche il loop esterno
   if (combinedText.length >= MAX_OCR_CHARS) break;
 }
 
 rawOcrText = combinedText;
+await setJobProgress(supabase, jobId, 78, "parsing");
 
 // 1) parser “a regole” (fallback)
 const ruleItems = extractWineItemsFromText(rawOcrText);
@@ -802,7 +860,12 @@ const ruleItems = extractWineItemsFromText(rawOcrText);
 // 2) OpenAI (sempre)
 let aiItems: any[] = [];
 if (OPENAI_API_KEY) {
-  aiItems = await openaiExtractWinesFromText(rawOcrText);
+  await setJobProgress(supabase, jobId, 88, "ai");
+  aiItems = await openaiExtractWinesFromText(rawOcrText, async (done, total) => {
+  // progress AI: da 88% a 96% in base ai chunk completati
+  const pct = 88 + Math.round((done / Math.max(total, 1)) * (96 - 88));
+  await setJobProgress(supabase, jobId, pct, "ai");
+});
 }
 
 // 3) Se OpenAI ha risultati, usa quelli (più completi). Altrimenti fallback.
@@ -837,16 +900,25 @@ if (aiItems.length) {
 
     } else {
       // image sync
+      await setJobProgress(supabase, jobId, 40, "processing"); // prima di chiamare Vision
       const v = await visionImageOCR(gToken, bytes);
+        await setJobProgress(supabase, jobId, 60, "processing"); // Vision finita
       const text = v?.responses?.[0]?.fullTextAnnotation?.text ?? "";
       rawOcrText = text;
+      
+  await setJobProgress(supabase, jobId, 72, "parsing"); // parsing inizia
 // 1) parser “a regole” (fallback)
 const ruleItems = extractWineItemsFromText(rawOcrText);
+await setJobProgress(supabase, jobId, 80, "parsing");
 
 // 2) OpenAI (sempre)
 let aiItems: any[] = [];
 if (OPENAI_API_KEY) {
-  aiItems = await openaiExtractWinesFromText(rawOcrText);
+  await setJobProgress(supabase, jobId, 88, "ai");
+  aiItems = await openaiExtractWinesFromText(rawOcrText, async (done, total) => {
+  const pct = 88 + Math.round((done / Math.max(total, 1)) * (96 - 88));
+  await setJobProgress(supabase, jobId, pct, "ai");
+});
 }
 
 // 3) Se OpenAI ha risultati, usa quelli (più completi). Altrimenti fallback.
@@ -909,8 +981,26 @@ return new Response(JSON.stringify({
   headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
 });
 
-  } catch (err: any) {
-    console.error(err);
-    return new Response(`OCR import error: ${err?.message ?? err}`, { status: 500, headers: corsHeaders(origin) });
+} catch (err: any) {
+  console.error(err);
+
+  // se ho già un jobId, segno errore in tabella
+  try {
+    if (supabase && typeof jobId === "string" && jobId) {
+      await supabase.from("ocr_import_jobs").update({
+        status: "error",
+        progress: 100,
+        error: String(err?.message ?? err).slice(0, 5000),
+        updated_at: new Date().toISOString(),
+      }).eq("id", jobId);
+    }
+  } catch (e) {
+    console.warn("Failed to mark job error:", e);
   }
+
+  return new Response(
+    `OCR import error: ${err?.message ?? err}`,
+    { status: 500, headers: corsHeaders(origin) },
+  );
+}
 });

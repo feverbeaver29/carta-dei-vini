@@ -1793,6 +1793,75 @@ function escapeHtml(str){
 }
 
 // ==========================
+// OCR PROGRESS (realtime job)
+// ==========================
+let ocrJobChannel = null;
+
+function stageTextFromJob(job){
+  const st = String(job?.status || "").toLowerCase();
+  if (st === "uploading") return "Caricamento file…";
+  if (st === "processing") return "Analisi OCR in corso…";
+  if (st === "parsing") return "Estrazione vini…";
+  if (st === "ai") return "Ottimizzazione con AI…";
+  if (st === "saving") return "Salvataggio risultati…";
+  if (st === "done") return "Completato ✅";
+  if (st === "error") return "Errore ❌";
+  return "Import OCR in corso…";
+}
+
+async function createOcrJobRow(){
+  // NB: richiede RLS/policy per permettere INSERT/SELECT all’owner (vedi sezione C)
+  const { data, error } = await sb
+    .from("ocr_import_jobs")
+    .insert({
+      ristorante_id: RESTAURANT_ID,
+      status: "uploading",
+      progress: 1,
+      file_bucket: OCR_BUCKET,
+      file_path: null
+    })
+    .select("id")
+    .single();
+
+  if (error) throw error;
+  return data.id;
+}
+
+async function patchOcrJob(jobId, patch){
+  const { error } = await sb
+    .from("ocr_import_jobs")
+    .update(patch)
+    .eq("id", jobId);
+
+  if (error) throw error;
+}
+
+function subscribeOcrJob(jobId){
+  // chiudi eventuale canale precedente
+  try { if (ocrJobChannel) sb.removeChannel(ocrJobChannel); } catch(e){}
+
+  ocrJobChannel = sb.channel(`ocr_job_${jobId}`)
+    .on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "ocr_import_jobs", filter: `id=eq.${jobId}` },
+      (payload) => {
+        const job = payload.new || {};
+        const pct = Math.max(0, Math.min(100, Math.round(job.progress || 0)));
+        setOcrOverlay(pct, stageTextFromJob(job));
+      }
+    )
+    .subscribe();
+
+  return ocrJobChannel;
+}
+
+function unsubscribeOcrJob(){
+  try {
+    if (ocrJobChannel) sb.removeChannel(ocrJobChannel);
+  } catch(e){}
+  ocrJobChannel = null;
+}
+// ==========================
 // OCR IMPORT (PRO) - UI + Upload + Call Edge Function
 // ==========================
 const OCR_BUCKET = "ocr-imports"; // <-- crea questo bucket in Supabase Storage
@@ -1908,7 +1977,7 @@ const fullName = alreadyHasProducer
   });
 }
 
-async function callOcrEdgeFunction(storagePath){
+async function callOcrEdgeFunction(storagePath, jobId){
   // Edge Function che creeremo: /functions/v1/ocr-wine-import
   const url = `${FUNCTIONS_BASE}/ocr-wine-import`;
   const { data: sess } = await sb.auth.getSession();
@@ -1925,6 +1994,7 @@ async function callOcrEdgeFunction(storagePath){
       ristorante_id: RESTAURANT_ID,
       storage_bucket: OCR_BUCKET,
       storage_path: storagePath,
+      job_id: jobId,
       lang: currentLang
     })
   });
@@ -1950,25 +2020,37 @@ async function handleOcrImportFlow(file){
   }
 
   try {
+    // 1) Creo subito il job (così ho un jobId immediato)
+    const jobId = await createOcrJobRow();
+
+    // 2) Apro overlay e mi aggancio realtime a quel job
     openOcrOverlay(2, "Caricamento file…");
+    subscribeOcrJob(jobId);
 
-    // Upload
+    // 3) Upload su storage
     const storagePath = await uploadImportFileToStorage(file);
-    setOcrOverlay(18, "Analisi OCR in corso…");
-    startSimulatedProgress(92);
 
-    // Chiamata Edge Function (può metterci un po’)
-    const data = await callOcrEdgeFunction(storagePath);
+    // salvo nel job file_path + passo a processing
+    await patchOcrJob(jobId, {
+      file_path: storagePath,
+      status: "processing",
+      progress: 12
+    });
 
-    // Finito
-    stopSimulatedProgress();
+    // 4) Chiamo la Edge Function con job_id (lei aggiorna progress “vero” step-by-step)
+    const data = await callOcrEdgeFunction(storagePath, jobId);
+
+    // 5) Finito (realtime dovrebbe già aver portato a 100, ma forzo UI a 100)
     setOcrOverlay(100, "Completato ✅");
 
     const items = Array.isArray(data?.items) ? data.items : [];
     if (data?.raw_ocr_preview) console.log("RAW OCR PREVIEW:\n", data.raw_ocr_preview);
 
     // piccola pausa per far vedere 100%
-    setTimeout(() => closeOcrOverlay(), 450);
+    setTimeout(() => {
+      closeOcrOverlay();
+      unsubscribeOcrJob();
+    }, 450);
 
     if (!items.length){
       showMessage("Nessuna riga vino trovata. Prova con una foto più nitida o un PDF diverso.", false);
@@ -1979,8 +2061,8 @@ async function handleOcrImportFlow(file){
     renderOcrResults(items);
 
   } catch (err){
-    stopSimulatedProgress();
     closeOcrOverlay();
+    unsubscribeOcrJob();
     console.error(err);
     showMessage("Errore import OCR: " + (err?.message || err), false);
   }
@@ -2046,22 +2128,6 @@ function closeOcrOverlay() {
   ov.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
   stopSimulatedProgress();
-}
-
-function startSimulatedProgress(target = 92) {
-  stopSimulatedProgress();
-  ocrSimTimer = setInterval(() => {
-    // avanza lentamente e “a scatti”, senza mai arrivare al 100 finché non finisce davvero
-    const bump = (ocrPct < 40) ? 3 : (ocrPct < 70 ? 2 : 1);
-    const next = Math.min(target, ocrPct + bump);
-    if (next !== ocrPct) setOcrOverlay(next);
-    if (ocrPct >= target) stopSimulatedProgress();
-  }, 650);
-}
-
-function stopSimulatedProgress() {
-  if (ocrSimTimer) clearInterval(ocrSimTimer);
-  ocrSimTimer = null;
 }
 
 </script>
