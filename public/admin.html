@@ -1818,7 +1818,6 @@ async function createOcrJobRow(){
       status: "uploading",
       progress: 1,
       file_bucket: OCR_BUCKET,
-      file_path: null
     })
     .select("id")
     .single();
@@ -2127,7 +2126,6 @@ function closeOcrOverlay() {
   ov.classList.remove("is-open");
   ov.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
-  stopSimulatedProgress();
 }
 
 </script>
