@@ -797,50 +797,99 @@ function cleanHeader2(s: string) {
  * Questo elimina l’effetto “Marche appiccicata”.
  */
 function reanchorSectionSubcategoryFromSourceLines(aiItems: any[], ocrText: string) {
-  const { lines } = buildNumberedLines(ocrText); // lines[] è 0-index, source_lines è 1-index
+  const { lines } = buildNumberedLines(ocrText); // 0-index
+  const clean = (s: string) => cleanHeader2(s || "").trim();
 
-  let currentSection = "";
-  let currentSub = "";
+  // 1) raccogli marker di SECTION e SUBCATEGORY con indice riga
+  const sectionMarkers: { idx: number; text: string }[] = [];
+  const subMarkers: { idx: number; text: string; sectionIdx: number }[] = [];
 
-  const sectionAt: string[] = new Array(lines.length).fill("");
-  const subAt: string[] = new Array(lines.length).fill("");
+  let currentSectionIdx = -1;
 
   for (let i = 0; i < lines.length; i++) {
-    const raw = lines[i];
-    const t = cleanHeader2(raw);
-    if (!t) {
-      sectionAt[i] = currentSection;
-      subAt[i] = currentSub;
+    const t = clean(lines[i]);
+    if (!t) continue;
+
+    if (looksLikeSection2(t)) {
+      sectionMarkers.push({ idx: i, text: t });
+      currentSectionIdx = sectionMarkers.length - 1;
       continue;
     }
 
-    if (looksLikeSection2(t)) {
-      currentSection = t;
-      currentSub = "";
-    } else if (currentSection && looksLikeSubcategory2(t)) {
-      currentSub = t;
+    if (currentSectionIdx >= 0 && looksLikeSubcategory2(t)) {
+      subMarkers.push({ idx: i, text: t, sectionIdx: currentSectionIdx });
     }
-
-    sectionAt[i] = currentSection;
-    subAt[i] = currentSub;
   }
+
+  // helper: trova la section “corrente” per una riga (ultima section sopra)
+  function sectionIndexForLine(lineIdx: number) {
+    let s = -1;
+    for (let i = 0; i < sectionMarkers.length; i++) {
+      if (sectionMarkers[i].idx <= lineIdx) s = i;
+      else break;
+    }
+    return s;
+  }
+
+  // helper: limite di validità della section (fino alla prossima section)
+  function sectionRange(sectionIdx: number) {
+    const start = sectionMarkers[sectionIdx]?.idx ?? 0;
+    const end = (sectionIdx + 1 < sectionMarkers.length)
+      ? sectionMarkers[sectionIdx + 1].idx
+      : lines.length;
+    return { start, end };
+  }
+
+  // 2) per ogni item: assegna section (ultima sopra) e subcategory “più vicina” (anche sotto)
+  const MAX_DIST = 25; // puoi alzare a 35 se vuoi essere più permissivo
 
   for (const it of aiItems) {
     const src = Array.isArray(it?.source_lines) ? it.source_lines : [];
     if (!src.length) continue;
 
-    const firstLineIdx = Math.max(0, (Math.min(...src) - 1));
+    // scegli una riga rappresentativa del vino: media delle source_lines
+    const avg = Math.round(src.reduce((a: number, b: number) => a + b, 0) / src.length);
+    const lineIdx = Math.max(0, avg - 1);
 
-    const sec = sectionAt[firstLineIdx] || null;
-    const sub = subAt[firstLineIdx] || null;
+    const secIdx = sectionIndexForLine(lineIdx);
+    if (secIdx >= 0) it.section = sectionMarkers[secIdx].text;
+    else it.section = null;
 
-    // Se OpenAI ha messo qualcosa di sbagliato / troppo appiccicoso, lo sovrascriviamo con il contesto vero.
-    it.section = sec;
-    it.subcategory = sub;
+    if (secIdx < 0) {
+      it.subcategory = null;
+      continue;
+    }
+
+    const { start, end } = sectionRange(secIdx);
+
+    // candidati subcategory solo dentro questa section
+    const candidates = subMarkers.filter(m => m.sectionIdx === secIdx && m.idx >= start && m.idx < end);
+
+    if (!candidates.length) {
+      it.subcategory = null;
+      continue;
+    }
+
+    // scegli la subcategory più vicina (anche sotto!)
+    let best = candidates[0];
+    let bestDist = Math.abs(best.idx - lineIdx);
+
+    for (const c of candidates) {
+      const d = Math.abs(c.idx - lineIdx);
+
+      // tie-break: se stessa distanza, preferisci quella sopra (idx <= lineIdx)
+      if (d < bestDist || (d === bestDist && c.idx <= lineIdx && best.idx > lineIdx)) {
+        best = c;
+        bestDist = d;
+      }
+    }
+
+    it.subcategory = (bestDist <= MAX_DIST) ? best.text : null;
   }
 
   return aiItems;
 }
+
 // --------------------
 // Main
 // --------------------
@@ -1053,6 +1102,11 @@ if (aiItems.length) {
   aiItems = reanchorSectionSubcategoryFromSourceLines(aiItems, rawOcrText);
 }
 }
+console.log("DEBUG SUB:", aiItems.slice(0, 15).map((x:any)=>({
+  wine: x.wine_name,
+  sub: x.subcategory,
+  lines: x.source_lines
+})));
 
 // 3) Se OpenAI ha risultati, usa quelli (più completi). Altrimenti fallback.
 if (aiItems.length) {
