@@ -2074,6 +2074,7 @@ const fullName = alreadyHasProducer
     `;
 
     row.querySelector(".btn-usa").onclick = () => {
+      
   document.getElementById("nome_completo").value = fullName;
   document.getElementById("annata").value = annata;
   document.getElementById("prezzo").value = prezzoB;
@@ -2084,6 +2085,11 @@ const fullName = alreadyHasProducer
   const catEl = document.getElementById("categoria");
   const section = (it.section || "").trim();
   if (catEl && !catEl.value.trim() && section) catEl.value = section;
+
+  // ✅ sottocategoria solo se vuoto
+const subEl = document.getElementById("sottocategoria");
+const sub = (it.subcategory || it.sottocategoria || "").trim();
+if (subEl && !subEl.value.trim() && sub) subEl.value = sub;
 
   document.getElementById("nome_completo")?.scrollIntoView({ behavior:"smooth", block:"center" });
 };

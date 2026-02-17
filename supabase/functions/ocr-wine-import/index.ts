@@ -34,6 +34,14 @@ const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
 const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL") ?? "gpt-4o-mini";
 const OPENAI_MAX_CHARS = parseInt(Deno.env.get("OPENAI_MAX_CHARS") ?? "12000", 10);
 const MAX_OCR_CHARS = parseInt(Deno.env.get("MAX_OCR_CHARS") ?? "120000", 10);
+// --------------------
+// Hard limits anti WORKER_LIMIT (CPU/mem/time)
+// --------------------
+const MAX_PDF_PAGES = parseInt(Deno.env.get("MAX_PDF_PAGES") ?? "20", 10);          // quante pagine OCR leggere max
+const MAX_GCS_JSON_FILES = parseInt(Deno.env.get("MAX_GCS_JSON_FILES") ?? "6", 10); // quanti json output max (fail-safe)
+const MAX_AI_CHUNKS = parseInt(Deno.env.get("MAX_AI_CHUNKS") ?? "6", 10);           // quanti chunk OpenAI max
+const VISION_POLL_MAX = parseInt(Deno.env.get("VISION_POLL_MAX") ?? "45", 10);      // tentativi polling
+const VISION_POLL_DELAY_MS = parseInt(Deno.env.get("VISION_POLL_DELAY_MS") ?? "2000", 10); // sleep polling
 
 // --------------------
 // Helpers: base64url + JWT sign (RS256) for Google OAuth
@@ -214,7 +222,7 @@ async function visionPollOperation(
   onTick?: (i: number, max: number) => Promise<void> | void,
 ) {
   const url = `https://vision.googleapis.com/v1/${opName}`;
-  const MAX = 60;
+  const MAX = VISION_POLL_MAX;
 
   for (let i = 0; i < MAX; i++) {
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
@@ -223,7 +231,7 @@ async function visionPollOperation(
     if (data.done) return data;
 
     if (onTick) await onTick(i + 1, MAX);
-    await new Promise((r) => setTimeout(r, 2000));
+    await new Promise((r) => setTimeout(r, VISION_POLL_DELAY_MS));
   }
   throw new Error("Vision operation timeout (troppo lento).");
 }
@@ -288,6 +296,7 @@ async function openaiExtractWinesFromText(
             properties: {
               section: { type: ["string", "null"] },
               producer: { type: ["string", "null"] },
+              subcategory: { type: ["string", "null"] },
               wine_name: { type: "string" },
               vintage: { type: ["integer", "null"] },
               grapes: { type: ["array", "null"], items: { type: "string" } },
@@ -299,7 +308,7 @@ async function openaiExtractWinesFromText(
               notes: { type: ["string", "null"] },
               localita: { type: ["string", "null"] },
             },
-            required: [  "section",  "producer",  "wine_name",  "vintage",  "grapes",  "price_bottle_eur",  "price_glass_eur",  "currency",  "confidence",  "source_lines",  "notes",  "localita",],
+            required: [  "section",  "producer", "subcategory",  "wine_name",  "vintage",  "grapes",  "price_bottle_eur",  "price_glass_eur",  "currency",  "confidence",  "source_lines",  "notes",  "localita",],
 
           },
         },
@@ -308,7 +317,12 @@ async function openaiExtractWinesFromText(
     },
   };
 
-  const chunks = chunkNumberedText(numberedLines, OPENAI_MAX_CHARS);
+  let chunks = chunkNumberedText(numberedLines, OPENAI_MAX_CHARS);
+
+// hard cap chunks per evitare WORKER_LIMIT su testi enormi
+if (chunks.length > MAX_AI_CHUNKS) {
+  chunks = chunks.slice(0, MAX_AI_CHUNKS);
+}
 
 const all: any[] = [];
 for (let idx = 0; idx < chunks.length; idx++) {
@@ -334,6 +348,11 @@ Regole di collegamento righe:
 - Prezzi: se trovi due prezzi chiaramente associati allo stesso vino, mappa min->price_glass_eur e max->price_bottle_eur.
 - Se trovi prezzi su righe separate e ci sono più vini senza prezzo prima di quei prezzi, assegna i prezzi in ordine ai vini (NON calice/bottiglia).
 - section: se vedi intestazioni tipo “VINI ROSSI”, “BIANCHI”, ecc.
+- subcategory: se dentro una section trovi sotto-intestazioni tipo regione/zona/stato (es. "Emilia Romagna", "Veneto", "Champagne", "España"),
+  allora quella riga è subcategory e resta “attiva” per i vini successivi finché non cambia.
+- Una subcategory in genere è una riga breve SOLO testo, senza prezzi/annate, spesso in MAIUSCOLO o Title Case.
+- Non confondere producer con subcategory: se contiene keyword tipo Tenuta/Cantina/Azienda ecc => è producer, non subcategory.
+- Se non vedi una subcategory per quei vini: null.
 
 Output:
 Restituisci SOLO JSON valido conforme allo schema.
@@ -441,23 +460,54 @@ function extractWineItemsFromText(text: string) {
 
   const producerKeywords = /\b(tenuta|cantina|azienda|societ[aà]|podere|fattoria|vigne|vigneti|vini|agricola)\b/i;
 
+    function looksLikeSection(s: string) {
+    const t = s.trim();
+    // tipico: "LE BOLLICINE ITALIANE", "VINI ROSSI", "BIANCHI", ecc.
+    if (t.length < 6 || t.length > 80) return false;
+    if (/[0-9€$£]/.test(t)) return false;
+
+    const upperish = t === t.toUpperCase();
+    const hasWineWord = /\b(vini|bollicine|bianchi|rossi|rosati|champagne|spumanti|dolci|dessert)\b/i.test(t);
+    return upperish || hasWineWord;
+  }
+
+  function looksLikeSubcategoryLine(s: string) {
+    const t = s.trim();
+    // tipico: "Emilia Romagna", "Veneto", "Champagne", "España"
+    if (t.length < 3 || t.length > 40) return false;
+    if (/[0-9€$£]/.test(t)) return false;
+    if (producerKeywords.test(t)) return false; // evita Tenuta/Cantina ecc.
+
+    // poche parole, solo testo
+    const wc = t.split(/\s+/).length;
+    if (wc < 1 || wc > 4) return false;
+
+    // evita righe che sembrano "nome vino" troppo lunghe o con trattini tipo produttore - vino
+    if (t.includes(" - ")) return false;
+
+    return true;
+  }
+
   function toNum(v: string) {
     return parseFloat(v.replace(",", "."));
   }
 
-  function cleanHeader(s: string) {
-    const lower = s.toLowerCase();
-    if (
-      lower.includes("vini") ||
-      lower.includes("bottiglia") ||
-      lower.includes("al calice") ||
-      lower.includes("emilia") ||
-      lower.includes("romagna") ||
-      lower.includes("italiani") ||
-      lower.includes("italiane")
-    ) return "";
-    return s;
-  }
+function cleanHeader(s: string) {
+  const lower = s.toLowerCase();
+  // filtra solo intestazioni/legende generiche, NON regioni
+  if (
+    lower.includes("bottiglia") ||
+    lower.includes("bottle") ||
+    lower.includes("al calice") ||
+    lower.includes("glass") ||
+    lower.includes("cl") ||
+    lower.includes("ml") ||
+    lower.includes("prezzo") ||
+    lower === "vini"
+  ) return "";
+  return s;
+}
+
 
   function looksLikeLocation(s: string) {
     // es: "Torriana (RN)" oppure "... (Brisighella (RA)"
@@ -539,6 +589,8 @@ function extractWineItemsFromText(text: string) {
   let pendingGrapes = "";
   let pendingProducer = "";
   let pendingLocation = "";
+  let pendingSubcategory = "";
+let pendingSection = "";
 
   // per gestire 2 righe prezzo consecutive (calice + bottiglia)
   let pendingPriceQueue: string[] = [];
@@ -563,16 +615,18 @@ function extractWineItemsFromText(text: string) {
       bottle = String(max).replace(".", ",");
     }
 
-    items.push({
-      nome: finalName,
-      uvaggio: pendingGrapes || "",
-      produttore: pendingProducer || "",
-      localita: pendingLocation || "",
-      prezzo: bottle,
-      prezzo_bicchiere: glass,
-      confidence: 0.85,
-      raw_line: `${pendingProducer} | ${pendingLocation} | ${pendingName} | ${pendingGrapes} | ${priceA}${priceB ? " | " + priceB : ""}`,
-    });
+items.push({
+  nome: finalName,
+  uvaggio: pendingGrapes || "",
+  produttore: pendingProducer || "",
+  localita: pendingLocation || "",
+  section: pendingSection || "",
+  subcategory: pendingSubcategory || "",
+  prezzo: bottle,
+  prezzo_bicchiere: glass,
+  confidence: 0.85,
+  raw_line: `${pendingProducer} | ${pendingLocation} | ${pendingSection} | ${pendingSubcategory} | ${pendingName} | ${pendingGrapes} | ${priceA}${priceB ? " | " + priceB : ""}`,
+});
 
     // reset vino + prezzi + uvaggio (ma NON resettiamo producer/location: restano “attivi” finché non cambiano)
     pendingName = "";
@@ -588,6 +642,19 @@ function extractWineItemsFromText(text: string) {
     if (!filtered) continue;
 
     const lower = raw.toLowerCase();
+
+        // 0) section (macro categoria)
+    if (looksLikeSection(raw)) {
+      pendingSection = raw;
+      pendingSubcategory = ""; // reset quando cambia sezione
+      continue;
+    }
+
+    // 0b) subcategory (regione/zona/stato) - valida solo se abbiamo già una section (opzionale ma consigliato)
+    if (pendingSection && looksLikeSubcategoryLine(raw)) {
+      pendingSubcategory = raw;
+      continue;
+    }
 
     // 1) location su righe intermedie (non vino)
     if (looksLikeLocation(raw)) {
@@ -613,10 +680,16 @@ function extractWineItemsFromText(text: string) {
     const hasNums = /[0-9]/.test(raw);
     const hasEuro = raw.includes("€");
     if (!hasNums && !hasEuro && raw.split(" ").length <= 3 && raw.length <= 25) {
-      if (!/^cantina\b/i.test(raw) && !/^docg\b/i.test(raw)) {
-        pendingGrapes = raw;
-        continue;
-      }
+if (!/^cantina\b/i.test(raw) && !/^docg\b/i.test(raw)) {
+  // se sembra una subcategory, NON trattarlo come uvaggio
+  if (looksLikeSubcategoryLine(raw)) {
+    pendingSubcategory = raw;
+    continue;
+  }
+
+  pendingGrapes = raw;
+  continue;
+}
     }
 
     // 4) prezzo su riga dedicata: mettilo in coda
@@ -640,16 +713,18 @@ function extractWineItemsFromText(text: string) {
       let name = raw.replace(yearRe, " ").trim();
       name = removePriceTokens(name, bottle, glass);
       if (name.length >= 3 && !/^cantina\b/i.test(name) && !/^docg\b/i.test(name)) {
-        items.push({
-          nome: name,
-          uvaggio: pendingGrapes || "",
-          produttore: pendingProducer || "",
-          localita: pendingLocation || "",
-          prezzo: bottle,
-          prezzo_bicchiere: glass || "",
-          confidence: 0.85,
-          raw_line: raw,
-        });
+items.push({
+  nome: name,
+  uvaggio: pendingGrapes || "",
+  produttore: pendingProducer || "",
+  localita: pendingLocation || "",
+  section: pendingSection || "",
+  subcategory: pendingSubcategory || "",
+  prezzo: bottle,
+  prezzo_bicchiere: glass || "",
+  confidence: 0.85,
+  raw_line: raw,
+});
         pendingName = "";
         pendingGrapes = "";
         pendingPriceQueue = [];
@@ -819,35 +894,53 @@ if (!jobId) {
 });
 
       // list output objects
-      const listed = await gcsList(gToken, GCS_BUCKET_NAME, gcsOutputPrefix);
-      const files: string[] = (listed.items ?? []).map((x: any) => x.name).filter((n: string) =>
-        n.endsWith(".json")
-      );
+const listed = await gcsList(gToken, GCS_BUCKET_NAME, gcsOutputPrefix);
+
+let files: string[] = (listed.items ?? [])
+  .map((x: any) => x.name)
+  .filter((n: string) => typeof n === "string" && n.endsWith(".json"));
+
+// importantissimo: ordina per nome (Vision spesso mette shard in ordine lessicografico)
+files.sort((a, b) => a.localeCompare(b));
+
+// fail-safe: evita di scaricare 200 json se qualcosa va storto
+if (files.length > MAX_GCS_JSON_FILES) {
+  files = files.slice(0, MAX_GCS_JSON_FILES);
+}
 
 let combinedText = "";
+let pagesUsed = 0;
+
 for (let i = 0; i < files.length; i++) {
   const objName = files[i];
 
   // download output JSON: da 70% a 78%
-  const pct = 70 + Math.round(((i) / Math.max(files.length, 1)) * (78 - 70));
+  const pct = 70 + Math.round((i / Math.max(files.length, 1)) * (78 - 70));
   await setJobProgress(supabase, jobId, pct, "processing");
 
   const outBytes = await gcsDownload(gToken, GCS_BUCKET_NAME, objName);
   const parsed = JSON.parse(new TextDecoder().decode(outBytes));
 
-  const responses = parsed.responses ?? [];
+  const responses = Array.isArray(parsed.responses) ? parsed.responses : [];
+
   for (const r of responses) {
+    // ogni "response" corrisponde tipicamente a una pagina (o parte)
+    if (pagesUsed >= MAX_PDF_PAGES) break;
+
     const t = r.fullTextAnnotation?.text;
-    if (!t) continue;
+    if (!t) { pagesUsed++; continue; }
 
     if (combinedText.length + t.length + 1 > MAX_OCR_CHARS) {
       combinedText += "\n" + t.slice(0, Math.max(0, MAX_OCR_CHARS - combinedText.length - 1));
+      pagesUsed++;
       break;
     }
 
     combinedText += "\n" + t;
+    pagesUsed++;
   }
 
+  if (pagesUsed >= MAX_PDF_PAGES) break;
   if (combinedText.length >= MAX_OCR_CHARS) break;
 }
 
@@ -890,6 +983,7 @@ if (aiItems.length) {
       produttore: producer,
       localita: (x.localita ?? "").trim?.() ?? "",
       section: x.section ?? "",
+      subcategory: (x.subcategory ?? "").trim?.() ?? "",
       confidence: typeof x.confidence === "number" ? x.confidence : 0.85,
       raw_line: x._source_text || "openai",
     };
@@ -943,6 +1037,7 @@ if (aiItems.length) {
       produttore: producer,
       localita: (x.localita ?? "").trim?.() ?? "",
       section: x.section ?? "",
+      subcategory: (x.subcategory ?? "").trim?.() ?? "",
       confidence: typeof x.confidence === "number" ? x.confidence : 0.85,
       raw_line: x._source_text || "openai",
     };
@@ -953,6 +1048,7 @@ if (aiItems.length) {
     }
 
     // 6) Salva items in DB (facoltativo ma utile)
+    await setJobProgress(supabase, jobId, 97, "saving");
     if (items.length) {
       const rows = items.slice(0, 500).map((it) => ({
         job_id: jobId,
