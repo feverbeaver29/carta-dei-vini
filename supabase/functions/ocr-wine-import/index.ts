@@ -752,6 +752,95 @@ items.push({
   return items;
 }
 
+const producerKeywords2 = /\b(tenuta|cantina|azienda|societ[aà]|podere|fattoria|vigne|vigneti|agricola)\b/i;
+
+function looksLikeSection2(s: string) {
+  const t = (s || "").trim();
+  if (t.length < 6 || t.length > 80) return false;
+  if (/[0-9€$£]/.test(t)) return false;
+
+  const upperish = t === t.toUpperCase();
+  const hasWineWord = /\b(vini|bollicine|bianchi|rossi|rosati|champagne|spumanti|dolci|dessert)\b/i.test(t);
+  return upperish || hasWineWord;
+}
+
+function looksLikeSubcategory2(s: string) {
+  const t = (s || "").trim();
+  if (t.length < 3 || t.length > 40) return false;
+  if (/[0-9€$£]/.test(t)) return false;
+  if (producerKeywords2.test(t)) return false;
+
+  const wc = t.split(/\s+/).length;
+  if (wc < 1 || wc > 4) return false;
+
+  if (t.includes(" - ")) return false; // evita “Produttore - Vino”
+  return true;
+}
+
+function cleanHeader2(s: string) {
+  const lower = (s || "").toLowerCase();
+  if (
+    lower.includes("bottiglia") ||
+    lower.includes("bottle") ||
+    lower.includes("al calice") ||
+    lower.includes("glass") ||
+    lower.includes("cl") ||
+    lower.includes("ml") ||
+    lower.includes("prezzo") ||
+    lower === "vini"
+  ) return "";
+  return (s || "").trim();
+}
+
+/**
+ * Ricalcola section/subcategory per ogni item OpenAI usando la riga più vicina sopra (source_lines).
+ * Questo elimina l’effetto “Marche appiccicata”.
+ */
+function reanchorSectionSubcategoryFromSourceLines(aiItems: any[], ocrText: string) {
+  const { lines } = buildNumberedLines(ocrText); // lines[] è 0-index, source_lines è 1-index
+
+  let currentSection = "";
+  let currentSub = "";
+
+  const sectionAt: string[] = new Array(lines.length).fill("");
+  const subAt: string[] = new Array(lines.length).fill("");
+
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i];
+    const t = cleanHeader2(raw);
+    if (!t) {
+      sectionAt[i] = currentSection;
+      subAt[i] = currentSub;
+      continue;
+    }
+
+    if (looksLikeSection2(t)) {
+      currentSection = t;
+      currentSub = "";
+    } else if (currentSection && looksLikeSubcategory2(t)) {
+      currentSub = t;
+    }
+
+    sectionAt[i] = currentSection;
+    subAt[i] = currentSub;
+  }
+
+  for (const it of aiItems) {
+    const src = Array.isArray(it?.source_lines) ? it.source_lines : [];
+    if (!src.length) continue;
+
+    const firstLineIdx = Math.max(0, (Math.min(...src) - 1));
+
+    const sec = sectionAt[firstLineIdx] || null;
+    const sub = subAt[firstLineIdx] || null;
+
+    // Se OpenAI ha messo qualcosa di sbagliato / troppo appiccicoso, lo sovrascriviamo con il contesto vero.
+    it.section = sec;
+    it.subcategory = sub;
+  }
+
+  return aiItems;
+}
 // --------------------
 // Main
 // --------------------
@@ -959,6 +1048,10 @@ if (OPENAI_API_KEY) {
   const pct = 88 + Math.round((done / Math.max(total, 1)) * (96 - 88));
   await setJobProgress(supabase, jobId, pct, "ai");
 });
+// ✅ FIX: ricalcola section/subcategory dal testo OCR usando source_lines
+if (aiItems.length) {
+  aiItems = reanchorSectionSubcategoryFromSourceLines(aiItems, rawOcrText);
+}
 }
 
 // 3) Se OpenAI ha risultati, usa quelli (più completi). Altrimenti fallback.
@@ -1013,6 +1106,10 @@ if (OPENAI_API_KEY) {
   const pct = 88 + Math.round((done / Math.max(total, 1)) * (96 - 88));
   await setJobProgress(supabase, jobId, pct, "ai");
 });
+// ✅ FIX: ricalcola section/subcategory dal testo OCR usando source_lines
+if (aiItems.length) {
+  aiItems = reanchorSectionSubcategoryFromSourceLines(aiItems, rawOcrText);
+}
 }
 
 // 3) Se OpenAI ha risultati, usa quelli (più completi). Altrimenti fallback.
