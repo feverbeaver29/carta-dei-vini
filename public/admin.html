@@ -479,6 +479,36 @@ let currentLang = "it";
 
 const TRANSLATIONS = {
   it: {
+    ocr_overlay_title: "Import OCR in corso",
+ocr_overlay_lock: "Non chiudere la pagina finché non termina.",
+ocr_overlay_default_sub: "Stiamo leggendo la carta vini…",
+
+ocr_stage_uploading: "Caricamento file…",
+ocr_stage_processing: "OCR in elaborazione…",
+ocr_stage_parsing: "Analisi righe…",
+ocr_stage_ai: "Estrazione intelligente…",
+ocr_stage_saving: "Salvataggio…",
+ocr_stage_done: "Completato ✅",
+ocr_stage_error: "Errore ❌",
+ocr_stage_default: "In corso…",
+
+file_too_large: "File troppo grande (max {mb} MB).",
+ocr_none_found: "Non ho trovato vini. Prova con una foto più nitida o un PDF migliore.",
+ocr_done_msg: "Import OCR completato. Seleziona un vino da aggiungere.",
+ocr_err_prefix: "Errore OCR: ",
+
+ocr_panel_title: "Risultati OCR",
+ocr_panel_close: "Chiudi",
+ocr_meta_found: "Trovati {n} vini",
+ocr_use_btn: "Usa",
+
+show_format: "Mostra formato",
+hide_format: "Nascondi formato",
+
+bottle_lbl: "Bottiglia",
+vintage_label_inline: "Annata",
+blend_lbl_inline: "Uvaggio",
+confidence_lbl: "Affidabilità",
     import_btn: "📥 Importa carta vini (PRO)",
 import_hint_pro: "Carica PDF o foto della carta vini e importa i vini più velocemente.",
 import_hint_upgrade: "Funzione disponibile solo per PRO.",
@@ -532,75 +562,138 @@ import_hint_upgrade: "Funzione disponibile solo per PRO.",
     saved_added: "Vino aggiunto",
     saved_updated: "Vino aggiornato"
   },
-  en: {
-    import_btn: "📥 Import wine list (PRO)",
-import_hint_pro: "Upload a PDF or photo and import wines faster.",
-import_hint_upgrade: "This feature is available only on PRO.",
-    glass_lbl: "Glass",
-    language: "Language",
-    back_dashboard: "← Back to Dashboard",
-    page_title: "Wine List Admin",
-    add_wine: "Add Wine",
-    add_new: "Add new",
-    edit_wine: "Edit Wine",
-    save: "Save",
-    update: "Update",
-    wine_name_label: "Wine name:",
-    wine_name_ph: "Full wine name",
-    vintage_label: "Vintage:",
-    vintage_ph: "optional",
-    price_label: "Price:",
-    bottle_ph: "bottle 0.75",
-    glass_ph: "glass",
-    currency_hint: "Selected currency applies to both prices.",
-    add_format: "+ add format",
-    pick_format: "Select format…",
-    category_label: "Category:",
-    subcategory_label: "Subcategory:",
-    blend_label: "Grapes:",
-    wine_list: "Wine List",
-    search_ph: "Search wine by name...",
-    filter_cat: "Filter by category",
-    filter_sub: "Filter by subcategory",
-    all: "All",
-    visibility: "Visibility",
-    hide_not_visible: "Hide not visible",
-    sort_by: "Sort by",
-    sort_name_asc: "Name A → Z",
-    sort_name_desc: "Name Z → A",
-    sort_price_asc: "Price ascending",
-    sort_price_desc: "Price descending",
-    show: "Show:",
-    prev: "◀️ Prev",
-    next: "Next ▶️",
-    page_x_of_y: "Page {x} of {y}",
-    edit_btn: "Edit",
-    delete_btn: "Delete",
-    visible_btn: "✅ Visible",
-    hidden_btn: "🚫 Hidden",
-    confirm_delete: "Delete this wine?",
-    err_fetch: "Error loading wines",
-    err_save: "Save error",
-    err_delete: "Delete error",
-    deleted: "Wine deleted",
-    saved_added: "Wine added",
-    saved_updated: "Wine updated"
-  },
+en: {
+  ocr_overlay_title: "OCR import in progress",
+  ocr_overlay_lock: "Don’t close the page until it finishes.",
+  ocr_overlay_default_sub: "We’re reading your wine list…",
+
+  ocr_stage_uploading: "Uploading file…",
+  ocr_stage_processing: "OCR processing…",
+  ocr_stage_parsing: "Analyzing lines…",
+  ocr_stage_ai: "Smart extraction…",
+  ocr_stage_saving: "Saving…",
+  ocr_stage_done: "Completed ✅",
+  ocr_stage_error: "Error ❌",
+  ocr_stage_default: "In progress…",
+
+  file_too_large: "File too large (max {mb} MB).",
+  ocr_none_found: "No wines found. Try a sharper photo or a better PDF.",
+  ocr_done_msg: "OCR import completed. Select a wine to add.",
+  ocr_err_prefix: "OCR error: ",
+
+  ocr_panel_title: "OCR Results",
+  ocr_panel_close: "Close",
+  ocr_meta_found: "{n} wines found",
+  ocr_use_btn: "Use",
+
+  show_format: "Show format",
+  hide_format: "Hide format",
+
+  bottle_lbl: "Bottle",
+  glass_lbl: "Glass",
+  vintage_label_inline: "Vintage",
+  blend_lbl_inline: "Grapes",
+  confidence_lbl: "Confidence",
+
+  import_btn: "📥 Import wine list (PRO)",
+  import_hint_pro: "Upload a PDF or photo of your wine list and import wines faster.",
+  import_hint_upgrade: "This feature is available only on PRO.",
+
+  language: "Language",
+  back_dashboard: "← Back to Dashboard",
+  page_title: "Wine List Admin",
+  add_wine: "Add Wine",
+  add_new: "Add new",
+  edit_wine: "Edit Wine",
+  save: "Save",
+  update: "Update",
+  wine_name_label: "Wine name:",
+  wine_name_ph: "Full wine name",
+  vintage_label: "Vintage:",
+  vintage_ph: "optional",
+  price_label: "Price:",
+  bottle_ph: "bottle 0.75",
+  glass_ph: "glass",
+  currency_hint: "Selected currency applies to both prices.",
+  add_format: "+ add format",
+  pick_format: "Select format…",
+  category_label: "Category:",
+  subcategory_label: "Subcategory:",
+  blend_label: "Grapes:",
+  wine_list: "Wine List",
+  search_ph: "Search wine by name...",
+  filter_cat: "Filter by category",
+  filter_sub: "Filter by subcategory",
+  all: "All",
+  visibility: "Visibility",
+  hide_not_visible: "Hide not visible",
+  sort_by: "Sort by",
+  sort_name_asc: "Name A → Z",
+  sort_name_desc: "Name Z → A",
+  sort_price_asc: "Price ascending",
+  sort_price_desc: "Price descending",
+  show: "Show:",
+  prev: "◀️ Prev",
+  next: "Next ▶️",
+  page_x_of_y: "Page {x} of {y}",
+  edit_btn: "Edit",
+  delete_btn: "Delete",
+  visible_btn: "✅ Visible",
+  hidden_btn: "🚫 Hidden",
+  confirm_delete: "Delete this wine?",
+  err_fetch: "Error loading wines",
+  err_save: "Save error",
+  err_delete: "Delete error",
+  deleted: "Wine deleted",
+  saved_added: "Wine added",
+  saved_updated: "Wine updated"
+},
+
 fr: {
-  import_btn: "📥 Importer la carte des vins (PRO)",
-import_hint_pro: "Télécharge un PDF ou une photo pour importer les vins plus vite.",
-import_hint_upgrade: "Fonction disponible uniquement en PRO.",
+  ocr_overlay_title: "Import OCR en cours",
+  ocr_overlay_lock: "Ne ferme pas la page avant la fin.",
+  ocr_overlay_default_sub: "Nous lisons la carte des vins…",
+
+  ocr_stage_uploading: "Téléversement du fichier…",
+  ocr_stage_processing: "OCR en cours…",
+  ocr_stage_parsing: "Analyse des lignes…",
+  ocr_stage_ai: "Extraction intelligente…",
+  ocr_stage_saving: "Enregistrement…",
+  ocr_stage_done: "Terminé ✅",
+  ocr_stage_error: "Erreur ❌",
+  ocr_stage_default: "En cours…",
+
+  file_too_large: "Fichier trop volumineux (max {mb} MB).",
+  ocr_none_found: "Aucun vin trouvé. Essaie une photo plus nette ou un meilleur PDF.",
+  ocr_done_msg: "Import OCR terminé. Sélectionne un vin à ajouter.",
+  ocr_err_prefix: "Erreur OCR : ",
+
+  ocr_panel_title: "Résultats OCR",
+  ocr_panel_close: "Fermer",
+  ocr_meta_found: "{n} vins trouvés",
+  ocr_use_btn: "Utiliser",
+
+  show_format: "Afficher le format",
+  hide_format: "Masquer le format",
+
+  bottle_lbl: "Bouteille",
   glass_lbl: "Verre",
+  vintage_label_inline: "Millésime",
+  blend_lbl_inline: "Assemblage",
+  confidence_lbl: "Fiabilité",
+
+  import_btn: "📥 Importer la carte des vins (PRO)",
+  import_hint_pro: "Télécharge un PDF ou une photo pour importer les vins plus vite.",
+  import_hint_upgrade: "Fonction disponible uniquement en PRO.",
+
+  language: "Langue",
   back_dashboard: "← Retour au tableau de bord",
   page_title: "Gestion de la carte des vins",
-  language: "Langue",
-
   add_wine: "Ajouter un vin",
   add_new: "Ajouter nouveau",
   edit_wine: "Modifier le vin",
   save: "Enregistrer",
   update: "Mettre à jour",
-
   wine_name_label: "Nom du vin :",
   wine_name_ph: "Nom complet du vin",
   vintage_label: "Millésime :",
@@ -609,40 +702,31 @@ import_hint_upgrade: "Fonction disponible uniquement en PRO.",
   bottle_ph: "bouteille 0,75",
   glass_ph: "verre",
   currency_hint: "La devise sélectionnée s’applique aux deux prix.",
-
   add_format: "+ ajouter un format",
   pick_format: "Choisir un format…",
-
   category_label: "Catégorie :",
   subcategory_label: "Sous-catégorie :",
   blend_label: "Assemblage :",
-
   wine_list: "Liste des vins",
-  search_ph: "Rechercher un vin par nom.",
-
+  search_ph: "Rechercher un vin par nom...",
   filter_cat: "Filtrer par catégorie",
   filter_sub: "Filtrer par sous-catégorie",
   all: "Toutes",
-
   visibility: "Visibilité",
   hide_not_visible: "Masquer les non visibles",
   sort_by: "Trier par",
-
   sort_name_asc: "Nom A → Z",
   sort_name_desc: "Nom Z → A",
   sort_price_asc: "Prix croissant",
   sort_price_desc: "Prix décroissant",
-
   show: "Afficher :",
   prev: "◀️ Préc.",
   next: "Suiv. ▶️",
   page_x_of_y: "Page {x} sur {y}",
-
   edit_btn: "Modifier",
   delete_btn: "Supprimer",
   visible_btn: "✅ Visible",
   hidden_btn: "🚫 Masqué",
-
   confirm_delete: "Supprimer ce vin ?",
   err_fetch: "Erreur lors du chargement des vins",
   err_save: "Erreur d’enregistrement",
@@ -653,20 +737,50 @@ import_hint_upgrade: "Fonction disponible uniquement en PRO.",
 },
 
 es: {
-  import_btn: "📥 Importar carta de vinos (PRO)",
-import_hint_pro: "Sube un PDF o una foto y importa los vinos más rápido.",
-import_hint_upgrade: "Función disponible solo para PRO.",
+  ocr_overlay_title: "Importación OCR en curso",
+  ocr_overlay_lock: "No cierres la página hasta que termine.",
+  ocr_overlay_default_sub: "Estamos leyendo la carta de vinos…",
+
+  ocr_stage_uploading: "Subiendo archivo…",
+  ocr_stage_processing: "OCR en proceso…",
+  ocr_stage_parsing: "Analizando líneas…",
+  ocr_stage_ai: "Extracción inteligente…",
+  ocr_stage_saving: "Guardando…",
+  ocr_stage_done: "Completado ✅",
+  ocr_stage_error: "Error ❌",
+  ocr_stage_default: "En curso…",
+
+  file_too_large: "Archivo demasiado grande (máx. {mb} MB).",
+  ocr_none_found: "No encontré vinos. Prueba con una foto más nítida o un PDF mejor.",
+  ocr_done_msg: "Importación OCR completada. Selecciona un vino para añadirlo.",
+  ocr_err_prefix: "Error OCR: ",
+
+  ocr_panel_title: "Resultados OCR",
+  ocr_panel_close: "Cerrar",
+  ocr_meta_found: "Encontrados {n} vinos",
+  ocr_use_btn: "Usar",
+
+  show_format: "Mostrar formato",
+  hide_format: "Ocultar formato",
+
+  bottle_lbl: "Botella",
   glass_lbl: "Copa",
+  vintage_label_inline: "Añada",
+  blend_lbl_inline: "Uvas",
+  confidence_lbl: "Fiabilidad",
+
+  import_btn: "📥 Importar carta de vinos (PRO)",
+  import_hint_pro: "Sube un PDF o una foto de la carta e importa los vinos más rápido.",
+  import_hint_upgrade: "Función disponible solo para PRO.",
+
+  language: "Idioma",
   back_dashboard: "← Volver al panel",
   page_title: "Gestión de la carta de vinos",
-  language: "Idioma",
-
   add_wine: "Añadir vino",
   add_new: "Añadir nuevo",
   edit_wine: "Editar vino",
   save: "Guardar",
   update: "Actualizar",
-
   wine_name_label: "Nombre del vino:",
   wine_name_ph: "Nombre completo del vino",
   vintage_label: "Añada:",
@@ -675,40 +789,31 @@ import_hint_upgrade: "Función disponible solo para PRO.",
   bottle_ph: "bot. 0,75",
   glass_ph: "copa",
   currency_hint: "La moneda seleccionada se aplica a ambos precios.",
-
   add_format: "+ añadir formato",
   pick_format: "Selecciona formato…",
-
   category_label: "Categoría:",
   subcategory_label: "Subcategoría:",
   blend_label: "Uvas:",
-
   wine_list: "Lista de vinos",
-  search_ph: "Buscar vino por nombre.",
-
+  search_ph: "Buscar vino por nombre...",
   filter_cat: "Filtrar por categoría",
   filter_sub: "Filtrar por subcategoría",
   all: "Todas",
-
   visibility: "Visibilidad",
   hide_not_visible: "Ocultar no visibles",
   sort_by: "Ordenar por",
-
   sort_name_asc: "Nombre A → Z",
   sort_name_desc: "Nombre Z → A",
   sort_price_asc: "Precio ascendente",
   sort_price_desc: "Precio descendente",
-
   show: "Mostrar:",
   prev: "◀️ Atrás",
   next: "Siguiente ▶️",
   page_x_of_y: "Página {x} de {y}",
-
   edit_btn: "Editar",
   delete_btn: "Eliminar",
   visible_btn: "✅ Visible",
   hidden_btn: "🚫 Oculto",
-
   confirm_delete: "¿Eliminar este vino?",
   err_fetch: "Error al cargar los vinos",
   err_save: "Error al guardar",
@@ -716,7 +821,7 @@ import_hint_upgrade: "Función disponible solo para PRO.",
   deleted: "Vino eliminado",
   saved_added: "Vino añadido",
   saved_updated: "Vino actualizado"
-}
+},
 };
 
 function normalizeLang(raw) {
@@ -781,6 +886,12 @@ function applyTranslations() {
 
   const langLbl = document.getElementById("langLabel");
   if (langLbl) langLbl.textContent = t("language");
+
+  const ttl = document.getElementById("ocrLoadingTitle");
+if (ttl) ttl.textContent = t("ocr_overlay_title");
+
+const lock = document.getElementById("ocrLoadingLock");
+if (lock) lock.textContent = t("ocr_overlay_lock");
 
   // form title (attenzione: contiene bottone dentro)
   const formTitle = document.getElementById("formTitle");
@@ -1595,7 +1706,7 @@ row.innerHTML = `
 
       const eye = document.createElement("button");
       eye.className = "eye-btn";
-      eye.title = isHidden ? "Mostra questo formato" : "Nascondi questo formato";
+      eye.title = isHidden ? t("show_format") : t("hide_format");
       eye.innerHTML = isHidden ? EYE_OFF : EYE_OPEN;
       eye.onclick = (e) => { e.stopPropagation(); toggleHiddenField(wine, m.key); };
 
@@ -1799,14 +1910,14 @@ let ocrJobChannel = null;
 
 function stageTextFromJob(job){
   const st = String(job?.status || "").toLowerCase();
-  if (st === "uploading") return "Caricamento file…";
-  if (st === "processing") return "Analisi OCR in corso…";
-  if (st === "parsing") return "Estrazione vini…";
-  if (st === "ai") return "Ottimizzazione con AI…";
-  if (st === "saving") return "Salvataggio risultati…";
-  if (st === "done") return "Completato ✅";
-  if (st === "error") return "Errore ❌";
-  return "Import OCR in corso…";
+  if (st === "uploading")  return t("ocr_stage_uploading");
+  if (st === "processing") return t("ocr_stage_processing");
+  if (st === "parsing")    return t("ocr_stage_parsing");
+  if (st === "ai")         return t("ocr_stage_ai");
+  if (st === "saving")     return t("ocr_stage_saving");
+  if (st === "done")       return t("ocr_stage_done");
+  if (st === "error")      return t("ocr_stage_error");
+  return t("ocr_stage_default");
 }
 
 async function createOcrJobRow(){
@@ -1892,14 +2003,17 @@ function ensureOcrResultsPanel(){
   panel.id = "ocrResultsPanel";
   panel.style = "display:none; border:1px solid #ddd; border-radius:14px; padding:12px; margin-bottom:12px; background:#fff;";
 
-  panel.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-      <strong>Import OCR</strong>
-      <button id="ocrClosePanelBtn" type="button" style="margin-top:0; padding:6px 10px; border-radius:10px; background:#eee; color:#111;">Chiudi</button>
-    </div>
-    <div id="ocrResultsMeta" style="margin-top:8px; font-size:0.9em; color:#444;"></div>
-    <div id="ocrResultsList" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;"></div>
-  `;
+panel.innerHTML = `
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+    <div style="font-weight:800;">${t("ocr_panel_title")}</div>
+    <button id="ocrClosePanelBtn" type="button"
+      style="margin-top:0; padding:6px 10px; border-radius:10px; background:#eee; color:#111;">
+      ${t("ocr_panel_close")}
+    </button>
+  </div>
+  <div id="ocrResultsMeta" style="margin-top:8px; font-size:0.9em; color:#444;"></div>
+  <div id="ocrResultsList" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;"></div>
+`;
 
   adminPanel.prepend(panel);
 
@@ -1916,7 +2030,7 @@ function renderOcrResults(items){
   const list  = panel.querySelector("#ocrResultsList");
 
   panel.style.display = "block";
-  meta.textContent = `Righe trovate: ${items.length}. Clicca “Usa” per riempire il form.`;
+  meta.textContent = t("ocr_meta_found",{n: items.length})
 
   list.innerHTML = "";
 
@@ -1947,14 +2061,16 @@ const fullName = alreadyHasProducer
       <div style="min-width:0;">
         <div style="font-weight:700; word-break:break-word;">${escapeHtml(fullName || "(senza nome)")}</div>
         <div style="font-size:13px;color:#666;margin-top:3px;">
-          ${annata ? `Annata: ${escapeHtml(annata)} · ` : ""}
-          Bottiglia: ${escapeHtml(prezzoB || "-")}
-          ${prezzoG ? ` · Calice: ${escapeHtml(prezzoG)}` : ""}
-          ${uvaggio ? ` · Uvaggio: ${escapeHtml(uvaggio)}` : ""}
-          · Conf: ${conf}%
+          ${annata ? `${t("vintage_label_inline")}: ${escapeHtml(annata)} · ` : ""}
+          ${t("bottle_lbl")}: ${escapeHtml(prezzoB || "-")}
+          ${prezzoG ? ` · ${t("glass_lbl")}: ${escapeHtml(prezzoG)}` : ""}
+          ${uvaggio ? ` · ${t("blend_lbl_inline")}: ${escapeHtml(uvaggio)}` : ""}
+        · ${t("confidence_lbl")}: ${conf}%
         </div>
       </div>
-      <button type="button" class="btn-usa" style="margin-top:0; padding:6px 10px; border-radius:10px;">Usa</button>
+      <button type="button" class="btn-usa" style="margin-top:0; padding:6px 10px; border-radius:10px;">
+  ${t("ocr_use_btn")}
+</button>
     `;
 
     row.querySelector(".btn-usa").onclick = () => {
@@ -2014,7 +2130,7 @@ async function handleOcrImportFlow(file){
 
   const MAX_MB = 25;
   if (file.size > MAX_MB * 1024 * 1024){
-    showMessage(`File troppo grande (max ${MAX_MB}MB)`, false);
+    showMessage(t("file_too_large", { mb: MAX_MB }), false);
     return;
   }
 
@@ -2023,7 +2139,7 @@ async function handleOcrImportFlow(file){
     const jobId = await createOcrJobRow();
 
     // 2) Apro overlay e mi aggancio realtime a quel job
-    openOcrOverlay(2, "Caricamento file…");
+    openOcrOverlay(2, t("ocr_stage_uploading"));
     subscribeOcrJob(jobId);
 
     // 3) Upload su storage
@@ -2040,7 +2156,7 @@ async function handleOcrImportFlow(file){
     const data = await callOcrEdgeFunction(storagePath, jobId);
 
     // 5) Finito (realtime dovrebbe già aver portato a 100, ma forzo UI a 100)
-    setOcrOverlay(100, "Completato ✅");
+    setOcrOverlay(100, t("ocr_stage_done"));
 
     const items = Array.isArray(data?.items) ? data.items : [];
     if (data?.raw_ocr_preview) console.log("RAW OCR PREVIEW:\n", data.raw_ocr_preview);
@@ -2052,18 +2168,18 @@ async function handleOcrImportFlow(file){
     }, 450);
 
     if (!items.length){
-      showMessage("Nessuna riga vino trovata. Prova con una foto più nitida o un PDF diverso.", false);
+      showMessage(t("ocr_none_found"), false);
       return;
     }
 
-    showMessage("OCR completato ✅");
+    showMessage(t("ocr_done_msg"));
     renderOcrResults(items);
 
   } catch (err){
     closeOcrOverlay();
     unsubscribeOcrJob();
     console.error(err);
-    showMessage("Errore import OCR: " + (err?.message || err), false);
+    showMessage(t("ocr_err_prefix") + (err?.message || err), false);
   }
 }
 
@@ -2093,7 +2209,7 @@ document.getElementById("importWineCardFile")?.addEventListener("change", async 
 let ocrSimTimer = null;
 let ocrPct = 0;
 
-function openOcrOverlay(startPct = 0, subText = "Stiamo leggendo la carta vini…") {
+function openOcrOverlay(startPct = 0, subText = t("ocr_overlay_default_sub")) {
   const ov = document.getElementById("ocrLoadingOverlay");
   if (!ov) return;
 
@@ -2132,12 +2248,12 @@ function closeOcrOverlay() {
 <!-- OCR Loading Overlay -->
 <div id="ocrLoadingOverlay" aria-hidden="true">
   <div class="ocr-loading-box" role="dialog" aria-modal="true" aria-label="OCR Loading">
-    <div class="ocr-loading-title">Import OCR in corso</div>
+    <div class="ocr-loading-title" id="ocrLoadingTitle">Import OCR in corso</div>
     <div id="ocrLoadingSub" class="ocr-loading-sub">Stiamo leggendo la carta vini…</div>
     <div class="ocr-spinner"></div>
     <div class="ocr-progress"><div id="ocrLoadingBar"></div></div>
     <div class="ocr-percent"><span id="ocrLoadingPct">0</span>%</div>
-    <div class="ocr-lock-hint">Non chiudere la pagina finché non termina.</div>
+    <div class="ocr-lock-hint" id="ocrLoadingLock">Non chiudere la pagina finché non termina.</div>
   </div>
 </div>
 </body>
