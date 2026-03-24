@@ -293,7 +293,7 @@ border: 1px solid rgba(255,255,255,.35);
 
 /* Popover posizionati sopra la bar */
 #searchPopover{ bottom: calc(var(--bottom-bar-height) + 22px) !important; }
-#filterMenu{    bottom: calc(var(--bottom-bar-height) + 14px) !important; }
+#filterTray{ bottom: calc(var(--bottom-bar-height) + 10px) !important; }
 
 /* =========================
    POPUP SOMMELIER
@@ -599,7 +599,7 @@ body.pdf-export #helperBanner,
 body.pdf-export #sommelierOverlay,
 body.pdf-export #sommelierBtn,
 body.pdf-export #searchPopover,
-body.pdf-export #filterMenu {
+body.pdf-export #filterTray {
   display: none !important;
 }
 
@@ -706,6 +706,63 @@ body.reordering #bottomBar{
   pointer-events:none;
   opacity:.85;
 }
+.filter-tray{
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(var(--bottom-bar-height) + 10px);
+  z-index: 2000;
+  background: rgba(255,255,255,.96);
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 16px;
+  padding: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.18);
+  backdrop-filter: blur(10px);
+}
+
+.filter-chips{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-chip{
+  border: 1px solid rgba(0,0,0,.15);
+  background: #fff;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: .95em;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.filter-chip.active{
+  background: var(--accent-color);
+  color: #fff;
+  border-color: var(--accent-color);
+}
+.format-badge{
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--accent-color);
+  font-size: 11px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+#bottleBtn{
+  position: relative;
+}
+
+#bottleBtn .format-badge{
+  margin-left: 2px;
+}
 </style>
 </head>
 <body>
@@ -750,6 +807,7 @@ body.reordering #bottomBar{
 <script>
 const translations = {
   it: {
+    formatFilters: "Formati",
     subBlockedTitle: "Carta non disponibile",
     subBlockedMsg: "Il ristorante non ha un abbonamento attivo.",
     subBlockedClose: "Chiudi",
@@ -794,6 +852,7 @@ const translations = {
     helperGlassMode: "🍷 Stai visualizzando solo i vini al calice",
   },
   en: {
+    formatFilters: "Formats",
     subBlockedTitle: "Menu unavailable",
     subBlockedMsg: "This restaurant doesn't have an active subscription.",
     subBlockedClose: "Close",
@@ -838,6 +897,7 @@ const translations = {
     helperGlassMode: "🍷 You are viewing only wines by the glass",
   },
   fr: {
+    formatFilters: "Formats",
     subBlockedTitle: "Carte indisponible",
     subBlockedMsg: "Le restaurant n’a pas d’abonnement actif.",
     subBlockedClose: "Fermer",
@@ -881,6 +941,7 @@ sommelierBtnBadge: "Nouveauté",
 helperGlassMode: "🍷 Vous voyez uniquement les vins au verre",
   },
   de: {
+    formatFilters: "Formate",
     subBlockedTitle: "Karte nicht verfügbar",
     subBlockedMsg: "Das Restaurant hat kein aktives Abonnement.",
     subBlockedClose: "Schließen",
@@ -923,6 +984,7 @@ sommelierBtnBadge: "Neu",
 helperGlassMode: "🍷 Sie sehen nur Weine im Glas",
   },
   es: {
+    formatFilters: "Formatos",
     subBlockedTitle: "Carta no disponible",
     subBlockedMsg: "El restaurante no tiene una suscripción activa.",
     subBlockedClose: "Cerrar",
@@ -966,6 +1028,7 @@ sommelierBtnBadge: "Novedad",
 helperGlassMode: "🍷 Estás viendo solo los vinos por copa",
   },
   zh: {
+    formatFilters: "规格",
     subBlockedTitle: "酒单不可用",
     subBlockedMsg: "该餐厅没有有效订阅。",
     subBlockedClose: "关闭",
@@ -1010,6 +1073,7 @@ helperGlassMode: "🍷 您正在查看仅按杯供应的葡萄酒",
   }
     ,
   ko: {
+    formatFilters: "형식",
     subBlockedTitle: "와인 리스트를 사용할 수 없습니다",
     subBlockedMsg: "이 레스토랑에는 활성 구독이 없습니다.",
     subBlockedClose: "닫기",
@@ -1054,6 +1118,7 @@ sommelierBtn:      "와인 추천",
     helperGlassMode: "🍷 잔으로 제공되는 와인만 표시 중",
   },
   ru: {
+    formatFilters: "Форматы",
     subBlockedTitle: "Карта недоступна",
     subBlockedMsg: "У ресторана нет активной подписки.",
     subBlockedClose: "Закрыть",
@@ -1460,12 +1525,6 @@ if (sBtn) {
 const si = document.getElementById("searchInput");
 if (si && t.searchPlaceholder) {
   si.placeholder = t.searchPlaceholder;
-}
-
-// 2) titolo del menu filtro ("Filtra per:")
-const filterTitle = document.querySelector('#filterMenu .translate-text[data-key="filterBy"]');
-if (filterTitle && t.filterBy) {
-  filterTitle.textContent = t.filterBy;
 }
 
 // 3) bottone "Cerca" dentro al popover
@@ -3778,82 +3837,92 @@ fetch(fnUrl, {
 
 function setupFilterUI() {
   const btn = document.getElementById("bottleBtn");
-  const menu = document.getElementById("filterMenu");
+  const tray = document.getElementById("filterTray");
   const optionsContainer = document.getElementById("filterOptions");
-  const t = translations[currentLang] || translations.it;  // ← AGGIUNGI QUESTA RIGA
+  if (!btn || !tray || !optionsContainer) return;
 
-// Trova i formati disponibili nei vini
-const formatsMapUI = {                    // ← solo formati "bottiglia"
-  bottle:    { label: t.formatBottle || "Bottiglia", key: "prezzo" },
-  quarter:   { label: "1/4 lt",       key: "prezzo_025" },
-  threequart:{ label: "0,375 lt",     key: "prezzo_0375" },
-  half:      { label: "1/2 lt",       key: "prezzo_05" },
-  onehalf:   { label: "1,5 lt",       key: "prezzo_15" },
-  three:     { label: "3 lt",         key: "prezzo_3l" }
-};
+  const t = translations[currentLang] || translations.it;
 
-const availableFormats = {};
-wines.forEach(w => {
-  for (const [id, f] of Object.entries(formatsMapUI)) {
-    if (hasVisiblePrice(w, f.key)) availableFormats[id] = f;
+  const formatsMapUI = {
+    bottle:     { label: t.formatBottle || "Bottiglia", key: "prezzo" },
+    quarter:    { label: "1/4 lt",       key: "prezzo_025" },
+    threequart: { label: "0,375 lt",     key: "prezzo_0375" },
+    half:       { label: "1/2 lt",       key: "prezzo_05" },
+    onehalf:    { label: "1,5 lt",       key: "prezzo_15" },
+    three:      { label: "3 lt",         key: "prezzo_3l" }
+  };
+
+  const availableFormats = {};
+  wines.forEach(w => {
+    for (const [id, f] of Object.entries(formatsMapUI)) {
+      if (hasVisiblePrice(w, f.key)) availableFormats[id] = f;
+    }
+  });
+
+  optionsContainer.innerHTML = "";
+
+  for (const [id, f] of Object.entries(availableFormats)) {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "filter-chip active";
+    chip.dataset.value = id;
+    chip.textContent = f.label;
+
+    chip.onclick = () => {
+      chip.classList.toggle("active");
+
+      const hidden = document.getElementById("glassHiddenCb");
+      if (id !== "glass" && hidden) hidden.checked = false;
+
+      syncChipStateToFilters();
+      applyFilters();
+      updateFormatActiveState();
+    };
+
+    optionsContainer.appendChild(chip);
   }
-});
 
-// Popola le checkbox (tutte NON spuntate di default)
-optionsContainer.innerHTML = "";
-for (const [id, f] of Object.entries(availableFormats)) {
-  const label = document.createElement("label");
-  label.style.display = "flex";
-  label.style.alignItems = "center";
-  label.style.gap = "6px";
-  label.style.marginBottom = "6px";
+  let hidden = document.getElementById("glassHiddenCb");
+  if (!hidden) {
+    hidden = document.createElement("input");
+    hidden.type = "checkbox";
+    hidden.value = "glass";
+    hidden.id = "glassHiddenCb";
+    hidden.style.display = "none";
+    hidden.checked = false;
+    optionsContainer.appendChild(hidden);
+  }
 
-  const cb = document.createElement("input");
-  cb.type = "checkbox";
-  cb.value = id;
-  cb.checked = true;               // 👈 default: nessun filtro
-  cb.onchange = () => {
-  // se l’utente tocca un formato “bottiglia”, disattiva il bicchiere nascosto
-  const hidden = document.getElementById("glassHiddenCb");
-  if (hidden) hidden.checked = false;
+  btn.onclick = () => {
+    tray.style.display = (tray.style.display === "none" || !tray.style.display) ? "block" : "none";
+  };
+
   applyFilters();
-};
-
-  label.appendChild(cb);
-  label.appendChild(document.createTextNode(f.label));
-  optionsContainer.appendChild(label);
+  updateFormatActiveState();
 }
+function syncChipStateToFilters() {
+  const tray = document.getElementById("filterTray");
+  if (!tray) return;
 
-// ✅ checkbox "glass" nascosta per il quick filter (non visibile nel menu)
-let hidden = document.getElementById("glassHiddenCb");
-if (!hidden) {
-  hidden = document.createElement("input");
-  hidden.type = "checkbox";
-  hidden.value = "glass";
-  hidden.id = "glassHiddenCb";
-  hidden.style.display = "none";
-  hidden.checked = false;
-  optionsContainer.appendChild(hidden);
+  const chips = Array.from(tray.querySelectorAll(".filter-chip"));
+  const hidden = document.getElementById("glassHiddenCb");
+
+  if (hidden && hidden.checked) {
+    chips.forEach(ch => ch.classList.remove("active"));
+    return;
+  }
+
+  // nessuna azione extra: lo stato attivo è già visivo sulle chip
 }
-
-btn.onclick = () => {
-  menu.style.display = (menu.style.display === "none") ? "block" : "none";
-};
-
-applyFilters();
-}
-
 // Quick-filter: mostra solo i vini al bicchiere
 function quickFilterGlass() {
   const container = document.getElementById("filterOptions");
   if (!container) return;
 
-  // deseleziona tutti i formati visibili
-  container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-    if (cb.id !== "glassHiddenCb") cb.checked = false;
+  container.querySelectorAll(".filter-chip").forEach(ch => {
+    ch.classList.remove("active");
   });
 
-  // attiva SOLO la checkbox nascosta "glass"
   const hidden = document.getElementById("glassHiddenCb");
   if (hidden) hidden.checked = true;
 
@@ -3861,22 +3930,11 @@ function quickFilterGlass() {
   updateFormatActiveState();
   closeFilterMenu();
 
-  // 🔹 Mostra doppia riga nel banner
   const helper = document.getElementById("helperBanner");
   if (helper) {
     const mainLine = translations[currentLang].helperChooseCategory || "Scegli una categoria!";
     const subLine  = translations[currentLang].helperGlassMode || "🍷 Stai visualizzando solo i vini al calice";
     helper.innerHTML = `${mainLine}<br><span style="color:#050505;font-weight:600;">${subLine}</span>`;
-  }
-
-  // 🔹 Attiva effetto visivo sul bottone bicchiere
-  const glassBtn = document.getElementById("glassBtn");
-  const bottleBtn = document.getElementById("bottleBtn");
-  if (glassBtn) {
-    glassBtn.classList.add("active", "glass-mode");
-  }
-  if (bottleBtn) {
-    bottleBtn.classList.remove("active", "glass-mode");
   }
 }
 
@@ -3890,26 +3948,24 @@ function refreshFilterOptionsPreservingState() {
   const optionsContainer = document.getElementById("filterOptions");
   if (!optionsContainer) return;
 
-  // Ricorda cosa era selezionato PRIMA di ricostruire
-  const prevChecked = new Set(
-    Array.from(optionsContainer.querySelectorAll("input[type='checkbox']:checked"))
-         .map(cb => cb.value)
+  const prevActive = new Set(
+    Array.from(optionsContainer.querySelectorAll(".filter-chip.active"))
+      .map(ch => ch.dataset.value)
   );
-  const wasGlassOn = prevChecked.has('glass');
 
-  // ---- Ricostruzione (SOLO formati bottiglia) ----
+  const hiddenOld = document.getElementById("glassHiddenCb");
+  const wasGlassOn = !!hiddenOld?.checked;
+
   const t = translations[currentLang] || translations.it;
   const formatsMap = {
     bottle:     { label: t.formatBottle || "Bottiglia", key: "prezzo" },
-    quarter:    { label: "1/4 lt",      key: "prezzo_025" },
-    threequart: { label: "0,375 lt",    key: "prezzo_0375" },
-    half:       { label: "1/2 lt",      key: "prezzo_05" },
-    onehalf:    { label: "1,5 lt",      key: "prezzo_15" },
-    three:      { label: "3 lt",        key: "prezzo_3l" }
-    // 👆 NIENTE 'glass' qui dentro
+    quarter:    { label: "1/4 lt",       key: "prezzo_025" },
+    threequart: { label: "0,375 lt",     key: "prezzo_0375" },
+    half:       { label: "1/2 lt",       key: "prezzo_05" },
+    onehalf:    { label: "1,5 lt",       key: "prezzo_15" },
+    three:      { label: "3 lt",         key: "prezzo_3l" }
   };
 
-  // Limita ai formati effettivamente presenti nei vini
   const availableFormats = {};
   wines.forEach(w => {
     for (const [id, f] of Object.entries(formatsMap)) {
@@ -3918,45 +3974,50 @@ function refreshFilterOptionsPreservingState() {
   });
 
   optionsContainer.innerHTML = "";
-  for (const [id, f] of Object.entries(availableFormats)) {
-    const label = document.createElement("label");
-    label.style.cssText = "display:flex;align-items:center;gap:6px;margin-bottom:6px;";
 
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.value = id;
-    // se avevo roba selezionata, ripristino; altrimenti default=spento
-    cb.checked = prevChecked.size ? prevChecked.has(id) : false;
-    cb.onchange = () => {
-      // se tocco un formato bottiglia, spengo la nascosta 'glass'
+  for (const [id, f] of Object.entries(availableFormats)) {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "filter-chip";
+    chip.dataset.value = id;
+    chip.textContent = f.label;
+
+    const shouldBeActive = wasGlassOn ? false : (prevActive.size ? prevActive.has(id) : true);
+    if (shouldBeActive) chip.classList.add("active");
+
+    chip.onclick = () => {
+      chip.classList.toggle("active");
+
       const hidden = document.getElementById("glassHiddenCb");
       if (hidden) hidden.checked = false;
+
+      syncChipStateToFilters();
       applyFilters();
+      updateFormatActiveState();
     };
 
-    label.appendChild(cb);
-    label.appendChild(document.createTextNode(f.label));
-    optionsContainer.appendChild(label);
+    optionsContainer.appendChild(chip);
   }
 
-  // 🔒 ricreo SEMPRE la checkbox NASCOSTA 'glass' e ripristino lo stato precedente
-  let hidden = document.createElement("input");
+  const hidden = document.createElement("input");
   hidden.type = "checkbox";
   hidden.value = "glass";
   hidden.id = "glassHiddenCb";
   hidden.style.display = "none";
-  hidden.checked = wasGlassOn === true;   // se era attivo prima del cambio lingua, resta attivo
+  hidden.checked = wasGlassOn;
   optionsContainer.appendChild(hidden);
 
   updateFormatActiveState();
 }
 
 function getCheckedFormats() {
-  const all = Array.from(document.querySelectorAll("#filterOptions input:checked")).map(cb => cb.value);
-  // se c’è almeno un formato bottiglia, escludi ‘glass’
-  const ids = all.includes('glass') && all.some(v => v !== 'glass')
-    ? all.filter(v => v !== 'glass')
-    : all;
+  const chipIds = Array.from(document.querySelectorAll("#filterOptions .filter-chip.active"))
+    .map(ch => ch.dataset.value);
+
+  const glassHidden = document.getElementById("glassHiddenCb");
+  const glassOn = !!glassHidden?.checked;
+
+  const ids = glassOn ? ["glass"] : chipIds;
 
   const map = {
     bottle: "prezzo",
@@ -3967,6 +4028,7 @@ function getCheckedFormats() {
     onehalf: "prezzo_15",
     three: "prezzo_3l"
   };
+
   return { ids, map };
 }
 
@@ -4073,41 +4135,59 @@ function applyFilters() {
 function updateFormatActiveState(){
   const bottleBtn = document.getElementById('bottleBtn');
   const glassBtn  = document.getElementById('glassBtn');
+  const badge     = document.getElementById('formatCountBadge');
+
   bottleBtn?.classList.remove('active', 'glass-mode');
   glassBtn?.classList.remove('active', 'glass-mode');
 
-  const checks = document.querySelectorAll('#filterOptions input[type="checkbox"]');
-  const checked = Array.from(checks).filter(cb => cb.checked).map(cb => cb.value);
+  const activeChips = Array.from(document.querySelectorAll('#filterOptions .filter-chip.active'));
+  const hiddenGlass = document.getElementById('glassHiddenCb');
+  const glassOnly = !!hiddenGlass?.checked;
+  const count = activeChips.length;
 
-  if (checked.length === 1 && checked[0] === 'glass') {
+  if (glassOnly) {
     glassBtn?.classList.add('active', 'glass-mode');
-  } else if (checked.length > 0) {
+    if (badge) {
+      badge.style.display = 'none';
+      badge.textContent = '0';
+    }
+  } else if (count > 0) {
     bottleBtn?.classList.add('active');
+    if (badge) {
+      badge.style.display = 'inline-flex';
+      badge.textContent = String(count);
+    }
+  } else {
+    if (badge) {
+      badge.style.display = 'none';
+      badge.textContent = '0';
+    }
   }
 
-  // banner sempre coerente con la vista corrente,
-  // ma aggiunge sotto la riga "al calice" se glass è attivo
-  setHelperByKey('helperChooseCategory');
+  if (currentView === 'categories') {
+    setHelperByKey('helperChooseCategory');
+  } else if (currentView === 'wines') {
+    setHelperByKey('helperClickWine');
+  }
 }
 
-
 function closeFilterMenu(){ 
-  const m = document.getElementById('filterMenu');
+  const m = document.getElementById('filterTray');
   if (m) m.style.display = 'none';
 }
 
 document.addEventListener('click', (e) => {
-  const menu = document.getElementById('filterMenu');
+  const tray = document.getElementById('filterTray');
   const btn  = document.getElementById('bottleBtn');
-  if (!menu || !btn) return;
+  if (!tray || !btn) return;
 
   if (
-    menu.style.display === 'block' &&
-    !menu.contains(e.target) &&
+    tray.style.display === 'block' &&
+    !tray.contains(e.target) &&
     e.target !== btn &&
     !btn.contains(e.target)
   ) {
-    menu.style.display = 'none';
+    tray.style.display = 'none';
   }
 });
 
@@ -4257,9 +4337,11 @@ if (rn) {
 
   <!-- GRUPPO FORMATI A DESTRA -->
   <div id="formatBtnGroup" style="justify-self:end; display:flex; gap:6px;">
-    <button id="bottleBtn" class="bottom-btn" aria-label="Bottiglia">
-      <img src="bottleiconwhite.png" alt="Bottiglia" aria-hidden="true">
-    </button>
+<button id="bottleBtn" class="bottom-btn" aria-label="Formati">
+  <img src="bottleiconwhite.png" alt="" aria-hidden="true">
+  <span class="translate-label" data-key="formatFilters">Formati</span>
+  <span id="formatCountBadge" class="format-badge" style="display:none;">0</span>
+</button>
     <button id="glassBtn" class="bottom-btn" aria-label="Bicchiere">
       <img src="glassiconwhite.png" alt="Bicchiere" aria-hidden="true">
     </button>
@@ -4276,9 +4358,8 @@ if (rn) {
   </div>
 </div>
 
-<div id="filterMenu" style="display:none; position:fixed; bottom:70px; right:16px; background:#fff; border:1px solid #ccc; border-radius:12px; padding:12px; box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:2000; min-width:200px;">
-  <strong class="translate-text" data-key="filterBy">Filtra per:</strong>
-  <div id="filterOptions"></div>
+<div id="filterTray" class="filter-tray" style="display:none;">
+  <div id="filterOptions" class="filter-chips"></div>
 </div>
 </body>
 </html>
