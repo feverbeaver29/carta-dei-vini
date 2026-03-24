@@ -136,7 +136,10 @@ nav{ position:fixed; top:0; left:0; right:0; } /* già c'è, lo ribadisco */
 /* =========================
    LISTE / CARD
 ========================= */
-.category-list, .subcategory-list, .wine-list{padding: .5em 1em;padding-bottom: calc(var(--bottom-bar-height) + var(--sommelier-height) + var(--safe-bottom-gap));}
+.category-list, .subcategory-list, .wine-list{
+  padding: .5em 1em;
+  padding-bottom: calc(var(--bottom-bar-height) + var(--sommelier-height) + 70px + var(--safe-bottom-gap));
+}
 .category, .subcategory, .wine-card{
   background:inherit; margin-bottom:.6em; padding:1em; border:1px solid; border-radius:12px;
   box-shadow:0 2px 4px rgba(0,0,0,.1);
@@ -159,62 +162,52 @@ nav{ position:fixed; top:0; left:0; right:0; } /* già c'è, lo ribadisco */
    BOTTOM BAR FISSA
 ========================= */
 #bottomBar{
-  position:fixed; left:0; right:0; bottom:0;
-  height:var(--bottom-bar-height);
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  height:46px;
   background: var(--navbar-color, #222);
-  display:grid;
-  grid-template-columns: 1fr auto 1fr; /* sinistra | centro | destra */
+  display:flex;
   align-items:center;
-  padding:8px 12px;                   /* 👈 più respiro */
+  justify-content:flex-end;
+  gap:10px;
+  padding:6px 12px;
   z-index:980;
   box-shadow:0 -2px 8px rgba(0,0,0,.15);
 }
 
 .bottom-btn{
-  height:44px; min-width:44px;
-  padding:0 10px;
-  border:none; border-radius:12px;
-  background: rgba(255,255,255,0.06);          /* ghost */
+  height:34px;
+  min-width:34px;
+  padding:0 12px;
+  border:none;
+  border-radius:10px;
+  background: rgba(255,255,255,0.08);
   color: var(--bottom-bar-foreground, #fff);
-  display:flex; align-items:center; gap:8px; justify-content:center;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  justify-content:center;
   font-weight:700;
-  transition: transform .12s ease, background .2s ease, box-shadow .2s ease;
+  font-size:.92em;
+  transition: transform .12s ease, background .2s ease;
 }
-.bottom-btn:hover{ transform: translateY(-1px); }
-.bottom-btn img{ width:24px; height:24px; display:block; }
+
+.bottom-btn:hover{
+  transform: translateY(-1px);
+}
+
+.bottom-btn img{
+  width:18px;
+  height:18px;
+  display:block;
+}
 
 .bottom-btn.active{
   background: rgba(255,255,255,0.18);
-  outline: 2px solid rgba(255,255,255,0.28);
-  box-shadow: 0 4px 14px rgba(0,0,0,.18);
-}
-
-/* Gruppo formati come "segment control" */
-#formatBtnGroup{
-  justify-self:end;
-  display:flex;
-  gap:4px;                                /* 👈 ravvicinati */
-  padding:4px;
-  background: rgba(255,255,255,0.10);
-  border-radius:14px;
-  backdrop-filter: blur(6px);
-}
-#formatBtnGroup .bottom-btn{
-  width:44px; height:44px;
-  padding:0;
-  border-radius:10px;
-  background: transparent;                /* fantasma dentro il group */
-}
-#formatBtnGroup .bottom-btn.active{
-  background: rgba(255,255,255,0.22);
-  outline: 2px solid rgba(255,255,255,0.30);
-}
-/* Effetto visivo “Glass Mode” quando il filtro al calice è attivo */
-.bottom-btn.glass-mode {
-  background: linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0.15));
-  box-shadow: 0 0 15px rgba(255,255,255,0.6), inset 0 0 10px rgba(255,255,255,0.3);
-  transform: scale(1.05);
-  transition: all 0.25s ease;
+  outline: 1px solid rgba(255,255,255,0.25);
+  box-shadow: 0 3px 10px rgba(0,0,0,.15);
 }
 
 /* =========================
@@ -223,7 +216,7 @@ nav{ position:fixed; top:0; left:0; right:0; } /* già c'è, lo ribadisco */
 /* — Posizionamento e layout */
 #sommelierBtn{
   position:fixed;
-  bottom: calc(var(--bottom-bar-height) + 22px);
+  bottom: calc(var(--bottom-bar-height) + 70px);
   left: 50%;
   right: auto;
   transform: translateX(-50%);
@@ -292,8 +285,7 @@ border: 1px solid rgba(255,255,255,.35);
 }
 
 /* Popover posizionati sopra la bar */
-#searchPopover{ bottom: calc(var(--bottom-bar-height) + 22px) !important; }
-#filterTray{ bottom: calc(var(--bottom-bar-height) + 10px) !important; }
+#searchPopover{ bottom: calc(var(--bottom-bar-height) + 70px) !important; }
 
 /* =========================
    POPUP SOMMELIER
@@ -595,11 +587,11 @@ border: 1px solid rgba(255,255,255,.35);
 body.pdf-export nav,
 body.pdf-export #fab,
 body.pdf-export #bottomBar,
+body.pdf-export #formatBar,
 body.pdf-export #helperBanner,
 body.pdf-export #sommelierOverlay,
 body.pdf-export #sommelierBtn,
-body.pdf-export #searchPopover,
-body.pdf-export #filterTray {
+body.pdf-export #searchPopover {
   display: none !important;
 }
 
@@ -706,62 +698,71 @@ body.reordering #bottomBar{
   pointer-events:none;
   opacity:.85;
 }
-.filter-tray{
+
+#formatBar{
   position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: calc(var(--bottom-bar-height) + 10px);
-  z-index: 2000;
-  background: rgba(255,255,255,.96);
-  border: 1px solid rgba(0,0,0,.12);
-  border-radius: 16px;
-  padding: 10px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.18);
-  backdrop-filter: blur(10px);
+  left: 0;
+  right: 0;
+  bottom: 46px;
+  z-index: 979;
+  background: color-mix(in srgb, var(--navbar-color, #222) 92%, white 8%);
+  box-shadow: 0 -1px 4px rgba(0,0,0,.10);
+  padding: 8px 12px;
+}
+
+.format-bar-inner{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px 10px;
+}
+
+.format-bar-label{
+  color: var(--bottom-bar-foreground, #fff);
+  font-size:.92em;
+  font-weight:800;
+  margin-right:2px;
 }
 
 .filter-chips{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
 }
 
-.filter-chip{
-  border: 1px solid rgba(0,0,0,.15);
-  background: #fff;
-  border-radius: 999px;
-  padding: 10px 14px;
-  font-size: .95em;
-  font-weight: 700;
-  cursor: pointer;
+.format-check{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 10px;
+  border-radius:999px;
+  background: rgba(255,255,255,0.10);
+  color: var(--bottom-bar-foreground, #fff);
+  font-size:.88em;
+  font-weight:700;
+  line-height:1;
 }
 
-.filter-chip.active{
-  background: var(--accent-color);
-  color: #fff;
-  border-color: var(--accent-color);
-}
-.format-badge{
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: 999px;
-  background: #fff;
-  color: var(--accent-color);
-  font-size: 11px;
-  font-weight: 800;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
+.format-check input{
+  margin:0;
+  accent-color: var(--accent-color);
+  transform: scale(1.05);
 }
 
-#bottleBtn{
-  position: relative;
-}
+@media (max-width: 480px){
+  #formatBar{
+    padding: 7px 10px;
+  }
 
-#bottleBtn .format-badge{
-  margin-left: 2px;
+  .format-bar-label{
+    width:100%;
+    margin-bottom:2px;
+  }
+
+  .format-check{
+    font-size:.84em;
+    padding:5px 8px;
+  }
 }
 </style>
 </head>
@@ -2304,7 +2305,6 @@ function normalize(str) {
 
 function goToCategories() {
   // chiudi eventuali overlay/popover
-  closeFilterMenu?.();
   closeSearch?.();
 
   // reset contesto
@@ -3541,7 +3541,6 @@ try {
   history.replaceState({ view: "categories" }, "");
 
 applyPalette(window.ristorantePalette);
-_afterDomGlassHook?.();
 
 // ✅ mostra la pagina solo quando è pronta (niente flash/scatti)
 requestAnimationFrame(() => {
@@ -3836,14 +3835,13 @@ fetch(fnUrl, {
 }
 
 function setupFilterUI() {
-  const btn = document.getElementById("bottleBtn");
-  const tray = document.getElementById("filterTray");
   const optionsContainer = document.getElementById("filterOptions");
-  if (!btn || !tray || !optionsContainer) return;
+  if (!optionsContainer) return;
 
   const t = translations[currentLang] || translations.it;
 
   const formatsMapUI = {
+    glass:      { label: t.formatGlass || "Bicchiere", key: "prezzo_bicchiere" },
     bottle:     { label: t.formatBottle || "Bottiglia", key: "prezzo" },
     quarter:    { label: "1/4 lt",       key: "prezzo_025" },
     threequart: { label: "0,375 lt",     key: "prezzo_0375" },
@@ -3862,102 +3860,43 @@ function setupFilterUI() {
   optionsContainer.innerHTML = "";
 
   for (const [id, f] of Object.entries(availableFormats)) {
-    const chip = document.createElement("button");
-    chip.type = "button";
-    chip.className = "filter-chip active";
-    chip.dataset.value = id;
-    chip.textContent = f.label;
+    const label = document.createElement("label");
+    label.className = "format-check";
 
-    chip.onclick = () => {
-      chip.classList.toggle("active");
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.value = id;
+    input.checked = true;
 
-      const hidden = document.getElementById("glassHiddenCb");
-      if (id !== "glass" && hidden) hidden.checked = false;
-
-      syncChipStateToFilters();
+    input.addEventListener("change", () => {
       applyFilters();
       updateFormatActiveState();
-    };
+    });
 
-    optionsContainer.appendChild(chip);
+    const span = document.createElement("span");
+    span.textContent = f.label;
+
+    label.appendChild(input);
+    label.appendChild(span);
+    optionsContainer.appendChild(label);
   }
-
-  let hidden = document.getElementById("glassHiddenCb");
-  if (!hidden) {
-    hidden = document.createElement("input");
-    hidden.type = "checkbox";
-    hidden.value = "glass";
-    hidden.id = "glassHiddenCb";
-    hidden.style.display = "none";
-    hidden.checked = false;
-    optionsContainer.appendChild(hidden);
-  }
-
-  btn.onclick = () => {
-    tray.style.display = (tray.style.display === "none" || !tray.style.display) ? "block" : "none";
-  };
 
   applyFilters();
   updateFormatActiveState();
 }
-function syncChipStateToFilters() {
-  const tray = document.getElementById("filterTray");
-  if (!tray) return;
-
-  const chips = Array.from(tray.querySelectorAll(".filter-chip"));
-  const hidden = document.getElementById("glassHiddenCb");
-
-  if (hidden && hidden.checked) {
-    chips.forEach(ch => ch.classList.remove("active"));
-    return;
-  }
-
-  // nessuna azione extra: lo stato attivo è già visivo sulle chip
-}
-// Quick-filter: mostra solo i vini al bicchiere
-function quickFilterGlass() {
-  const container = document.getElementById("filterOptions");
-  if (!container) return;
-
-  container.querySelectorAll(".filter-chip").forEach(ch => {
-    ch.classList.remove("active");
-  });
-
-  const hidden = document.getElementById("glassHiddenCb");
-  if (hidden) hidden.checked = true;
-
-  applyFilters();
-  updateFormatActiveState();
-  closeFilterMenu();
-
-  const helper = document.getElementById("helperBanner");
-  if (helper) {
-    const mainLine = translations[currentLang].helperChooseCategory || "Scegli una categoria!";
-    const subLine  = translations[currentLang].helperGlassMode || "🍷 Stai visualizzando solo i vini al calice";
-    helper.innerHTML = `${mainLine}<br><span style="color:#050505;font-weight:600;">${subLine}</span>`;
-  }
-}
-
-// collega il bottone
-const _afterDomGlassHook = () => {
-  const glassBtn = document.getElementById("glassBtn");
-  if (glassBtn) glassBtn.onclick = quickFilterGlass;
-};
 
 function refreshFilterOptionsPreservingState() {
   const optionsContainer = document.getElementById("filterOptions");
   if (!optionsContainer) return;
 
-  const prevActive = new Set(
-    Array.from(optionsContainer.querySelectorAll(".filter-chip.active"))
-      .map(ch => ch.dataset.value)
+  const prevChecked = new Set(
+    Array.from(optionsContainer.querySelectorAll('input[type="checkbox"]:checked'))
+      .map(cb => cb.value)
   );
-
-  const hiddenOld = document.getElementById("glassHiddenCb");
-  const wasGlassOn = !!hiddenOld?.checked;
 
   const t = translations[currentLang] || translations.it;
   const formatsMap = {
+    glass:      { label: t.formatGlass || "Bicchiere", key: "prezzo_bicchiere" },
     bottle:     { label: t.formatBottle || "Bottiglia", key: "prezzo" },
     quarter:    { label: "1/4 lt",       key: "prezzo_025" },
     threequart: { label: "0,375 lt",     key: "prezzo_0375" },
@@ -3976,48 +3915,34 @@ function refreshFilterOptionsPreservingState() {
   optionsContainer.innerHTML = "";
 
   for (const [id, f] of Object.entries(availableFormats)) {
-    const chip = document.createElement("button");
-    chip.type = "button";
-    chip.className = "filter-chip";
-    chip.dataset.value = id;
-    chip.textContent = f.label;
+    const label = document.createElement("label");
+    label.className = "format-check";
 
-    const shouldBeActive = wasGlassOn ? false : (prevActive.size ? prevActive.has(id) : true);
-    if (shouldBeActive) chip.classList.add("active");
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.value = id;
+    input.checked = prevChecked.size ? prevChecked.has(id) : true;
 
-    chip.onclick = () => {
-      chip.classList.toggle("active");
-
-      const hidden = document.getElementById("glassHiddenCb");
-      if (hidden) hidden.checked = false;
-
-      syncChipStateToFilters();
+    input.addEventListener("change", () => {
       applyFilters();
       updateFormatActiveState();
-    };
+    });
 
-    optionsContainer.appendChild(chip);
+    const span = document.createElement("span");
+    span.textContent = f.label;
+
+    label.appendChild(input);
+    label.appendChild(span);
+    optionsContainer.appendChild(label);
   }
-
-  const hidden = document.createElement("input");
-  hidden.type = "checkbox";
-  hidden.value = "glass";
-  hidden.id = "glassHiddenCb";
-  hidden.style.display = "none";
-  hidden.checked = wasGlassOn;
-  optionsContainer.appendChild(hidden);
 
   updateFormatActiveState();
 }
 
 function getCheckedFormats() {
-  const chipIds = Array.from(document.querySelectorAll("#filterOptions .filter-chip.active"))
-    .map(ch => ch.dataset.value);
-
-  const glassHidden = document.getElementById("glassHiddenCb");
-  const glassOn = !!glassHidden?.checked;
-
-  const ids = glassOn ? ["glass"] : chipIds;
+  const ids = Array.from(
+    document.querySelectorAll('#filterOptions input[type="checkbox"]:checked')
+  ).map(cb => cb.value);
 
   const map = {
     bottle: "prezzo",
@@ -4133,36 +4058,21 @@ function applyFilters() {
 }
 
 function updateFormatActiveState(){
-  const bottleBtn = document.getElementById('bottleBtn');
-  const glassBtn  = document.getElementById('glassBtn');
-  const badge     = document.getElementById('formatCountBadge');
+  const checked = Array.from(
+    document.querySelectorAll('#filterOptions input[type="checkbox"]:checked')
+  ).map(cb => cb.value);
 
-  bottleBtn?.classList.remove('active', 'glass-mode');
-  glassBtn?.classList.remove('active', 'glass-mode');
-
-  const activeChips = Array.from(document.querySelectorAll('#filterOptions .filter-chip.active'));
-  const hiddenGlass = document.getElementById('glassHiddenCb');
-  const glassOnly = !!hiddenGlass?.checked;
-  const count = activeChips.length;
-
-  if (glassOnly) {
-    glassBtn?.classList.add('active', 'glass-mode');
-    if (badge) {
-      badge.style.display = 'none';
-      badge.textContent = '0';
-    }
-  } else if (count > 0) {
-    bottleBtn?.classList.add('active');
-    if (badge) {
-      badge.style.display = 'inline-flex';
-      badge.textContent = String(count);
-    }
-  } else {
-    if (badge) {
-      badge.style.display = 'none';
-      badge.textContent = '0';
-    }
-  }
+  const labels = Array.from(document.querySelectorAll('#filterOptions .format-check'));
+  labels.forEach(label => {
+    const input = label.querySelector('input[type="checkbox"]');
+    if (!input) return;
+    label.style.background = input.checked
+      ? 'rgba(255,255,255,0.20)'
+      : 'rgba(255,255,255,0.10)';
+    label.style.outline = input.checked
+      ? '1px solid rgba(255,255,255,0.18)'
+      : 'none';
+  });
 
   if (currentView === 'categories') {
     setHelperByKey('helperChooseCategory');
@@ -4170,26 +4080,6 @@ function updateFormatActiveState(){
     setHelperByKey('helperClickWine');
   }
 }
-
-function closeFilterMenu(){ 
-  const m = document.getElementById('filterTray');
-  if (m) m.style.display = 'none';
-}
-
-document.addEventListener('click', (e) => {
-  const tray = document.getElementById('filterTray');
-  const btn  = document.getElementById('bottleBtn');
-  if (!tray || !btn) return;
-
-  if (
-    tray.style.display === 'block' &&
-    !tray.contains(e.target) &&
-    e.target !== btn &&
-    !btn.contains(e.target)
-  ) {
-    tray.style.display = 'none';
-  }
-});
 
 let lastSearchQuery = "";
 let searchResults = [];
@@ -4310,7 +4200,6 @@ window.addEventListener('popstate', (ev) => {
 const rn = document.getElementById('restaurantName');
 if (rn) {
   rn.addEventListener('click', () => {
-    closeFilterMenu();
     // reset view → categorie
     currentCategory = null;
     window.currentSubcategory = null;
@@ -4324,28 +4213,23 @@ if (rn) {
 
 </script>
 <!-- Bottom bar -->
+<div id="formatBar">
+  <div class="format-bar-inner">
+    <span class="format-bar-label translate-label" data-key="formatFilters">Formati</span>
+    <div id="filterOptions" class="filter-chips"></div>
+  </div>
+</div>
+
 <div id="bottomBar">
-  <button id="searchBtn" class="bottom-btn" aria-label="Cerca" onclick="openSearch()" style="justify-self:start">
+  <button id="searchBtn" class="bottom-btn" aria-label="Cerca" onclick="openSearch()">
     <img src="iconsearch.png" alt="" aria-hidden="true">
     <span class="translate-label" data-key="search">Cerca</span>
   </button>
 
-  <button id="homeBtn" class="bottom-btn" aria-label="Home" onclick="goToCategories()" style="justify-self:center">
+  <button id="homeBtn" class="bottom-btn" aria-label="Home" onclick="goToCategories()">
     <img src="iconmenu.png" alt="" aria-hidden="true">
     <span>Home</span>
   </button>
-
-  <!-- GRUPPO FORMATI A DESTRA -->
-  <div id="formatBtnGroup" style="justify-self:end; display:flex; gap:6px;">
-<button id="bottleBtn" class="bottom-btn" aria-label="Formati">
-  <img src="bottleiconwhite.png" alt="" aria-hidden="true">
-  <span class="translate-label" data-key="formatFilters">Formati</span>
-  <span id="formatCountBadge" class="format-badge" style="display:none;">0</span>
-</button>
-    <button id="glassBtn" class="bottom-btn" aria-label="Bicchiere">
-      <img src="glassiconwhite.png" alt="Bicchiere" aria-hidden="true">
-    </button>
-  </div>
 </div>
 
 <!-- Popover di ricerca sopra al FAB (chiuso di default) -->
@@ -4356,10 +4240,6 @@ if (rn) {
            style="flex:1; padding:8px 10px; border:1px solid #ccc; border-radius:8px; font-size:0.95em;">
     <button class="save-btn translate-label" data-key="searchButton" onclick="runSearch()">Cerca</button>
   </div>
-</div>
-
-<div id="filterTray" class="filter-tray" style="display:none;">
-  <div id="filterOptions" class="filter-chips"></div>
 </div>
 </body>
 </html>
