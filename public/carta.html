@@ -881,6 +881,12 @@ body.reordering #bottomBar{
   background: rgba(255,255,255,0.18);
   border-color: rgba(255,255,255,0.22);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 4px 12px rgba(0,0,0,.12);
+  animation: glassBtnOn .18s ease;
+}
+
+@keyframes glassBtnOn{
+  from{ transform: scale(.97); }
+  to{ transform: scale(1); }
 }
 
 #otherFormatsPanel{
@@ -916,6 +922,18 @@ body.reordering #bottomBar{
   display: flex;
   gap: 6px;
   align-items: center;
+  animation: formatsPanelIn .18s ease-out;
+}
+
+@keyframes formatsPanelIn{
+  from{
+    opacity: 0;
+    transform: translateY(6px) scale(.98);
+  }
+  to{
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .format-option{
@@ -1003,7 +1021,54 @@ body.reordering #bottomBar{
   box-shadow: none;
   opacity: .86;
 }
+.format-reset-btn{
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  border: 1px dashed rgba(255,255,255,0.18);
+  color: var(--bottom-bar-foreground, #fff);
+  font-size: .74em;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: background .18s ease, transform .12s ease, border-color .18s ease, opacity .18s ease;
+}
 
+.format-reset-btn:hover{
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.28);
+  transform: translateY(-1px);
+}
+
+.format-reset-btn:active{
+  transform: scale(.985);
+}
+
+.format-reset-btn .reset-icon{
+  font-size: .95em;
+  opacity: .95;
+}
+
+.format-reset-btn.hidden{
+  display: none;
+}
+.format-reset-btn.just-reset{
+  animation: resetPulse .28s ease;
+}
+
+@keyframes resetPulse{
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
 @media (max-width: 420px){
   #formatBar{
     left: 6px;
@@ -1035,6 +1100,11 @@ body.reordering #bottomBar{
     font-size: .71em;
     padding: 0 8px 0 7px;
   }
+  .format-reset-btn{
+  height: 27px;
+  font-size: .70em;
+  padding: 0 9px;
+}
 
   .format-option .tick{
     width: 13px;
@@ -1091,6 +1161,7 @@ body.reordering #bottomBar{
 <script>
 const translations = {
   it: {
+    resetFilters: "Reset",
     formatBottleShort: "Bott.",
 formatGlassShort: "Calice",
     formatFilters: "Formati",
@@ -1140,6 +1211,7 @@ formatGlassShort: "Calice",
 glassOnly: "Al calice",
   },
   en: {
+    resetFilters: "Reset",
     otherFormats: "Other formats",
 glassOnly: "By the glass",
     formatBottleShort: "Bottle",
@@ -1189,6 +1261,7 @@ formatGlassShort: "Glass",
     helperGlassMode: "🍷 You are viewing only wines by the glass",
   },
   fr: {
+    resetFilters: "Réinit.",
     otherFormats: "Autres formats",
 glassOnly: "Au verre",
     formatBottleShort: "Bout.",
@@ -1237,6 +1310,7 @@ sommelierBtnBadge: "Nouveauté",
 helperGlassMode: "🍷 Vous voyez uniquement les vins au verre",
   },
   de: {
+    resetFilters: "Reset",
     otherFormats: "Weitere Formate",
 glassOnly: "Im Glas",
     formatBottleShort: "Fl.",
@@ -1284,6 +1358,7 @@ sommelierBtnBadge: "Neu",
 helperGlassMode: "🍷 Sie sehen nur Weine im Glas",
   },
   es: {
+    resetFilters: "Reiniciar",
     otherFormats: "Otros formatos",
 glassOnly: "Por copa",
     formatBottleShort: "Bot.",
@@ -1332,6 +1407,7 @@ sommelierBtnBadge: "Novedad",
 helperGlassMode: "🍷 Estás viendo solo los vinos por copa",
   },
   zh: {
+    resetFilters: "重置",
     otherFormats: "其他规格",
 glassOnly: "杯装",
     formatBottleShort: "瓶装",
@@ -1381,6 +1457,7 @@ helperGlassMode: "🍷 您正在查看仅按杯供应的葡萄酒",
   }
     ,
   ko: {
+    resetFilters: "초기화",
     otherFormats: "다른 형식",
 glassOnly: "잔으로",
     formatBottleShort: "병",
@@ -1430,6 +1507,7 @@ sommelierBtn:      "와인 추천",
     helperGlassMode: "🍷 잔으로 제공되는 와인만 표시 중",
   },
   ru: {
+    resetFilters: "Сброс",
     otherFormats: "Другие форматы",
 glassOnly: "По бокалам",
     formatBottleShort: "Бут.",
@@ -4213,6 +4291,16 @@ function setupFilterUI() {
     panel.appendChild(hidden);
   }
 
+  const resetBtn = document.createElement("button");
+  resetBtn.type = "button";
+  resetBtn.id = "resetFiltersBtn";
+  resetBtn.className = "format-reset-btn hidden";
+  resetBtn.innerHTML = `<span class="reset-icon" aria-hidden="true">↺</span><span>${t.resetFilters || "Reset"}</span>`;
+  resetBtn.onclick = () => {
+    resetAllFormatFilters();
+  };
+  panel.appendChild(resetBtn);
+
 otherBtn.onclick = () => {
   const open = panel.classList.toggle("open");
   otherBtn.classList.toggle("open", open);
@@ -4308,6 +4396,16 @@ function refreshFilterOptionsPreservingState() {
   hidden.style.display = "none";
   hidden.checked = wasGlassOn;
   panel.appendChild(hidden);
+
+  const resetBtn = document.createElement("button");
+  resetBtn.type = "button";
+  resetBtn.id = "resetFiltersBtn";
+  resetBtn.className = "format-reset-btn hidden";
+  resetBtn.innerHTML = `<span class="reset-icon" aria-hidden="true">↺</span><span>${t.resetFilters || "Reset"}</span>`;
+  resetBtn.onclick = () => {
+    resetAllFormatFilters();
+  };
+  panel.appendChild(resetBtn);
 
   updateFormatActiveState();
 }
@@ -4440,19 +4538,24 @@ function updateFormatActiveState(){
   const otherBtn = document.getElementById("otherFormatsBtn");
   const glassBtn = document.getElementById("glassBtn");
   const glassHidden = document.getElementById("glassHiddenCb");
+  const resetBtn = document.getElementById("resetFiltersBtn");
 
   let activeBottleCount = 0;
+  let totalBottleCount = 0;
 
   labels.forEach(label => {
     const input = label.querySelector('input[type="checkbox"]');
     if (!input) return;
 
+    totalBottleCount++;
     const on = !!input.checked;
     if (on) activeBottleCount++;
 
     label.classList.toggle('is-on', on);
     label.classList.toggle('is-off', !on);
   });
+
+  const isDefaultState = (activeBottleCount === totalBottleCount) && !glassHidden?.checked;
 
   if (otherBtn) {
     otherBtn.classList.toggle("active", activeBottleCount > 0 && !glassHidden?.checked);
@@ -4470,6 +4573,10 @@ function updateFormatActiveState(){
     glassBtn.setAttribute("aria-pressed", glassHidden?.checked ? "true" : "false");
   }
 
+  if (resetBtn) {
+    resetBtn.classList.toggle("hidden", isDefaultState);
+  }
+
   if (currentView === 'categories') {
     setHelperByKey('helperChooseCategory');
   } else if (currentView === 'wines') {
@@ -4477,6 +4584,28 @@ function updateFormatActiveState(){
   }
 }
 
+function resetAllFormatFilters(){
+  const panel = document.getElementById("otherFormatsPanel");
+  const glassHidden = document.getElementById("glassHiddenCb");
+  if (!panel) return;
+
+  // stato default della carta: tutti i formati bottiglia attivi, calice spento
+  panel.querySelectorAll('.format-option input[type="checkbox"]').forEach(cb => {
+    cb.checked = true;
+  });
+
+  if (glassHidden) glassHidden.checked = false;
+
+  applyFilters();
+  updateFormatActiveState();
+
+  // micro feedback premium
+  const btn = document.getElementById("resetFiltersBtn");
+  if (btn) {
+    btn.classList.add("just-reset");
+    setTimeout(() => btn.classList.remove("just-reset"), 280);
+  }
+}
 let lastSearchQuery = "";
 let searchResults = [];
 
