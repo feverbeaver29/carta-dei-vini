@@ -4291,15 +4291,6 @@ function setupFilterUI() {
     panel.appendChild(hidden);
   }
 
-  const resetBtn = document.createElement("button");
-  resetBtn.type = "button";
-  resetBtn.id = "resetFiltersBtn";
-  resetBtn.className = "format-reset-btn hidden";
-  resetBtn.innerHTML = `<span class="reset-icon" aria-hidden="true">↺</span><span>${t.resetFilters || "Reset"}</span>`;
-  resetBtn.onclick = () => {
-    resetAllFormatFilters();
-  };
-  panel.appendChild(resetBtn);
 
 otherBtn.onclick = () => {
   const open = panel.classList.toggle("open");
@@ -4311,6 +4302,11 @@ otherBtn.onclick = () => {
   glassBtn.onclick = () => {
     const hidden = document.getElementById("glassHiddenCb");
     if (!hidden) return;
+
+    if (areFormatFiltersDirty()) {
+      resetAllFormatFilters();
+      return;
+    }
 
     const wasOn = hidden.checked;
     hidden.checked = !wasOn;
@@ -4397,15 +4393,6 @@ function refreshFilterOptionsPreservingState() {
   hidden.checked = wasGlassOn;
   panel.appendChild(hidden);
 
-  const resetBtn = document.createElement("button");
-  resetBtn.type = "button";
-  resetBtn.id = "resetFiltersBtn";
-  resetBtn.className = "format-reset-btn hidden";
-  resetBtn.innerHTML = `<span class="reset-icon" aria-hidden="true">↺</span><span>${t.resetFilters || "Reset"}</span>`;
-  resetBtn.onclick = () => {
-    resetAllFormatFilters();
-  };
-  panel.appendChild(resetBtn);
 
   updateFormatActiveState();
 }
@@ -4533,12 +4520,55 @@ function applyFilters() {
   updateFormatActiveState();
 }
 
+function areFormatFiltersDirty(){
+  const panel = document.getElementById("otherFormatsPanel");
+  const glassHidden = document.getElementById("glassHiddenCb");
+  if (!panel) return false;
+
+  const checks = Array.from(panel.querySelectorAll('.format-option input[type="checkbox"]'));
+  const allBottleOn = checks.length > 0 && checks.every(cb => cb.checked);
+  const glassOn = !!glassHidden?.checked;
+
+  return glassOn || !allBottleOn;
+}
+
+function updateGlassButtonMode(isReset){
+  const glassBtn = document.getElementById("glassBtn");
+  const icon = document.getElementById("glassBtnIcon");
+  const label = document.getElementById("glassBtnLabel");
+  const t = translations[currentLang] || translations.it;
+  if (!glassBtn || !icon || !label) return;
+
+  glassBtn.dataset.mode = isReset ? "reset" : "glass";
+  glassBtn.classList.toggle("is-reset", isReset);
+
+  if (isReset) {
+    icon.src = "reseticonwhite.png";
+    icon.onerror = () => {
+      icon.onerror = null;
+      icon.style.display = "none";
+    };
+    icon.style.display = "block";
+    label.textContent = t.resetFilters || "Reset";
+    label.dataset.key = "resetFilters";
+    glassBtn.setAttribute("aria-label", t.resetFilters || "Reset");
+    glassBtn.setAttribute("aria-pressed", "true");
+  } else {
+    icon.style.display = "block";
+    icon.src = "glassiconwhite.png";
+    icon.onerror = null;
+    label.textContent = t.glassOnly || "Al calice";
+    label.dataset.key = "glassOnly";
+    glassBtn.setAttribute("aria-label", t.glassOnly || "Al calice");
+    glassBtn.setAttribute("aria-pressed", "false");
+  }
+}
+
 function updateFormatActiveState(){
   const labels = Array.from(document.querySelectorAll('#otherFormatsPanel .format-option'));
   const otherBtn = document.getElementById("otherFormatsBtn");
   const glassBtn = document.getElementById("glassBtn");
   const glassHidden = document.getElementById("glassHiddenCb");
-  const resetBtn = document.getElementById("resetFiltersBtn");
 
   let activeBottleCount = 0;
   let totalBottleCount = 0;
@@ -4555,7 +4585,7 @@ function updateFormatActiveState(){
     label.classList.toggle('is-off', !on);
   });
 
-  const isDefaultState = (activeBottleCount === totalBottleCount) && !glassHidden?.checked;
+  const isDirty = areFormatFiltersDirty();
 
   if (otherBtn) {
     otherBtn.classList.toggle("active", activeBottleCount > 0 && !glassHidden?.checked);
@@ -4569,13 +4599,10 @@ function updateFormatActiveState(){
   }
 
   if (glassBtn) {
-    glassBtn.classList.toggle("active", !!glassHidden?.checked);
-    glassBtn.setAttribute("aria-pressed", glassHidden?.checked ? "true" : "false");
+    glassBtn.classList.toggle("active", !!glassHidden?.checked || isDirty);
   }
 
-  if (resetBtn) {
-    resetBtn.classList.toggle("hidden", isDefaultState);
-  }
+  updateGlassButtonMode(isDirty);
 
   if (currentView === 'categories') {
     setHelperByKey('helperChooseCategory');
@@ -4600,7 +4627,7 @@ function resetAllFormatFilters(){
   updateFormatActiveState();
 
   // micro feedback premium
-  const btn = document.getElementById("resetFiltersBtn");
+  const btn = document.getElementById("glassBtn");
   if (btn) {
     btn.classList.add("just-reset");
     setTimeout(() => btn.classList.remove("just-reset"), 280);
@@ -4759,9 +4786,9 @@ if (rn) {
       <span class="chev" aria-hidden="true">▼</span>
     </button>
 
-    <button id="glassBtn" class="format-main-btn" type="button" aria-pressed="false">
-      <img src="glassiconwhite.png" alt="" aria-hidden="true">
-      <span class="translate-label" data-key="glassOnly">Al calice</span>
+    <button id="glassBtn" class="format-main-btn" type="button" aria-pressed="false" data-mode="glass">
+      <img id="glassBtnIcon" src="glassiconwhite.png" alt="" aria-hidden="true">
+      <span id="glassBtnLabel" class="translate-label" data-key="glassOnly">Al calice</span>
     </button>
   </div>
 
