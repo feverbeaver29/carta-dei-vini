@@ -283,6 +283,12 @@ font-size:.92rem;
   transition: transform .15s ease, filter .2s ease, box-shadow .2s ease;
   white-space:normal;
 }
+body.formats-open #sommelierBtn{
+  opacity: .28;
+  transform: translateX(-50%) scale(.985);
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+}
 #sommelierBtn:hover  { filter: brightness(1.05); }
 #sommelierBtn:active { filter: brightness(0.98); }
 
@@ -785,7 +791,7 @@ body.reordering #bottomBar{
   left: 8px;
   right: 8px;
   bottom: calc(var(--bottom-bar-height) + 6px);
-  z-index: 979;
+  z-index: 1001;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -883,6 +889,7 @@ body.reordering #bottomBar{
   right: 128px;
   bottom: 40px;
   display: none;
+  z-index: 1002;
   padding: 7px 8px;
   border-radius: 14px;
   border: 1px solid rgba(255,255,255,0.10);
@@ -892,7 +899,7 @@ body.reordering #bottomBar{
       color-mix(in srgb, var(--navbar-color, #222) 95%, white 5%),
       color-mix(in srgb, var(--navbar-color, #222) 89%, black 11%)
     );
-  box-shadow: 0 8px 18px rgba(0,0,0,.16);
+  box-shadow: 0 12px 28px rgba(0,0,0,.22);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   overflow-x: auto;
@@ -1015,12 +1022,13 @@ body.reordering #bottomBar{
     min-width: 102px;
   }
 
-  #otherFormatsPanel{
-    right: 108px;
-    bottom: 38px;
-    padding: 6px 7px;
-    border-radius: 13px;
-  }
+#otherFormatsPanel{
+  right: 108px;
+  bottom: 38px;
+  z-index: 1002;
+  padding: 6px 7px;
+  border-radius: 13px;
+}
 
   .format-option{
     height: 27px;
@@ -4205,11 +4213,12 @@ function setupFilterUI() {
     panel.appendChild(hidden);
   }
 
-  otherBtn.onclick = () => {
-    const open = panel.classList.toggle("open");
-    otherBtn.classList.toggle("open", open);
-    otherBtn.setAttribute("aria-expanded", open ? "true" : "false");
-  };
+otherBtn.onclick = () => {
+  const open = panel.classList.toggle("open");
+  otherBtn.classList.toggle("open", open);
+  otherBtn.setAttribute("aria-expanded", open ? "true" : "false");
+  document.body.classList.toggle("formats-open", open);
+};
 
   glassBtn.onclick = () => {
     const hidden = document.getElementById("glassHiddenCb");
@@ -4532,6 +4541,7 @@ document.addEventListener('click', function(ev){
     panel.classList.remove("open");
     btn.classList.remove("open");
     btn.setAttribute("aria-expanded", "false");
+    document.body.classList.remove("formats-open");
   }
 });
 
