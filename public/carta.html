@@ -138,7 +138,7 @@ nav{ position:fixed; top:0; left:0; right:0; } /* già c'è, lo ribadisco */
 ========================= */
 .category-list, .subcategory-list, .wine-list{
   padding: .5em 1em;
-  padding-bottom: calc(var(--bottom-bar-height) + var(--sommelier-height) + 70px + var(--safe-bottom-gap));
+  padding-bottom: calc(var(--bottom-bar-height) + var(--sommelier-height) + 110px + var(--safe-bottom-gap));
 }
 .category, .subcategory, .wine-card{
   background:inherit; margin-bottom:.6em; padding:1em; border:1px solid; border-radius:12px;
@@ -162,52 +162,86 @@ nav{ position:fixed; top:0; left:0; right:0; } /* già c'è, lo ribadisco */
    BOTTOM BAR FISSA
 ========================= */
 #bottomBar{
-  position:fixed;
-  left:0;
-  right:0;
-  bottom:0;
-  height:46px;
-  background: var(--navbar-color, #222);
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  gap:10px;
-  padding:6px 12px;
-  z-index:980;
-  box-shadow:0 -2px 8px rgba(0,0,0,.15);
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+  background:
+    linear-gradient(
+      to top,
+      color-mix(in srgb, var(--navbar-color, #222) 96%, black 4%),
+      color-mix(in srgb, var(--navbar-color, #222) 90%, white 10%)
+    );
+  border-top: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 -8px 24px rgba(0,0,0,.16);
+  z-index: 980;
+  box-sizing: border-box;
 }
 
 .bottom-btn{
-  height:34px;
-  min-width:34px;
-  padding:0 12px;
-  border:none;
-  border-radius:10px;
+  height: 38px;
+  min-width: 108px;
+  padding: 0 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 12px;
   background: rgba(255,255,255,0.08);
   color: var(--bottom-bar-foreground, #fff);
-  display:flex;
-  align-items:center;
-  gap:7px;
-  justify-content:center;
-  font-weight:700;
-  font-size:.92em;
-  transition: transform .12s ease, background .2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: .94em;
+  line-height: 1;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+  transition: background .2s ease, transform .12s ease, border-color .2s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .bottom-btn:hover{
+  background: rgba(255,255,255,0.13);
   transform: translateY(-1px);
 }
 
-.bottom-btn img{
-  width:18px;
-  height:18px;
-  display:block;
+.bottom-btn:active{
+  transform: translateY(0);
 }
 
-.bottom-btn.active{
-  background: rgba(255,255,255,0.18);
-  outline: 1px solid rgba(255,255,255,0.25);
-  box-shadow: 0 3px 10px rgba(0,0,0,.15);
+.bottom-btn img{
+  width: 17px;
+  height: 17px;
+  display: block;
+  flex: 0 0 auto;
+}
+
+#searchBtn{
+  justify-self: flex-start;
+}
+
+#homeBtn{
+  justify-self: flex-end;
+}
+
+@media (max-width: 480px){
+  #bottomBar{
+    height: 56px;
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .bottom-btn{
+    min-width: 96px;
+    height: 36px;
+    padding: 0 12px;
+    font-size: .9em;
+    border-radius: 11px;
+  }
 }
 
 /* =========================
@@ -216,7 +250,7 @@ nav{ position:fixed; top:0; left:0; right:0; } /* già c'è, lo ribadisco */
 /* — Posizionamento e layout */
 #sommelierBtn{
   position:fixed;
-  bottom: calc(var(--bottom-bar-height) + 70px);
+  bottom: calc(var(--bottom-bar-height) + 118px);
   left: 50%;
   right: auto;
   transform: translateX(-50%);
@@ -285,7 +319,7 @@ border: 1px solid rgba(255,255,255,.35);
 }
 
 /* Popover posizionati sopra la bar */
-#searchPopover{ bottom: calc(var(--bottom-bar-height) + 70px) !important; }
+#searchPopover{ bottom: calc(var(--bottom-bar-height) + 118px) !important; }
 
 /* =========================
    POPUP SOMMELIER
@@ -701,67 +735,134 @@ body.reordering #bottomBar{
 
 #formatBar{
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 46px;
+  left: 10px;
+  right: 10px;
+  bottom: 66px;
   z-index: 979;
-  background: color-mix(in srgb, var(--navbar-color, #222) 92%, white 8%);
-  box-shadow: 0 -1px 4px rgba(0,0,0,.10);
-  padding: 8px 12px;
+  background:
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--navbar-color, #222) 94%, white 6%),
+      color-mix(in srgb, var(--navbar-color, #222) 88%, black 12%)
+    );
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 10px 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.16);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-sizing: border-box;
 }
 
 .format-bar-inner{
-  display:flex;
-  align-items:center;
-  flex-wrap:wrap;
-  gap:8px 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px 12px;
+  flex-wrap: wrap;
 }
 
 .format-bar-label{
+  flex: 0 0 auto;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
   color: var(--bottom-bar-foreground, #fff);
-  font-size:.92em;
-  font-weight:800;
-  margin-right:2px;
+  font-size: .96em;
+  font-weight: 800;
+  letter-spacing: .01em;
+  opacity: .96;
+  padding-right: 2px;
 }
 
 .filter-chips{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .format-check{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  padding:6px 10px;
-  border-radius:999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
   background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.10);
   color: var(--bottom-bar-foreground, #fff);
-  font-size:.88em;
-  font-weight:700;
-  line-height:1;
+  font-size: .9em;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  box-sizing: border-box;
+  transition: background .2s ease, border-color .2s ease, transform .12s ease;
+}
+
+.format-check:hover{
+  background: rgba(255,255,255,0.14);
+  transform: translateY(-1px);
 }
 
 .format-check input{
-  margin:0;
+  margin: 0;
   accent-color: var(--accent-color);
-  transform: scale(1.05);
+  transform: scale(1.08);
+  flex: 0 0 auto;
 }
 
-@media (max-width: 480px){
+.format-check span{
+  display: inline-block;
+  color: inherit;
+  opacity: 1;
+}
+
+@media (min-width: 900px){
   #formatBar{
-    padding: 7px 10px;
+    left: 14px;
+    right: 14px;
+    bottom: 68px;
+    padding: 12px 14px;
+  }
+}
+
+@media (max-width: 640px){
+  #formatBar{
+    left: 8px;
+    right: 8px;
+    bottom: 64px;
+    padding: 9px 10px;
+    border-radius: 14px;
+  }
+
+  .format-bar-inner{
+    gap: 8px;
   }
 
   .format-bar-label{
-    width:100%;
-    margin-bottom:2px;
+    flex: 0 0 100%;
+    min-height: auto;
+    font-size: .9em;
+    padding-bottom: 2px;
+  }
+
+  .filter-chips{
+    gap: 7px;
   }
 
   .format-check{
-    font-size:.84em;
-    padding:5px 8px;
+    min-height: 34px;
+    padding: 0 10px;
+    font-size: .84em;
+  }
+}
+
+@media (max-width: 380px){
+  .format-check{
+    padding: 0 9px;
+    font-size: .8em;
   }
 }
 </style>
@@ -3841,25 +3942,22 @@ function setupFilterUI() {
   const t = translations[currentLang] || translations.it;
 
   const formatsMapUI = {
-    glass:      { label: t.formatGlass || "Bicchiere", key: "prezzo_bicchiere" },
-    bottle:     { label: t.formatBottle || "Bottiglia", key: "prezzo" },
-    quarter:    { label: "1/4 lt",       key: "prezzo_025" },
-    threequart: { label: "0,375 lt",     key: "prezzo_0375" },
-    half:       { label: "1/2 lt",       key: "prezzo_05" },
-    onehalf:    { label: "1,5 lt",       key: "prezzo_15" },
-    three:      { label: "3 lt",         key: "prezzo_3l" }
+    glass:      { label: t.formatGlass || "Bicchiere", key: "prezzo_bicchiere", order: 1 },
+    bottle:     { label: t.formatBottle || "Bottiglia", key: "prezzo", order: 2 },
+    threequart: { label: "0,375 lt", key: "prezzo_0375", order: 3 },
+    half:       { label: "1/2 lt",   key: "prezzo_05",   order: 4 },
+    onehalf:    { label: "1,5 lt",   key: "prezzo_15",   order: 5 },
+    quarter:    { label: "1/4 lt",   key: "prezzo_025",  order: 6 },
+    three:      { label: "3 lt",     key: "prezzo_3l",   order: 7 }
   };
 
-  const availableFormats = {};
-  wines.forEach(w => {
-    for (const [id, f] of Object.entries(formatsMapUI)) {
-      if (hasVisiblePrice(w, f.key)) availableFormats[id] = f;
-    }
-  });
+  const availableFormats = Object.entries(formatsMapUI)
+    .filter(([id, f]) => wines.some(w => hasVisiblePrice(w, f.key)))
+    .sort((a, b) => a[1].order - b[1].order);
 
   optionsContainer.innerHTML = "";
 
-  for (const [id, f] of Object.entries(availableFormats)) {
+  for (const [id, f] of availableFormats) {
     const label = document.createElement("label");
     label.className = "format-check";
 
@@ -3895,26 +3993,24 @@ function refreshFilterOptionsPreservingState() {
   );
 
   const t = translations[currentLang] || translations.it;
+
   const formatsMap = {
-    glass:      { label: t.formatGlass || "Bicchiere", key: "prezzo_bicchiere" },
-    bottle:     { label: t.formatBottle || "Bottiglia", key: "prezzo" },
-    quarter:    { label: "1/4 lt",       key: "prezzo_025" },
-    threequart: { label: "0,375 lt",     key: "prezzo_0375" },
-    half:       { label: "1/2 lt",       key: "prezzo_05" },
-    onehalf:    { label: "1,5 lt",       key: "prezzo_15" },
-    three:      { label: "3 lt",         key: "prezzo_3l" }
+    glass:      { label: t.formatGlass || "Bicchiere", key: "prezzo_bicchiere", order: 1 },
+    bottle:     { label: t.formatBottle || "Bottiglia", key: "prezzo", order: 2 },
+    threequart: { label: "0,375 lt", key: "prezzo_0375", order: 3 },
+    half:       { label: "1/2 lt",   key: "prezzo_05",   order: 4 },
+    onehalf:    { label: "1,5 lt",   key: "prezzo_15",   order: 5 },
+    quarter:    { label: "1/4 lt",   key: "prezzo_025",  order: 6 },
+    three:      { label: "3 lt",     key: "prezzo_3l",   order: 7 }
   };
 
-  const availableFormats = {};
-  wines.forEach(w => {
-    for (const [id, f] of Object.entries(formatsMap)) {
-      if (hasVisiblePrice(w, f.key)) availableFormats[id] = f;
-    }
-  });
+  const availableFormats = Object.entries(formatsMap)
+    .filter(([id, f]) => wines.some(w => hasVisiblePrice(w, f.key)))
+    .sort((a, b) => a[1].order - b[1].order);
 
   optionsContainer.innerHTML = "";
 
-  for (const [id, f] of Object.entries(availableFormats)) {
+  for (const [id, f] of availableFormats) {
     const label = document.createElement("label");
     label.className = "format-check";
 
@@ -4058,20 +4154,23 @@ function applyFilters() {
 }
 
 function updateFormatActiveState(){
-  const checked = Array.from(
-    document.querySelectorAll('#filterOptions input[type="checkbox"]:checked')
-  ).map(cb => cb.value);
-
   const labels = Array.from(document.querySelectorAll('#filterOptions .format-check'));
+
   labels.forEach(label => {
     const input = label.querySelector('input[type="checkbox"]');
     if (!input) return;
-    label.style.background = input.checked
-      ? 'rgba(255,255,255,0.20)'
-      : 'rgba(255,255,255,0.10)';
-    label.style.outline = input.checked
-      ? '1px solid rgba(255,255,255,0.18)'
-      : 'none';
+
+    if (input.checked) {
+      label.style.background = 'rgba(255,255,255,0.18)';
+      label.style.borderColor = 'rgba(255,255,255,0.22)';
+      label.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,.05), 0 4px 12px rgba(0,0,0,.10)';
+      label.style.opacity = '1';
+    } else {
+      label.style.background = 'rgba(255,255,255,0.08)';
+      label.style.borderColor = 'rgba(255,255,255,0.08)';
+      label.style.boxShadow = 'none';
+      label.style.opacity = '.78';
+    }
   });
 
   if (currentView === 'categories') {
@@ -4213,7 +4312,7 @@ if (rn) {
 
 </script>
 <!-- Bottom bar -->
-<div id="formatBar">
+<div id="formatBar" aria-label="Filtri formato">
   <div class="format-bar-inner">
     <span class="format-bar-label translate-label" data-key="formatFilters">Formati</span>
     <div id="filterOptions" class="filter-chips"></div>
