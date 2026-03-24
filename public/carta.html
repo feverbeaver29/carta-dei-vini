@@ -14,7 +14,7 @@
   --accent-color: #b00;
   --bg-default: #fff9f4;
   --bottom-bar-height: 50px;
-  --format-bar-height-est: 46px;
+  --format-bar-height-est: 38px;
   --sommelier-side-gap: 8px;
   --sommelier-height: 58px;
   --safe-bottom-gap: 16px;
@@ -515,7 +515,7 @@ font-size:.92rem;
 @media (max-width: 420px){
   :root{
     --sommelier-height: 52px;
-    --format-bar-height-est: 44px;
+    --format-bar-height-est: 36px;
   }
 
   #sommelierBtn{
@@ -786,102 +786,160 @@ body.reordering #bottomBar{
   right: 8px;
   bottom: calc(var(--bottom-bar-height) + 6px);
   z-index: 979;
-  background:
-    linear-gradient(
-      to bottom,
-      color-mix(in srgb, var(--navbar-color, #222) 95%, white 5%),
-      color-mix(in srgb, var(--navbar-color, #222) 90%, black 10%)
-    );
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 14px;
-  padding: 6px 8px;
-  box-shadow: 0 5px 16px rgba(0,0,0,.14);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-.format-bar-inner{
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: nowrap;
-  min-width: 0;
+  min-height: 38px;
+  padding: 4px 0;
+  box-sizing: border-box;
 }
 
-.format-bar-label{
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  color: var(--bottom-bar-foreground, #fff);
-  font-size: .80em;
-  font-weight: 800;
-  letter-spacing: .01em;
-  opacity: .95;
-  white-space: nowrap;
-  margin-right: 2px;
-}
-
-.filter-chips{
-  flex: 1 1 auto;
-  min-width: 0;
+#formatMainRow{
+  width: 100%;
   display: flex;
-  flex-wrap: nowrap;
-  gap: 6px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  white-space: nowrap;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 1px;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
-.filter-chips::-webkit-scrollbar{
-  display: none;
-}
-#formatBar::after{
-  content:"";
-  position:absolute;
-  top:0;
-  right:0;
-  width:18px;
-  height:100%;
-  pointer-events:none;
-  background: linear-gradient(to left, rgba(0,0,0,.10), rgba(0,0,0,0));
-  opacity:.18;
-}
-
-.format-check{
-  position: relative;
-  flex: 0 0 auto;
+.format-main-btn{
+  height: 32px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  background:
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--navbar-color, #222) 93%, white 7%),
+      color-mix(in srgb, var(--navbar-color, #222) 88%, black 12%)
+    );
+  color: var(--bottom-bar-foreground, #fff);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
+  padding: 0 12px;
+  font-size: .82em;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(0,0,0,.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .18s ease, transform .12s ease, border-color .18s ease, box-shadow .18s ease, opacity .18s ease;
+}
+
+.format-main-btn:hover{
+  transform: translateY(-1px);
+}
+
+.format-main-btn:active{
+  transform: scale(.985);
+}
+
+#otherFormatsBtn{
+  flex: 1 1 auto;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+#otherFormatsBtn .label{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#otherFormatsBtn .chev{
+  margin-left: auto;
+  font-size: .9em;
+  opacity: .9;
+  transition: transform .18s ease;
+}
+
+#otherFormatsBtn.open .chev{
+  transform: rotate(180deg);
+}
+
+#glassBtn{
+  flex: 0 0 auto;
+  min-width: 116px;
+}
+
+#glassBtn img{
+  width: 15px;
+  height: 15px;
+  display: block;
+  flex: 0 0 auto;
+}
+
+#glassBtn.active{
+  background: rgba(255,255,255,0.18);
+  border-color: rgba(255,255,255,0.22);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 4px 12px rgba(0,0,0,.12);
+}
+
+#otherFormatsPanel{
+  position: absolute;
+  left: 0;
+  right: 128px;
+  bottom: 40px;
+  display: none;
+  padding: 7px 8px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background:
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--navbar-color, #222) 95%, white 5%),
+      color-mix(in srgb, var(--navbar-color, #222) 89%, black 11%)
+    );
+  box-shadow: 0 8px 18px rgba(0,0,0,.16);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: none;
+}
+
+#otherFormatsPanel::-webkit-scrollbar{
+  display: none;
+}
+
+#otherFormatsPanel.open{
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.format-option{
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   height: 28px;
   padding: 0 10px 0 8px;
   border-radius: 999px;
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.10);
   color: var(--bottom-bar-foreground, #fff);
-  font-size: .76em;
+  font-size: .75em;
   font-weight: 700;
   line-height: 1;
   white-space: nowrap;
   box-sizing: border-box;
-  transition: background .18s ease, border-color .18s ease, transform .12s ease, opacity .18s ease, box-shadow .18s ease;
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
+  transition: background .18s ease, border-color .18s ease, transform .12s ease, opacity .18s ease, box-shadow .18s ease;
 }
 
-.format-check:hover{
+.format-option:hover{
   background: rgba(255,255,255,0.12);
   transform: translateY(-1px);
 }
 
-.format-check input{
+.format-option input{
   position: absolute;
   opacity: 0;
   pointer-events: none;
@@ -889,7 +947,7 @@ body.reordering #bottomBar{
   height: 0;
 }
 
-.format-check .format-tick{
+.format-option .tick{
   width: 14px;
   height: 14px;
   border-radius: 999px;
@@ -899,12 +957,10 @@ body.reordering #bottomBar{
   justify-content: center;
   background: rgba(255,255,255,0.12);
   border: 1px solid rgba(255,255,255,0.16);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
-  transition: background .18s ease, border-color .18s ease, transform .12s ease, box-shadow .18s ease;
   position: relative;
 }
 
-.format-check .format-tick::after{
+.format-option .tick::after{
   content: "";
   width: 7px;
   height: 4px;
@@ -916,103 +972,72 @@ body.reordering #bottomBar{
   margin-top: -1px;
 }
 
-.format-check .format-text{
-  display: inline-block;
-  color: inherit;
-  opacity: 1;
-  white-space: nowrap;
-}
-
-.format-check.is-on{
+.format-option.is-on{
   background: rgba(255,255,255,0.18);
   border-color: rgba(255,255,255,0.20);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 4px 10px rgba(0,0,0,.10);
   opacity: 1;
 }
 
-.format-check.is-on .format-tick{
+.format-option.is-on .tick{
   background: var(--accent-color);
   border-color: color-mix(in srgb, var(--accent-color) 82%, white 18%);
   box-shadow: 0 0 0 2px rgba(255,255,255,.08), 0 3px 8px rgba(0,0,0,.14);
 }
 
-.format-check.is-on .format-tick::after{
+.format-option.is-on .tick::after{
   opacity: 1;
   transform: rotate(-45deg) scale(1);
 }
 
-.format-check.is-off{
+.format-option.is-off{
   background: rgba(255,255,255,0.07);
   border-color: rgba(255,255,255,0.08);
   box-shadow: none;
   opacity: .86;
 }
 
-.format-check.is-off .format-tick{
-  background: rgba(255,255,255,0.10);
-  border-color: rgba(255,255,255,0.13);
-}
-
-.format-check:active{
-  transform: scale(.985);
-}
-
-@media (min-width: 900px){
-  #formatBar{
-    left: 12px;
-    right: 12px;
-    bottom: calc(var(--bottom-bar-height) + 8px);
-    padding: 7px 10px;
-  }
-
-  .format-bar-label{
-    font-size: .86em;
-  }
-
-  .format-check{
-    height: 30px;
-    font-size: .80em;
-    padding: 0 10px;
-  }
-}
-
 @media (max-width: 420px){
   #formatBar{
     left: 6px;
     right: 6px;
-    padding: 5px 7px;
-    border-radius: 13px;
-  }
-
-  .format-bar-inner{
     gap: 6px;
   }
 
-  .format-bar-label{
+  .format-main-btn{
+    height: 30px;
     font-size: .76em;
+    padding: 0 10px;
+    border-radius: 11px;
   }
 
-  .filter-chips{
-    gap: 5px;
+  #glassBtn{
+    min-width: 102px;
   }
 
-  .format-check{
-  height: 27px;
-  padding: 0 8px 0 7px;
-  font-size: .72em;
-  gap: 6px;
-}
+  #otherFormatsPanel{
+    right: 108px;
+    bottom: 38px;
+    padding: 6px 7px;
+    border-radius: 13px;
+  }
 
-.format-check .format-tick{
-  width: 13px;
-  height: 13px;
-  flex-basis: 13px;
-}
+  .format-option{
+    height: 27px;
+    font-size: .71em;
+    padding: 0 8px 0 7px;
+  }
 
-.format-check .format-tick::after{
-  width: 6px;
-  height: 4px;
-}
+  .format-option .tick{
+    width: 13px;
+    height: 13px;
+    flex-basis: 13px;
+  }
+
+  .format-option .tick::after{
+    width: 6px;
+    height: 4px;
+  }
 }
 </style>
 </head>
@@ -1103,8 +1128,12 @@ formatGlassShort: "Calice",
     sommelierBtn:      "Consiglio vino",
     sommelierBtnBadge: "Novità",
     helperGlassMode: "🍷 Stai visualizzando solo i vini al calice",
+    otherFormats: "Altri formati",
+glassOnly: "Al calice",
   },
   en: {
+    otherFormats: "Other formats",
+glassOnly: "By the glass",
     formatBottleShort: "Bottle",
 formatGlassShort: "Glass",
     formatFilters: "Formats",
@@ -1152,6 +1181,8 @@ formatGlassShort: "Glass",
     helperGlassMode: "🍷 You are viewing only wines by the glass",
   },
   fr: {
+    otherFormats: "Autres formats",
+glassOnly: "Au verre",
     formatBottleShort: "Bout.",
 formatGlassShort: "Verre",
     formatFilters: "Formats",
@@ -1198,6 +1229,8 @@ sommelierBtnBadge: "Nouveauté",
 helperGlassMode: "🍷 Vous voyez uniquement les vins au verre",
   },
   de: {
+    otherFormats: "Weitere Formate",
+glassOnly: "Im Glas",
     formatBottleShort: "Fl.",
 formatGlassShort: "Glas",
     formatFilters: "Formate",
@@ -1243,6 +1276,8 @@ sommelierBtnBadge: "Neu",
 helperGlassMode: "🍷 Sie sehen nur Weine im Glas",
   },
   es: {
+    otherFormats: "Otros formatos",
+glassOnly: "Por copa",
     formatBottleShort: "Bot.",
 formatGlassShort: "Copa",
     formatFilters: "Formatos",
@@ -1289,6 +1324,8 @@ sommelierBtnBadge: "Novedad",
 helperGlassMode: "🍷 Estás viendo solo los vinos por copa",
   },
   zh: {
+    otherFormats: "其他规格",
+glassOnly: "杯装",
     formatBottleShort: "瓶装",
 formatGlassShort: "杯装",
     formatFilters: "规格",
@@ -1336,6 +1373,8 @@ helperGlassMode: "🍷 您正在查看仅按杯供应的葡萄酒",
   }
     ,
   ko: {
+    otherFormats: "다른 형식",
+glassOnly: "잔으로",
     formatBottleShort: "병",
 formatGlassShort: "잔",
     formatFilters: "형식",
@@ -1383,6 +1422,8 @@ sommelierBtn:      "와인 추천",
     helperGlassMode: "🍷 잔으로 제공되는 와인만 표시 중",
   },
   ru: {
+    otherFormats: "Другие форматы",
+glassOnly: "По бокалам",
     formatBottleShort: "Бут.",
 formatGlassShort: "Бокал",
     formatFilters: "Форматы",
@@ -1466,9 +1507,8 @@ function refreshSommelierBtnCopy(){
 }
 
 function isGlassOnly(){
-  const checks = document.querySelectorAll('#filterOptions input[type="checkbox"]');
-  const checked = Array.from(checks).filter(cb => cb.checked).map(cb => cb.value);
-  return (checked.length === 1 && checked[0] === 'glass');
+  const glassHidden = document.getElementById("glassHiddenCb");
+  return !!glassHidden?.checked;
 }
 
 function setHelper(text){
@@ -4101,125 +4141,177 @@ fetch(fnUrl, {
 }
 
 function setupFilterUI() {
-  const optionsContainer = document.getElementById("filterOptions");
-  if (!optionsContainer) return;
+  const panel = document.getElementById("otherFormatsPanel");
+  const otherBtn = document.getElementById("otherFormatsBtn");
+  const glassBtn = document.getElementById("glassBtn");
+  if (!panel || !otherBtn || !glassBtn) return;
 
   const t = translations[currentLang] || translations.it;
+  const isSmallMobile = window.innerWidth <= 420;
 
-const isSmallMobile = window.innerWidth <= 420;
-
-const formatsMapUI = {
-  glass:      { label: isSmallMobile ? (t.formatGlassShort || "Calice") : (t.formatGlass || "Bicchiere"), key: "prezzo_bicchiere", order: 1 },
-  bottle:     { label: isSmallMobile ? (t.formatBottleShort || "Bott.") : (t.formatBottle || "Bottiglia"), key: "prezzo", order: 2 },
-  threequart: { label: "0,375 lt", key: "prezzo_0375", order: 3 },
-  half:       { label: "1/2 lt",   key: "prezzo_05",   order: 4 },
-  onehalf:    { label: "1,5 lt",   key: "prezzo_15",   order: 5 },
-  quarter:    { label: "1/4 lt",   key: "prezzo_025",  order: 6 },
-  three:      { label: "3 lt",     key: "prezzo_3l",   order: 7 }
-};
+  const formatsMapUI = {
+    bottle:     { label: isSmallMobile ? (t.formatBottleShort || "Bott.") : (t.formatBottle || "Bottiglia"), key: "prezzo", order: 1 },
+    threequart: { label: "0,375 lt", key: "prezzo_0375", order: 2 },
+    half:       { label: "1/2 lt",   key: "prezzo_05",   order: 3 },
+    onehalf:    { label: "1,5 lt",   key: "prezzo_15",   order: 4 },
+    quarter:    { label: "1/4 lt",   key: "prezzo_025",  order: 5 },
+    three:      { label: "3 lt",     key: "prezzo_3l",   order: 6 }
+  };
 
   const availableFormats = Object.entries(formatsMapUI)
     .filter(([id, f]) => wines.some(w => hasVisiblePrice(w, f.key)))
     .sort((a, b) => a[1].order - b[1].order);
 
-  optionsContainer.innerHTML = "";
+  panel.innerHTML = "";
 
-for (const [id, f] of availableFormats) {
-  const label = document.createElement("label");
-  label.className = "format-check";
+  for (const [id, f] of availableFormats) {
+    const label = document.createElement("label");
+    label.className = "format-option";
 
-  const input = document.createElement("input");
-  input.type = "checkbox";
-  input.value = id;
-  input.checked = true;
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.value = id;
+    input.checked = true;
 
-  input.addEventListener("change", () => {
+    input.addEventListener("change", () => {
+      const glassHidden = document.getElementById("glassHiddenCb");
+      if (glassHidden) glassHidden.checked = false;
+      applyFilters();
+      updateFormatActiveState();
+    });
+
+    const tick = document.createElement("span");
+    tick.className = "tick";
+    tick.setAttribute("aria-hidden", "true");
+
+    const text = document.createElement("span");
+    text.className = "format-text";
+    text.textContent = f.label;
+
+    label.appendChild(input);
+    label.appendChild(tick);
+    label.appendChild(text);
+    panel.appendChild(label);
+  }
+
+  let hidden = document.getElementById("glassHiddenCb");
+  if (!hidden) {
+    hidden = document.createElement("input");
+    hidden.type = "checkbox";
+    hidden.value = "glass";
+    hidden.id = "glassHiddenCb";
+    hidden.style.display = "none";
+    hidden.checked = false;
+    panel.appendChild(hidden);
+  }
+
+  otherBtn.onclick = () => {
+    const open = panel.classList.toggle("open");
+    otherBtn.classList.toggle("open", open);
+    otherBtn.setAttribute("aria-expanded", open ? "true" : "false");
+  };
+
+  glassBtn.onclick = () => {
+    const hidden = document.getElementById("glassHiddenCb");
+    if (!hidden) return;
+
+    const wasOn = hidden.checked;
+    hidden.checked = !wasOn;
+
+    if (hidden.checked) {
+      panel.querySelectorAll('.format-option input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+      });
+    }
+
     applyFilters();
     updateFormatActiveState();
-  });
-
-  const tick = document.createElement("span");
-  tick.className = "format-tick";
-  tick.setAttribute("aria-hidden", "true");
-
-  const text = document.createElement("span");
-  text.className = "format-text";
-  text.textContent = f.label;
-
-  label.appendChild(input);
-  label.appendChild(tick);
-  label.appendChild(text);
-  optionsContainer.appendChild(label);
-}
+  };
 
   applyFilters();
   updateFormatActiveState();
 }
 
 function refreshFilterOptionsPreservingState() {
-  const optionsContainer = document.getElementById("filterOptions");
-  if (!optionsContainer) return;
+  const panel = document.getElementById("otherFormatsPanel");
+  if (!panel) return;
 
   const prevChecked = new Set(
-    Array.from(optionsContainer.querySelectorAll('input[type="checkbox"]:checked'))
+    Array.from(panel.querySelectorAll('.format-option input[type="checkbox"]:checked'))
       .map(cb => cb.value)
   );
 
+  const hiddenOld = document.getElementById("glassHiddenCb");
+  const wasGlassOn = !!hiddenOld?.checked;
+
   const t = translations[currentLang] || translations.it;
+  const isSmallMobile = window.innerWidth <= 420;
 
-const isSmallMobile = window.innerWidth <= 420;
-
-const formatsMap = {
-  glass:      { label: isSmallMobile ? (t.formatGlassShort || "Calice") : (t.formatGlass || "Bicchiere"), key: "prezzo_bicchiere", order: 1 },
-  bottle:     { label: isSmallMobile ? (t.formatBottleShort || "Bott.") : (t.formatBottle || "Bottiglia"), key: "prezzo", order: 2 },
-  threequart: { label: "0,375 lt", key: "prezzo_0375", order: 3 },
-  half:       { label: "1/2 lt",   key: "prezzo_05",   order: 4 },
-  onehalf:    { label: "1,5 lt",   key: "prezzo_15",   order: 5 },
-  quarter:    { label: "1/4 lt",   key: "prezzo_025",  order: 6 },
-  three:      { label: "3 lt",     key: "prezzo_3l",   order: 7 }
-};
+  const formatsMap = {
+    bottle:     { label: isSmallMobile ? (t.formatBottleShort || "Bott.") : (t.formatBottle || "Bottiglia"), key: "prezzo", order: 1 },
+    threequart: { label: "0,375 lt", key: "prezzo_0375", order: 2 },
+    half:       { label: "1/2 lt",   key: "prezzo_05",   order: 3 },
+    onehalf:    { label: "1,5 lt",   key: "prezzo_15",   order: 4 },
+    quarter:    { label: "1/4 lt",   key: "prezzo_025",  order: 5 },
+    three:      { label: "3 lt",     key: "prezzo_3l",   order: 6 }
+  };
 
   const availableFormats = Object.entries(formatsMap)
     .filter(([id, f]) => wines.some(w => hasVisiblePrice(w, f.key)))
     .sort((a, b) => a[1].order - b[1].order);
 
-  optionsContainer.innerHTML = "";
+  panel.innerHTML = "";
 
-for (const [id, f] of availableFormats) {
-  const label = document.createElement("label");
-  label.className = "format-check";
+  for (const [id, f] of availableFormats) {
+    const label = document.createElement("label");
+    label.className = "format-option";
 
-  const input = document.createElement("input");
-  input.type = "checkbox";
-  input.value = id;
-  input.checked = prevChecked.size ? prevChecked.has(id) : true;
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.value = id;
+    input.checked = wasGlassOn ? false : (prevChecked.size ? prevChecked.has(id) : true);
 
-  input.addEventListener("change", () => {
-    applyFilters();
-    updateFormatActiveState();
-  });
+    input.addEventListener("change", () => {
+      const glassHidden = document.getElementById("glassHiddenCb");
+      if (glassHidden) glassHidden.checked = false;
+      applyFilters();
+      updateFormatActiveState();
+    });
 
-  const tick = document.createElement("span");
-  tick.className = "format-tick";
-  tick.setAttribute("aria-hidden", "true");
+    const tick = document.createElement("span");
+    tick.className = "tick";
+    tick.setAttribute("aria-hidden", "true");
 
-  const text = document.createElement("span");
-  text.className = "format-text";
-  text.textContent = f.label;
+    const text = document.createElement("span");
+    text.className = "format-text";
+    text.textContent = f.label;
 
-  label.appendChild(input);
-  label.appendChild(tick);
-  label.appendChild(text);
-  optionsContainer.appendChild(label);
-}
+    label.appendChild(input);
+    label.appendChild(tick);
+    label.appendChild(text);
+    panel.appendChild(label);
+  }
+
+  const hidden = document.createElement("input");
+  hidden.type = "checkbox";
+  hidden.value = "glass";
+  hidden.id = "glassHiddenCb";
+  hidden.style.display = "none";
+  hidden.checked = wasGlassOn;
+  panel.appendChild(hidden);
 
   updateFormatActiveState();
 }
 
 function getCheckedFormats() {
-  const ids = Array.from(
-    document.querySelectorAll('#filterOptions input[type="checkbox"]:checked')
+  const bottleIds = Array.from(
+    document.querySelectorAll('#otherFormatsPanel .format-option input[type="checkbox"]:checked')
   ).map(cb => cb.value);
+
+  const glassHidden = document.getElementById("glassHiddenCb");
+  const glassOn = !!glassHidden?.checked;
+
+  const ids = glassOn ? ["glass"] : bottleIds;
 
   const map = {
     bottle: "prezzo",
@@ -4335,15 +4427,39 @@ function applyFilters() {
 }
 
 function updateFormatActiveState(){
-  const labels = Array.from(document.querySelectorAll('#filterOptions .format-check'));
+  const labels = Array.from(document.querySelectorAll('#otherFormatsPanel .format-option'));
+  const otherBtn = document.getElementById("otherFormatsBtn");
+  const glassBtn = document.getElementById("glassBtn");
+  const glassHidden = document.getElementById("glassHiddenCb");
+
+  let activeBottleCount = 0;
 
   labels.forEach(label => {
     const input = label.querySelector('input[type="checkbox"]');
     if (!input) return;
 
-    label.classList.toggle('is-on', !!input.checked);
-    label.classList.toggle('is-off', !input.checked);
+    const on = !!input.checked;
+    if (on) activeBottleCount++;
+
+    label.classList.toggle('is-on', on);
+    label.classList.toggle('is-off', !on);
   });
+
+  if (otherBtn) {
+    otherBtn.classList.toggle("active", activeBottleCount > 0 && !glassHidden?.checked);
+    const labelSpan = otherBtn.querySelector(".label");
+    const t = translations[currentLang] || translations.it;
+    if (labelSpan) {
+      labelSpan.textContent = activeBottleCount > 0
+        ? `${t.otherFormats || "Altri formati"} (${activeBottleCount})`
+        : (t.otherFormats || "Altri formati");
+    }
+  }
+
+  if (glassBtn) {
+    glassBtn.classList.toggle("active", !!glassHidden?.checked);
+    glassBtn.setAttribute("aria-pressed", glassHidden?.checked ? "true" : "false");
+  }
 
   if (currentView === 'categories') {
     setHelperByKey('helperChooseCategory');
@@ -4404,6 +4520,19 @@ document.addEventListener('click', function(ev){
   if (!pop || !btn) return;
   const clickInside = pop.contains(ev.target) || btn.contains(ev.target);
   if (pop.style.display === 'block' && !clickInside) pop.style.display = 'none';
+});
+
+document.addEventListener('click', function(ev){
+  const panel = document.getElementById("otherFormatsPanel");
+  const btn = document.getElementById("otherFormatsBtn");
+  if (!panel || !btn) return;
+
+  const clickInside = panel.contains(ev.target) || btn.contains(ev.target);
+  if (panel.classList.contains("open") && !clickInside) {
+    panel.classList.remove("open");
+    btn.classList.remove("open");
+    btn.setAttribute("aria-expanded", "false");
+  }
 });
 
 window.showSearchResults = function(query){
@@ -4485,10 +4614,19 @@ if (rn) {
 </script>
 <!-- Bottom bar -->
 <div id="formatBar" aria-label="Filtri formato">
-  <div class="format-bar-inner">
-    <span class="format-bar-label translate-label" data-key="formatFilters">Formati</span>
-    <div id="filterOptions" class="filter-chips"></div>
+  <div id="formatMainRow">
+    <button id="otherFormatsBtn" class="format-main-btn" type="button" aria-expanded="false">
+      <span class="label translate-label" data-key="otherFormats">Altri formati</span>
+      <span class="chev" aria-hidden="true">▼</span>
+    </button>
+
+    <button id="glassBtn" class="format-main-btn" type="button" aria-pressed="false">
+      <img src="glassiconwhite.png" alt="" aria-hidden="true">
+      <span class="translate-label" data-key="glassOnly">Al calice</span>
+    </button>
   </div>
+
+  <div id="otherFormatsPanel"></div>
 </div>
 
 <div id="bottomBar">
