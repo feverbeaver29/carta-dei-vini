@@ -924,12 +924,12 @@ body.reordering #bottomBar{
 
 #otherFormatsPanel{
   position: absolute;
-  left: 128px;
+  left: 0;
   right: 0;
   bottom: 40px;
   display: none;
   z-index: 1002;
-  padding: 7px 8px;
+  padding: 8px;
   border-radius: 14px;
   border: 1px solid var(--bottom-btn-border, rgba(255,255,255,0.22));
   background:
@@ -941,20 +941,20 @@ body.reordering #bottomBar{
   box-shadow: 0 12px 28px rgba(0,0,0,.22);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  overflow-x: auto;
-  overflow-y: hidden;
-  white-space: nowrap;
-  scrollbar-width: none;
-}
+  box-sizing: border-box;
 
-#otherFormatsPanel::-webkit-scrollbar{
-  display: none;
+  /* nuovo comportamento */
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 6px;
+  white-space: normal;
+  overflow: visible;
+  max-width: 100%;
 }
 
 #otherFormatsPanel.open{
   display: flex;
-  gap: 6px;
-  align-items: center;
   animation: formatsPanelIn .18s ease-out;
 }
 
@@ -970,12 +970,12 @@ body.reordering #bottomBar{
 }
 
 .format-option{
-  flex: 0 0 auto;
+  flex: 0 1 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 28px;
+  min-height: 28px;
   padding: 0 10px 0 8px;
   border-radius: 999px;
   background: rgba(255,255,255,0.08);
@@ -990,6 +990,7 @@ body.reordering #bottomBar{
   user-select: none;
   -webkit-user-select: none;
   transition: background .18s ease, border-color .18s ease, transform .12s ease, opacity .18s ease, box-shadow .18s ease;
+  max-width: 100%;
 }
 
 .format-option:hover{
@@ -1121,7 +1122,7 @@ body.reordering #bottomBar{
   }
 
 #otherFormatsPanel{
-  left: 108px;
+  left: 0;
   right: 0;
   bottom: 38px;
   z-index: 1002;
