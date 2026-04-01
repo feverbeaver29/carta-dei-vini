@@ -931,7 +931,7 @@ body.reordering #bottomBar{
   z-index: 1002;
   padding: 7px 8px;
   border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.10);
+  border: 1px solid var(--bottom-btn-border, rgba(255,255,255,0.22));
   background:
     linear-gradient(
       to bottom,
@@ -979,7 +979,7 @@ body.reordering #bottomBar{
   padding: 0 10px 0 8px;
   border-radius: 999px;
   background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.10);
+  border: 1px solid var(--bottom-btn-border, rgba(255,255,255,0.22));
   color: var(--bottom-bar-foreground, #fff);
   font-size: .75em;
   font-weight: 700;
@@ -1064,7 +1064,7 @@ body.reordering #bottomBar{
   padding: 0 11px;
   border-radius: 999px;
   background: rgba(255,255,255,0.06);
-  border: 1px dashed rgba(255,255,255,0.18);
+  border: 1px dashed var(--bottom-btn-border, rgba(255,255,255,0.22));
   color: var(--bottom-bar-foreground, #fff);
   font-size: .74em;
   font-weight: 800;
@@ -2681,7 +2681,6 @@ document.documentElement.style.setProperty('--navbar-color', (typeof navbarColor
 const navBg = (typeof navbarColor !== "undefined" ? navbarColor : background);
 const navFg = getContrastingTextColor(navBg);
 document.documentElement.style.setProperty('--navbar-foreground', navFg);
-const helperFg = getContrastingTextColor(background);
 document.documentElement.style.setProperty('--helper-foreground', textColor);
 
 // foreground chiaro/scuro in base allo sfondo
