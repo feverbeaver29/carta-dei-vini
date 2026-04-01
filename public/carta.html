@@ -891,8 +891,8 @@ body.reordering #bottomBar{
 
 #otherFormatsPanel{
   position: absolute;
-  left: 0;
-  right: 128px;
+  left: 128px;
+  right: 0;
   bottom: 40px;
   display: none;
   z-index: 1002;
@@ -1088,7 +1088,8 @@ body.reordering #bottomBar{
   }
 
 #otherFormatsPanel{
-  right: 108px;
+  left: 108px;
+  right: 0;
   bottom: 38px;
   z-index: 1002;
   padding: 6px 7px;
@@ -4780,15 +4781,15 @@ if (rn) {
 </script>
 <!-- Bottom bar -->
 <div id="formatBar" aria-label="Filtri formato">
-  <div id="formatMainRow">
-    <button id="otherFormatsBtn" class="format-main-btn" type="button" aria-expanded="false">
-      <span class="label translate-label" data-key="otherFormats">Altri formati</span>
-      <span class="chev" aria-hidden="true">▼</span>
-    </button>
-
+  <div id="formatMainRow">    
     <button id="glassBtn" class="format-main-btn" type="button" aria-pressed="false" data-mode="glass">
       <img id="glassBtnIcon" src="glassiconwhite.png" alt="" aria-hidden="true">
       <span id="glassBtnLabel" class="translate-label" data-key="glassOnly">Al calice</span>
+    </button>
+
+    <button id="otherFormatsBtn" class="format-main-btn" type="button" aria-expanded="false">
+      <span class="label translate-label" data-key="otherFormats">Altri formati</span>
+      <span class="chev" aria-hidden="true">▼</span>
     </button>
   </div>
 
