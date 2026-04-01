@@ -929,25 +929,25 @@ body.reordering #bottomBar{
   bottom: 40px;
   display: none;
   z-index: 1002;
-  padding: 8px;
-  border-radius: 14px;
+  padding: 9px;
+  border-radius: 16px;
   border: 1px solid var(--bottom-btn-border, rgba(255,255,255,0.22));
   background:
     linear-gradient(
       to bottom,
-      color-mix(in srgb, var(--navbar-color, #222) 95%, white 5%),
-      color-mix(in srgb, var(--navbar-color, #222) 89%, black 11%)
+      color-mix(in srgb, var(--navbar-color, #222) 96%, white 4%),
+      color-mix(in srgb, var(--navbar-color, #222) 90%, black 10%)
     );
-  box-shadow: 0 12px 28px rgba(0,0,0,.22);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  box-shadow:
+    0 14px 30px rgba(0,0,0,.24),
+    inset 0 1px 0 rgba(255,255,255,.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   box-sizing: border-box;
-
-  /* nuovo comportamento */
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: flex-start;
-  gap: 6px;
+  gap: 7px;
   white-space: normal;
   overflow: visible;
   max-width: 100%;
@@ -974,15 +974,16 @@ body.reordering #bottomBar{
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  min-height: 28px;
-  padding: 0 10px 0 8px;
+  gap: 8px;
+  min-height: 30px;
+  padding: 0 12px 0 10px;
   border-radius: 999px;
   background: rgba(255,255,255,0.08);
   border: 1px solid var(--bottom-btn-border, rgba(255,255,255,0.22));
   color: var(--bottom-bar-foreground, #fff);
-  font-size: .75em;
-  font-weight: 700;
+  font-size: .76em;
+  font-weight: 800;
+  letter-spacing: .01em;
   line-height: 1;
   white-space: nowrap;
   box-sizing: border-box;
@@ -991,6 +992,22 @@ body.reordering #bottomBar{
   -webkit-user-select: none;
   transition: background .18s ease, border-color .18s ease, transform .12s ease, opacity .18s ease, box-shadow .18s ease;
   max-width: 100%;
+}
+
+.format-option.is-primary-format{
+  font-weight: 900;
+  padding-left: 12px;
+  padding-right: 13px;
+}
+
+.format-option.tap-pop{
+  animation: formatTapPop .22s ease;
+}
+
+@keyframes formatTapPop{
+  0%   { transform: scale(1); }
+  45%  { transform: scale(0.97); }
+  100% { transform: scale(1); }
 }
 
 .format-option:hover{
@@ -1007,53 +1024,48 @@ body.reordering #bottomBar{
 }
 
 .format-option .tick{
-  width: 14px;
-  height: 14px;
+  width: 8px;
+  height: 8px;
   border-radius: 999px;
-  flex: 0 0 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.16);
-  position: relative;
+  flex: 0 0 8px;
+  display: inline-block;
+  background: currentColor;
+  opacity: .32;
+  box-shadow: none;
+  border: 0;
+  transition: opacity .18s ease, transform .18s ease;
 }
 
 .format-option .tick::after{
-  content: "";
-  width: 7px;
-  height: 4px;
-  border-left: 2px solid #fff;
-  border-bottom: 2px solid #fff;
-  transform: rotate(-45deg) scale(.9);
-  opacity: 0;
-  transition: opacity .15s ease, transform .15s ease;
-  margin-top: -1px;
-}
-
-.format-option.is-on{
-  background: rgba(255,255,255,0.18);
-  border-color: rgba(255,255,255,0.20);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 4px 10px rgba(0,0,0,.10);
-  opacity: 1;
+  content: none;
 }
 
 .format-option.is-on .tick{
-  background: var(--accent-color);
-  border-color: color-mix(in srgb, var(--accent-color) 82%, white 18%);
-  box-shadow: 0 0 0 2px rgba(255,255,255,.08), 0 3px 8px rgba(0,0,0,.14);
+  opacity: .95;
+  transform: scale(1.15);
 }
 
-.format-option.is-on .tick::after{
+.format-option.is-on{
+  background:
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--accent-color) 22%, rgba(255,255,255,0.10)),
+      color-mix(in srgb, var(--accent-color) 38%, rgba(255,255,255,0.04))
+    );
+  border-color: color-mix(in srgb, var(--accent-color) 55%, white 20%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.12),
+    0 6px 14px rgba(0,0,0,.14),
+    0 0 0 1px rgba(255,255,255,.04);
   opacity: 1;
-  transform: rotate(-45deg) scale(1);
+  transform: translateY(-1px);
 }
 
 .format-option.is-off{
-  background: rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.05);
   border-color: rgba(255,255,255,0.08);
-  box-shadow: none;
-  opacity: .86;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+  opacity: .82;
 }
 .format-reset-btn{
   flex: 0 0 auto;
@@ -4365,18 +4377,24 @@ function setupFilterUI() {
   for (const [id, f] of availableFormats) {
     const label = document.createElement("label");
     label.className = "format-option";
+    if (id === "bottle") label.classList.add("is-primary-format");
 
     const input = document.createElement("input");
     input.type = "checkbox";
     input.value = id;
     input.checked = true;
 
-    input.addEventListener("change", () => {
-      const glassHidden = document.getElementById("glassHiddenCb");
-      if (glassHidden) glassHidden.checked = false;
-      applyFilters();
-      updateFormatActiveState();
-    });
+input.addEventListener("change", () => {
+  const glassHidden = document.getElementById("glassHiddenCb");
+  if (glassHidden) glassHidden.checked = false;
+
+  label.classList.remove("tap-pop");
+  void label.offsetWidth;
+  label.classList.add("tap-pop");
+
+  applyFilters();
+  updateFormatActiveState();
+});
 
     const tick = document.createElement("span");
     tick.className = "tick";
@@ -4470,18 +4488,24 @@ function refreshFilterOptionsPreservingState() {
   for (const [id, f] of availableFormats) {
     const label = document.createElement("label");
     label.className = "format-option";
+    if (id === "bottle") label.classList.add("is-primary-format");
 
     const input = document.createElement("input");
     input.type = "checkbox";
     input.value = id;
     input.checked = wasGlassOn ? false : (prevChecked.size ? prevChecked.has(id) : true);
 
-    input.addEventListener("change", () => {
-      const glassHidden = document.getElementById("glassHiddenCb");
-      if (glassHidden) glassHidden.checked = false;
-      applyFilters();
-      updateFormatActiveState();
-    });
+input.addEventListener("change", () => {
+  const glassHidden = document.getElementById("glassHiddenCb");
+  if (glassHidden) glassHidden.checked = false;
+
+  label.classList.remove("tap-pop");
+  void label.offsetWidth;
+  label.classList.add("tap-pop");
+
+  applyFilters();
+  updateFormatActiveState();
+});
 
     const tick = document.createElement("span");
     tick.className = "tick";
@@ -4699,16 +4723,29 @@ function updateFormatActiveState(){
 
   const isDirty = areFormatFiltersDirty();
 
-  if (otherBtn) {
-    otherBtn.classList.toggle("active", activeBottleCount > 0 && !glassHidden?.checked);
-    const labelSpan = otherBtn.querySelector(".label");
-    const t = translations[currentLang] || translations.it;
-    if (labelSpan) {
-      labelSpan.textContent = activeBottleCount > 0
-        ? `${t.otherFormats || "Altri formati"} (${activeBottleCount})`
-        : (t.otherFormats || "Altri formati");
+if (otherBtn) {
+  otherBtn.classList.toggle("active", activeBottleCount > 0 && !glassHidden?.checked);
+  const labelSpan = otherBtn.querySelector(".label");
+  const t = translations[currentLang] || translations.it;
+
+  if (labelSpan) {
+    const activeLabels = labels
+      .map(label => {
+        const input = label.querySelector('input[type="checkbox"]');
+        const text = label.querySelector('.format-text')?.textContent?.trim();
+        return input?.checked ? text : null;
+      })
+      .filter(Boolean);
+
+    if (!activeLabels.length) {
+      labelSpan.textContent = t.otherFormats || "Altri formati";
+    } else if (activeLabels.length <= 2) {
+      labelSpan.textContent = activeLabels.join(" • ");
+    } else {
+      labelSpan.textContent = `${t.otherFormats || "Altri formati"} (${activeLabels.length})`;
     }
   }
+}
 
   if (glassBtn) {
     glassBtn.classList.toggle("active", !!glassHidden?.checked || isDirty);
