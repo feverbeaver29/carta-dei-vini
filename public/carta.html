@@ -3469,13 +3469,25 @@ window.addEventListener("message", async (event) => {
     window._manualNavigation = prev;
     return;
   }
-  if (event.data?.action === "updateFontLive") {
+if (event.data?.action === "updateFontLive") {
   const font = event.data.font;
   if (font) {
-    document.body.style.fontFamily = font;
     ensureFontLoaded(font);
+    document.body.style.fontFamily = font;
+    document.documentElement.style.setProperty('--restaurant-font', font);
+
+    [
+      "#sommelierBtn",
+      "#bottomBar",
+      "#formatBar",
+      "#searchPopover",
+      "#sommelierPopup",
+      "#helperBanner"
+    ].forEach(sel => {
+      const el = document.querySelector(sel);
+      if (el) el.style.fontFamily = font;
+    });
   }
-  window.paletteOverrideLive = true;
 }
 
 if (event.data?.action === "updatePaletteLive") {

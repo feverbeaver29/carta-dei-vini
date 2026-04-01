@@ -2608,6 +2608,8 @@ if (!fontOption) {
   bodyFontSelect.add(fontOption);
 }
 bodyFontSelect.value = fontBody;
+updateFontLivePreview();
+
     document.getElementById("nameFont").addEventListener("change", () => {
   const font = document.getElementById("nameFont").value;
   if (font === "custom") {
@@ -2618,9 +2620,13 @@ bodyFontSelect.value = fontBody;
 });
 document.getElementById("fontSelector").addEventListener("change", () => {
   const font = document.getElementById("fontSelector").value;
+
   if (font === "custom") {
     showFontPopupForBody();
+    return;
   }
+
+  updateFontLivePreview();
 });
 document.getElementById("paletteSelector").addEventListener("change", () => {
   updatePaletteLivePreview();
@@ -2660,8 +2666,10 @@ updateLogoPreviewLive();
 
 const iframe = document.getElementById("previewFrame");
 iframe.addEventListener("load", () => {
-  updateNamePreviewLive(); // aggiorna subito una volta
-    updateLogoPreviewLive(); // ✅ aggiungi anche questo!
+  updateNamePreviewLive();
+  updateLogoPreviewLive();
+  updateFontLivePreview();      // ✅ AGGIUNGI QUESTO
+  updatePaletteLivePreview();   // ✅ AGGIUNGI ANCHE QUESTO
 
   ["nameSize", "nameColor", "nameBold", "nameFont", "displayName"].forEach(id => {
     const el = document.getElementById(id);
@@ -2678,9 +2686,6 @@ showSettings('carta');
     // ensure translations apply after initial rendering
     applyTranslations();
 
-      document.getElementById("fontSelector").addEventListener("change", () => {
-        updateFontLivePreview(); // anteprima live font body
-      });
       bindCustomFileUI("logoUpload", "logoChooseBtn", "logoFileName");
       bindCustomFileUI("sommelierLogoUpload", "sommelierChooseBtn", "sommelierFileName");
   });
