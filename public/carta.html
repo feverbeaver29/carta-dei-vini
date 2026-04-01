@@ -23,11 +23,28 @@
    ELEMENTI COMUNI
 ========================= */
 body{
-  font-family: sans-serif;
+  font-family: var(--restaurant-font, sans-serif);
   background: var(--bg-default);
   color:#333;
   margin:0;
   padding-top:60px;
+}
+button,
+input,
+select,
+textarea,
+.bottom-btn,
+.format-main-btn,
+.format-option,
+.format-reset-btn,
+#sommelierBtn,
+#sommelierPopup,
+#searchPopover,
+#helperBanner,
+.category,
+.subcategory,
+.wine-card {
+  font-family: inherit;
 }
 
 /* ===== BOOT SPLASH: evita flash e scatti iniziali ===== */
@@ -62,8 +79,24 @@ button, .save-btn{ background-color: var(--accent-color); }
 #restaurantLogo{ display:block; max-height:120px; object-fit:contain; border-radius:6px; }
 
 /* Helper banner */
-.helper-banner{ position:relative; z-index:900; margin:14px 16px; padding:0; font-weight:600; text-align:center; border:0; box-shadow:none; background:transparent; color:inherit; }
-:root .helper-banner{ background: var(--bg-default); border-color:#ddd; color:#333; }
+.helper-banner{
+  position:relative;
+  z-index:900;
+  margin:14px 16px;
+  padding:0;
+  font-weight:600;
+  text-align:center;
+  border:0;
+  box-shadow:none;
+  background:transparent;
+  color: var(--helper-foreground, #333);
+}
+
+:root .helper-banner{
+  background: var(--bg-default);
+  border-color:#ddd;
+  color: var(--helper-foreground, #333);
+}
 @media (max-width:480px){ .helper-banner{ margin:10px; font-size:.95em; } }
 
 /* =========================
@@ -195,9 +228,9 @@ nav{ position:fixed; top:0; left:0; right:0; } /* già c'è, lo ribadisco */
   height: 34px;
   min-width: 92px;
   padding: 0 12px;
-  border: 1px solid rgba(255,255,255,0.10);
+  border: 1px solid var(--bottom-btn-border, rgba(255,255,255,0.22));
   border-radius: 11px;
-  background: rgba(255,255,255,0.08);
+  background: var(--bottom-btn-bg, rgba(255,255,255,0.08));
   color: var(--bottom-bar-foreground, #fff);
   display: inline-flex;
   align-items: center;
@@ -213,7 +246,7 @@ nav{ position:fixed; top:0; left:0; right:0; } /* già c'è, lo ribadisco */
 }
 
 .bottom-btn:hover{
-  background: rgba(255,255,255,0.12);
+  background: var(--bottom-btn-bg-hover, rgba(255,255,255,0.14));
   transform: translateY(-1px);
 }
 
@@ -810,7 +843,7 @@ body.reordering #bottomBar{
 
 .format-main-btn{
   height: 32px;
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid var(--bottom-btn-border, rgba(255,255,255,0.22));
   border-radius: 12px;
   background:
     linear-gradient(
@@ -2405,7 +2438,20 @@ if (btnImg) {
 
 if (ristorante.font) {
   document.body.style.fontFamily = ristorante.font;
+  document.documentElement.style.setProperty('--restaurant-font', ristorante.font);
   ensureFontLoaded(ristorante.font);
+
+  [
+    "#sommelierBtn",
+    "#bottomBar",
+    "#formatBar",
+    "#searchPopover",
+    "#sommelierPopup",
+    "#helperBanner"
+  ].forEach(sel => {
+    const el = document.querySelector(sel);
+    if (el) el.style.fontFamily = ristorante.font;
+  });
 }
 
 const avatar = document.getElementById('sommelierAvatar');
@@ -2635,6 +2681,8 @@ document.documentElement.style.setProperty('--navbar-color', (typeof navbarColor
 const navBg = (typeof navbarColor !== "undefined" ? navbarColor : background);
 const navFg = getContrastingTextColor(navBg);
 document.documentElement.style.setProperty('--navbar-foreground', navFg);
+const helperFg = getContrastingTextColor(background);
+document.documentElement.style.setProperty('--helper-foreground', textColor);
 
 // foreground chiaro/scuro in base allo sfondo
 const bb = document.getElementById("bottomBar");
@@ -2643,6 +2691,28 @@ if (bb) {
   bb.style.color = fg;
   document.documentElement.style.setProperty('--bottom-bar-foreground', fg);
 }
+
+const bottomBaseBg = (typeof navbarColor !== "undefined" ? navbarColor : background);
+const bottomFg = getContrastingTextColor(bottomBaseBg);
+
+const bottomBtnBorder =
+  bottomFg === "#000000"
+    ? "rgba(0,0,0,0.22)"
+    : "rgba(255,255,255,0.24)";
+
+const bottomBtnBg =
+  bottomFg === "#000000"
+    ? "rgba(0,0,0,0.05)"
+    : "rgba(255,255,255,0.08)";
+
+const bottomBtnBgHover =
+  bottomFg === "#000000"
+    ? "rgba(0,0,0,0.09)"
+    : "rgba(255,255,255,0.14)";
+
+document.documentElement.style.setProperty('--bottom-btn-border', bottomBtnBorder);
+document.documentElement.style.setProperty('--bottom-btn-bg', bottomBtnBg);
+document.documentElement.style.setProperty('--bottom-btn-bg-hover', bottomBtnBgHover);
 
 const bottleBtn = document.getElementById("bottleBtn");
 if (bottleBtn) {
@@ -2690,6 +2760,21 @@ window.paletteColors = {
   textColor,
   boxShadow
 };
+if (ristorante?.font) {
+  [
+    "#sommelierBtn",
+    "#searchBtn",
+    "#homeBtn",
+    "#glassBtn",
+    "#otherFormatsBtn",
+    "#otherFormatsPanel",
+    "#searchPopover",
+    "#helperBanner"
+  ].forEach(sel => {
+    const el = document.querySelector(sel);
+    if (el) el.style.fontFamily = ristorante.font;
+  });
+}
 }
 
 function normalize(str) {
@@ -2936,6 +3021,9 @@ btn.innerHTML = `
   </div>
 `;
   document.body.appendChild(btn);
+  if (ristorante?.font) {
+  btn.style.fontFamily = ristorante.font;
+}
   btn.classList.add("breathe");
   refreshSommelierBtnCopy();
 
@@ -2997,6 +3085,10 @@ setInterval(() => {
       </div>
     `;
     document.body.appendChild(overlay);
+    if (ristorante?.font) {
+  const popup = document.getElementById("sommelierPopup");
+  if (popup) popup.style.fontFamily = ristorante.font;
+}
 
     const foodInput = document.getElementById("foodInput");
     const sendBtn = document.getElementById("sendFoodBtn");
