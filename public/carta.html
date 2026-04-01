@@ -2727,8 +2727,15 @@ if (glassBtn) {
 
 const searchBtn = document.getElementById("searchBtn");
 if (searchBtn) {
+  const searchFg = getContrastingTextColor(primary);
+
   searchBtn.style.backgroundColor = primary;
   searchBtn.style.borderColor = primary;
+  searchBtn.style.color = searchFg;
+
+  searchBtn.querySelectorAll("span, img").forEach(el => {
+    el.style.color = searchFg;
+  });
 }
 
 const searchPop = document.getElementById("searchPopover");
