@@ -4469,12 +4469,24 @@ label.addEventListener("click", (e) => {
   const checkedBefore = allInputs.filter(cb => cb.checked);
 
   if (checkedBefore.length > 1) {
-    // se ce ne sono più di uno attivi, il click isola subito quello premuto
+    // da stato multi -> isola subito quello cliccato
     allInputs.forEach(cb => {
       cb.checked = (cb === input);
     });
+  } else if (checkedBefore.length === 1) {
+    const onlyChecked = checkedBefore[0];
+
+    if (onlyChecked === input) {
+      // se clicca quello già unico attivo, resta acceso
+      input.checked = true;
+    } else {
+      // se clicca un altro formato, deve restare solo quello nuovo
+      allInputs.forEach(cb => {
+        cb.checked = (cb === input);
+      });
+    }
   } else {
-    // se era già l'unico attivo, non permettere di spegnere tutto
+    // fallback di sicurezza
     input.checked = true;
   }
 
@@ -4602,6 +4614,16 @@ label.addEventListener("click", (e) => {
     allInputs.forEach(cb => {
       cb.checked = (cb === input);
     });
+  } else if (checkedBefore.length === 1) {
+    const onlyChecked = checkedBefore[0];
+
+    if (onlyChecked === input) {
+      input.checked = true;
+    } else {
+      allInputs.forEach(cb => {
+        cb.checked = (cb === input);
+      });
+    }
   } else {
     input.checked = true;
   }
