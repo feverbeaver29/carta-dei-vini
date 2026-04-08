@@ -4457,22 +4457,25 @@ input.type = "checkbox";
 input.value = id;
 input.checked = true;
 
-input.addEventListener("change", () => {
+label.addEventListener("click", (e) => {
+  e.preventDefault();
+
   const glassHidden = document.getElementById("glassHiddenCb");
   if (glassHidden) glassHidden.checked = false;
 
   const allInputs = Array.from(
     panel.querySelectorAll('.format-option input[type="checkbox"]')
   );
-  const currentlyChecked = allInputs.filter(cb => cb.checked);
+  const checkedBefore = allInputs.filter(cb => cb.checked);
 
-  if (currentlyChecked.length === 0) {
-    input.checked = true; // mai zero formati attivi
-  } else if (currentlyChecked.length > 1 && input.checked) {
-    // se clicco un formato mentre ce ne sono più di uno attivi -> resta solo lui
+  if (checkedBefore.length > 1) {
+    // se ce ne sono più di uno attivi, il click isola subito quello premuto
     allInputs.forEach(cb => {
-      if (cb !== input) cb.checked = false;
+      cb.checked = (cb === input);
     });
+  } else {
+    // se era già l'unico attivo, non permettere di spegnere tutto
+    input.checked = true;
   }
 
   label.classList.remove("tap-pop");
@@ -4584,21 +4587,23 @@ const prevChecked = Array.from(
     input.value = id;
     input.checked = wasGlassOn ? false : (prevChecked.length ? prevChecked.includes(id) : true);
 
-input.addEventListener("change", () => {
+label.addEventListener("click", (e) => {
+  e.preventDefault();
+
   const glassHidden = document.getElementById("glassHiddenCb");
   if (glassHidden) glassHidden.checked = false;
 
   const allInputs = Array.from(
     panel.querySelectorAll('.format-option input[type="checkbox"]')
   );
-  const currentlyChecked = allInputs.filter(cb => cb.checked);
+  const checkedBefore = allInputs.filter(cb => cb.checked);
 
-  if (currentlyChecked.length === 0) {
-    input.checked = true;
-  } else if (currentlyChecked.length > 1 && input.checked) {
+  if (checkedBefore.length > 1) {
     allInputs.forEach(cb => {
-      if (cb !== input) cb.checked = false;
+      cb.checked = (cb === input);
     });
+  } else {
+    input.checked = true;
   }
 
   label.classList.remove("tap-pop");
@@ -4831,15 +4836,23 @@ if (otherBtn) {
   const t = translations[currentLang] || translations.it;
 
 if (labelSpan) {
-  const activeLabel = labels
+  const activeLabels = labels
     .map(label => {
       const input = label.querySelector('input[type="checkbox"]');
       const text = label.querySelector('.format-text')?.textContent?.trim();
       return input?.checked ? text : null;
     })
-    .find(Boolean);
+    .filter(Boolean);
 
-  labelSpan.textContent = activeLabel || t.otherFormats || "Altri formati";
+  const allSelected = activeLabels.length === totalBottleCount;
+
+  if (glassHidden?.checked || allSelected || activeLabels.length === 0) {
+    labelSpan.textContent = t.otherFormats || "Altri formati";
+  } else if (activeLabels.length === 1) {
+    labelSpan.textContent = activeLabels[0];
+  } else {
+    labelSpan.textContent = t.otherFormats || "Altri formati";
+  }
 }
 }
 
