@@ -1208,6 +1208,12 @@ body.reordering #bottomBar{
 <script>
 const translations = {
   it: {
+    helperFormatBottle: "🍾 Stai visualizzando solo bottiglie",
+helperFormatQuarter: "🍾 Stai visualizzando solo 1/4 lt",
+helperFormatThreeQuart: "🍾 Stai visualizzando solo bottiglie da 0,375 lt",
+helperFormatHalf: "🍾 Stai visualizzando solo 1/2 lt",
+helperFormatOneHalf: "🍾 Stai visualizzando solo bottiglie da 1,5 lt",
+helperFormatThree: "🍾 Stai visualizzando solo bottiglie da 3 lt",
     resetFilters: "Reset",
     formatBottleShort: "Bott.",
 formatGlassShort: "Calice",
@@ -1258,6 +1264,12 @@ formatGlassShort: "Calice",
 glassOnly: "Al calice",
   },
   en: {
+    helperFormatBottle: "🍾 You are viewing only bottles",
+helperFormatQuarter: "🍾 You are viewing only 1/4 l formats",
+helperFormatThreeQuart: "🍾 You are viewing only 0.375 l bottles",
+helperFormatHalf: "🍾 You are viewing only 1/2 l formats",
+helperFormatOneHalf: "🍾 You are viewing only 1.5 l bottles",
+helperFormatThree: "🍾 You are viewing only 3 l bottles",
     resetFilters: "Reset",
     otherFormats: "Other formats",
 glassOnly: "By the glass",
@@ -1308,6 +1320,12 @@ formatGlassShort: "Glass",
     helperGlassMode: "🍷 You are viewing only wines by the glass",
   },
   fr: {
+    helperFormatBottle: "🍾 Vous voyez uniquement les bouteilles",
+helperFormatQuarter: "🍾 Vous voyez uniquement le format 1/4 l",
+helperFormatThreeQuart: "🍾 Vous voyez uniquement les bouteilles de 0,375 l",
+helperFormatHalf: "🍾 Vous voyez uniquement le format 1/2 l",
+helperFormatOneHalf: "🍾 Vous voyez uniquement les bouteilles de 1,5 l",
+helperFormatThree: "🍾 Vous voyez uniquement les bouteilles de 3 l",
     resetFilters: "Réinit.",
     otherFormats: "Autres formats",
 glassOnly: "Au verre",
@@ -1357,6 +1375,12 @@ sommelierBtnBadge: "Nouveauté",
 helperGlassMode: "🍷 Vous voyez uniquement les vins au verre",
   },
   de: {
+    helperFormatBottle: "🍾 Sie sehen nur Flaschen",
+helperFormatQuarter: "🍾 Sie sehen nur 1/4-l-Formate",
+helperFormatThreeQuart: "🍾 Sie sehen nur 0,375-l-Flaschen",
+helperFormatHalf: "🍾 Sie sehen nur 1/2-l-Formate",
+helperFormatOneHalf: "🍾 Sie sehen nur 1,5-l-Flaschen",
+helperFormatThree: "🍾 Sie sehen nur 3-l-Flaschen",
     resetFilters: "Reset",
     otherFormats: "Weitere Formate",
 glassOnly: "Im Glas",
@@ -1405,6 +1429,12 @@ sommelierBtnBadge: "Neu",
 helperGlassMode: "🍷 Sie sehen nur Weine im Glas",
   },
   es: {
+    helperFormatBottle: "🍾 Estás viendo solo botellas",
+helperFormatQuarter: "🍾 Estás viendo solo formato de 1/4 l",
+helperFormatThreeQuart: "🍾 Estás viendo solo botellas de 0,375 l",
+helperFormatHalf: "🍾 Estás viendo solo formato de 1/2 l",
+helperFormatOneHalf: "🍾 Estás viendo solo botellas de 1,5 l",
+helperFormatThree: "🍾 Estás viendo solo botellas de 3 l",
     resetFilters: "Reiniciar",
     otherFormats: "Otros formatos",
 glassOnly: "Por copa",
@@ -1643,15 +1673,42 @@ function isGlassOnly(){
   const glassHidden = document.getElementById("glassHiddenCb");
   return !!glassHidden?.checked;
 }
+function getSingleActiveBottleFormat(){
+  const checked = Array.from(
+    document.querySelectorAll('#otherFormatsPanel .format-option input[type="checkbox"]:checked')
+  ).map(cb => cb.value);
+
+  return checked.length === 1 ? checked[0] : null;
+}
+
+function getActiveFormatHelperKey(){
+  const glassHidden = document.getElementById("glassHiddenCb");
+  if (glassHidden?.checked) return "helperGlassMode";
+
+  const active = getSingleActiveBottleFormat();
+  if (!active) return null;
+
+  const map = {
+    bottle: "helperFormatBottle",
+    quarter: "helperFormatQuarter",
+    threequart: "helperFormatThreeQuart",
+    half: "helperFormatHalf",
+    onehalf: "helperFormatOneHalf",
+    three: "helperFormatThree"
+  };
+
+  return map[active] || null;
+}
 
 function setHelper(text){
   const el = document.getElementById('helperBanner');
   if (!el) return;
-  const t = translations[currentLang];
-  if (isGlassOnly()){
-    const sub = t?.helperGlassMode || "🍷 Stai visualizzando solo i vini al calice";
-    // entrambe NERE (niente colore rosso)
-    el.innerHTML = `${text}<br><span>${sub}</span>`;
+
+  const t = translations[currentLang] || translations.it;
+  const formatHelperKey = getActiveFormatHelperKey();
+
+  if (formatHelperKey && t?.[formatHelperKey]) {
+    el.innerHTML = `${text}<br><span>${t[formatHelperKey]}</span>`;
   } else {
     el.textContent = text;
   }
@@ -4395,14 +4452,25 @@ function setupFilterUI() {
     label.className = "format-option";
     if (id === "bottle") label.classList.add("is-primary-format");
 
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.value = id;
-    input.checked = true;
+const input = document.createElement("input");
+input.type = "checkbox";
+input.value = id;
+input.checked = (id === "bottle");
 
 input.addEventListener("change", () => {
   const glassHidden = document.getElementById("glassHiddenCb");
   if (glassHidden) glassHidden.checked = false;
+
+  const allInputs = panel.querySelectorAll('.format-option input[type="checkbox"]');
+
+  if (input.checked) {
+    allInputs.forEach(cb => {
+      if (cb !== input) cb.checked = false;
+    });
+  } else {
+    // impedisce stato "nessun formato attivo"
+    input.checked = true;
+  }
 
   label.classList.remove("tap-pop");
   void label.offsetWidth;
@@ -4475,10 +4543,11 @@ function refreshFilterOptionsPreservingState() {
   const panel = document.getElementById("otherFormatsPanel");
   if (!panel) return;
 
-  const prevChecked = new Set(
-    Array.from(panel.querySelectorAll('.format-option input[type="checkbox"]:checked'))
-      .map(cb => cb.value)
-  );
+const prevChecked = Array.from(
+  panel.querySelectorAll('.format-option input[type="checkbox"]:checked')
+).map(cb => cb.value);
+
+const prevSingle = prevChecked[0] || "bottle";
 
   const hiddenOld = document.getElementById("glassHiddenCb");
   const wasGlassOn = !!hiddenOld?.checked;
@@ -4509,11 +4578,21 @@ function refreshFilterOptionsPreservingState() {
     const input = document.createElement("input");
     input.type = "checkbox";
     input.value = id;
-    input.checked = wasGlassOn ? false : (prevChecked.size ? prevChecked.has(id) : true);
+    input.checked = wasGlassOn ? false : (id === prevSingle);
 
 input.addEventListener("change", () => {
   const glassHidden = document.getElementById("glassHiddenCb");
   if (glassHidden) glassHidden.checked = false;
+
+  const allInputs = panel.querySelectorAll('.format-option input[type="checkbox"]');
+
+  if (input.checked) {
+    allInputs.forEach(cb => {
+      if (cb !== input) cb.checked = false;
+    });
+  } else {
+    input.checked = true;
+  }
 
   label.classList.remove("tap-pop");
   void label.offsetWidth;
@@ -4744,23 +4823,17 @@ if (otherBtn) {
   const labelSpan = otherBtn.querySelector(".label");
   const t = translations[currentLang] || translations.it;
 
-  if (labelSpan) {
-    const activeLabels = labels
-      .map(label => {
-        const input = label.querySelector('input[type="checkbox"]');
-        const text = label.querySelector('.format-text')?.textContent?.trim();
-        return input?.checked ? text : null;
-      })
-      .filter(Boolean);
+if (labelSpan) {
+  const activeLabel = labels
+    .map(label => {
+      const input = label.querySelector('input[type="checkbox"]');
+      const text = label.querySelector('.format-text')?.textContent?.trim();
+      return input?.checked ? text : null;
+    })
+    .find(Boolean);
 
-    if (!activeLabels.length) {
-      labelSpan.textContent = t.otherFormats || "Altri formati";
-    } else if (activeLabels.length <= 2) {
-      labelSpan.textContent = activeLabels.join(" • ");
-    } else {
-      labelSpan.textContent = `${t.otherFormats || "Altri formati"} (${activeLabels.length})`;
-    }
-  }
+  labelSpan.textContent = activeLabel || t.otherFormats || "Altri formati";
+}
 }
 
   if (glassBtn) {
@@ -4781,9 +4854,8 @@ function resetAllFormatFilters(){
   const glassHidden = document.getElementById("glassHiddenCb");
   if (!panel) return;
 
-  // stato default della carta: tutti i formati bottiglia attivi, calice spento
   panel.querySelectorAll('.format-option input[type="checkbox"]').forEach(cb => {
-    cb.checked = true;
+    cb.checked = (cb.value === "bottle");
   });
 
   if (glassHidden) glassHidden.checked = false;
@@ -4791,7 +4863,6 @@ function resetAllFormatFilters(){
   applyFilters();
   updateFormatActiveState();
 
-  // micro feedback premium
   const btn = document.getElementById("glassBtn");
   if (btn) {
     btn.classList.add("just-reset");
