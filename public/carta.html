@@ -4455,21 +4455,24 @@ function setupFilterUI() {
 const input = document.createElement("input");
 input.type = "checkbox";
 input.value = id;
-input.checked = (id === "bottle");
+input.checked = true;
 
 input.addEventListener("change", () => {
   const glassHidden = document.getElementById("glassHiddenCb");
   if (glassHidden) glassHidden.checked = false;
 
-  const allInputs = panel.querySelectorAll('.format-option input[type="checkbox"]');
+  const allInputs = Array.from(
+    panel.querySelectorAll('.format-option input[type="checkbox"]')
+  );
+  const currentlyChecked = allInputs.filter(cb => cb.checked);
 
-  if (input.checked) {
+  if (currentlyChecked.length === 0) {
+    input.checked = true; // mai zero formati attivi
+  } else if (currentlyChecked.length > 1 && input.checked) {
+    // se clicco un formato mentre ce ne sono più di uno attivi -> resta solo lui
     allInputs.forEach(cb => {
       if (cb !== input) cb.checked = false;
     });
-  } else {
-    // impedisce stato "nessun formato attivo"
-    input.checked = true;
   }
 
   label.classList.remove("tap-pop");
@@ -4525,12 +4528,15 @@ otherBtn.onclick = () => {
     const wasOn = hidden.checked;
     hidden.checked = !wasOn;
 
-    if (hidden.checked) {
-      panel.querySelectorAll('.format-option input[type="checkbox"]').forEach(cb => {
-        cb.checked = false;
-      });
-    }
-
+if (hidden.checked) {
+  panel.querySelectorAll('.format-option input[type="checkbox"]').forEach(cb => {
+    cb.checked = false;
+  });
+} else {
+  panel.querySelectorAll('.format-option input[type="checkbox"]').forEach(cb => {
+    cb.checked = true;
+  });
+}
     applyFilters();
     updateFormatActiveState();
   };
@@ -4546,8 +4552,6 @@ function refreshFilterOptionsPreservingState() {
 const prevChecked = Array.from(
   panel.querySelectorAll('.format-option input[type="checkbox"]:checked')
 ).map(cb => cb.value);
-
-const prevSingle = prevChecked[0] || "bottle";
 
   const hiddenOld = document.getElementById("glassHiddenCb");
   const wasGlassOn = !!hiddenOld?.checked;
@@ -4578,20 +4582,23 @@ const prevSingle = prevChecked[0] || "bottle";
     const input = document.createElement("input");
     input.type = "checkbox";
     input.value = id;
-    input.checked = wasGlassOn ? false : (id === prevSingle);
+    input.checked = wasGlassOn ? false : (prevChecked.length ? prevChecked.includes(id) : true);
 
 input.addEventListener("change", () => {
   const glassHidden = document.getElementById("glassHiddenCb");
   if (glassHidden) glassHidden.checked = false;
 
-  const allInputs = panel.querySelectorAll('.format-option input[type="checkbox"]');
+  const allInputs = Array.from(
+    panel.querySelectorAll('.format-option input[type="checkbox"]')
+  );
+  const currentlyChecked = allInputs.filter(cb => cb.checked);
 
-  if (input.checked) {
+  if (currentlyChecked.length === 0) {
+    input.checked = true;
+  } else if (currentlyChecked.length > 1 && input.checked) {
     allInputs.forEach(cb => {
       if (cb !== input) cb.checked = false;
     });
-  } else {
-    input.checked = true;
   }
 
   label.classList.remove("tap-pop");
@@ -4855,7 +4862,7 @@ function resetAllFormatFilters(){
   if (!panel) return;
 
   panel.querySelectorAll('.format-option input[type="checkbox"]').forEach(cb => {
-    cb.checked = (cb.value === "bottle");
+    cb.checked = true;
   });
 
   if (glassHidden) glassHidden.checked = false;
