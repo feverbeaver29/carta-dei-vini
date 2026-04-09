@@ -126,6 +126,13 @@ type Priors = {
   appellations: { key: string; prior: AppellationPrior }[];
 };
 
+type WineScheda = {
+  hook: string;
+  notes: string[];
+  palate: string;
+  pairings: string[];
+};
+
 type WineTextContext = {
   grapes: string[];
   tastingNotes: string[];
@@ -137,6 +144,11 @@ type WineTextContext = {
   terroirTags: string[];
   grapeTextSummary: string[];
   palateTemplate: string[];
+
+  descNotes: string[];
+  descPairings: string[];
+  descHook: string[];
+  descPalate: string[];
 };
 
 type EnrichedWine = {
@@ -262,6 +274,147 @@ function extractLogWineKeys(row: any): string[] {
   }
 
   return [];
+}
+
+function normalizeFingerprintPart(raw: any): string {
+  return cleanText(raw)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildDescrizioneFingerprint(w: any, ristoranteId: string): string {
+  return [
+    normalizeFingerprintPart(w?.nome),
+    normalizeVintage(w?.annata),
+    normalizeFingerprintPart(w?.uvaggio),
+    normalizeFingerprintPart(w?.categoria),
+    normalizeFingerprintPart(w?.sottocategoria),
+    cleanText(ristoranteId),
+  ].join("|");
+}
+
+function emptyWineScheda(): WineScheda {
+  return {
+    hook: "",
+    notes: [],
+    palate: "",
+    pairings: [],
+  };
+}
+
+function parseWineScheda(raw: any): WineScheda {
+  if (!raw) return emptyWineScheda();
+
+  let obj = raw;
+  if (typeof raw === "string") {
+    try {
+      obj = JSON.parse(raw);
+    } catch {
+      return emptyWineScheda();
+    }
+  }
+
+  return {
+    hook: cleanText(obj?.hook),
+    notes: Array.isArray(obj?.notes)
+      ? obj.notes.map((x: any) => cleanText(x)).filter(Boolean)
+      : [],
+    palate: cleanText(obj?.palate),
+    pairings: Array.isArray(obj?.pairings)
+      ? obj.pairings.map((x: any) => cleanText(x)).filter(Boolean)
+      : [],
+  };
+}
+
+function pickSchedaRawForLang(row: any, lang: LangCode): any {
+  const localized = row?.[`scheda_${lang}`];
+  return localized || row?.scheda_it || row?.scheda || null;
+}
+
+function hasUsefulScheda(s: WineScheda): boolean {
+  return !!(s.hook || s.palate || s.notes.length || s.pairings.length);
+}
+
+function mergeSchedaIntoContext(
+  ctx: WineTextContext,
+  scheda?: WineScheda | null,
+): WineTextContext {
+  if (!scheda) return ctx;
+
+  return {
+    ...ctx,
+    descNotes: [...ctx.descNotes, ...scheda.notes],
+    descPairings: [...ctx.descPairings, ...scheda.pairings],
+    descHook: [...ctx.descHook, ...(scheda.hook ? [scheda.hook] : [])],
+    descPalate: [...ctx.descPalate, ...(scheda.palate ? [scheda.palate] : [])],
+  };
+}
+
+async function loadDescrizioniByFingerprint(
+  headers: Record<string, string>,
+  ristoranteId: string,
+  wines: any[],
+  lang: LangCode,
+): Promise<Map<string, WineScheda>> {
+  const wanted = new Set(
+    (wines || [])
+      .map((w) => buildDescrizioneFingerprint(w, ristoranteId))
+      .filter(Boolean),
+  );
+
+  if (!wanted.size) return new Map();
+
+  const supabaseUrl = "https://ldunvbftxhbtuyabgxwh.supabase.co";
+  const selectCols = [
+    "fingerprint",
+    "scheda",
+    "scheda_it",
+    "scheda_en",
+    "scheda_de",
+    "scheda_fr",
+    "scheda_es",
+    "scheda_zh",
+    "scheda_ko",
+    "scheda_ru",
+  ].join(",");
+
+  const res = await fetch(
+    `${supabaseUrl}/rest/v1/descrizioni_vini?ristorante_id=eq.${ristoranteId}&select=${selectCols}&limit=1000`,
+    { headers },
+  );
+
+  if (!res.ok) return new Map();
+
+  const rows = await res.json();
+  const map = new Map<string, WineScheda>();
+
+  for (const row of rows || []) {
+    const fp = cleanText(row?.fingerprint);
+    if (!fp || !wanted.has(fp)) continue;
+
+    const scheda = parseWineScheda(pickSchedaRawForLang(row, lang));
+    if (hasUsefulScheda(scheda)) {
+      map.set(fp, scheda);
+    }
+  }
+
+  return map;
+}
+
+function getMotivationNotesPool(ctx: WineTextContext, lang: LangCode): string[] {
+  if (lang === "it") {
+    return [
+      ...(ctx.descNotes || []),
+      ...(ctx.tastingNotes || []),
+      ...(ctx.typicalNotes || []),
+    ];
+  }
+
+  return [...(ctx.descNotes || [])];
 }
 /** =========================
  *  COLOR PARSING
@@ -791,6 +944,11 @@ function buildTags(ctx: WineTextContext, colore: Colore): Set<string> {
   addArr(ctx.appStyleHints);
   addArr(ctx.terroirTags);
   addArr(ctx.palateTemplate);
+
+  addArr(ctx.descNotes);
+  addArr(ctx.descPairings);
+  addArr(ctx.descHook);
+  addArr(ctx.descPalate);
   ctx.grapes.forEach((g) => tags.add(norm(g)));
   tags.add(colore);
   return tags;
@@ -918,6 +1076,11 @@ function profileAndContextFromWine(
     terroirTags: [],
     grapeTextSummary: [],
     palateTemplate: [],
+
+    descNotes: [],
+    descPairings: [],
+    descHook: [],
+    descPalate: [],
   };
 
   for (const { gp } of found) {
@@ -1077,6 +1240,7 @@ function matchScore(
   const pairingTexts = [
     ...(wineCtx.grapePairings || []),
     ...(wineCtx.appPairings || []),
+    ...(wineCtx.descPairings || []),
   ];
   let pairingHits = 0;
   for (const p of pairingTexts) {
@@ -1098,6 +1262,8 @@ function matchScore(
       ...(wineCtx.terroirTags || []),
       ...(wineCtx.grapeTextSummary || []),
       ...(wineCtx.palateTemplate || []),
+      ...(wineCtx.descHook || []),
+      ...(wineCtx.descPalate || []),
     ].join(" "),
   );
 
@@ -1109,20 +1275,30 @@ function matchScore(
 
   if (richDish) {
     if (
-      /(struttura|importante|rovere|barrique|potente|corposo|longevit)/.test(
+      /(struttura|importante|rovere|barrique|potente|corposo|longevit|avvolgente|polpos|fitto|profondo|strutturat)/.test(
         styleAll,
       )
     ) {
       sc += 0.05;
     }
   }
+
   if (delicateDish) {
-    if (/(teso|snello|fresco|mineral|salino|gastronomic)/.test(styleAll)) {
+    if (
+      /(teso|snello|fresco|mineral|salino|gastronomic|fine|elegante|vibrante|legger|slanciato)/.test(
+        styleAll,
+      )
+    ) {
       sc += 0.05;
     }
   }
+
   if (spicyDish) {
-    if (/(morbido|rotondo|dolcezza|glicerico|avvolgente)/.test(styleAll)) {
+    if (
+      /(morbido|rotondo|dolcezza|glicerico|avvolgente|setoso|soffice)/.test(
+        styleAll,
+      )
+    ) {
       sc += 0.03;
     }
   }
@@ -2060,14 +2236,10 @@ function buildMotivation(
 ): string {
   const S = getSommelierLocale(lang);
   const core = lowerFirst(buildPairingCore(profile, dish, rand, lang));
-  const useRawNotes = shouldUseRawNotesInMotivation(lang);
+  const rawNotesPool = getMotivationNotesPool(ctx, lang);
 
-  const rawNotes = useRawNotes
-    ? pickUnique(
-      [...(ctx.tastingNotes || []), ...(ctx.typicalNotes || [])],
-      4,
-      rand,
-    ).map((s) => trimToWords(s, 4))
+  const rawNotes = rawNotesPool.length
+    ? pickUnique(rawNotesPool, 4, rand).map((s) => trimToWords(s, 4))
     : [];
 
   const notes: string[] = [];
@@ -2368,18 +2540,31 @@ serve(async (req) => {
       );
     }
 
+    const descrizioniMap = await loadDescrizioniByFingerprint(
+      headers,
+      ristorante_id,
+      wines0,
+      safeCode,
+    );
+
     const enriched: EnrichedWine[] = wines0.map((w) => {
       const { profile, colore, ctx } = profileAndContextFromWine(
         w,
         priors,
         w.colore,
       );
-      const __tags = buildTags(ctx, colore);
+
+      const fp = buildDescrizioneFingerprint(w, ristorante_id);
+      const scheda = descrizioniMap.get(fp);
+      const mergedCtx = mergeSchedaIntoContext(ctx, scheda);
+
+      const __tags = buildTags(mergedCtx, colore);
+
       return {
         ...w,
         colore,
         __profile: profile,
-        __ctx: ctx,
+        __ctx: mergedCtx,
         __tags,
       };
     });
