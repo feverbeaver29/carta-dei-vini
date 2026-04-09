@@ -87,6 +87,10 @@ type Dish = {
   spice: number;
   sweet: number;
   intensity: number;
+  succulence: number;
+  sapidity: number;
+  aromaticity: number;
+  persistence: number;
   protein:
     | "pesce"
     | "carne_rossa"
@@ -537,96 +541,156 @@ function parseDefaultColor(raw: any): Colore | null {
 
 function parseDishFallback(text: string): Dish {
   const s = (text || "").toLowerCase();
+
   const dish: Dish = {
     fat: 0.3,
     spice: 0,
     sweet: 0,
     intensity: 0.4,
+    succulence: 0.3,
+    sapidity: 0.25,
+    aromaticity: 0.35,
+    persistence: 0.35,
     protein: null,
     cooking: null,
     acid_hint: false,
   };
 
-  if (/forno|al forno|arrosto|in crosta/.test(s)) {
-    dish.cooking = dish.cooking ?? "griglia";
-    dish.intensity = Math.max(dish.intensity, 0.55);
-  }
-  if (/crudo|tartare|carpaccio/.test(s)) {
+  // cotture
+  if (/crudo|tartare|carpaccio|ceviche/.test(s)) {
     dish.cooking = "crudo";
     dish.intensity = 0.3;
+    dish.succulence = Math.max(dish.succulence, 0.35);
+    dish.persistence = Math.max(dish.persistence, 0.25);
   }
+
   if (/fritt|impanat/.test(s)) {
     dish.cooking = "fritto";
-    dish.fat = 0.7;
+    dish.fat = Math.max(dish.fat, 0.7);
     dish.intensity = Math.max(dish.intensity, 0.5);
+    dish.sapidity = Math.max(dish.sapidity, 0.35);
+    dish.persistence = Math.max(dish.persistence, 0.45);
   }
+
   if (/griglia|brace|arrosto/.test(s)) {
     dish.cooking = "griglia";
-    dish.intensity = 0.6;
+    dish.intensity = Math.max(dish.intensity, 0.6);
+    dish.aromaticity = Math.max(dish.aromaticity, 0.45);
+    dish.persistence = Math.max(dish.persistence, 0.5);
   }
-  if (/brasat|stracotto|stufato/.test(s)) {
+
+  if (/brasat|stracotto|stufato|spezzatino|ragu|ragù|peposo/.test(s)) {
     dish.cooking = "brasato";
-    dish.intensity = 0.8;
-    dish.fat = Math.max(dish.fat, 0.6);
+    dish.intensity = Math.max(dish.intensity, 0.8);
+    dish.fat = Math.max(dish.fat, 0.55);
+    dish.succulence = Math.max(dish.succulence, 0.7);
+    dish.persistence = Math.max(dish.persistence, 0.75);
+    dish.aromaticity = Math.max(dish.aromaticity, 0.55);
   }
+
   if (/bollit/.test(s)) {
     dish.cooking = "bollito";
     dish.intensity = Math.max(dish.intensity, 0.45);
+    dish.succulence = Math.max(dish.succulence, 0.4);
   }
 
-  if (/limone|agrodolce|aceto|capperi|citric|yuzu/.test(s)) {
+  if (/forno|al forno|in crosta/.test(s)) {
+    dish.cooking = dish.cooking ?? "griglia";
+    dish.intensity = Math.max(dish.intensity, 0.55);
+    dish.persistence = Math.max(dish.persistence, 0.5);
+  }
+
+  // acidità / freschezza del piatto
+  if (/limone|agrodolce|aceto|capperi|citric|yuzu|pomodoro|arancia|agrum/.test(s)) {
     dish.acid_hint = true;
   }
 
-  if (/piccant|’nduja|nduja|peperoncino|curry|speziat/.test(s)) {
-    dish.spice = 0.6;
+  // piccante / speziato
+  if (/piccant|’nduja|nduja|peperoncino|curry|harissa/.test(s)) {
+    dish.spice = Math.max(dish.spice, 0.6);
+    dish.aromaticity = Math.max(dish.aromaticity, 0.55);
   }
 
+  // tendenza dolce
   if (
     /dolce|dessert|tiramisu|cheesecake|torta|pasticc|gelato|sorbetto/.test(s)
   ) {
-    dish.sweet = 0.8;
-    dish.intensity = 0.6;
+    dish.sweet = Math.max(dish.sweet, 0.8);
+    dish.intensity = Math.max(dish.intensity, 0.6);
+    dish.persistence = Math.max(dish.persistence, 0.55);
   }
 
+  // proteine
   if (
-    /pesce|tonno|salmone|gamber|calamari|cozze|vongole|polpo|scampi|branzino|orata|spigola/
-      .test(s)
+    /pesce|tonno|salmone|gamber|calamari|cozze|vongole|polpo|scampi|branzino|orata|spigola|baccala|baccalà/.test(s)
   ) {
     dish.protein = "pesce";
+    dish.succulence = Math.max(dish.succulence, 0.35);
+    dish.sapidity = Math.max(dish.sapidity, 0.3);
   } else if (
-    /manzo|bovino|fiorentina|tagliata|agnello|cervo|capriolo|cacciagione/
-      .test(s)
+    /manzo|bovino|fiorentina|tagliata|agnello|cervo|capriolo|cacciagione|guancia|cinghiale|peposo/.test(s)
   ) {
     dish.protein = "carne_rossa";
-    dish.intensity = 0.8;
+    dish.intensity = Math.max(dish.intensity, 0.8);
+    dish.succulence = Math.max(dish.succulence, 0.7);
+    dish.persistence = Math.max(dish.persistence, 0.7);
   } else if (
-    /maiale|porchetta|salsiccia|pollo|tacchino|coniglio|anatra|oca/.test(s)
+    /anatra|oca/.test(s)
   ) {
     dish.protein = "carne_bianca";
-    dish.intensity = Math.max(dish.intensity, 0.5);
+    dish.fat = Math.max(dish.fat, 0.65);
+    dish.intensity = Math.max(dish.intensity, 0.75);
+    dish.succulence = Math.max(dish.succulence, 0.65);
+    dish.persistence = Math.max(dish.persistence, 0.65);
+    dish.aromaticity = Math.max(dish.aromaticity, 0.5);
+  } else if (
+    /maiale|porchetta|salsiccia|pollo|tacchino|coniglio/.test(s)
+  ) {
+    dish.protein = "carne_bianca";
+    dish.intensity = Math.max(dish.intensity, 0.55);
+    dish.succulence = Math.max(dish.succulence, 0.45);
   } else if (
     /salume|prosciutto|speck|salami|mortadella|culatello|bresaola/.test(s)
   ) {
     dish.protein = "salumi";
-    dish.intensity = 0.6;
-    dish.fat = 0.6;
+    dish.intensity = Math.max(dish.intensity, 0.6);
+    dish.fat = Math.max(dish.fat, 0.6);
+    dish.sapidity = Math.max(dish.sapidity, 0.65);
+    dish.persistence = Math.max(dish.persistence, 0.5);
   } else if (
-    /formagg|parmigiano|pecorino|gorgonzola|caprino|blu|erborinat/.test(s)
+    /formagg|parmigiano|pecorino|gorgonzola|caprino|blu|erborinat|comte|comté|brie|taleggio/.test(s)
   ) {
     dish.protein = "formaggio";
-    dish.intensity = 0.7;
-    dish.fat = 0.6;
+    dish.intensity = Math.max(dish.intensity, 0.7);
+    dish.fat = Math.max(dish.fat, 0.6);
+    dish.sapidity = Math.max(dish.sapidity, 0.65);
+    dish.persistence = Math.max(dish.persistence, 0.6);
   } else {
     dish.protein = dish.protein ?? "veg";
   }
 
-  if (/burro|panna|carbonara|cacio e pepe|alla gricia|quattro formaggi/.test(s)) {
+  // elementi grassi / cremosi
+  if (/burro|panna|carbonara|cacio e pepe|alla gricia|quattro formaggi|crema|maionese/.test(s)) {
     dish.fat = Math.max(dish.fat, 0.6);
+    dish.persistence = Math.max(dish.persistence, 0.55);
   }
-  if (/pomodoro|rag[ùu]/.test(s)) {
-    dish.intensity = Math.max(dish.intensity, 0.55);
+
+  // sapidità
+  if (/acciug|alici|capperi|olive|pecorino|parmigiano|grana|soia|miso|colatura|bottarga/.test(s)) {
+    dish.sapidity = Math.max(dish.sapidity, 0.65);
+  }
+
+  // aromaticità
+  if (/pepe|pepe nero|ginepro|rosmarino|salvia|timo|origano|curry|curcuma|zenzero|aglio|cipolla|erbe|erbe aromatiche|tartufo|funghi/.test(s)) {
+    dish.aromaticity = Math.max(dish.aromaticity, 0.65);
+  }
+
+  // pomodoro / ragù
+  if (/pomodoro|ragu|ragù/.test(s)) {
+    dish.intensity = Math.max(dish.intensity, 0.6);
     dish.acid_hint = true;
+    dish.succulence = Math.max(dish.succulence, 0.55);
+    dish.persistence = Math.max(dish.persistence, 0.6);
   }
 
   return dish;
@@ -639,11 +703,16 @@ function combineDishes(ds: Dish[]): Dish {
       spice: 0,
       sweet: 0,
       intensity: 0.4,
+      succulence: 0.3,
+      sapidity: 0.25,
+      aromaticity: 0.35,
+      persistence: 0.35,
       protein: null,
       cooking: null,
       acid_hint: false,
     };
   }
+
   const avg = (a: number[]) => a.reduce((x, y) => x + y, 0) / a.length;
   const mode = (arr: (string | null)[]) => {
     const m = new Map<string, number>();
@@ -651,11 +720,16 @@ function combineDishes(ds: Dish[]): Dish {
     return (Array.from(m.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ??
       null) as any;
   };
+
   return {
     fat: +avg(ds.map((d) => d.fat)).toFixed(2),
     spice: +avg(ds.map((d) => d.spice)).toFixed(2),
     sweet: +avg(ds.map((d) => d.sweet)).toFixed(2),
     intensity: +avg(ds.map((d) => d.intensity)).toFixed(2),
+    succulence: +avg(ds.map((d) => d.succulence)).toFixed(2),
+    sapidity: +avg(ds.map((d) => d.sapidity)).toFixed(2),
+    aromaticity: +avg(ds.map((d) => d.aromaticity)).toFixed(2),
+    persistence: +avg(ds.map((d) => d.persistence)).toFixed(2),
     acid_hint: ds.some((d) => d.acid_hint),
     protein: mode(ds.map((d) => d.protein)),
     cooking: mode(ds.map((d) => d.cooking)),
@@ -667,10 +741,21 @@ async function getDishFeatures(piattoRaw: string, openaiKey?: string): Promise<D
   if (!openaiKey) return combineDishes(items.map(parseDishFallback));
 
   const userPrompt = `
-Analizza questi piatti e restituisci SOLO un ARRAY JSON, ogni oggetto con chiavi:
+Analizza questi piatti e restituisci SOLO un ARRAY JSON valido.
+Per ogni piatto usa queste chiavi:
 "protein": "pesce"|"carne_rossa"|"carne_bianca"|"salumi"|"formaggio"|"veg"|null
 "cooking": "crudo"|"fritto"|"griglia"|"brasato"|"bollito"|null
-"fat": 0..1, "spice": 0..1, "sweet": 0..1, "intensity": 0..1, "acid_hint": true/false
+"fat": 0..1
+"spice": 0..1
+"sweet": 0..1
+"intensity": 0..1
+"succulence": 0..1
+"sapidity": 0..1
+"aromaticity": 0..1
+"persistence": 0..1
+"acid_hint": true/false
+
+Valuta il piatto in senso sensoriale da sommelier, non nutrizionale.
 Piatti: ${items.map((s) => `"${s}"`).join(", ")}
 `.trim();
 
@@ -734,6 +819,10 @@ Piatti: ${items.map((s) => `"${s}"`).join(", ")}
     spice: clamp01(Number(r?.spice ?? 0)),
     sweet: clamp01(Number(r?.sweet ?? 0)),
     intensity: clamp01(Number(r?.intensity ?? 0.4)),
+    succulence: clamp01(Number(r?.succulence ?? 0.3)),
+    sapidity: clamp01(Number(r?.sapidity ?? 0.25)),
+    aromaticity: clamp01(Number(r?.aromaticity ?? 0.35)),
+    persistence: clamp01(Number(r?.persistence ?? 0.35)),
     acid_hint: !!r?.acid_hint,
   });
 
@@ -1170,7 +1259,11 @@ function matchScore(
 ): number {
   let sc = 0;
 
-  sc += (dish.fat * (profile.acid * 1.0 + profile.bubbles * 0.6));
+  // basi sensoriali nuove
+  sc += dish.fat * (profile.acid * 1.0 + profile.bubbles * 0.6);
+  sc += dish.succulence * (profile.tannin * 0.9 + profile.body * 0.35);
+  sc += dish.sapidity * (profile.acid * 0.55 + profile.bubbles * 0.25);
+  sc += dish.persistence * (profile.body * 0.45);
 
   if (dish.protein === "pesce" || dish.cooking === "crudo") {
     sc += (profile.acid * 1.35) - (profile.tannin * 1.0);
@@ -1242,6 +1335,7 @@ function matchScore(
     ...(wineCtx.appPairings || []),
     ...(wineCtx.descPairings || []),
   ];
+
   let pairingHits = 0;
   for (const p of pairingTexts) {
     const ptoks = new Set(norm(String(p)).split(" ").filter(Boolean));
@@ -1272,6 +1366,9 @@ function matchScore(
   const delicateDish = dish.intensity <= 0.45 && dish.fat <= 0.4 &&
     (dish.protein === "pesce" || dish.protein === "veg");
   const spicyDish = dish.spice > 0.4;
+  const aromaticDish = dish.aromaticity >= 0.55;
+  const persistentDish = dish.persistence >= 0.65;
+  const saltyDish = dish.sapidity >= 0.55;
 
   if (richDish) {
     if (
@@ -1302,6 +1399,33 @@ function matchScore(
       sc += 0.03;
     }
   }
+
+  if (aromaticDish) {
+    if (
+      /(balsam|spezi|pepper|pepato|erbe|herb|floreal|floral|violet|violetta|agrum|citrus|anice|liquir|grafite|graphite|fum|smoke)/.test(
+        styleAll,
+      )
+    ) {
+      sc += 0.06;
+    }
+  }
+
+  if (saltyDish) {
+    if (/(salino|sapido|mineral|marine|marittimo|costa|vulcanic)/.test(styleAll)) {
+      sc += 0.04;
+    }
+  }
+
+  if (persistentDish) {
+    if (
+      /(lungo|persisten|profondo|struttura|corposo|fitto|ampio|avvolgente)/.test(
+        styleAll,
+      )
+    ) {
+      sc += 0.05;
+    }
+  }
+
   if (
     (dish.protein === "pesce" || dish.protein === "veg") &&
     /(marittimo|vulcanic|costa|sapido)/.test(styleAll)
@@ -2710,6 +2834,27 @@ serve(async (req) => {
       registerWine(chosenOne);
     }
 
+        // se i vincoli di diversità sono troppo stretti, rilassa il riempimento
+    if (chosen.length < wanted) {
+      const relaxedPool = sorted.filter((w) =>
+        !catastrophicMismatch(w) &&
+        !chosen.some((c) => c.__historyKey === w.__historyKey)
+      );
+
+      for (const w of relaxedPool) {
+        chosen.push(w);
+        if (chosen.length >= wanted) break;
+      }
+    }
+
+    // rete di sicurezza estrema: mai tornare picks vuoto
+    if (!chosen.length) {
+      for (const w of sorted.slice(0, wanted || 3)) {
+        if (chosen.some((c) => c.__historyKey === w.__historyKey)) continue;
+        chosen.push(w);
+      }
+    }
+    
     const finalChosen = chosen.slice(0, wanted);
 
     function styleOf(colore: Colore, p: Profile):
