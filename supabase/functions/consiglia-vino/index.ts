@@ -149,6 +149,8 @@ type EnrichedWine = {
   __profile: Profile;
   __ctx: WineTextContext;
   __tags: Set<string>;
+  __historyKey: string;
+  __legacyLogKey: string;
   __q?: number;
   __scoreCore?: number;
   __isBoost?: boolean;
@@ -218,6 +220,49 @@ function trimToWords(s: string, max: number) {
   return words.join(" ");
 }
 
+function cleanText(raw: any): string {
+  if (raw == null) return "";
+  return String(raw).trim();
+}
+
+function normalizeVintage(raw: any): string {
+  const s = cleanText(raw);
+  if (!s) return "";
+  const m = s.match(/\b(19|20)\d{2}\b/);
+  return m ? m[0] : norm(s);
+}
+
+function wineHistoryKey(w: any): string {
+  const id = cleanText(w?.id);
+  if (id) return `id:${id}`;
+
+  const nome = norm(String(w?.nome || ""));
+  const annata = normalizeVintage(w?.annata);
+  const uvaggio = norm(String(w?.uvaggio || ""));
+  return `fp:${nome}|${annata}|${uvaggio}`;
+}
+
+function extractLogWineKeys(row: any): string[] {
+  if (Array.isArray(row?.vini_keys) && row.vini_keys.length) {
+    return row.vini_keys.map((x: any) => cleanText(x)).filter(Boolean);
+  }
+
+  if (Array.isArray(row?.vini_ids) && row.vini_ids.length) {
+    return row.vini_ids
+      .map((x: any) => cleanText(x))
+      .filter(Boolean)
+      .map((id: string) => `id:${id}`);
+  }
+
+  if (Array.isArray(row?.vini) && row.vini.length) {
+    return row.vini
+      .map((x: any) => cleanText(x))
+      .filter(Boolean)
+      .map((nome: string) => `legacy:${norm(nome)}`);
+  }
+
+  return [];
+}
 /** =========================
  *  COLOR PARSING
  *  ========================= */
@@ -550,28 +595,68 @@ Piatti: ${items.map((s) => `"${s}"`).join(", ")}
  *  ========================= */
 
 function toStringArray(raw: any): string[] {
-  if (!raw) return [];
-  if (Array.isArray(raw)) return raw.map((x) => String(x)).filter(Boolean);
+  if (raw == null) return [];
+
+  if (Array.isArray(raw)) {
+    return raw.map((x) => String(x).trim()).filter(Boolean);
+  }
 
   const s = String(raw).trim();
-  if (!s) return [];
+  if (!s || s.toLowerCase() === "nan") return [];
 
+  // JSON array vero
   if (s.startsWith("[") && s.endsWith("]")) {
     try {
       const arr = JSON.parse(s);
-      return Array.isArray(arr) ? arr.map((x) => String(x)).filter(Boolean) : [s];
+      return Array.isArray(arr)
+        ? arr.map((x) => String(x).trim()).filter(Boolean)
+        : [];
     } catch {
-      return [s];
+      // continua sotto
     }
   }
 
+  // PostgreSQL array testuale: {"a","b","c"}
   if (s.startsWith("{") && s.endsWith("}")) {
     const inner = s.slice(1, -1).trim();
     if (!inner) return [];
-    return inner
-      .split(/",(?![^"]*")|,(?![^"]*")/g)
-      .map((x) => x.replace(/^"+|"+$/g, "").trim())
-      .filter(Boolean);
+
+    const out: string[] = [];
+    let buf = "";
+    let inQuotes = false;
+    let escaped = false;
+
+    for (const ch of inner) {
+      if (escaped) {
+        buf += ch;
+        escaped = false;
+        continue;
+      }
+
+      if (ch === "\\") {
+        escaped = true;
+        continue;
+      }
+
+      if (ch === '"') {
+        inQuotes = !inQuotes;
+        continue;
+      }
+
+      if (ch === "," && !inQuotes) {
+        const item = buf.trim().replace(/^"+|"+$/g, "").trim();
+        if (item) out.push(item);
+        buf = "";
+        continue;
+      }
+
+      buf += ch;
+    }
+
+    const last = buf.trim().replace(/^"+|"+$/g, "").trim();
+    if (last) out.push(last);
+
+    return out.filter(Boolean);
   }
 
   return [s];
@@ -2200,14 +2285,16 @@ serve(async (req) => {
 
     const COOL_N = 80;
     const coolList: string[] = [];
+
     for (const r of recentLog) {
-      for (const nome of (r.vini || [])) {
-        const n = norm(nome);
-        if (!coolList.includes(n)) coolList.push(n);
+      const keys = extractLogWineKeys(r);
+      for (const key of keys) {
+        if (!coolList.includes(key)) coolList.push(key);
         if (coolList.length >= COOL_N) break;
       }
       if (coolList.length >= COOL_N) break;
     }
+
     const coolSet = new Set(coolList);
 
     const nowMs = Date.now();
@@ -2219,12 +2306,14 @@ serve(async (req) => {
       return Math.exp(-LAMBDA_DECAY * dt);
     };
 
-    const expByWine: Record<string, number> = {};
+        const expByWine: Record<string, number> = {};
+
     recentLog.forEach((r) => {
-      const w = decay(String(r.creato_il || ""));
-      (r.vini || []).forEach((nome: string) => {
-        const n = norm(nome);
-        expByWine[n] = (expByWine[n] || 0) + w;
+      const weight = decay(String(r.creato_il || ""));
+      const keys = extractLogWineKeys(r);
+
+      keys.forEach((key: string) => {
+        expByWine[key] = (expByWine[key] || 0) + weight;
       });
     });
 
@@ -2244,14 +2333,17 @@ serve(async (req) => {
             .replace(/[^\d.,]/g, "")
             .replace(",", "."),
         ) || 0;
-        const coloreCat = coloreFromLabel(String(v.categoria || ""));
 
+        const coloreCat = coloreFromLabel(String(v.categoria || ""));
         const nomeN = norm(v.nome);
         const producerRaw = String(v.nome || "").split("|")[0];
         const __producer = norm(producerRaw);
-        const __uvTokens = new Set(splitGrapes(String(v.uvaggio || "")).map(
-          norm,
-        ));
+        const __uvTokens = new Set(
+          splitGrapes(String(v.uvaggio || "")).map(norm),
+        );
+
+        const __historyKey = wineHistoryKey(v);
+        const __legacyLogKey = `legacy:${nomeN}`;
 
         return {
           ...v,
@@ -2260,6 +2352,8 @@ serve(async (req) => {
           nomeN,
           __producer,
           __uvTokens,
+          __historyKey,
+          __legacyLogKey,
         } as EnrichedWine;
       })
       .filter((v) =>
@@ -2305,14 +2399,23 @@ serve(async (req) => {
 
     const baseList: EnrichedWine[] = enriched.map((w, idx) => {
       const q = mNorm(mVals[idx]);
-      const views = expByWine[w.nomeN] || 0;
+
+      const views =
+        (expByWine[w.__historyKey] || 0) +
+        (expByWine[w.__legacyLogKey] || 0);
+
       const explore = C *
         Math.sqrt(Math.log(totalViews + Math.E) / (views + 1));
+
       const blended = 0.82 * q + 0.18 * explore;
 
       const exposurePenalty = -0.1 *
         Math.pow((views / (totalViews || 1)), 0.7);
-      const cooldownPenalty = coolSet.has(w.nomeN) ? -0.25 : 0;
+
+      const cooldownPenalty =
+        (coolSet.has(w.__historyKey) || coolSet.has(w.__legacyLogKey))
+          ? -0.25
+          : 0;
       const jitter = (rng() - 0.5) * 0.02;
 
       const idKey = w.id ? String(w.id) : "";
@@ -2388,19 +2491,20 @@ serve(async (req) => {
       }
     }
 
-    const neverSeen = sorted.filter((w) =>
-      (expByWine[w.nomeN] || 0) === 0 && !catastrophicMismatch(w)
+        const neverSeen = sorted.filter((w) =>
+      ((expByWine[w.__historyKey] || 0) + (expByWine[w.__legacyLogKey] || 0)) === 0 &&
+      !catastrophicMismatch(w)
     );
     for (const w of neverSeen) {
       if (chosen.length >= Math.min(2, wanted)) break;
-      if (chosen.some((c) => c.nomeN === w.nomeN)) continue;
+            if (chosen.some((c) => c.__historyKey === w.__historyKey)) continue;
       if (!canAddWine(w)) continue;
       chosen.push(w);
       registerWine(w);
     }
 
-    const already = new Set(chosen.map((w) => w.nomeN));
-    const pool = sorted.filter((w) => !already.has(w.nomeN));
+    const already = new Set(chosen.map((w) => w.__historyKey));
+    const pool = sorted.filter((w) => !already.has(w.__historyKey));
 
     while (chosen.length < wanted && pool.length) {
       let bestIdx = -1;
@@ -2445,12 +2549,12 @@ serve(async (req) => {
     const topByScore = [...finalChosen].sort((a, b) =>
       (b.__scoreCore ?? 0) - (a.__scoreCore ?? 0)
     ).slice(0, Math.min(2, finalChosen.length));
-    const topSet = new Set(topByScore.map((w) => w.nomeN));
+        const topSet = new Set(topByScore.map((w) => w.__historyKey));
 
     let discoveryWine: EnrichedWine | null = null;
     let worstAvgSim = Infinity;
     for (const cand of finalChosen) {
-      if (topSet.has(cand.nomeN)) continue;
+      if (topSet.has(cand.__historyKey)) continue;
       let avgSim = 0;
       let count = 0;
       for (const other of finalChosen) {
@@ -2469,7 +2573,7 @@ serve(async (req) => {
       }
     }
     const discoverySet = new Set<string>(
-      discoveryWine ? [discoveryWine.nomeN] : [],
+      discoveryWine ? [discoveryWine.__historyKey] : [],
     );
 
     const out = finalChosen.map((w) => {
@@ -2522,6 +2626,8 @@ serve(async (req) => {
           ristorante_id,
           piatto,
           vini: out.map((w) => w.nome),
+          vini_ids: out.map((w) => w.id).filter(Boolean),
+          vini_keys: out.map((w) => w.__historyKey).filter(Boolean),
           boost_inclusi: out.some((w) => w.__isBoost),
           sottocategoria: out[0]?.sottocategoria || null,
         }),
@@ -2534,8 +2640,8 @@ serve(async (req) => {
       const isBoost = !!w.__isBoost;
       const parts = [
         isBoost ? ICONS.boosted : "",
-        topSet.has(w.nomeN) ? ICONS.top : "",
-        discoverySet.has(w.nomeN) ? ICONS.discovery : "",
+        topSet.has(w.__historyKey) ? ICONS.top : "",
+        discoverySet.has(w.__historyKey) ? ICONS.discovery : "",
         ICONS.style[w.__style as keyof typeof ICONS.style] || "",
       ].filter(Boolean);
       const prefix = parts.join(" ");
