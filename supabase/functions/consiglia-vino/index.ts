@@ -1313,12 +1313,17 @@ function buildReasonCodes(
     );
   }
 
-  if (
-    (dish.protein === "pesce" || dish.cooking === "crudo") &&
-    profile.tannin <= 0.4
-  ) {
-    push("supports_fish", profile.acid * 0.5 + Math.max(0, 0.45 - profile.tannin));
-  }
+if (
+  (dish.protein === "pesce" || dish.cooking === "crudo") &&
+  profile.tannin <= 0.45
+) {
+  push(
+    "supports_fish",
+    profile.acid * 0.55 +
+      Math.max(0, 0.5 - profile.tannin) +
+      profile.bubbles * 0.2,
+  );
+}
 
   if (
     dish.intensity <= 0.45 &&
@@ -1375,6 +1380,21 @@ function matchScore(
   piattoNorm: string,
 ): number {
   let sc = 0;
+  const isPaellaLike = /\b(paella|fideua|fideuà)\b/.test(piattoNorm);
+
+const isSeaRiceLike =
+  (
+    /\b(paella|fideua|fideuà|risotto|riso|arroz)\b/.test(piattoNorm) &&
+    /\b(pesce|gamber|gamberi|scampi|cozze|vongole|calamari|polpo|seppie|mare)\b/.test(piattoNorm)
+  ) ||
+  (isPaellaLike && dish.protein === "pesce");
+
+const isMixedSeaSpice =
+  isPaellaLike ||
+  (
+    isSeaRiceLike &&
+    (dish.spice >= 0.2 || dish.acid_hint || dish.sapidity >= 0.4)
+  );
 
   // basi sensoriali nuove
   sc += dish.fat * (profile.acid * 1.0 + profile.bubbles * 0.6);
@@ -1550,6 +1570,23 @@ function matchScore(
     sc += 0.03;
   }
 
+  if (isMixedSeaSpice) {
+  if (profile.bubbles >= 0.9) {
+    sc += 0.18;
+  }
+
+  if (profile.acid >= 0.58 && profile.tannin <= 0.35) {
+    sc += 0.12;
+  }
+
+  if (profile.tannin >= 0.45) {
+    sc -= 0.12 + Math.max(0, profile.tannin - 0.45) * 0.45;
+  }
+
+  if (profile.body >= 0.72 && profile.bubbles < 0.9) {
+    sc -= 0.08;
+  }
+}
   return sc;
 }
 
@@ -2295,6 +2332,11 @@ function lowerFirst(s: string) {
   return s ? s[0].toLowerCase() + s.slice(1) : s;
 }
 
+function upperFirst(s: string) {
+  s = (s || "").trim();
+  return s ? s[0].toUpperCase() + s.slice(1) : s;
+}
+
 function pickUnique(arr: string[], n: number, rand: () => number) {
   const clean = (arr || [])
     .map((x) => String(x || "").trim())
@@ -2608,6 +2650,7 @@ function buildMotivation(
 ): string {
   const S = getSommelierLocale(lang);
   const core = lowerFirst(buildPairingCore(profile, dish, rand, lang));
+const coreSentence = lang === "zh" ? core : upperFirst(core);
   const reasonLines = (reasons || [])
   .flatMap((r) => {
     const arr = getReasonTexts(lang, r.code);
@@ -2647,13 +2690,15 @@ let text = "";
 if (hasNotes && reasonText) {
   text = lang === "zh"
     ? `${intro}${notePart}；${reasonText}；${core}`
-    : `${intro}${spacer}${notePart};${spacer}${reasonText}${spacer}${core}`;
+    : `${intro}${spacer}${notePart};${spacer}${reasonText}${spacer}${coreSentence}`;
 } else if (hasNotes) {
   text = lang === "zh"
     ? `${intro}${notePart}；${core}`
     : `${intro}${spacer}${notePart};${spacer}${core}`;
 } else if (reasonText) {
-  text = `${intro}${spacer}${reasonText}${spacer}${core}`;
+  text = lang === "zh"
+    ? `${intro}${reasonText}；${core}`
+    : `${intro}${spacer}${reasonText}${spacer}${coreSentence}`;
 } else {
   text = `${intro}${spacer}${core}`;
 }
@@ -3125,7 +3170,12 @@ const scoreRaw =
       }
     }
     
-    const finalChosen = chosen.slice(0, wanted);
+    const finalChosen = [...chosen]
+  .sort((a, b) =>
+    ((b.__scoreCore ?? 0) - (a.__scoreCore ?? 0)) ||
+    ((b.__q ?? 0) - (a.__q ?? 0))
+  )
+  .slice(0, wanted);
 
     function styleOf(colore: Colore, p: Profile):
       | "sparkling"
