@@ -3598,8 +3598,17 @@ if (topPairing) {
 }
 
 const leaderQ = topPairing?.__q ?? 0;
+const boostFloorQ = Math.max(0.30, leaderQ - 0.28);
 
-// 2) TOP 2: ancora molto fedele al pairing, non ancora "exploration"
+const bestBoost = pairingSorted.find((w) =>
+  w.__isBoost &&
+  !alreadyChosen(w) &&
+  !catastrophicMismatch(w) &&
+  canAddWine(w) &&
+  (w.__q ?? 0) >= boostFloorQ
+);
+
+// 2) SLOT 2: pairing molto fedele, ma se il boost è quasi allo stesso livello lo facciamo entrare
 if (chosen.length < Math.min(2, wanted)) {
   const secondPairing = pairingSorted.find((w) =>
     !alreadyChosen(w) &&
@@ -3608,30 +3617,26 @@ if (chosen.length < Math.min(2, wanted)) {
     (w.__q ?? 0) >= Math.max(0.35, leaderQ - 0.08)
   );
 
-  if (secondPairing) {
+  const useBoostInSecondSlot =
+    !!bestBoost &&
+    (
+      !secondPairing ||
+      (bestBoost.__q ?? 0) >= ((secondPairing.__q ?? 0) - 0.05)
+    );
+
+  if (useBoostInSecondSlot && bestBoost) {
+    addChosen(bestBoost);
+  } else if (secondPairing) {
     addChosen(secondPairing);
   }
 }
 
-// 3) BOOST del ristorante: sì, ma solo se resta vicino ai migliori
-if (chosen.length < wanted) {
-  const boostCandidates = pairingSorted.filter((w) =>
-    w.__isBoost &&
-    !alreadyChosen(w) &&
-    !catastrophicMismatch(w)
-  );
-
-  const goodBoost = boostCandidates.find((w) =>
-    canAddWine(w) &&
-    (w.__q ?? 0) >= Math.max(0.4, leaderQ - 0.15)
-  );
-
-  if (goodBoost) {
-    addChosen(goodBoost);
-  }
+// 3) BOOST del ristorante: se non è ancora entrato, prova a inserirlo subito dopo
+if (chosen.length < wanted && bestBoost && !alreadyChosen(bestBoost)) {
+  addChosen(bestBoost);
 }
 
-// 4) EXPLORATION solo dal terzo posto in poi, e solo se non troppo distante
+// 4) EXPLORATION solo dal terzo posto in poi
 if (chosen.length < wanted) {
   const explorationPool = sorted.filter((w) =>
     !alreadyChosen(w) &&
@@ -3661,7 +3666,7 @@ if (chosen.length < wanted) {
   }
 }
 
-// 5) Se i vincoli di diversità bloccano troppo, riempi con pairing puri
+// 5) Fill finale: prima rispetta la diversità, poi solo se serve la rilassa davvero
 if (chosen.length < wanted) {
   const relaxedPool = pairingSorted.filter((w) =>
     !alreadyChosen(w) &&
@@ -3670,8 +3675,17 @@ if (chosen.length < wanted) {
   );
 
   for (const w of relaxedPool) {
+    if (!canAddWine(w)) continue;
     addChosen(w);
     if (chosen.length >= wanted) break;
+  }
+
+  if (chosen.length < wanted) {
+    for (const w of relaxedPool) {
+      if (alreadyChosen(w)) continue;
+      addChosen(w);
+      if (chosen.length >= wanted) break;
+    }
   }
 }
 
