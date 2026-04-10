@@ -757,6 +757,57 @@ function combineDishes(ds: Dish[]): Dish {
   };
 }
 
+function applyDishOverrides(piattoRaw: string, input: Dish): Dish {
+  const s = norm(piattoRaw);
+  const d: Dish = { ...input };
+
+  const hasFish = /\b(pesce|gamber|gamberi|scampi|cozze|vongole|calamari|polpo|salmone|tonno|mare)\b/.test(s);
+  const hasRedMeat = /\b(manzo|bovino|fiorentina|tagliata|agnello|cervo|capriolo|cacciagione|guancia|cinghiale|peposo|brasato|stracotto)\b/.test(s);
+  const hasWhiteMeat = /\b(maiale|porchetta|salsiccia|pollo|tacchino|coniglio|anatra|oca)\b/.test(s);
+  const hasAnyMeat = hasRedMeat || hasWhiteMeat;
+
+  const isPastaLike = /\b(tortello|tortelli|tortellini|ravioli|gnocchi|tagliatelle|pappardelle|lasagne|risotto|pasta)\b/.test(s);
+  const hasButterSauce = /\b(burro|burro e salvia|salvia|mantecato)\b/.test(s);
+  const hasCheeseLike = /\b(formaggio|parmigiano|grana|pecorino|cacio|burro)\b/.test(s);
+
+  if (isPastaLike && !hasFish && !hasAnyMeat) {
+    d.protein = hasCheeseLike ? "formaggio" : "veg";
+    d.intensity = Math.min(d.intensity, 0.62);
+  }
+
+  if (hasButterSauce) {
+    d.fat = Math.max(d.fat, 0.68);
+    d.sapidity = Math.max(d.sapidity, 0.35);
+    d.aromaticity = /\bsalvia\b/.test(s) ? Math.max(d.aromaticity, 0.5) : d.aromaticity;
+
+    if (!hasFish && !hasAnyMeat) {
+      d.protein = "formaggio";
+    }
+  }
+
+  if (/\b(ragu|ragù)\b/.test(s)) {
+    d.succulence = Math.max(d.succulence, 0.55);
+    d.persistence = Math.max(d.persistence, 0.58);
+
+    if (!/\bbianco\b/.test(s)) {
+      d.acid_hint = true;
+    }
+
+    if (hasAnyMeat || hasRedMeat) {
+      d.protein = "carne_rossa";
+    }
+  }
+
+  if (/\b(tortello burro e salvia|tortelli burro e salvia|ravioli burro e salvia)\b/.test(s)) {
+    d.protein = "formaggio";
+    d.fat = Math.max(d.fat, 0.7);
+    d.intensity = Math.min(d.intensity, 0.58);
+    d.spice = Math.min(d.spice, 0.12);
+  }
+
+  return d;
+}
+
 async function getDishFeatures(piattoRaw: string, openaiKey?: string): Promise<Dish> {
   const items = splitDishes(piattoRaw);
   if (!openaiKey) return combineDishes(items.map(parseDishFallback));
@@ -1454,6 +1505,18 @@ const isMixedSeaSpice =
       profile.bubbles * 0.2;
   }
 
+    const isDelicatePasta =
+    /\b(tortello|tortelli|tortellini|ravioli|gnocchi|tagliatelle|pappardelle|risotto|pasta)\b/.test(piattoNorm) &&
+    dish.protein !== "carne_rossa" &&
+    dish.protein !== "pesce" &&
+    dish.cooking !== "brasato";
+
+  if (isDelicatePasta) {
+    sc += profile.bubbles * 0.65 + profile.acid * 0.25;
+    sc -= Math.max(0, profile.tannin - 0.45) * 1.1;
+    sc -= Math.max(0, profile.body - 0.7) * 0.35;
+  }
+  
   if (dish.sweet > 0) sc += profile.sweet * 1.5;
   if (dish.acid_hint) sc += profile.acid * 0.8;
   sc += (1 - Math.abs(dish.intensity - profile.body)) * 0.6;
@@ -3381,7 +3444,8 @@ serve(async (req) => {
       hashStringToSeed(`${ristorante_id}|${norm(piatto)}|${day}`),
     );
 
-    const dish = await getDishFeatures(piatto, Deno.env.get("OPENAI_API_KEY"));
+    const dishRaw = await getDishFeatures(piatto, Deno.env.get("OPENAI_API_KEY"));
+const dish = applyDishOverrides(piatto, dishRaw);
     const piattoNorm = norm(piatto);
 
     const wines0: EnrichedWine[] = vini
