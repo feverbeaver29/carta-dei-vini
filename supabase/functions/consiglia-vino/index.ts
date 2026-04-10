@@ -2973,7 +2973,132 @@ function getReasonTexts(lang: LangCode, code: ReasonCode): string[] {
   return [];
 }
 
+const REASON_BUCKET: Record<ReasonCode, string> = {
+  cuts_fat: "freshness",
+  bubbles_cleanse: "bubbles",
+  handles_succulence: "structure",
+  matches_intensity: "weight",
+  fresh_on_acid: "freshness",
+  softens_spice: "spice",
+  does_not_overwhelm: "delicacy",
+  supports_fish: "protein",
+  supports_cheese: "protein",
+  supports_cured_meat: "protein",
+  supports_red_meat: "protein",
+  supports_white_meat: "protein",
+  supports_veg: "protein",
+};
+
+function pickReasonLines(
+  reasons: PairingReason[],
+  lang: LangCode,
+  rand: () => number,
+): string[] {
+  const out: string[] = [];
+  const usedBuckets = new Set<string>();
+
+  for (const r of reasons || []) {
+    const bucket = REASON_BUCKET[r.code];
+    if (bucket && usedBuckets.has(bucket)) continue;
+
+    const arr = getReasonTexts(lang, r.code);
+    if (!arr.length) continue;
+
+    out.push(pickOne(arr, rand));
+    if (bucket) usedBuckets.add(bucket);
+
+    if (out.length >= 2) break;
+  }
+
+  return out;
+}
+
+function noteScoreForWine(
+  note: string,
+  colore: Colore,
+  profile: Profile,
+): number {
+  const s = norm(note);
+  if (!s) return -999;
+
+  const whiteFresh =
+    /(limone|lime|cedro|pompelmo|agrum|mela|pera|pesca|pesca bianca|albicocc|albicocca|fiori bianchi|fiori di campo|biancospino|gelsomino|sambuco|idrocarburo|mineral|gessos|salin|mandorla)\b/u;
+
+  const sparklingSet =
+    /(crosta di pane|brioche|lievito|spuma|mousse|mineral|gessos|agrum|mela|pera|limone)\b/u;
+
+  const redFresh =
+    /(fragola|lampone|ciliegia|amarena|melograno|rosa|violetta|pepe|erbe mediterranee|balsamico leggero)\b/u;
+
+  const redDeep =
+    /(prugna|mora|cassis|ribes nero|tabacco|cuoio|grafite|catrame|cioccolato|cacao|liquirizia|balsamico|sottobosco|funghi|terra|spezie scure)\b/u;
+
+  let score = 0.05;
+
+  if (colore === "spumante") {
+    if (sparklingSet.test(s)) score += 1.1;
+    if (whiteFresh.test(s)) score += 0.45;
+    if (redDeep.test(s)) score -= 1.1;
+  } else if (colore === "bianco") {
+    if (whiteFresh.test(s)) score += 1.0;
+    if (sparklingSet.test(s)) score += 0.15;
+    if (redDeep.test(s)) score -= 1.0;
+  } else if (colore === "rosato") {
+    if (whiteFresh.test(s)) score += 0.5;
+    if (redFresh.test(s)) score += 0.8;
+    if (redDeep.test(s)) score -= 0.55;
+  } else if (colore === "rosso") {
+    if (redFresh.test(s)) score += profile.body <= 0.6 ? 1.0 : 0.6;
+    if (redDeep.test(s)) score += profile.body > 0.6 || profile.tannin > 0.55 ? 1.0 : 0.55;
+    if (whiteFresh.test(s)) score -= 1.15;
+    if (sparklingSet.test(s)) score -= 0.6;
+  }
+
+  if (wordCount(s) > 5) score -= 0.15;
+  return score;
+}
+
+function pickMotivationNotes(
+  ctx: WineTextContext,
+  colore: Colore,
+  profile: Profile,
+  lang: LangCode,
+  rand: () => number,
+): string[] {
+  const pool = getMotivationNotesPool(ctx, lang)
+    .map((s) => trimToWords(s, 4))
+    .filter(Boolean);
+
+  const ranked = pool
+    .map((note) => ({
+      note,
+      score: noteScoreForWine(note, colore, profile) + rand() * 0.03,
+    }))
+    .filter((x) => x.score > 0.08)
+    .sort((a, b) => b.score - a.score);
+
+  const out: string[] = [];
+  const seen = new Set<string>();
+
+  for (const item of ranked) {
+    const k = norm(item.note)
+      .replace(/[^\p{L}\p{N} ]+/gu, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!k || seen.has(k)) continue;
+    seen.add(k);
+    out.push(item.note);
+    if (out.length >= 2) break;
+  }
+
+  if (out.length) return out;
+
+  return pickUnique(pool, 2, rand).map((s) => trimToWords(s, 4));
+}
+
 function buildMotivation(
+  colore: Colore,
   profile: Profile,
   dish: Dish,
   ctx: WineTextContext,
@@ -2984,18 +3109,15 @@ function buildMotivation(
   const S = getSommelierLocale(lang);
   const core = lowerFirst(buildPairingCore(profile, dish, rand, lang));
 const coreSentence = lang === "zh" ? core : upperFirst(core);
-  const reasonLines = (reasons || [])
-  .flatMap((r) => {
-    const arr = getReasonTexts(lang, r.code);
-    return arr.length ? [pickOne(arr, rand)] : [];
-  })
-  .filter(Boolean)
-  .slice(0, 2);
-  const rawNotesPool = getMotivationNotesPool(ctx, lang);
+const reasonLines = pickReasonLines(reasons || [], lang, rand);
 
-  const rawNotes = rawNotesPool.length
-    ? pickUnique(rawNotesPool, 4, rand).map((s) => trimToWords(s, 4))
-    : [];
+const rawNotes = pickMotivationNotes(
+  ctx,
+  colore,
+  profile,
+  lang,
+  rand,
+);
 
   const notes: string[] = [];
   const seen = new Set<string>();
@@ -3392,123 +3514,179 @@ const scoreRaw =
     });
 
     const sorted = [...baseList].sort((a, b) =>
-      (b.__scoreCore ?? 0) - (a.__scoreCore ?? 0)
-    );
+  ((b.__scoreCore ?? 0) - (a.__scoreCore ?? 0)) ||
+  ((b.__q ?? 0) - (a.__q ?? 0))
+);
 
-    const capByProd = 1;
-    const capBySub = 1;
-    const capByGrape = wanted <= 3 ? 1 : 2;
+const pairingSorted = [...baseList].sort((a, b) =>
+  ((b.__q ?? 0) - (a.__q ?? 0)) ||
+  ((b.__scoreCore ?? 0) - (a.__scoreCore ?? 0))
+);
 
-    const usedByProd = new Map<string, number>();
-    const usedBySub = new Map<string, number>();
-    const usedByGrape = new Map<string, number>();
+const capByProd = 1;
+const capBySub = 1;
+const capByGrape = wanted <= 3 ? 1 : 2;
 
-    const chosen: EnrichedWine[] = [];
+const usedByProd = new Map<string, number>();
+const usedBySub = new Map<string, number>();
+const usedByGrape = new Map<string, number>();
 
-    const catastrophicMismatch = (w: EnrichedWine): boolean => {
-      const p = w.__profile;
-      if (
-        (dish.protein === "pesce" || dish.cooking === "crudo") &&
-        w.colore === "rosso" &&
-        p.tannin >= 0.8 &&
-        p.sweet <= 0.05
-      ) return true;
-      if (dish.sweet > 0.4 && p.sweet < 0.25) return true;
-      if (dish.spice > 0.6 && p.tannin > 0.8 && p.sweet <= 0.05) return true;
-      return false;
-    };
+const chosen: EnrichedWine[] = [];
+const explorationKeys = new Set<string>();
 
-    const canAddWine = (w: EnrichedWine): boolean => {
-      const prod = w.__producer;
-      const sub = norm(String(w.sottocategoria || ""));
-      const grape = mainGrapeOf(w);
-      if ((usedByProd.get(prod) || 0) >= capByProd) return false;
-      if (sub && (usedBySub.get(sub) || 0) >= capBySub) return false;
-      if (grape && (usedByGrape.get(grape) || 0) >= capByGrape) return false;
-      return true;
-    };
+const catastrophicMismatch = (w: EnrichedWine): boolean => {
+  const p = w.__profile;
+  if (
+    (dish.protein === "pesce" || dish.cooking === "crudo") &&
+    w.colore === "rosso" &&
+    p.tannin >= 0.8 &&
+    p.sweet <= 0.05
+  ) return true;
 
-    const registerWine = (w: EnrichedWine) => {
-      const prod = w.__producer;
-      const sub = norm(String(w.sottocategoria || ""));
-      const grape = mainGrapeOf(w);
-      usedByProd.set(prod, (usedByProd.get(prod) || 0) + 1);
-      if (sub) usedBySub.set(sub, (usedBySub.get(sub) || 0) + 1);
-      if (grape) usedByGrape.set(grape, (usedByGrape.get(grape) || 0) + 1);
-    };
+  if (dish.sweet > 0.4 && p.sweet < 0.25) return true;
+  if (dish.spice > 0.6 && p.tannin > 0.8 && p.sweet <= 0.05) return true;
 
-    const boostCandidates = sorted.filter((w) => w.__isBoost);
-    if (boostCandidates.length) {
-      const goodBoost = boostCandidates.find((w) =>
-        !catastrophicMismatch(w) && (w.__q ?? 0) >= 0.4
-      ) || boostCandidates[0];
-      if (goodBoost && canAddWine(goodBoost) && !catastrophicMismatch(goodBoost)) {
-        chosen.push(goodBoost);
-        registerWine(goodBoost);
+  return false;
+};
+
+const canAddWine = (w: EnrichedWine): boolean => {
+  const prod = w.__producer;
+  const sub = norm(String(w.sottocategoria || ""));
+  const grape = mainGrapeOf(w);
+
+  if ((usedByProd.get(prod) || 0) >= capByProd) return false;
+  if (sub && (usedBySub.get(sub) || 0) >= capBySub) return false;
+  if (grape && (usedByGrape.get(grape) || 0) >= capByGrape) return false;
+
+  return true;
+};
+
+const registerWine = (w: EnrichedWine) => {
+  const prod = w.__producer;
+  const sub = norm(String(w.sottocategoria || ""));
+  const grape = mainGrapeOf(w);
+
+  usedByProd.set(prod, (usedByProd.get(prod) || 0) + 1);
+  if (sub) usedBySub.set(sub, (usedBySub.get(sub) || 0) + 1);
+  if (grape) usedByGrape.set(grape, (usedByGrape.get(grape) || 0) + 1);
+};
+
+const alreadyChosen = (w: EnrichedWine) =>
+  chosen.some((c) => c.__historyKey === w.__historyKey);
+
+const addChosen = (w: EnrichedWine, isExploration = false): boolean => {
+  if (!w) return false;
+  if (alreadyChosen(w)) return false;
+
+  chosen.push(w);
+  registerWine(w);
+
+  if (isExploration) {
+    explorationKeys.add(w.__historyKey);
+  }
+
+  return true;
+};
+
+// 1) TOP 1: il pairing più giusto possibile
+const topPairing = pairingSorted.find((w) =>
+  !catastrophicMismatch(w) && canAddWine(w)
+);
+
+if (topPairing) {
+  addChosen(topPairing);
+}
+
+const leaderQ = topPairing?.__q ?? 0;
+
+// 2) TOP 2: ancora molto fedele al pairing, non ancora "exploration"
+if (chosen.length < Math.min(2, wanted)) {
+  const secondPairing = pairingSorted.find((w) =>
+    !alreadyChosen(w) &&
+    !catastrophicMismatch(w) &&
+    canAddWine(w) &&
+    (w.__q ?? 0) >= Math.max(0.35, leaderQ - 0.08)
+  );
+
+  if (secondPairing) {
+    addChosen(secondPairing);
+  }
+}
+
+// 3) BOOST del ristorante: sì, ma solo se resta vicino ai migliori
+if (chosen.length < wanted) {
+  const boostCandidates = pairingSorted.filter((w) =>
+    w.__isBoost &&
+    !alreadyChosen(w) &&
+    !catastrophicMismatch(w)
+  );
+
+  const goodBoost = boostCandidates.find((w) =>
+    canAddWine(w) &&
+    (w.__q ?? 0) >= Math.max(0.4, leaderQ - 0.15)
+  );
+
+  if (goodBoost) {
+    addChosen(goodBoost);
+  }
+}
+
+// 4) EXPLORATION solo dal terzo posto in poi, e solo se non troppo distante
+if (chosen.length < wanted) {
+  const explorationPool = sorted.filter((w) =>
+    !alreadyChosen(w) &&
+    !catastrophicMismatch(w) &&
+    (w.__q ?? 0) >= Math.max(0.28, leaderQ - 0.18)
+  );
+
+  while (chosen.length < wanted && explorationPool.length) {
+    let bestIdx = -1;
+    let bestScore = -Infinity;
+
+    for (let i = 0; i < explorationPool.length; i++) {
+      const cand = explorationPool[i];
+      if (!canAddWine(cand)) continue;
+
+      const score = mmrScore(cand, chosen, 0.65);
+      if (score > bestScore) {
+        bestScore = score;
+        bestIdx = i;
       }
     }
 
-        const neverSeen = sorted.filter((w) =>
-      ((expByWine[w.__historyKey] || 0) + (expByWine[w.__legacyLogKey] || 0)) === 0 &&
-      !catastrophicMismatch(w)
-    );
-    for (const w of neverSeen) {
-      if (chosen.length >= Math.min(2, wanted)) break;
-            if (chosen.some((c) => c.__historyKey === w.__historyKey)) continue;
-      if (!canAddWine(w)) continue;
-      chosen.push(w);
-      registerWine(w);
-    }
+    if (bestIdx < 0) break;
 
-    const already = new Set(chosen.map((w) => w.__historyKey));
-    const pool = sorted.filter((w) => !already.has(w.__historyKey));
+    const chosenOne = explorationPool.splice(bestIdx, 1)[0];
+    addChosen(chosenOne, true);
+  }
+}
 
-    while (chosen.length < wanted && pool.length) {
-      let bestIdx = -1;
-      let bestScore = -Infinity;
-      for (let i = 0; i < pool.length; i++) {
-        const cand = pool[i];
-        if (catastrophicMismatch(cand)) continue;
-        if (!canAddWine(cand)) continue;
-        const score = mmrScore(cand, chosen, 0.65);
-        if (score > bestScore) {
-          bestScore = score;
-          bestIdx = i;
-        }
-      }
-      if (bestIdx < 0) break;
-      const chosenOne = pool.splice(bestIdx, 1)[0];
-      chosen.push(chosenOne);
-      registerWine(chosenOne);
-    }
+// 5) Se i vincoli di diversità bloccano troppo, riempi con pairing puri
+if (chosen.length < wanted) {
+  const relaxedPool = pairingSorted.filter((w) =>
+    !alreadyChosen(w) &&
+    !catastrophicMismatch(w) &&
+    (w.__q ?? 0) >= Math.max(0.22, leaderQ - 0.25)
+  );
 
-        // se i vincoli di diversità sono troppo stretti, rilassa il riempimento
-    if (chosen.length < wanted) {
-      const relaxedPool = sorted.filter((w) =>
-        !catastrophicMismatch(w) &&
-        !chosen.some((c) => c.__historyKey === w.__historyKey)
-      );
+  for (const w of relaxedPool) {
+    addChosen(w);
+    if (chosen.length >= wanted) break;
+  }
+}
 
-      for (const w of relaxedPool) {
-        chosen.push(w);
-        if (chosen.length >= wanted) break;
-      }
-    }
+// 6) Rete di sicurezza estrema: mai picks vuoto
+if (!chosen.length) {
+  for (const w of pairingSorted.slice(0, wanted || 3)) {
+    if (alreadyChosen(w)) continue;
+    chosen.push(w);
+    if (chosen.length >= wanted) break;
+  }
+}
 
-    // rete di sicurezza estrema: mai tornare picks vuoto
-    if (!chosen.length) {
-      for (const w of sorted.slice(0, wanted || 3)) {
-        if (chosen.some((c) => c.__historyKey === w.__historyKey)) continue;
-        chosen.push(w);
-      }
-    }
-    
-    const finalChosen = [...chosen]
-  .sort((a, b) =>
-    ((b.__scoreCore ?? 0) - (a.__scoreCore ?? 0)) ||
-    ((b.__q ?? 0) - (a.__q ?? 0))
-  )
-  .slice(0, wanted);
+// IMPORTANTISSIMO: qui NON riordinare più per __scoreCore,
+// perché l'ordine scelto sopra è già quello "umano"
+const finalChosen = chosen.slice(0, wanted);
 
     function styleOf(colore: Colore, p: Profile):
       | "sparkling"
@@ -3529,35 +3707,18 @@ const scoreRaw =
         : "structured_red";
     }
 
-    const topByScore = [...finalChosen].sort((a, b) =>
-      (b.__scoreCore ?? 0) - (a.__scoreCore ?? 0)
-    ).slice(0, Math.min(2, finalChosen.length));
-        const topSet = new Set(topByScore.map((w) => w.__historyKey));
+const topSet = new Set(
+  finalChosen
+    .slice(0, Math.min(2, finalChosen.length))
+    .map((w) => w.__historyKey),
+);
 
-    let discoveryWine: EnrichedWine | null = null;
-    let worstAvgSim = Infinity;
-    for (const cand of finalChosen) {
-      if (topSet.has(cand.__historyKey)) continue;
-      let avgSim = 0;
-      let count = 0;
-      for (const other of finalChosen) {
-        if (other === cand) continue;
-        const sim = cosSim(
-          toVec(cand.__profile),
-          toVec(other.__profile),
-        );
-        avgSim += sim;
-        count++;
-      }
-      if (count > 0) avgSim /= count;
-      if (avgSim < worstAvgSim) {
-        worstAvgSim = avgSim;
-        discoveryWine = cand;
-      }
-    }
-    const discoverySet = new Set<string>(
-      discoveryWine ? [discoveryWine.__historyKey] : [],
-    );
+const discoverySet = new Set<string>(
+  finalChosen
+    .filter((w) => explorationKeys.has(w.__historyKey))
+    .slice(0, 1)
+    .map((w) => w.__historyKey),
+);
 
     const out = finalChosen.map((w) => {
       const grape = (w.uvaggio && String(w.uvaggio).trim())
@@ -3567,7 +3728,15 @@ const scoreRaw =
         hashStringToSeed(`${ristorante_id}|${norm(piatto)}|${day}|${w.nomeN}`),
       );
 
-      const motive = buildMotivation(w.__profile, dish, w.__ctx, w.__reasons || [], wineRng, safeCode,);
+      const motive = buildMotivation(
+  w.colore,
+  w.__profile,
+  dish,
+  w.__ctx,
+  w.__reasons || [],
+  wineRng,
+  safeCode,
+);
       const __style = styleOf(w.colore, w.__profile);
 
       return {
