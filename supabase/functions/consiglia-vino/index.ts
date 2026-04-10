@@ -2402,7 +2402,11 @@ function finalizeSentence(s: string, lang: LangCode) {
 }
 
 function joinSentences(parts: string[], lang: LangCode) {
-  const clean = parts.map(stripEndPunct).filter(Boolean);
+  const clean = parts
+    .map(stripEndPunct)
+    .filter(Boolean)
+    .map((p) => (lang === "zh" ? p : upperFirst(p)));
+
   if (!clean.length) return "";
   return clean.map((p) => finalizeSentence(p, lang)).join(sentenceJoin(lang));
 }
@@ -2633,11 +2637,17 @@ const REASON_TEXT: Record<
 };
 
 function getReasonTexts(lang: LangCode, code: ReasonCode): string[] {
-  const table = REASON_TEXT[lang] && Object.keys(REASON_TEXT[lang]).length
-    ? REASON_TEXT[lang]
-    : (lang === "it" ? REASON_TEXT.it : REASON_TEXT.en);
+  const local = REASON_TEXT[lang];
 
-  return table[code] || [];
+  if (local && Object.keys(local).length && local[code]?.length) {
+    return local[code];
+  }
+
+  if ((lang === "it" || lang === "en") && REASON_TEXT[lang]?.[code]?.length) {
+    return REASON_TEXT[lang][code];
+  }
+
+  return [];
 }
 
 function buildMotivation(
