@@ -2628,12 +2628,335 @@ const REASON_TEXT: Record<
     ],
   },
 
-  es: {} as any,
-  fr: {} as any,
-  de: {} as any,
-  zh: {} as any,
-  ko: {} as any,
-  ru: {} as any,
+  es: {
+    cuts_fat: [
+      "tiene la frescura suficiente para limpiar la grasa",
+      "limpia bien la parte más grasa del bocado y mantiene el paladar vivo",
+    ],
+    bubbles_cleanse: [
+      "la burbuja limpia el paladar con precisión",
+      "la espuma reequilibra el paladar entre un bocado y otro",
+    ],
+    handles_succulence: [
+      "tiene la estructura adecuada para la suculencia del plato",
+      "soporta bien la parte jugosa sin perder impulso",
+    ],
+    matches_intensity: [
+      "su peso en boca encaja bien con el plato",
+      "su intensidad está bien alineada con el bocado",
+    ],
+    fresh_on_acid: [
+      "dialoga bien con la parte ácida del plato",
+      "se mantiene recto incluso en la parte más fresca del plato",
+    ],
+    softens_spice: [
+      "no endurece el picante",
+      "acompaña el especiado sin aumentar el calor",
+    ],
+    does_not_overwhelm: [
+      "no tapa los matices del plato",
+      "se mantiene medido y deja espacio al bocado",
+    ],
+    supports_fish: [
+      "con el pescado se mantiene armónico y limpio",
+      "acompaña el pescado sin endurecer el bocado",
+    ],
+    supports_cheese: [
+      "soporta bien la sapidez y la textura del queso",
+      "tiene suficiente firmeza para el queso sin volverse pesado",
+    ],
+    supports_cured_meat: [
+      "funciona bien con la sapidez de los embutidos",
+      "limpia bien la boca entre un bocado y otro",
+    ],
+    supports_red_meat: [
+      "tiene suficiente estructura para la carne roja",
+      "sostiene bien la parte intensa y carnosa del plato",
+    ],
+    supports_white_meat: [
+      "acompaña bien la carne blanca sin recargarla",
+      "queda bien con la carne blanca de forma equilibrada",
+    ],
+    supports_veg: [
+      "sigue siendo gastronómico también con un plato vegetal",
+      "acompaña el perfil vegetal sin invadirlo",
+    ],
+  },
+
+  fr: {
+    cuts_fat: [
+      "il a assez de fraîcheur pour nettoyer le gras",
+      "il allège bien la partie la plus riche du plat et garde le palais net",
+    ],
+    bubbles_cleanse: [
+      "la bulle nettoie le palais avec précision",
+      "la mousse remet le palais en équilibre entre deux bouchées",
+    ],
+    handles_succulence: [
+      "il a la structure qu’il faut pour la succulence du plat",
+      "il tient bien la partie juteuse sans perdre son élan",
+    ],
+    matches_intensity: [
+      "son poids en bouche est juste par rapport au plat",
+      "son intensité est cohérente avec la bouchée",
+    ],
+    fresh_on_acid: [
+      "il dialogue bien avec la composante acide du plat",
+      "il reste droit même sur la partie la plus fraîche de l’assiette",
+    ],
+    softens_spice: [
+      "il ne durcit pas le piquant",
+      "il accompagne les épices sans en augmenter la chaleur",
+    ],
+    does_not_overwhelm: [
+      "il ne couvre pas les détails du plat",
+      "il reste mesuré et laisse de la place à la bouchée",
+    ],
+    supports_fish: [
+      "avec le poisson, il reste harmonieux et net",
+      "il accompagne le poisson sans durcir la bouche",
+    ],
+    supports_cheese: [
+      "il tient bien face à la sapidité et à la texture du fromage",
+      "il a assez de tenue pour le fromage sans alourdir",
+    ],
+    supports_cured_meat: [
+      "il fonctionne bien avec la sapidité des charcuteries",
+      "il nettoie bien la bouche entre deux bouchées",
+    ],
+    supports_red_meat: [
+      "il a assez d’épaule pour la viande rouge",
+      "il soutient bien la partie intense et charnue du plat",
+    ],
+    supports_white_meat: [
+      "il accompagne bien la viande blanche sans l’alourdir",
+      "il va bien avec la viande blanche avec équilibre",
+    ],
+    supports_veg: [
+      "il reste gastronomique même sur un plat végétal",
+      "il accompagne le végétal sans prendre le dessus",
+    ],
+  },
+
+  de: {
+    cuts_fat: [
+      "er hat genug Frische, um das Fett sauber aufzufangen",
+      "er nimmt dem reicheren Bissen die Schwere und hält den Gaumen lebendig",
+    ],
+    bubbles_cleanse: [
+      "die Perlage reinigt den Gaumen präzise",
+      "der Mousseux bringt den Gaumen zwischen den Bissen wieder ins Gleichgewicht",
+    ],
+    handles_succulence: [
+      "er hat die richtige Struktur für die Saftigkeit des Gerichts",
+      "er trägt die saftige Komponente gut, ohne an Spannung zu verlieren",
+    ],
+    matches_intensity: [
+      "sein Gewicht am Gaumen passt gut zum Gericht",
+      "seine Intensität ist stimmig zum Bissen",
+    ],
+    fresh_on_acid: [
+      "er harmoniert gut mit der Säure des Gerichts",
+      "er bleibt auch bei der frischeren Seite des Tellers klar und präzise",
+    ],
+    softens_spice: [
+      "er verhärtet die Schärfe nicht",
+      "er begleitet die Würze, ohne die Hitze zu steigern",
+    ],
+    does_not_overwhelm: [
+      "er überdeckt die feineren Details des Gerichts nicht",
+      "er bleibt zurückhaltend und lässt dem Bissen Raum",
+    ],
+    supports_fish: [
+      "zum Fisch bleibt er harmonisch und sauber",
+      "er begleitet Fisch, ohne den Eindruck im Mund zu verhärten",
+    ],
+    supports_cheese: [
+      "er trägt Würze und Textur von Käse gut",
+      "er hat genug Halt für Käse, ohne schwer zu wirken",
+    ],
+    supports_cured_meat: [
+      "er funktioniert gut mit der Würze von Wurstwaren",
+      "er reinigt den Mund schön zwischen den Bissen",
+    ],
+    supports_red_meat: [
+      "er hat genug Schulter für rotes Fleisch",
+      "er stützt die intensive und fleischige Seite des Gerichts gut",
+    ],
+    supports_white_meat: [
+      "er begleitet helles Fleisch gut, ohne es zu beschweren",
+      "er passt ausgewogen zu hellem Fleisch",
+    ],
+    supports_veg: [
+      "er bleibt auch bei einem Gemüsegericht sehr gastronomisch",
+      "er begleitet das Pflanzliche, ohne sich in den Vordergrund zu drängen",
+    ],
+  },
+
+  zh: {
+    cuts_fat: [
+      "它有足够的清新感来化解油脂感",
+      "它能很好地削减菜肴中较丰厚的油润感，让口腔保持清爽",
+    ],
+    bubbles_cleanse: [
+      "气泡能够精准地清洁口腔",
+      "细腻的泡沫能在每一口之间让味蕾重新平衡",
+    ],
+    handles_succulence: [
+      "它具备应对菜肴多汁感所需的结构",
+      "它能承接菜肴的多汁部分，同时不失去节奏感",
+    ],
+    matches_intensity: [
+      "它在口中的重量感与菜肴很匹配",
+      "它的强度与这一口食物十分协调",
+    ],
+    fresh_on_acid: [
+      "它与菜肴中的酸度配合得很好",
+      "即使面对菜肴更清爽、更酸鲜的一面，它也依然稳定",
+    ],
+    softens_spice: [
+      "它不会让辣感变得更生硬",
+      "它能陪衬香料感，而不会把辣度推得更高",
+    ],
+    does_not_overwhelm: [
+      "它不会盖住菜肴更细腻的层次",
+      "它保持分寸，给每一口食物留下空间",
+    ],
+    supports_fish: [
+      "搭配鱼类时，它依然和谐而干净",
+      "它能陪衬鱼肉，而不会让口感变硬",
+    ],
+    supports_cheese: [
+      "它能很好承接奶酪的咸鲜感和质地",
+      "它对奶酪有足够支撑力，同时不会显得厚重",
+    ],
+    supports_cured_meat: [
+      "它与腌制肉类的咸鲜风味很合拍",
+      "它能在每一口之间很好地清洁口腔",
+    ],
+    supports_red_meat: [
+      "它有足够的支撑力来搭配红肉",
+      "它能很好承托菜肴浓郁而富有肉感的一面",
+    ],
+    supports_white_meat: [
+      "它能很好搭配白肉，同时不会显得沉重",
+      "它与白肉的配合平衡而自然",
+    ],
+    supports_veg: [
+      "即使搭配蔬菜类菜肴，它也依然很适合餐桌",
+      "它能衬托蔬菜风味，而不会喧宾夺主",
+    ],
+  },
+
+  ko: {
+    cuts_fat: [
+      "기름진 느낌을 정리해 줄 만큼 충분한 산뜻함이 있습니다",
+      "더 풍부한 기름기를 깔끔하게 잘라 주며 입안을 생기 있게 유지합니다",
+    ],
+    bubbles_cleanse: [
+      "버블이 입안을 정교하게 정리해 줍니다",
+      "기포감이 한 입 한 입 사이의 미각을 다시 균형 있게 맞춰 줍니다",
+    ],
+    handles_succulence: [
+      "요리의 육즙감을 받아줄 만큼 구조감이 있습니다",
+      "촉촉하고 육즙 있는 부분을 잘 받치면서도 흐트러지지 않습니다",
+    ],
+    matches_intensity: [
+      "입안에서의 무게감이 요리와 잘 맞습니다",
+      "강도가 한 입의 인상과 잘 어울립니다",
+    ],
+    fresh_on_acid: [
+      "요리의 산미 요소와 잘 어울립니다",
+      "더 산뜻하고 신선한 부분에서도 흐트러지지 않고 곧게 갑니다",
+    ],
+    softens_spice: [
+      "매운 느낌을 더 거칠게 만들지 않습니다",
+      "향신료의 느낌을 받쳐 주면서도 열감을 더 키우지 않습니다",
+    ],
+    does_not_overwhelm: [
+      "요리의 섬세한 디테일을 덮지 않습니다",
+      "절제된 인상을 유지해 한 입의 표현을 살려 줍니다",
+    ],
+    supports_fish: [
+      "생선과 함께했을 때 조화롭고 깔끔합니다",
+      "생선을 받쳐 주면서도 입안의 인상을 거칠게 만들지 않습니다",
+    ],
+    supports_cheese: [
+      "치즈의 짭짤함과 질감을 잘 받아 줍니다",
+      "치즈를 감당할 충분한 힘이 있으면서도 무겁게 가지 않습니다",
+    ],
+    supports_cured_meat: [
+      "염장육의 감칠맛과 짠맛에 잘 어울립니다",
+      "한 입 한 입 사이 입안을 깔끔하게 정리해 줍니다",
+    ],
+    supports_red_meat: [
+      "붉은 고기를 받쳐 줄 충분한 힘이 있습니다",
+      "요리의 진하고 육감적인 면을 잘 지탱해 줍니다",
+    ],
+    supports_white_meat: [
+      "흰 고기를 무겁게 만들지 않으면서 잘 어울립니다",
+      "흰 고기와 균형 있게 잘 맞습니다",
+    ],
+    supports_veg: [
+      "채소 중심의 요리에서도 음식 친화적으로 잘 작동합니다",
+      "채소의 성격을 살리면서도 앞서 나가지 않습니다",
+    ],
+  },
+
+  ru: {
+    cuts_fat: [
+      "у него достаточно свежести, чтобы хорошо очищать жирность",
+      "он чисто срезает более жирную сторону блюда и сохраняет нёбо живым",
+    ],
+    bubbles_cleanse: [
+      "пузырьки точно очищают нёбо",
+      "игра пузырьков возвращает баланса между глотками и кусочками",
+    ],
+    handles_succulence: [
+      "у него есть нужная структура для сочности блюда",
+      "он хорошо держит сочную сторону блюда, не теряя собранности",
+    ],
+    matches_intensity: [
+      "его вес во вкусе хорошо соответствует блюду",
+      "его интенсивность хорошо совпадает с характером кусочка",
+    ],
+    fresh_on_acid: [
+      "он хорошо работает с кислотной составляющей блюда",
+      "он остаётся собранным даже на более свежей и кислой стороне тарелки",
+    ],
+    softens_spice: [
+      "он не делает остроту жёстче",
+      "он сопровождает специи, не усиливая жар",
+    ],
+    does_not_overwhelm: [
+      "он не перекрывает более тонкие детали блюда",
+      "он остаётся сдержанным и оставляет место самому блюду",
+    ],
+    supports_fish: [
+      "с рыбой он остаётся гармоничным и чистым",
+      "он сопровождает рыбу, не утяжеляя ощущение во рту",
+    ],
+    supports_cheese: [
+      "он хорошо справляется с солоноватостью и текстурой сыра",
+      "у него достаточно опоры для сыра, но без тяжести",
+    ],
+    supports_cured_meat: [
+      "он хорошо работает с солоноватым характером мясных деликатесов",
+      "он хорошо очищает рот между кусочками",
+    ],
+    supports_red_meat: [
+      "у него достаточно опоры для красного мяса",
+      "он хорошо поддерживает более насыщенную и мясистую сторону блюда",
+    ],
+    supports_white_meat: [
+      "он хорошо сопровождает белое мясо, не утяжеляя его",
+      "он сочетается с белым мясом уравновешенно",
+    ],
+    supports_veg: [
+      "он остаётся гастрономичным и с овощным блюдом",
+      "он поддерживает овощной профиль, не перетягивая внимание на себя",
+    ],
+  },
 };
 
 function getReasonTexts(lang: LangCode, code: ReasonCode): string[] {
