@@ -137,6 +137,26 @@ type WineScheda = {
   pairings: string[];
 };
 
+type ReasonCode =
+  | "cuts_fat"
+  | "bubbles_cleanse"
+  | "handles_succulence"
+  | "matches_intensity"
+  | "fresh_on_acid"
+  | "softens_spice"
+  | "does_not_overwhelm"
+  | "supports_fish"
+  | "supports_cheese"
+  | "supports_cured_meat"
+  | "supports_red_meat"
+  | "supports_white_meat"
+  | "supports_veg";
+
+type PairingReason = {
+  code: ReasonCode;
+  strength: number;
+};
+
 type WineTextContext = {
   grapes: string[];
   tastingNotes: string[];
@@ -167,6 +187,7 @@ type EnrichedWine = {
   __tags: Set<string>;
   __historyKey: string;
   __legacyLogKey: string;
+  __reasons?: PairingReason[];
   __q?: number;
   __scoreCore?: number;
   __isBoost?: boolean;
@@ -1250,6 +1271,102 @@ function profileAndContextFromWine(
 /** =========================
  *  MATCHING
  *  ========================= */
+function buildReasonCodes(
+  profile: Profile,
+  dish: Dish,
+  wineCtx: WineTextContext,
+): PairingReason[] {
+  const reasons: PairingReason[] = [];
+
+  const push = (code: ReasonCode, strength: number) => {
+    if (strength > 0) reasons.push({ code, strength: +strength.toFixed(3) });
+  };
+
+  if (dish.fat >= 0.45 && profile.bubbles >= 0.9) {
+    push("bubbles_cleanse", dish.fat * 0.9 + profile.bubbles * 0.4);
+  }
+
+  if (dish.fat >= 0.4 && profile.acid >= 0.58) {
+    push("cuts_fat", dish.fat * 0.8 + profile.acid * 0.5);
+  }
+
+  if (dish.succulence >= 0.45 && (profile.tannin >= 0.45 || profile.body >= 0.58)) {
+    push(
+      "handles_succulence",
+      dish.succulence * 0.8 + profile.tannin * 0.5 + profile.body * 0.3,
+    );
+  }
+
+  const intensityFit = 1 - Math.abs(dish.intensity - profile.body);
+  if (intensityFit >= 0.7) {
+    push("matches_intensity", intensityFit);
+  }
+
+  if (dish.acid_hint && profile.acid >= 0.58) {
+    push("fresh_on_acid", profile.acid * 0.8);
+  }
+
+  if (dish.spice >= 0.4 && (profile.sweet >= 0.08 || profile.tannin <= 0.45)) {
+    push(
+      "softens_spice",
+      dish.spice * 0.6 + profile.sweet * 0.8 + Math.max(0, 0.5 - profile.tannin),
+    );
+  }
+
+  if (
+    (dish.protein === "pesce" || dish.cooking === "crudo") &&
+    profile.tannin <= 0.4
+  ) {
+    push("supports_fish", profile.acid * 0.5 + Math.max(0, 0.45 - profile.tannin));
+  }
+
+  if (
+    dish.intensity <= 0.45 &&
+    dish.fat <= 0.4 &&
+    profile.body <= 0.55 &&
+    profile.tannin <= 0.45
+  ) {
+    push("does_not_overwhelm", 0.7 - Math.max(0, profile.body - 0.45));
+  }
+
+  if (dish.protein === "formaggio") {
+    push("supports_cheese", profile.body * 0.5 + profile.acid * 0.3);
+  }
+
+  if (dish.protein === "salumi") {
+    push("supports_cured_meat", profile.acid * 0.5 + Math.max(0, 0.55 - profile.tannin));
+  }
+
+  if (dish.protein === "carne_rossa" || dish.cooking === "brasato") {
+    push("supports_red_meat", profile.tannin * 0.7 + profile.body * 0.5);
+  }
+
+  if (dish.protein === "carne_bianca") {
+    push("supports_white_meat", profile.body * 0.4 + profile.acid * 0.3);
+  }
+
+  if (dish.protein === "veg") {
+    push("supports_veg", profile.acid * 0.4 + Math.max(0, 0.45 - profile.tannin));
+  }
+
+  const styleAll = norm(
+    [
+      ...(wineCtx.grapeStyleHints || []),
+      ...(wineCtx.appStyleHints || []),
+      ...(wineCtx.descHook || []),
+      ...(wineCtx.descPalate || []),
+    ].join(" "),
+  );
+
+  if (
+    /(teso|snello|fresco|mineral|salino|fine|elegante|vibrante|slanciato)/.test(styleAll) &&
+    dish.intensity <= 0.5
+  ) {
+    push("does_not_overwhelm", 0.35);
+  }
+
+  return reasons.sort((a, b) => b.strength - a.strength).slice(0, 4);
+}
 
 function matchScore(
   profile: Profile,
@@ -2351,15 +2468,153 @@ function buildPairingCore(
   return joinSentences(chosen, lang);
 }
 
+const REASON_TEXT: Record<
+  LangCode,
+  Record<ReasonCode, string[]>
+> = {
+  it: {
+    cuts_fat: [
+      "ha freschezza sufficiente per ripulire il grasso",
+      "sgrassa bene il boccone e tiene il palato vivo",
+    ],
+    bubbles_cleanse: [
+      "la bollicina pulisce il palato con precisione",
+      "la spuma rimette in equilibrio il boccone successivo",
+    ],
+    handles_succulence: [
+      "ha la struttura giusta per la succulenza del piatto",
+      "regge bene la parte succosa senza perdere slancio",
+    ],
+    matches_intensity: [
+      "ha un peso gustativo centrato sul piatto",
+      "ha intensità coerente con il boccone",
+    ],
+    fresh_on_acid: [
+      "dialoga bene con la componente acida",
+      "resta dritto anche sulla parte più fresca del piatto",
+    ],
+    softens_spice: [
+      "non irrigidisce il piccante",
+      "accompagna la speziatura senza alzarne il calore",
+    ],
+    does_not_overwhelm: [
+      "non copre i dettagli del piatto",
+      "resta misurato e lascia spazio al boccone",
+    ],
+    supports_fish: [
+      "sul pesce resta armonico e pulito",
+      "accompagna il pesce senza indurire il boccone",
+    ],
+    supports_cheese: [
+      "regge bene sapidità e consistenza del formaggio",
+      "ha tenuta sufficiente per il formaggio senza impastare",
+    ],
+    supports_cured_meat: [
+      "funziona bene con la sapidità dei salumi",
+      "pulisce bene la bocca tra un assaggio e l’altro",
+    ],
+    supports_red_meat: [
+      "ha spalla sufficiente per la carne rossa",
+      "sostiene bene la parte intensa e carnosa",
+    ],
+    supports_white_meat: [
+      "accompagna bene la carne bianca senza appesantire",
+      "sta bene sulla carne bianca con equilibrio",
+    ],
+    supports_veg: [
+      "resta gastronomico anche su un piatto vegetale",
+      "accompagna il vegetale senza invadere",
+    ],
+  },
+
+  en: {
+    cuts_fat: [
+      "it has enough freshness to cleanse the richness",
+      "it cuts through the richer side of the dish cleanly",
+    ],
+    bubbles_cleanse: [
+      "the bubbles cleanse the palate precisely",
+      "the sparkle resets the palate between bites",
+    ],
+    handles_succulence: [
+      "it has the structure needed for the dish’s succulence",
+      "it carries the juicy side of the dish without losing shape",
+    ],
+    matches_intensity: [
+      "its weight on the palate matches the dish well",
+      "its intensity feels well aligned with the bite",
+    ],
+    fresh_on_acid: [
+      "it works well with the dish’s acidity",
+      "it stays focused on the fresher side of the plate",
+    ],
+    softens_spice: [
+      "it does not harden the spicy edge",
+      "it supports the spice without making it hotter",
+    ],
+    does_not_overwhelm: [
+      "it does not cover the dish’s finer details",
+      "it stays measured and lets the bite stay clear",
+    ],
+    supports_fish: [
+      "it stays clean and harmonious with fish",
+      "it supports fish without hardening the palate",
+    ],
+    supports_cheese: [
+      "it handles the savoury richness of cheese well",
+      "it has enough hold for cheese without becoming heavy",
+    ],
+    supports_cured_meat: [
+      "it works well with the savoury side of cured meats",
+      "it cleans the palate nicely between bites",
+    ],
+    supports_red_meat: [
+      "it has enough shoulder for red meat",
+      "it supports the dish’s deeper meat character well",
+    ],
+    supports_white_meat: [
+      "it accompanies white meat without weighing it down",
+      "it works with white meat in a balanced way",
+    ],
+    supports_veg: [
+      "it stays food-friendly on a vegetable dish",
+      "it supports the vegetable profile without taking over",
+    ],
+  },
+
+  es: {} as any,
+  fr: {} as any,
+  de: {} as any,
+  zh: {} as any,
+  ko: {} as any,
+  ru: {} as any,
+};
+
+function getReasonTexts(lang: LangCode, code: ReasonCode): string[] {
+  const table = REASON_TEXT[lang] && Object.keys(REASON_TEXT[lang]).length
+    ? REASON_TEXT[lang]
+    : (lang === "it" ? REASON_TEXT.it : REASON_TEXT.en);
+
+  return table[code] || [];
+}
+
 function buildMotivation(
   profile: Profile,
   dish: Dish,
   ctx: WineTextContext,
+  reasons: PairingReason[],
   rand: () => number,
   lang: LangCode,
 ): string {
   const S = getSommelierLocale(lang);
   const core = lowerFirst(buildPairingCore(profile, dish, rand, lang));
+  const reasonLines = (reasons || [])
+  .flatMap((r) => {
+    const arr = getReasonTexts(lang, r.code);
+    return arr.length ? [pickOne(arr, rand)] : [];
+  })
+  .filter(Boolean)
+  .slice(0, 2);
   const rawNotesPool = getMotivationNotesPool(ctx, lang);
 
   const rawNotes = rawNotesPool.length
@@ -2386,14 +2641,22 @@ function buildMotivation(
       : `${S.noteLead}${spacer}${joinNice(notes, lang)}`)
     : "";
 
-  let text = "";
-  if (hasNotes) {
-    text = lang === "zh"
-      ? `${intro}${notePart}；${core}`
-      : `${intro}${spacer}${notePart};${spacer}${core}`;
-  } else {
-    text = `${intro}${spacer}${core}`;
-  }
+const reasonText = joinSentences(reasonLines, lang);
+
+let text = "";
+if (hasNotes && reasonText) {
+  text = lang === "zh"
+    ? `${intro}${notePart}；${reasonText}；${core}`
+    : `${intro}${spacer}${notePart};${spacer}${reasonText}${spacer}${core}`;
+} else if (hasNotes) {
+  text = lang === "zh"
+    ? `${intro}${notePart}；${core}`
+    : `${intro}${spacer}${notePart};${spacer}${core}`;
+} else if (reasonText) {
+  text = `${intro}${spacer}${reasonText}${spacer}${core}`;
+} else {
+  text = `${intro}${spacer}${core}`;
+}
 
   text = text.replace(/\s+/g, " ").trim();
 
@@ -2671,27 +2934,29 @@ serve(async (req) => {
       safeCode,
     );
 
-    const enriched: EnrichedWine[] = wines0.map((w) => {
-      const { profile, colore, ctx } = profileAndContextFromWine(
-        w,
-        priors,
-        w.colore,
-      );
+const enriched: EnrichedWine[] = wines0.map((w) => {
+  const { profile, colore, ctx } = profileAndContextFromWine(
+    w,
+    priors,
+    w.colore,
+  );
 
-      const fp = buildDescrizioneFingerprint(w, ristorante_id);
-      const scheda = descrizioniMap.get(fp);
-      const mergedCtx = mergeSchedaIntoContext(ctx, scheda);
+  const fp = buildDescrizioneFingerprint(w, ristorante_id);
+  const scheda = descrizioniMap.get(fp);
+  const mergedCtx = mergeSchedaIntoContext(ctx, scheda);
 
-      const __tags = buildTags(mergedCtx, colore);
+  const __tags = buildTags(mergedCtx, colore);
+  const __reasons = buildReasonCodes(profile, dish, mergedCtx);
 
-      return {
-        ...w,
-        colore,
-        __profile: profile,
-        __ctx: mergedCtx,
-        __tags,
-      };
-    });
+  return {
+    ...w,
+    colore,
+    __profile: profile,
+    __ctx: mergedCtx,
+    __tags,
+    __reasons,
+  };
+});
 
     const wanted = computeWanted(rangeStr, enriched.length) || 1;
 
@@ -2732,8 +2997,13 @@ serve(async (req) => {
         (idKey && boostRawSet.has(idKey)) || boostNormSet.has(w.nomeN);
       const boostBonus = isBoost ? 0.12 : 0;
 
-      const scoreRaw =
-        blended + exposurePenalty + cooldownPenalty + jitter + boostBonus;
+const reasonBonus = Math.min(
+  0.08,
+  (w.__reasons || []).slice(0, 2).reduce((s, r) => s + r.strength, 0) * 0.03,
+);
+
+const scoreRaw =
+  blended + exposurePenalty + cooldownPenalty + jitter + boostBonus + reasonBonus;
 
       return {
         ...w,
@@ -2914,7 +3184,7 @@ serve(async (req) => {
         hashStringToSeed(`${ristorante_id}|${norm(piatto)}|${day}|${w.nomeN}`),
       );
 
-      const motive = buildMotivation(w.__profile, dish, w.__ctx, wineRng, safeCode);
+      const motive = buildMotivation(w.__profile, dish, w.__ctx, w.__reasons || [], wineRng, safeCode,);
       const __style = styleOf(w.colore, w.__profile);
 
       return {
@@ -2939,6 +3209,7 @@ serve(async (req) => {
           style: x.__style,
           grape: x.grape,
           motive: x.motive,
+          reasons: x.__reasons,
           prof: x.__profile,
         })),
       },
