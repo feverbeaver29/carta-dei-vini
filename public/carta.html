@@ -5019,12 +5019,13 @@ window.showSearchResults = function(query){
   const norm = s => (s||"").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu,"").trim();
   const nq = norm(query);
 
-  searchResults = wines.filter(w => nq && [
-    w.nome, w.uvaggio, w.note, w.sottocategoria, w.categoria, w.denominazione
-  ].some(f => norm(f).includes(nq)));
+const { ids, map } = getCheckedFormats();
+const formatFilteredWines = winesMatchFormats(wines, ids, map);
 
-  const { ids } = getCheckedFormats();
-  
+searchResults = formatFilteredWines.filter(w => nq && [
+  w.nome, w.uvaggio, w.note, w.sottocategoria, w.categoria, w.denominazione
+].some(f => norm(f).includes(nq)));
+
   wineList.innerHTML = "";
 if (!searchResults.length){
   wineList.innerHTML = `
