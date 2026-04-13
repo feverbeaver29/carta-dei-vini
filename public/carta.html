@@ -3932,6 +3932,16 @@ async function translateCatOnce(text, lang){
   return text;
 }
 
+function getTranslatedCategoryLabelSync(category){
+  const raw = String(category || "").trim();
+  if (!raw) return "";
+
+  if (currentLang === "it") return raw;
+
+  const key = `${currentLang}|${raw}`;
+  return _catI18nCache.get(key) || raw;
+}
+
 let _catRenderToken = 0;
 
 window.showCategories = async function () {
@@ -5040,13 +5050,16 @@ if (!searchResults.length){
     card.className = 'wine-card';
     const annata = w.annata ? ` (${w.annata})` : '';
     const nomePulito = (w.nome || "").trim();
-    card.innerHTML = `
-      <strong>${nomePulito}${annata}</strong>
-      ${buildPriceHTML(w, ids)}
-      ${w.uvaggio ? `<small>${translations[currentLang].grape}: ${w.uvaggio}</small>` : ""}
-      <div style="margin-top:6px; font-size:.85em; opacity:.8;">
-        <em>${(w.categoria||"").trim()}${w.sottocategoria ? " • " + w.sottocategoria : ""}</em>
-      </div>`;
+const categoriaLabel = getTranslatedCategoryLabelSync(w.categoria);
+const sottoLabel = (w.sottocategoria || "").trim();
+
+card.innerHTML = `
+  <strong>${nomePulito}${annata}</strong>
+  ${buildPriceHTML(w, ids)}
+  ${w.uvaggio ? `<small>${translations[currentLang].grape}: ${w.uvaggio}</small>` : ""}
+  <div style="margin-top:6px; font-size:.85em; opacity:.8;">
+    <em>${categoriaLabel}${sottoLabel ? " • " + sottoLabel : ""}</em>
+  </div>`;
     card.onclick = () => mostraPopupDescrizione(w);
     wineList.appendChild(card);
   });
