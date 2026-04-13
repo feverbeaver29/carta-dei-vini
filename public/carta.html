@@ -1208,6 +1208,7 @@ body.reordering #bottomBar{
 <script>
 const translations = {
   it: {
+    helperSearchResultsFor: "Risultati per:",
     helperFormatBottle: "🍾 Stai visualizzando solo bottiglie",
 helperFormatQuarter: "🍾 Stai visualizzando solo 1/4 lt",
 helperFormatThreeQuart: "🍾 Stai visualizzando solo bottiglie da 0,375 lt",
@@ -1264,6 +1265,7 @@ formatGlassShort: "Calice",
 glassOnly: "Al calice",
   },
   en: {
+    helperSearchResultsFor: "Results for:",
     helperFormatBottle: "🍾 You are viewing only bottles",
 helperFormatQuarter: "🍾 You are viewing only 1/4 l formats",
 helperFormatThreeQuart: "🍾 You are viewing only 0.375 l bottles",
@@ -1320,6 +1322,7 @@ formatGlassShort: "Glass",
     helperGlassMode: "🍷 You are viewing only wines by the glass",
   },
   fr: {
+    helperSearchResultsFor: "Résultats pour :",
     helperFormatBottle: "🍾 Vous voyez uniquement les bouteilles",
 helperFormatQuarter: "🍾 Vous voyez uniquement le format 1/4 l",
 helperFormatThreeQuart: "🍾 Vous voyez uniquement les bouteilles de 0,375 l",
@@ -1375,6 +1378,7 @@ sommelierBtnBadge: "Nouveauté",
 helperGlassMode: "🍷 Vous voyez uniquement les vins au verre",
   },
   de: {
+    helperSearchResultsFor: "Ergebnisse für:",
     helperFormatBottle: "🍾 Sie sehen nur Flaschen",
 helperFormatQuarter: "🍾 Sie sehen nur 1/4-l-Formate",
 helperFormatThreeQuart: "🍾 Sie sehen nur 0,375-l-Flaschen",
@@ -1429,6 +1433,7 @@ sommelierBtnBadge: "Neu",
 helperGlassMode: "🍷 Sie sehen nur Weine im Glas",
   },
   es: {
+    helperSearchResultsFor: "Resultados para:",
     helperFormatBottle: "🍾 Estás viendo solo botellas",
 helperFormatQuarter: "🍾 Estás viendo solo formato de 1/4 l",
 helperFormatThreeQuart: "🍾 Estás viendo solo botellas de 0,375 l",
@@ -1484,6 +1489,7 @@ sommelierBtnBadge: "Novedad",
 helperGlassMode: "🍷 Estás viendo solo los vinos por copa",
   },
   zh: {
+    helperSearchResultsFor: "搜索结果：",
     resetFilters: "重置",
     otherFormats: "其他规格",
 glassOnly: "杯装",
@@ -1534,6 +1540,7 @@ helperGlassMode: "🍷 您正在查看仅按杯供应的葡萄酒",
   }
     ,
   ko: {
+    helperSearchResultsFor: "검색 결과:",
     resetFilters: "초기화",
     otherFormats: "다른 형식",
 glassOnly: "잔으로",
@@ -1584,6 +1591,7 @@ sommelierBtn:      "와인 추천",
     helperGlassMode: "🍷 잔으로 제공되는 와인만 표시 중",
   },
   ru: {
+    helperSearchResultsFor: "Результаты для:",
     resetFilters: "Сброс",
     otherFormats: "Другие форматы",
 glassOnly: "По бокалам",
@@ -5068,7 +5076,7 @@ card.innerHTML = `
 applyPalette(window.ristorantePalette);
 nudgeSommelier("entered_wine_list");
 
-  setHelper(`Risultati per: “${query}”`);
+  setHelper(`${t.helperSearchResultsFor || "Risultati per:"} “${query}”`);
   history.pushState({ view:"search", query }, "");
 };
 
