@@ -2920,9 +2920,31 @@ function hasVisiblePrice(w, key){
 function buildPriceHTML(w, selectedIds = null){
   const chips = [];
 
+  const panel = document.getElementById("otherFormatsPanel");
+  const glassHidden = document.getElementById("glassHiddenCb");
+
+  const allBottleInputs = panel
+    ? Array.from(panel.querySelectorAll('.format-option input[type="checkbox"]'))
+    : [];
+
+  const allBottleIds = allBottleInputs.map(cb => cb.value);
+  const allBottleOn = allBottleInputs.length > 0 && allBottleInputs.every(cb => cb.checked);
+  const glassOnly = !!glassHidden?.checked;
+
   const activeIds = Array.isArray(selectedIds) ? selectedIds : getCheckedFormats().ids;
 
-  const wants = (id) => activeIds.includes(id);
+  const wants = (id) => {
+    // modalità "al calice": mostra solo il calice
+    if (glassOnly) return id === "glass";
+
+    // stato default/reset: tutti i formati bottiglia attivi -> mostra TUTTO, compreso il calice
+    if (allBottleOn) {
+      return id === "glass" || allBottleIds.includes(id);
+    }
+
+    // stato filtro singolo: mostra solo il formato selezionato
+    return activeIds.includes(id);
+  };
 
   if (wants("bottle") && hasVisiblePrice(w, "prezzo")) {
     chips.push(
@@ -5001,6 +5023,8 @@ window.showSearchResults = function(query){
     w.nome, w.uvaggio, w.note, w.sottocategoria, w.categoria, w.denominazione
   ].some(f => norm(f).includes(nq)));
 
+  const { ids } = getCheckedFormats();
+  
   wineList.innerHTML = "";
 if (!searchResults.length){
   wineList.innerHTML = `
