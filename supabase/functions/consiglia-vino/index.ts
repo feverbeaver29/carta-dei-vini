@@ -823,6 +823,31 @@ function applyDishOverrides(piattoRaw: string, input: Dish): Dish {
   return d;
 }
 
+function enforceDishIdentity(piattoRaw: string, input: Dish): Dish {
+  const s = norm(piattoRaw);
+  const d: Dish = { ...input };
+
+  const isFish = /\b(baccala|baccalà|stoccafisso|pesce|orata|branzino|spigola|tonno|salmone|gamber|gamberi|scampi|cozze|vongole|calamari|polpo|seppie|mare)\b/.test(s);
+  const isRedMeat = /\b(manzo|tagliata|fiorentina|peposo|brasato|guancia|cinghiale|ragu|ragù)\b/.test(s);
+
+  if (isFish) {
+    d.protein = "pesce";
+    d.intensity = Math.min(d.intensity, 0.62);
+    d.succulence = Math.min(Math.max(d.succulence, 0.35), 0.55);
+    if (/\bfritt/.test(s)) d.cooking = "fritto";
+  }
+
+  if (/\b(livornese|pomodoro|pomarola)\b/.test(s)) {
+    d.acid_hint = true;
+  }
+
+  if (isRedMeat) {
+    d.protein = "carne_rossa";
+  }
+
+  return d;
+}
+
 async function getDishFeatures(piattoRaw: string, openaiKey?: string): Promise<Dish> {
   const items = splitDishes(piattoRaw);
   if (!openaiKey) return combineDishes(items.map(parseDishFallback));
@@ -1063,6 +1088,20 @@ async function loadPriors(headers: Record<string, string>): Promise<Priors> {
   return { grapesByKey, appellations };
 }
 
+let PRIORS_CACHE: Priors | null = null;
+let PRIORS_CACHE_AT = 0;
+
+async function loadPriorsCached(headers: Record<string, string>): Promise<Priors> {
+  const now = Date.now();
+  if (PRIORS_CACHE && (now - PRIORS_CACHE_AT) < 10 * 60 * 1000) {
+    return PRIORS_CACHE;
+  }
+
+  const fresh = await loadPriors(headers);
+  PRIORS_CACHE = fresh;
+  PRIORS_CACHE_AT = now;
+  return fresh;
+}
 /** =========================
  *  PROFILE FROM WINE + CONTEXT
  *  ========================= */
@@ -3508,14 +3547,14 @@ serve(async (req) => {
       (boostRawList || []).map((x) => norm(String(x))),
     );
 
-    const priors = await loadPriors(headers);
+    const priors = await loadPriorsCached(headers);
 
     let recentLog: any[] = [];
     try {
       const recentRes = await fetch(
-        `${supabaseUrl}/rest/v1/consigliati_log?ristorante_id=eq.${ristorante_id}&order=creato_il.desc&limit=300`,
-        { headers },
-      );
+  `${supabaseUrl}/rest/v1/consigliati_log?ristorante_id=eq.${ristorante_id}&select=creato_il,vini_keys,vini_ids,vini&order=creato_il.desc&limit=120`,
+  { headers },
+);
       if (recentRes.ok) recentLog = await recentRes.json();
     } catch {
       recentLog = [];
@@ -3555,10 +3594,10 @@ serve(async (req) => {
       });
     });
 
-    const day = new Date().toISOString().slice(0, 10);
-    const rng = mulberry32(
-      hashStringToSeed(`${ristorante_id}|${norm(piatto)}|${day}`),
-    );
+const slot6h = Math.floor(Date.now() / (1000 * 60 * 60 * 6));
+const rng = mulberry32(
+  hashStringToSeed(`${ristorante_id}|${norm(piatto)}|slot:${slot6h}`),
+);
 
     const dishRaw = await getDishFeatures(piatto, Deno.env.get("OPENAI_API_KEY"));
 const dish = applyDishOverrides(piatto, dishRaw);
@@ -3740,7 +3779,7 @@ const pairingSorted = [...baseList].sort((a, b) =>
 
 const capByProd = 1;
 const capBySub = 1;
-const capByGrape = wanted <= 3 ? 1 : 2;
+const capByGrape = 1;
 
 const usedByProd = new Map<string, number>();
 const usedBySub = new Map<string, number>();
@@ -3751,12 +3790,11 @@ const explorationKeys = new Set<string>();
 
 const catastrophicMismatch = (w: EnrichedWine): boolean => {
   const p = w.__profile;
-  if (
-    (dish.protein === "pesce" || dish.cooking === "crudo") &&
-    w.colore === "rosso" &&
-    p.tannin >= 0.8 &&
-    p.sweet <= 0.05
-  ) return true;
+
+  if (dish.protein === "pesce" || dish.cooking === "crudo") {
+    if (w.colore === "rosso" && (p.tannin >= 0.45 || p.body >= 0.62)) return true;
+    if (w.colore === "rosso" && dish.acid_hint) return true;
+  }
 
   if (dish.sweet > 0.4 && p.sweet < 0.25) return true;
   if (dish.spice > 0.6 && p.tannin > 0.8 && p.sweet <= 0.05) return true;
@@ -3894,14 +3932,6 @@ const relaxedPool = pairingSorted.filter((w) =>
     addChosen(w);
     if (chosen.length >= wanted) break;
   }
-
-  if (chosen.length < wanted) {
-    for (const w of relaxedPool) {
-      if (alreadyChosen(w)) continue;
-      addChosen(w);
-      if (chosen.length >= wanted) break;
-    }
-  }
 }
 
 // 6) Rete di sicurezza estrema: mai picks vuoto
@@ -4006,7 +4036,7 @@ const out = finalChosen.map((w, idx) => {
       {
         piatto,
         lang: safeCode,
-        seed: `${ristorante_id}|${norm(piatto)}|${day}`,
+        seed: `${ristorante_id}|${norm(piatto)}|slot:${slot6h}`,
 picks: out.map((x) => ({
   nome: x.nome,
   colore: x.colore,
