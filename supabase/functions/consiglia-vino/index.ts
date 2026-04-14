@@ -3599,8 +3599,8 @@ const rng = mulberry32(
   hashStringToSeed(`${ristorante_id}|${norm(piatto)}|slot:${slot6h}`),
 );
 
-    const dishRaw = await getDishFeatures(piatto, Deno.env.get("OPENAI_API_KEY"));
-const dish = applyDishOverrides(piatto, dishRaw);
+const dishRaw = parseDishFallback(piatto);
+const dish = enforceDishIdentity(piatto, applyDishOverrides(piatto, dishRaw));
     const piattoNorm = norm(piatto);
 
     const wines0: EnrichedWine[] = vini
