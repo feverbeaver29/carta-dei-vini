@@ -2405,6 +2405,107 @@ function getSommelierLocale(lang: LangCode): SommelierLocale {
   return SOMM_TEXT[lang] || SOMM_TEXT.it;
 }
 
+type PairingBand = "high" | "medium" | "fallback";
+
+const CONFIDENCE_TEXT: Record<
+  LangCode,
+  Record<PairingBand, string>
+> = {
+  it: {
+    high: "Abbinamento molto centrato",
+    medium: "Abbinamento convincente",
+    fallback: "Scelta più coerente disponibile",
+  },
+  en: {
+    high: "Excellent pairing",
+    medium: "Convincing pairing",
+    fallback: "Most coherent option available",
+  },
+  fr: {
+    high: "Accord très juste",
+    medium: "Accord convaincant",
+    fallback: "Choix le plus cohérent disponible",
+  },
+  de: {
+    high: "Sehr stimmige Kombination",
+    medium: "Überzeugende Kombination",
+    fallback: "Die stimmigste verfügbare Wahl",
+  },
+  es: {
+    high: "Maridaje muy centrado",
+    medium: "Maridaje convincente",
+    fallback: "La opción más coherente disponible",
+  },
+  zh: {
+    high: "非常贴切的搭配",
+    medium: "比较稳妥的搭配",
+    fallback: "酒单里相对最合适的选择",
+  },
+  ko: {
+    high: "아주 정확한 페어링",
+    medium: "설득력 있는 페어링",
+    fallback: "와인 리스트에서 가장 무난하게 맞는 선택",
+  },
+  ru: {
+    high: "Очень точное сочетание",
+    medium: "Убедительное сочетание",
+    fallback: "Самый уместный вариант из доступных",
+  },
+};
+
+function getConfidenceLabel(lang: LangCode, band: PairingBand): string {
+  return CONFIDENCE_TEXT[lang]?.[band] || CONFIDENCE_TEXT.it[band];
+}
+
+function getPairingBand(params: {
+  q: number;
+  reasonStrength: number;
+  leaderQ: number;
+  secondQ: number;
+  index: number;
+}): PairingBand {
+  const { q, reasonStrength, leaderQ, secondQ, index } = params;
+  const gapFromLeader = leaderQ - q;
+  const leaderGap = Math.max(0, leaderQ - secondQ);
+
+  // top pick davvero forte
+  if (
+    index === 0 &&
+    q >= 0.78 &&
+    reasonStrength >= 1.15 &&
+    leaderGap >= 0.08
+  ) {
+    return "high";
+  }
+
+  // pick comunque buono / centrato
+  if (
+    q >= 0.58 &&
+    reasonStrength >= 0.75 &&
+    gapFromLeader <= 0.16
+  ) {
+    return "medium";
+  }
+
+  // tutto il resto = migliore scelta disponibile ma non perfetta
+  return "fallback";
+}
+
+function prependConfidenceLabel(
+  motive: string,
+  lang: LangCode,
+  band: PairingBand,
+): string {
+  const label = getConfidenceLabel(lang, band).trim();
+  const text = (motive || "").trim();
+
+  if (!label) return text;
+  if (!text) return label;
+
+  if (lang === "zh") return `${label}：${text}`;
+  return `${label}: ${text}`;
+}
+
 function lowerFirst(s: string) {
   s = (s || "").trim();
   return s ? s[0].toLowerCase() + s.slice(1) : s;
@@ -3848,32 +3949,57 @@ const discoverySet = new Set<string>(
     .map((w) => w.__historyKey),
 );
 
-    const out = finalChosen.map((w) => {
-      const grape = (w.uvaggio && String(w.uvaggio).trim())
-        ? String(w.uvaggio).trim()
-        : "N.D.";
-      const wineRng = mulberry32(
-        hashStringToSeed(`${ristorante_id}|${norm(piatto)}|${day}|${w.nomeN}`),
-      );
+const leaderQ = pairingSorted[0]?.__q ?? finalChosen[0]?.__q ?? 0;
+const secondQ = pairingSorted[1]?.__q ?? leaderQ;
 
-      const motive = buildMotivation(
-  w.colore,
-  w.__profile,
-  dish,
-  w.__ctx,
-  w.__reasons || [],
-  wineRng,
-  safeCode,
-);
-      const __style = styleOf(w.colore, w.__profile);
+const out = finalChosen.map((w, idx) => {
+  const grape = (w.uvaggio && String(w.uvaggio).trim())
+    ? String(w.uvaggio).trim()
+    : "N.D.";
 
-      return {
-        ...w,
-        __style,
-        grape,
-        motive,
-      };
-    });
+  const wineRng = mulberry32(
+    hashStringToSeed(`${ristorante_id}|${norm(piatto)}|${day}|${w.nomeN}`),
+  );
+
+  const baseMotive = buildMotivation(
+    w.colore,
+    w.__profile,
+    dish,
+    w.__ctx,
+    w.__reasons || [],
+    wineRng,
+    safeCode,
+  );
+
+  const reasonStrength = (w.__reasons || [])
+    .slice(0, 2)
+    .reduce((s, r) => s + Number(r.strength || 0), 0);
+
+  const pairingBand = getPairingBand({
+    q: Number(w.__q ?? 0),
+    reasonStrength,
+    leaderQ,
+    secondQ,
+    index: idx,
+  });
+
+  const motive = prependConfidenceLabel(
+    baseMotive,
+    safeCode,
+    pairingBand,
+  );
+
+  const __style = styleOf(w.colore, w.__profile);
+
+  return {
+    ...w,
+    __style,
+    grape,
+    motive,
+    pairing_band: pairingBand,
+    pairing_confidence_label: getConfidenceLabel(safeCode, pairingBand),
+  };
+});
 
     console.log(
       "PICKED",
@@ -3881,17 +4007,19 @@ const discoverySet = new Set<string>(
         piatto,
         lang: safeCode,
         seed: `${ristorante_id}|${norm(piatto)}|${day}`,
-        picks: out.map((x) => ({
-          nome: x.nome,
-          colore: x.colore,
-          q: +Number(x.__q ?? 0).toFixed(3),
-          base: +Number(x.__scoreCore ?? 0).toFixed(3),
-          style: x.__style,
-          grape: x.grape,
-          motive: x.motive,
-          reasons: x.__reasons,
-          prof: x.__profile,
-        })),
+picks: out.map((x) => ({
+  nome: x.nome,
+  colore: x.colore,
+  q: +Number(x.__q ?? 0).toFixed(3),
+  base: +Number(x.__scoreCore ?? 0).toFixed(3),
+  style: x.__style,
+  grape: x.grape,
+  pairing_band: x.pairing_band,
+  pairing_confidence_label: x.pairing_confidence_label,
+  motive: x.motive,
+  reasons: x.__reasons,
+  prof: x.__profile,
+})),
       },
     );
 
