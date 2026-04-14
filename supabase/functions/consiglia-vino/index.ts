@@ -697,9 +697,9 @@ function parseDishFallback(text: string): Dish {
   }
 
   if (/forno|al forno|in crosta/.test(s)) {
-    dish.cooking = dish.cooking ?? "griglia";
     dish.intensity = Math.max(dish.intensity, 0.55);
     dish.persistence = Math.max(dish.persistence, 0.5);
+    dish.aromaticity = Math.max(dish.aromaticity, 0.42);
   }
 
   // acidità / freschezza del piatto
@@ -1278,16 +1278,19 @@ function resolveDishFromKnowledge(
   let dish = dishFromBaseRow(baseRow);
   const matchedModifiers: string[] = [];
   const usedModifierNorms = new Set<string>();
+  const coveredModifierNorms: string[] = [];
   const accentTags = [...(baseRow.accent_tags || [])];
 
   for (const mod of knowledge.modifiers) {
     if (!includesPhrase(piattoNorm, mod.modifier_norm)) continue;
     if (usedModifierNorms.has(mod.modifier_norm)) continue;
+    if (coveredModifierNorms.some((prev) => includesPhrase(prev, mod.modifier_norm))) continue;
     if (!modifierAppliesToDish(mod, dish, baseRow.base_family)) continue;
 
     dish = applyModifierToDish(dish, mod);
     matchedModifiers.push(mod.modifier_text);
     usedModifierNorms.add(mod.modifier_norm);
+        coveredModifierNorms.push(mod.modifier_norm);
     accentTags.push(...(mod.accent_tags || []));
   }
 
@@ -1756,7 +1759,17 @@ function buildReasonCodes(
   const reasons: PairingReason[] = [];
 
   const push = (code: ReasonCode, strength: number) => {
-    if (strength > 0) reasons.push({ code, strength: +strength.toFixed(3) });
+    if (strength <= 0) return;
+
+    const value = +strength.toFixed(3);
+    const existing = reasons.find((r) => r.code === code);
+
+    if (existing) {
+      existing.strength = Math.max(existing.strength, value);
+      return;
+    }
+
+    reasons.push({ code, strength: value });
   };
 
   if (dish.fat >= 0.45 && profile.bubbles >= 0.9) {
@@ -1819,7 +1832,7 @@ if (
     push("supports_cured_meat", profile.acid * 0.5 + Math.max(0, 0.55 - profile.tannin));
   }
 
-  if (dish.protein === "carne_rossa" || dish.cooking === "brasato") {
+  if (dish.protein === "carne_rossa") {
     push("supports_red_meat", profile.tannin * 0.7 + profile.body * 0.5);
   }
 
@@ -1892,9 +1905,11 @@ const isMixedSeaSpice =
     sc += profile.bubbles * 1.3 + profile.acid * 0.8;
   }
 
-  if (dish.protein === "carne_rossa" || dish.cooking === "brasato") {
+  if (dish.protein === "carne_rossa") {
     sc += profile.tannin * 1.8 + profile.body * 1.35 - profile.bubbles * 0.8;
     if (profile.tannin >= 0.6 && profile.body >= 0.6) sc += 0.15;
+  } else if (dish.cooking === "brasato" && dish.protein !== "pesce") {
+    sc += profile.body * 0.25;
   }
 
   if (dish.spice > 0) {
@@ -4414,8 +4429,10 @@ const discoverySet = new Set<string>(
     .map((w) => w.__historyKey),
 );
 
-const leaderQ = pairingSorted[0]?.__q ?? finalChosen[0]?.__q ?? 0;
-const secondQ = pairingSorted[1]?.__q ?? leaderQ;
+const eligibleForBand = pairingSorted.filter((w) => !catastrophicMismatch(w));
+
+const leaderQ = eligibleForBand[0]?.__q ?? finalChosen[0]?.__q ?? 0;
+const secondQ = eligibleForBand[1]?.__q ?? leaderQ;
 
 const out = finalChosen.map((w, idx) => {
   const grape = (w.uvaggio && String(w.uvaggio).trim())
