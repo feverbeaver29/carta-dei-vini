@@ -3595,8 +3595,10 @@ serve(async (req) => {
     });
 
 const slot6h = Math.floor(Date.now() / (1000 * 60 * 60 * 6));
+const baseSeed = `${ristorante_id}|${norm(piatto)}|slot:${slot6h}`;
+
 const rng = mulberry32(
-  hashStringToSeed(`${ristorante_id}|${norm(piatto)}|slot:${slot6h}`),
+  hashStringToSeed(baseSeed),
 );
 
 const dishRaw = parseDishFallback(piatto);
@@ -3987,9 +3989,9 @@ const out = finalChosen.map((w, idx) => {
     ? String(w.uvaggio).trim()
     : "N.D.";
 
-  const wineRng = mulberry32(
-    hashStringToSeed(`${ristorante_id}|${norm(piatto)}|${day}|${w.nomeN}`),
-  );
+const wineRng = mulberry32(
+  hashStringToSeed(`${baseSeed}|${w.nomeN}`),
+);
 
   const baseMotive = buildMotivation(
     w.colore,
@@ -4036,7 +4038,7 @@ const out = finalChosen.map((w, idx) => {
       {
         piatto,
         lang: safeCode,
-        seed: `${ristorante_id}|${norm(piatto)}|slot:${slot6h}`,
+        seed: baseSeed,
 picks: out.map((x) => ({
   nome: x.nome,
   colore: x.colore,
