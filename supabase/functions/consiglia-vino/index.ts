@@ -194,6 +194,72 @@ type EnrichedWine = {
   __style?: string;
 };
 
+type DishBaseRow = {
+  slug: string;
+  canonical_name: string;
+  display_name: string;
+  base_family: string;
+  protein: Dish["protein"];
+  cooking: Dish["cooking"];
+  fat: number;
+  spice: number;
+  sweet: number;
+  intensity: number;
+  succulence: number;
+  sapidity: number;
+  aromaticity: number;
+  persistence: number;
+  acid_hint: boolean;
+  accent_tags: string[];
+};
+
+type DishAliasRow = {
+  alias_text: string;
+  alias_norm: string;
+  dish_base_slug: string;
+  confidence: number;
+  alias_type: string;
+};
+
+type DishModifierRow = {
+  modifier_text: string;
+  modifier_norm: string;
+  modifier_type: string;
+  set_cooking: Dish["cooking"] | null;
+  set_protein: Dish["protein"] | null;
+  delta_fat: number;
+  delta_spice: number;
+  delta_sweet: number;
+  delta_intensity: number;
+  delta_succulence: number;
+  delta_sapidity: number;
+  delta_aromaticity: number;
+  delta_persistence: number;
+  set_acid_hint: boolean | null;
+  accent_tags: string[];
+  applies_to_proteins: string[];
+  applies_to_cookings: string[];
+  applies_to_base_families: string[];
+  priority: number;
+};
+
+type DishKnowledge = {
+  basesBySlug: Map<string, DishBaseRow>;
+  aliases: DishAliasRow[];
+  modifiers: DishModifierRow[];
+};
+
+type DishResolution = {
+  dish: Dish;
+  source: "knowledge" | "fallback";
+  matched_base_slug: string | null;
+  matched_base_name: string | null;
+  matched_alias: string | null;
+  matched_modifiers: string[];
+  accent_tags: string[];
+  base_family: string | null;
+};
+
 /** =========================
  *  VECTORS & RANDOM
  *  ========================= */
@@ -945,6 +1011,312 @@ Piatti: ${items.map((s) => `"${s}"`).join(", ")}
 }
 
 /** =========================
+ *  DISH KNOWLEDGE TABLES
+ *  ========================= */
+
+function normalizeSearchText(raw: any): string {
+  return norm(String(raw || ""))
+    .replace(/[^\p{L}\p{N} ]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function includesPhrase(haystack: string, needle: string): boolean {
+  const h = normalizeSearchText(haystack);
+  const n = normalizeSearchText(needle);
+  if (!h || !n) return false;
+  return (` ${h} `).includes(` ${n} `);
+}
+
+function dishFromBaseRow(row: DishBaseRow): Dish {
+  return {
+    fat: clamp01(Number(row.fat ?? 0.3)),
+    spice: clamp01(Number(row.spice ?? 0)),
+    sweet: clamp01(Number(row.sweet ?? 0)),
+    intensity: clamp01(Number(row.intensity ?? 0.4)),
+    succulence: clamp01(Number(row.succulence ?? 0.3)),
+    sapidity: clamp01(Number(row.sapidity ?? 0.25)),
+    aromaticity: clamp01(Number(row.aromaticity ?? 0.35)),
+    persistence: clamp01(Number(row.persistence ?? 0.35)),
+    protein: row.protein ?? null,
+    cooking: row.cooking ?? null,
+    acid_hint: !!row.acid_hint,
+  };
+}
+
+function applyModifierToDish(dish: Dish, mod: DishModifierRow): Dish {
+  const out: Dish = { ...dish };
+
+  if (mod.set_cooking) out.cooking = mod.set_cooking;
+  if (mod.set_protein) out.protein = mod.set_protein;
+
+  out.fat = clamp01(out.fat + Number(mod.delta_fat || 0));
+  out.spice = clamp01(out.spice + Number(mod.delta_spice || 0));
+  out.sweet = clamp01(out.sweet + Number(mod.delta_sweet || 0));
+  out.intensity = clamp01(out.intensity + Number(mod.delta_intensity || 0));
+  out.succulence = clamp01(out.succulence + Number(mod.delta_succulence || 0));
+  out.sapidity = clamp01(out.sapidity + Number(mod.delta_sapidity || 0));
+  out.aromaticity = clamp01(out.aromaticity + Number(mod.delta_aromaticity || 0));
+  out.persistence = clamp01(out.persistence + Number(mod.delta_persistence || 0));
+
+  if (mod.set_acid_hint !== null && mod.set_acid_hint !== undefined) {
+    out.acid_hint = !!mod.set_acid_hint;
+  }
+
+  return out;
+}
+
+function modifierAppliesToDish(
+  mod: DishModifierRow,
+  dish: Dish,
+  baseFamily: string | null,
+): boolean {
+  const proteins = (mod.applies_to_proteins || []).map(normalizeSearchText).filter(Boolean);
+  const cookings = (mod.applies_to_cookings || []).map(normalizeSearchText).filter(Boolean);
+  const families = (mod.applies_to_base_families || []).map(normalizeSearchText).filter(Boolean);
+
+  if (proteins.length) {
+    if (!dish.protein) return false;
+    if (!proteins.includes(normalizeSearchText(dish.protein))) return false;
+  }
+
+  if (cookings.length) {
+    if (!dish.cooking) return false;
+    if (!cookings.includes(normalizeSearchText(dish.cooking))) return false;
+  }
+
+  if (families.length) {
+    const fam = normalizeSearchText(baseFamily || "");
+    if (!fam || !families.includes(fam)) return false;
+  }
+
+  return true;
+}
+
+function scoreAliasHit(a: DishAliasRow): number {
+  const typeBonus =
+    a.alias_type === "canonical" ? 0.08
+      : a.alias_type === "regional" ? 0.05
+      : a.alias_type === "menu" ? 0.03
+      : 0;
+
+  return (a.alias_norm.length * 0.01) + Number(a.confidence || 0) + typeBonus;
+}
+
+function pickBestDishAlias(
+  piattoNorm: string,
+  knowledge: DishKnowledge,
+): DishAliasRow | null {
+  const hits = knowledge.aliases.filter((a) => includesPhrase(piattoNorm, a.alias_norm));
+  if (!hits.length) return null;
+  hits.sort((a, b) => scoreAliasHit(b) - scoreAliasHit(a));
+  return hits[0] || null;
+}
+
+function pickBestDishBaseFromName(
+  piattoNorm: string,
+  knowledge: DishKnowledge,
+): DishBaseRow | null {
+  const rows = Array.from(knowledge.basesBySlug.values());
+
+  const hits = rows.filter((b) =>
+    includesPhrase(piattoNorm, b.canonical_name) ||
+    includesPhrase(piattoNorm, b.display_name)
+  );
+
+  if (!hits.length) return null;
+
+  hits.sort((a, b) => {
+    const la = Math.max(a.canonical_name.length, a.display_name.length);
+    const lb = Math.max(b.canonical_name.length, b.display_name.length);
+    return lb - la;
+  });
+
+  return hits[0] || null;
+}
+
+async function loadDishKnowledge(headers: Record<string, string>): Promise<DishKnowledge> {
+  const supabaseUrl = "https://ldunvbftxhbtuyabgxwh.supabase.co";
+
+  const [basesRes, aliasesRes, modifiersRes] = await Promise.all([
+    fetch(
+      `${supabaseUrl}/rest/v1/dish_bases?is_active=eq.true&select=slug,canonical_name,display_name,base_family,protein,cooking,fat,spice,sweet,intensity,succulence,sapidity,aromaticity,persistence,acid_hint,accent_tags`,
+      { headers },
+    ),
+    fetch(
+      `${supabaseUrl}/rest/v1/dish_aliases?select=alias_text,alias_norm,dish_base_slug,confidence,alias_type`,
+      { headers },
+    ),
+    fetch(
+      `${supabaseUrl}/rest/v1/dish_modifiers?select=modifier_text,modifier_norm,modifier_type,set_cooking,set_protein,delta_fat,delta_spice,delta_sweet,delta_intensity,delta_succulence,delta_sapidity,delta_aromaticity,delta_persistence,set_acid_hint,accent_tags,applies_to_proteins,applies_to_cookings,applies_to_base_families,priority`,
+      { headers },
+    ),
+  ]);
+
+  if (!basesRes.ok) throw new Error(`dish_bases ${basesRes.status}`);
+  if (!aliasesRes.ok) throw new Error(`dish_aliases ${aliasesRes.status}`);
+  if (!modifiersRes.ok) throw new Error(`dish_modifiers ${modifiersRes.status}`);
+
+  const basesJson = await basesRes.json();
+  const aliasesJson = await aliasesRes.json();
+  const modifiersJson = await modifiersRes.json();
+
+  const baseRows: DishBaseRow[] = (basesJson || []).map((r: any) => ({
+    slug: String(r.slug || ""),
+    canonical_name: String(r.canonical_name || ""),
+    display_name: String(r.display_name || ""),
+    base_family: String(r.base_family || ""),
+    protein: (r.protein ?? null) as Dish["protein"],
+    cooking: (r.cooking ?? null) as Dish["cooking"],
+    fat: Number(r.fat ?? 0.3),
+    spice: Number(r.spice ?? 0),
+    sweet: Number(r.sweet ?? 0),
+    intensity: Number(r.intensity ?? 0.4),
+    succulence: Number(r.succulence ?? 0.3),
+    sapidity: Number(r.sapidity ?? 0.25),
+    aromaticity: Number(r.aromaticity ?? 0.35),
+    persistence: Number(r.persistence ?? 0.35),
+    acid_hint: !!r.acid_hint,
+    accent_tags: toStringArray(r.accent_tags),
+  }));
+
+  const aliases: DishAliasRow[] = (aliasesJson || []).map((r: any) => ({
+    alias_text: String(r.alias_text || ""),
+    alias_norm: normalizeSearchText(r.alias_norm || r.alias_text || ""),
+    dish_base_slug: String(r.dish_base_slug || ""),
+    confidence: Number(r.confidence ?? 0.9),
+    alias_type: String(r.alias_type || "variant"),
+  }))
+    .filter((r: DishAliasRow) => r.alias_norm && r.dish_base_slug)
+    .sort((a: DishAliasRow, b: DishAliasRow) =>
+      scoreAliasHit(b) - scoreAliasHit(a)
+    );
+
+  const modifiers: DishModifierRow[] = (modifiersJson || []).map((r: any) => ({
+    modifier_text: String(r.modifier_text || ""),
+    modifier_norm: normalizeSearchText(r.modifier_norm || r.modifier_text || ""),
+    modifier_type: String(r.modifier_type || ""),
+    set_cooking: (r.set_cooking ?? null) as Dish["cooking"],
+    set_protein: (r.set_protein ?? null) as Dish["protein"],
+    delta_fat: Number(r.delta_fat ?? 0),
+    delta_spice: Number(r.delta_spice ?? 0),
+    delta_sweet: Number(r.delta_sweet ?? 0),
+    delta_intensity: Number(r.delta_intensity ?? 0),
+    delta_succulence: Number(r.delta_succulence ?? 0),
+    delta_sapidity: Number(r.delta_sapidity ?? 0),
+    delta_aromaticity: Number(r.delta_aromaticity ?? 0),
+    delta_persistence: Number(r.delta_persistence ?? 0),
+    set_acid_hint: r.set_acid_hint === null || r.set_acid_hint === undefined
+      ? null
+      : !!r.set_acid_hint,
+    accent_tags: toStringArray(r.accent_tags),
+    applies_to_proteins: toStringArray(r.applies_to_proteins),
+    applies_to_cookings: toStringArray(r.applies_to_cookings),
+    applies_to_base_families: toStringArray(r.applies_to_base_families),
+    priority: Number(r.priority ?? 100),
+  }))
+    .filter((r: DishModifierRow) => r.modifier_norm)
+    .sort((a: DishModifierRow, b: DishModifierRow) =>
+      (a.priority - b.priority) ||
+      (b.modifier_norm.length - a.modifier_norm.length)
+    );
+
+  const basesBySlug = new Map<string, DishBaseRow>();
+  for (const row of baseRows) {
+    if (row.slug) basesBySlug.set(row.slug, row);
+  }
+
+  return { basesBySlug, aliases, modifiers };
+}
+
+let DISH_KNOWLEDGE_CACHE: DishKnowledge | null = null;
+let DISH_KNOWLEDGE_CACHE_AT = 0;
+
+async function loadDishKnowledgeCached(
+  headers: Record<string, string>,
+): Promise<DishKnowledge> {
+  const now = Date.now();
+  if (DISH_KNOWLEDGE_CACHE && (now - DISH_KNOWLEDGE_CACHE_AT) < 10 * 60 * 1000) {
+    return DISH_KNOWLEDGE_CACHE;
+  }
+
+  const fresh = await loadDishKnowledge(headers);
+  DISH_KNOWLEDGE_CACHE = fresh;
+  DISH_KNOWLEDGE_CACHE_AT = now;
+  return fresh;
+}
+
+function resolveDishFromKnowledge(
+  piattoRaw: string,
+  knowledge: DishKnowledge,
+): DishResolution {
+  const piattoNorm = normalizeSearchText(piattoRaw);
+
+  const aliasHit = pickBestDishAlias(piattoNorm, knowledge);
+  let baseRow = aliasHit
+    ? (knowledge.basesBySlug.get(aliasHit.dish_base_slug) || null)
+    : pickBestDishBaseFromName(piattoNorm, knowledge);
+
+  if (!baseRow) {
+    const fallbackDish = enforceDishIdentity(
+      piattoRaw,
+      applyDishOverrides(piattoRaw, parseDishFallback(piattoRaw)),
+    );
+
+    return {
+      dish: fallbackDish,
+      source: "fallback",
+      matched_base_slug: null,
+      matched_base_name: null,
+      matched_alias: null,
+      matched_modifiers: [],
+      accent_tags: [],
+      base_family: null,
+    };
+  }
+
+  let dish = dishFromBaseRow(baseRow);
+  const matchedModifiers: string[] = [];
+  const usedModifierNorms = new Set<string>();
+  const accentTags = [...(baseRow.accent_tags || [])];
+
+  for (const mod of knowledge.modifiers) {
+    if (!includesPhrase(piattoNorm, mod.modifier_norm)) continue;
+    if (usedModifierNorms.has(mod.modifier_norm)) continue;
+    if (!modifierAppliesToDish(mod, dish, baseRow.base_family)) continue;
+
+    dish = applyModifierToDish(dish, mod);
+    matchedModifiers.push(mod.modifier_text);
+    usedModifierNorms.add(mod.modifier_norm);
+    accentTags.push(...(mod.accent_tags || []));
+  }
+
+  const finalDish = enforceDishIdentity(
+    piattoRaw,
+    applyDishOverrides(piattoRaw, dish),
+  );
+
+  const accentUnique = Array.from(
+    new Set(
+      accentTags
+        .map((x) => normalizeSearchText(x))
+        .filter(Boolean),
+    ),
+  );
+
+  return {
+    dish: finalDish,
+    source: "knowledge",
+    matched_base_slug: baseRow.slug,
+    matched_base_name: baseRow.display_name || baseRow.canonical_name,
+    matched_alias: aliasHit?.alias_text || baseRow.display_name || baseRow.canonical_name,
+    matched_modifiers: matchedModifiers,
+    accent_tags: accentUnique,
+    base_family: baseRow.base_family || null,
+  };
+}
+
+/** =========================
  *  PRIORS LOADING
  *  ========================= */
 
@@ -1483,6 +1855,7 @@ function matchScore(
   dish: Dish,
   wineCtx: WineTextContext,
   piattoNorm: string,
+  dishTags: Set<string>,
 ): number {
   let sc = 0;
   const isPaellaLike = /\b(paella|fideua|fideuà)\b/.test(piattoNorm);
@@ -1614,6 +1987,60 @@ const isMixedSeaSpice =
       ...(wineCtx.descPalate || []),
     ].join(" "),
   );
+
+    const noteBag = norm(
+    [
+      ...(wineCtx.tastingNotes || []),
+      ...(wineCtx.typicalNotes || []),
+      ...(wineCtx.descNotes || []),
+      ...(wineCtx.descHook || []),
+      ...(wineCtx.descPalate || []),
+      ...(wineCtx.appStyleHints || []),
+      ...(wineCtx.grapeStyleHints || []),
+    ].join(" "),
+  );
+
+  const hasDishTag = (tag: string) => dishTags.has(normalizeSearchText(tag));
+
+  if (hasDishTag("tartufo") || hasDishTag("funghi") || hasDishTag("porcini")) {
+    if (/(tartufo|terra|sottobosco|fungh|cuoio|grafite|balsam)/.test(noteBag)) {
+      sc += 0.12;
+    }
+  }
+
+  if (hasDishTag("pepe") || hasDishTag("pepato")) {
+    if (/(pepe|pepato|spezi|balsam)/.test(noteBag)) {
+      sc += 0.08;
+    }
+  }
+
+  if (hasDishTag("pomodoro") || hasDishTag("agrumi") || hasDishTag("acidulo")) {
+    sc += profile.acid * 0.12;
+  }
+
+  if (
+    hasDishTag("erbe") ||
+    hasDishTag("rosmarino") ||
+    hasDishTag("salvia") ||
+    hasDishTag("timo")
+  ) {
+    if (/(erbe|balsam|rosmarino|salvia|timo)/.test(noteBag)) {
+      sc += 0.06;
+    }
+  }
+
+  if (
+    hasDishTag("burro") ||
+    hasDishTag("cremoso") ||
+    hasDishTag("mantecato")
+  ) {
+    if (profile.acid >= 0.55 && profile.tannin <= 0.35) {
+      sc += 0.08;
+    }
+    if (dish.protein !== "carne_rossa" && profile.tannin >= 0.55) {
+      sc -= 0.08;
+    }
+  }
 
   const richDish = dish.fat >= 0.6 || dish.intensity >= 0.7 ||
     dish.cooking === "brasato";
@@ -3548,6 +3975,7 @@ serve(async (req) => {
     );
 
     const priors = await loadPriorsCached(headers);
+    const dishKnowledge = await loadDishKnowledgeCached(headers);
 
     let recentLog: any[] = [];
     try {
@@ -3601,9 +4029,14 @@ const rng = mulberry32(
   hashStringToSeed(baseSeed),
 );
 
-const dishRaw = parseDishFallback(piatto);
-const dish = enforceDishIdentity(piatto, applyDishOverrides(piatto, dishRaw));
-    const piattoNorm = norm(piatto);
+const dishResolved = resolveDishFromKnowledge(piatto, dishKnowledge);
+const dish = dishResolved.dish;
+const piattoNorm = normalizeSearchText(piatto);
+const dishTags = new Set(
+  (dishResolved.accent_tags || [])
+    .map((x) => normalizeSearchText(x))
+    .filter(Boolean),
+);
 
     const wines0: EnrichedWine[] = vini
       .filter((v: any) => v?.visibile !== false)
@@ -3716,9 +4149,9 @@ const enriched: EnrichedWine[] = wines0.map((w) => {
 
     const wanted = computeWanted(rangeStr, enriched.length) || 1;
 
-    const mVals = enriched.map((w) =>
-      matchScore(w.__profile, dish, w.__ctx, piattoNorm)
-    );
+const mVals = enriched.map((w) =>
+  matchScore(w.__profile, dish, w.__ctx, piattoNorm, dishTags)
+);
     const mMin = Math.min(...mVals);
     const mMax = Math.max(...mVals);
     const mRange = (mMax - mMin) || 1;
@@ -4033,12 +4466,19 @@ const wineRng = mulberry32(
   };
 });
 
-    console.log(
-      "PICKED",
-      {
-        piatto,
-        lang: safeCode,
-        seed: baseSeed,
+console.log(
+  "PICKED",
+  {
+    piatto,
+    lang: safeCode,
+    seed: baseSeed,
+    dish_source: dishResolved.source,
+    matched_base_slug: dishResolved.matched_base_slug,
+    matched_base_name: dishResolved.matched_base_name,
+    matched_alias: dishResolved.matched_alias,
+    matched_modifiers: dishResolved.matched_modifiers,
+    dish_tags: Array.from(dishTags),
+    dish_profile: dish,
 picks: out.map((x) => ({
   nome: x.nome,
   colore: x.colore,
