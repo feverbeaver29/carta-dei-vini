@@ -3812,8 +3812,8 @@ if (topPairing) {
   addChosen(topPairing);
 }
 
-const leaderQ = topPairing?.__q ?? 0;
-const boostFloorQ = Math.max(0.30, leaderQ - 0.28);
+const leaderPairingQ = topPairing?.__q ?? 0;
+const boostFloorQ = Math.max(0.30, leaderPairingQ - 0.28);
 
 const bestBoost = pairingSorted.find((w) =>
   w.__isBoost &&
@@ -3825,12 +3825,12 @@ const bestBoost = pairingSorted.find((w) =>
 
 // 2) SLOT 2: pairing molto fedele, ma se il boost è quasi allo stesso livello lo facciamo entrare
 if (chosen.length < Math.min(2, wanted)) {
-  const secondPairing = pairingSorted.find((w) =>
-    !alreadyChosen(w) &&
-    !catastrophicMismatch(w) &&
-    canAddWine(w) &&
-    (w.__q ?? 0) >= Math.max(0.35, leaderQ - 0.08)
-  );
+const secondPairing = pairingSorted.find((w) =>
+  !alreadyChosen(w) &&
+  !catastrophicMismatch(w) &&
+  canAddWine(w) &&
+  (w.__q ?? 0) >= Math.max(0.35, leaderPairingQ - 0.08)
+);
 
   const useBoostInSecondSlot =
     !!bestBoost &&
@@ -3853,11 +3853,11 @@ if (chosen.length < wanted && bestBoost && !alreadyChosen(bestBoost)) {
 
 // 4) EXPLORATION solo dal terzo posto in poi
 if (chosen.length < wanted) {
-  const explorationPool = sorted.filter((w) =>
-    !alreadyChosen(w) &&
-    !catastrophicMismatch(w) &&
-    (w.__q ?? 0) >= Math.max(0.28, leaderQ - 0.18)
-  );
+const explorationPool = sorted.filter((w) =>
+  !alreadyChosen(w) &&
+  !catastrophicMismatch(w) &&
+  (w.__q ?? 0) >= Math.max(0.28, leaderPairingQ - 0.18)
+);
 
   while (chosen.length < wanted && explorationPool.length) {
     let bestIdx = -1;
@@ -3883,11 +3883,11 @@ if (chosen.length < wanted) {
 
 // 5) Fill finale: prima rispetta la diversità, poi solo se serve la rilassa davvero
 if (chosen.length < wanted) {
-  const relaxedPool = pairingSorted.filter((w) =>
-    !alreadyChosen(w) &&
-    !catastrophicMismatch(w) &&
-    (w.__q ?? 0) >= Math.max(0.22, leaderQ - 0.25)
-  );
+const relaxedPool = pairingSorted.filter((w) =>
+  !alreadyChosen(w) &&
+  !catastrophicMismatch(w) &&
+  (w.__q ?? 0) >= Math.max(0.22, leaderPairingQ - 0.25)
+);
 
   for (const w of relaxedPool) {
     if (!canAddWine(w)) continue;
