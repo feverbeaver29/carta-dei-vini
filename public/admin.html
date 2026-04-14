@@ -1109,6 +1109,7 @@ document.getElementById("formatPicker").style.display = "none";
 
 function fillForm(index) {
   const wine = winesData[index];
+  currentCatalogTemplateId = wine.catalog_wine_id || null;
   ["annata", "categoria", "sottocategoria", "uvaggio"].forEach(id => document.getElementById(id).value = wine[id] || "");
 
 // Dividi nome in due parti (grezzo: fino al primo spazio = produttore)
@@ -1418,7 +1419,7 @@ catFilter.addEventListener("change", () => {
 }
 
 async function upsertWineIntoCatalogFromForm(wine) {
-  if (!wine.nome || !wine.nome.trim()) return;
+  if (!wine.nome || !wine.nome.trim()) return null;
 
   const nome = wine.nome.trim();
   const payload = {
@@ -1431,13 +1432,13 @@ async function upsertWineIntoCatalogFromForm(wine) {
 
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/wines_catalog?on_conflict=nome_norm`,
+      `${SUPABASE_URL}/rest/v1/wines_catalog?on_conflict=nome_norm&select=id,nome`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "apikey": SUPABASE_API_KEY,
-          "Prefer": "resolution=merge-duplicates"  // upsert
+          "Prefer": "resolution=merge-duplicates,return=representation"
         },
         body: JSON.stringify(payload)
       }
@@ -1445,25 +1446,33 @@ async function upsertWineIntoCatalogFromForm(wine) {
 
     if (!res.ok) {
       console.warn("Errore upsert in wines_catalog:", await res.text());
+      return null;
     }
+
+    const rows = await res.json();
+    return Array.isArray(rows) ? rows[0] || null : rows || null;
   } catch (e) {
     console.warn("Errore rete su wines_catalog:", e);
+    return null;
   }
 }
 
 // Lancia descrizione-vino + traduci-descrizione-vino per un vino appena creato
-async function triggerDescrizioniForWine(wine) {
+async function triggerDescrizioniForWine(wine, forceRegenerate = false) {
   try {
     const url = `${FUNCTIONS_BASE}/traduci-descrizione-vino`;
 
     const payload = {
+      wine_id: wine.id || null,
+      catalog_wine_id: wine.catalog_wine_id || null,
       nome: wine.nome,
       annata: wine.annata || null,
       uvaggio: wine.uvaggio || null,
       categoria: wine.categoria || null,
       sottocategoria: wine.sottocategoria || null,
       ristorante_id: wine.ristorante_id,
-      lang: "it"    // chiedo l'italiano, le altre lingue partono in background
+      lang: "it",
+      force_regenerate: forceRegenerate
     };
 
     const res = await fetch(url, {
@@ -1477,10 +1486,6 @@ async function triggerDescrizioniForWine(wine) {
 
     if (!res.ok) {
       console.warn("Errore traduci-descrizione-vino:", await res.text());
-    } else {
-      // se vuoi puoi loggare il risultato, ma non serve per l'utente
-      // const data = await res.json();
-      // console.log("Descrizione generata:", data);
     }
   } catch (e) {
     console.warn("Errore chiamata traduci-descrizione-vino:", e);
@@ -1494,7 +1499,6 @@ async function saveWine() {
   const prezzoCalice  = (document.getElementById("prezzo_bicchiere").value || "").trim();
   const prezzoBott075 = (document.getElementById("prezzo").value || "").trim();
 
-  // 1) oggetto base
   const wine = {
     ristorante_id: RESTAURANT_ID,
     nome: document.getElementById("nome_completo").value.trim(),
@@ -1506,24 +1510,43 @@ async function saveWine() {
     uvaggio: document.getElementById("uvaggio").value.trim(),
   };
 
-  // 2) inizializza i campi formati extra
   wine.prezzo_025 = "";
   wine.prezzo_0375 = "";
   wine.prezzo_05 = "";
   wine.prezzo_15 = "";
   wine.prezzo_3l = "";
 
-  // 3) prendi le righe del repeater e mappa sui campi
   document.querySelectorAll("#formatsRepeater .fmt-row").forEach(row => {
-    const code = row.dataset.code;           // "025" | "0375" | "05" | "15" | "3l"
-    const key  = FORMAT_KEYS[code];          // es. "prezzo_0375"
+    const code = row.dataset.code;
+    const key  = FORMAT_KEYS[code];
     const val  = row.querySelector(".fmt-input").value.trim();
     if (key && val) wine[key] = (valuta + val);
   });
 
-  const isEdit = (editIndex !== null);
+  let catalogWineId = currentCatalogTemplateId || null;
 
-  // 4) invio a Supabase
+  if (!catalogWineId) {
+    const catalogRow = await upsertWineIntoCatalogFromForm(wine);
+    catalogWineId = catalogRow?.id || null;
+  }
+
+  wine.catalog_wine_id = catalogWineId;
+
+  const isEdit = (editIndex !== null);
+  const wasNew = !isEdit;
+  const oldWine = isEdit ? winesData[editIndex] : null;
+
+  const normVal = (v) => String(v || "").trim().toLowerCase();
+
+  const structuralChanged =
+    wasNew ||
+    normVal(oldWine?.nome) !== normVal(wine.nome) ||
+    normVal(oldWine?.annata) !== normVal(wine.annata) ||
+    normVal(oldWine?.uvaggio) !== normVal(wine.uvaggio) ||
+    normVal(oldWine?.categoria) !== normVal(wine.categoria) ||
+    normVal(oldWine?.sottocategoria) !== normVal(wine.sottocategoria) ||
+    normVal(oldWine?.catalog_wine_id) !== normVal(wine.catalog_wine_id);
+
   const url = isEdit
     ? `${SUPABASE_URL}/rest/v1/wines?id=eq.${winesData[editIndex].id}`
     : `${SUPABASE_URL}/rest/v1/wines`;
@@ -1531,26 +1554,24 @@ async function saveWine() {
 
   const res = await fetch(url, {
     method,
-    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_API_KEY },
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_API_KEY,
+      "Prefer": "return=representation"
+    },
     body: JSON.stringify(wine)
   });
 
-    if (!res.ok) {
+  if (!res.ok) {
     showMessage(t("err_save"), false);
     return;
   }
 
-  const wasNew = !isEdit;
+  const savedRows = await res.json();
+  const savedWine = Array.isArray(savedRows) ? savedRows[0] : savedRows;
 
-  // 5) se è un vino NUOVO e NON proviene dal catalogo => aggiungilo a wines_catalog
-  if (wasNew && !currentCatalogTemplateId) {
-    await upsertWineIntoCatalogFromForm(wine);
-  }
-
-  // 6) se è un vino NUOVO, lancia descrizione + traduzioni
-  if (wasNew) {
-    // non faccio await per non bloccare l'interfaccia: parte "in background"
-    triggerDescrizioniForWine(wine);
+  if (structuralChanged && savedWine) {
+    triggerDescrizioniForWine(savedWine, true);
   }
 
   showMessage(isEdit ? t("saved_updated") : t("saved_added"));

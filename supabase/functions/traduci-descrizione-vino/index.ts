@@ -187,6 +187,9 @@ const FUNCTIONS_BASE =
  * Se non esiste, chiama la funzione "descrizione-vino" per crearla.
  */
 async function ensureBaseRow(params: {
+  wine_id?: string | null;
+  catalog_wine_id?: string | null;
+  force_regenerate?: boolean;
   nome: string;
   annata: string | number | null;
   uvaggio?: string | null;
@@ -194,8 +197,17 @@ async function ensureBaseRow(params: {
   sottocategoria?: string | null;
   ristorante_id: string;
 }) {
-  const { nome, annata, uvaggio, categoria, sottocategoria, ristorante_id } =
-    params;
+const {
+  wine_id,
+  catalog_wine_id,
+  force_regenerate,
+  nome,
+  annata,
+  uvaggio,
+  categoria,
+  sottocategoria,
+  ristorante_id,
+} = params;
 
   const fingerprint = [
     norm(nome),
@@ -206,28 +218,54 @@ async function ensureBaseRow(params: {
     ristorante_id ?? "",
   ].join("|");
 
-  // 1) prova a leggere dalla cache
-  let { data: row, error } = await supabase
+// 1) prova a leggere dalla cache: prima wine_id, poi fingerprint
+let row: any = null;
+
+if (wine_id) {
+  const { data } = await supabase
+    .from("descrizioni_vini")
+    .select("*")
+    .eq("ristorante_id", ristorante_id)
+    .eq("wine_id", wine_id)
+    .maybeSingle();
+
+  row = data || null;
+}
+
+if (!row) {
+  const { data } = await supabase
     .from("descrizioni_vini")
     .select("*")
     .eq("ristorante_id", ristorante_id)
     .eq("fingerprint", fingerprint)
     .maybeSingle();
 
-  if (!error && row) {
-    return { row, fingerprint };
-  }
+  row = data || null;
+}
+
+const rowIsComplete =
+  row &&
+  row.descrizione_it &&
+  row.scheda_it &&
+  row.sommelier_profile;
+
+if (rowIsComplete && !force_regenerate) {
+  return { row, fingerprint };
+}
 
   // 2) se non esiste, chiama descrizione-vino per generarla
   const descrFnUrl = `${FUNCTIONS_BASE}/descrizione-vino`;
-  const body = {
-    nome,
-    annata,
-    uvaggio,
-    categoria,
-    sottocategoria,
-    ristorante_id,
-  };
+const body = {
+  wine_id: wine_id ?? null,
+  catalog_wine_id: catalog_wine_id ?? null,
+  force_regenerate: !!force_regenerate,
+  nome,
+  annata,
+  uvaggio,
+  categoria,
+  sottocategoria,
+  ristorante_id,
+};
 
   const res = await fetch(descrFnUrl, {
     method: "POST",
@@ -244,19 +282,36 @@ async function ensureBaseRow(params: {
     throw new Error(`descrizione-vino HTTP ${res.status}: ${txt}`);
   }
 
-  // 3) rileggo la riga appena creata
-  const { data: row2, error: err2 } = await supabase
+// 3) rileggo la riga appena creata: prima wine_id, poi fingerprint
+let row2: any = null;
+
+if (wine_id) {
+  const { data } = await supabase
+    .from("descrizioni_vini")
+    .select("*")
+    .eq("ristorante_id", ristorante_id)
+    .eq("wine_id", wine_id)
+    .maybeSingle();
+
+  row2 = data || null;
+}
+
+if (!row2) {
+  const { data } = await supabase
     .from("descrizioni_vini")
     .select("*")
     .eq("ristorante_id", ristorante_id)
     .eq("fingerprint", fingerprint)
     .maybeSingle();
 
-  if (err2 || !row2) {
-    throw new Error("Impossibile recuperare descrizione_vini dopo descrizione-vino");
-  }
+  row2 = data || null;
+}
 
-  return { row: row2, fingerprint };
+if (!row2) {
+  throw new Error("Impossibile recuperare descrizione_vini dopo descrizione-vino");
+}
+
+return { row: row2, fingerprint };
 }
 
 serve(async (req) => {
@@ -272,15 +327,18 @@ serve(async (req) => {
   }
 
   try {
-    const {
-      nome,
-      annata,
-      uvaggio,
-      categoria,
-      sottocategoria,
-      ristorante_id,
-      lang,
-    } = await req.json();
+const {
+  wine_id,
+  catalog_wine_id,
+  force_regenerate,
+  nome,
+  annata,
+  uvaggio,
+  categoria,
+  sottocategoria,
+  ristorante_id,
+  lang,
+} = await req.json();
 
     if (!nome || !ristorante_id) {
       return new Response(
@@ -296,14 +354,17 @@ serve(async (req) => {
     }
 
     const targetLang = normalizeLang(lang);
-    const { row: baseRow } = await ensureBaseRow({
-      nome,
-      annata: annata ?? null,
-      uvaggio,
-      categoria,
-      sottocategoria,
-      ristorante_id,
-    });
+const { row: baseRow } = await ensureBaseRow({
+  wine_id: wine_id ?? null,
+  catalog_wine_id: catalog_wine_id ?? null,
+  force_regenerate: !!force_regenerate,
+  nome,
+  annata: annata ?? null,
+  uvaggio,
+  categoria,
+  sottocategoria,
+  ristorante_id,
+});
 
     // normalizza colonne italiane se ancora vuote
     const descrIt: string =

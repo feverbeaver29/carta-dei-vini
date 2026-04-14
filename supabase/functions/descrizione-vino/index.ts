@@ -187,7 +187,47 @@ function descrTannino(l: string): string {
   }
 }
 
+function inferFamily(
+  color: string,
+  core: PersistedProfileCore
+): PersistedSommelierProfile["family"] {
+  const c = norm(color);
+  if (c.includes("spum")) return "sparkling";
+  if (c.includes("dolce")) return "dessert";
+  if (c.includes("ros")) return "rosato";
+  if (c.includes("bianc")) return core.body >= 0.58 ? "full_white" : "crisp_white";
+  if (c.includes("ross")) return (core.tannin >= 0.55 || core.body >= 0.65) ? "structured_red" : "light_red";
+  return "other";
+}
+
 // =============== MAIN ===============
+type PersistedProfileCore = {
+  acid: number;
+  tannin: number;
+  body: number;
+  sweet: number;
+  bubbles: number;
+};
+
+type PersistedSommelierProfile = {
+  version: number;
+  source: string[];
+  color: "bianco" | "rosso" | "rosato" | "spumante" | "dolce" | "altro";
+  family:
+    | "sparkling"
+    | "crisp_white"
+    | "full_white"
+    | "rosato"
+    | "light_red"
+    | "structured_red"
+    | "dessert"
+    | "other";
+  core: PersistedProfileCore;
+  pairing_tags: string[];
+  avoid_tags: string[];
+  signature_notes: string[];
+  confidence: number;
+};
 
 serve(async (req) => {
   // CORS preflight
@@ -202,21 +242,20 @@ serve(async (req) => {
   }
 
   try {
-    const { nome, annata, uvaggio, categoria, sottocategoria, ristorante_id } =
-      await req.json();
+const {  wine_id,  catalog_wine_id,  force_regenerate,  nome,  annata,  uvaggio,  categoria,  sottocategoria,  ristorante_id} = await req.json();
 
-    if (!nome) {
-      return new Response(
-        JSON.stringify({ ok: false, error: "Manca il nome del vino" }),
-        {
-          status: 400,
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+if (!nome || !ristorante_id) {
+  return new Response(
+    JSON.stringify({ ok: false, error: "Mancano nome o ristorante_id" }),
+    {
+      status: 400,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+      },
     }
+  );
+}
 
     // fingerprint per la cache: se cambia qualcosa qui, rigeneriamo
     const fingerprint = [
@@ -229,42 +268,82 @@ serve(async (req) => {
     ].join("|");
 
     // 0) PROVA A LEGGERE DALLA CACHE descrizioni_vini
-    const { data: cached, error: cacheErr } = await supabase
-      .from("descrizioni_vini") // <-- cambia nome se la tabella è diversa
-      .select("*")
-      .eq("ristorante_id", ristorante_id)
-      .eq("fingerprint", fingerprint)
-      .maybeSingle();
+let cached: any = null;
 
-    if (!cacheErr && cached) {
-      // abbiamo già descrizione + scheda salvate
-      return new Response(
-        JSON.stringify({
-          ok: true,
-          descrizione: cached.descrizione,
-          mini_card: cached.scheda,
-          cached: true,
-        }),
-        {
-          status: 200,
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+if (wine_id) {
+  const { data } = await supabase
+    .from("descrizioni_vini")
+    .select("*")
+    .eq("ristorante_id", ristorante_id)
+    .eq("wine_id", wine_id)
+    .maybeSingle();
+
+  cached = data || null;
+}
+
+if (!cached) {
+  const { data } = await supabase
+    .from("descrizioni_vini")
+    .select("*")
+    .eq("ristorante_id", ristorante_id)
+    .eq("fingerprint", fingerprint)
+    .maybeSingle();
+
+  cached = data || null;
+}
+
+const canReturnCached =
+  cached &&
+  !force_regenerate &&
+  cached.descrizione_it &&
+  cached.scheda_it &&
+  cached.sommelier_profile;
+
+if (canReturnCached) {
+  return new Response(
+    JSON.stringify({
+      ok: true,
+      descrizione: cached.descrizione_it || cached.descrizione,
+      mini_card: cached.scheda_it || cached.scheda,
+      cached: true,
+    }),
+    {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+      },
     }
+  );
+}
 
     // seed per rendere ogni vino un po' diverso ma stabile
     const wineSeed = `${nome}|${annata ?? ""}|${ristorante_id ?? ""}`;
 
     // 1) PROVA a recuperare il record esatto da "wines" (opzionale ma utile)
-    const { data: wineRow } = await supabase
-      .from("wines")
-      .select("*")
-      .eq("ristorante_id", ristorante_id)
-      .ilike("nome", nome)
-      .maybeSingle();
+let wineRow: any = null;
+
+if (wine_id) {
+  const { data } = await supabase
+    .from("wines")
+    .select("*")
+    .eq("ristorante_id", ristorante_id)
+    .eq("id", wine_id)
+    .maybeSingle();
+
+  wineRow = data || null;
+}
+
+if (!wineRow) {
+  const { data } = await supabase
+    .from("wines")
+    .select("*")
+    .eq("ristorante_id", ristorante_id)
+    .ilike("nome", nome)
+    .maybeSingle();
+
+  wineRow = data || null;
+}
 
     const wine = {
       nome: wineRow?.nome ?? nome,
@@ -665,6 +744,40 @@ const fallbackPalate = clampChars(
   220,
 );
 
+const fallbackCore: PersistedProfileCore = {
+  acid: acidBase ?? 0.5,
+  tannin: tanninBase ?? 0.5,
+  body: bodyBase ?? 0.5,
+  sweet: sweetBase ?? 0.05,
+  bubbles: bubblesBase ?? 0,
+};
+
+const fallbackColor: PersistedSommelierProfile["color"] =
+  norm(defaultColor).includes("spum") ? "spumante" :
+  norm(defaultColor).includes("dolc") ? "dolce" :
+  norm(defaultColor).includes("ross") ? "rosso" :
+  norm(defaultColor).includes("bianc") ? "bianco" :
+  norm(defaultColor).includes("ros") ? "rosato" :
+  "altro";
+
+const avoidTags = unique([
+  (fallbackCore.sweet < 0.12 ? "dessert" : null),
+  (fallbackCore.tannin > 0.65 ? "pesce delicato" : null),
+  (fallbackCore.bubbles > 0.8 && fallbackCore.sweet < 0.2 ? "brasati lunghi" : null),
+]);
+
+let persistedProfile: PersistedSommelierProfile = {
+  version: 1,
+  source: ["grape_profiles", "appellation_priors", "context"],
+  color: fallbackColor,
+  family: inferFamily(fallbackColor, fallbackCore),
+  core: fallbackCore,
+  pairing_tags: pairingsChosen,
+  avoid_tags: avoidTags,
+  signature_notes: notesChosen,
+  confidence: 0.68,
+};
+
     // 8) CHIAMATA GPT: genera hook + palate (2–3 frasi)
 
     let hook = fallbackHook;
@@ -742,24 +855,51 @@ Assicurati che ogni frase abbia una chiusura completa, senza lasciare sospension
     };
 
     // 9) SALVA NELLA CACHE descrizioni_vini
-    try {
-      await supabase.from("descrizioni_vini").insert({
-  nome: wine.nome,
-  annata: wine.annata ? String(wine.annata) : null,
-  uvaggio: wine.uvaggio,
-  descrizione: descrizioneCompleta,
-  scheda: mini_card,
+// 9) SALVA / AGGIORNA in descrizioni_vini
+try {
+  const payload = {
+    nome: wine.nome,
+    annata: wine.annata ? String(wine.annata) : null,
+    uvaggio: wine.uvaggio,
+    descrizione: descrizioneCompleta,
+    scheda: mini_card,
 
-  // nuove colonne "master" in italiano
-  descrizione_it: descrizioneCompleta,
-  scheda_it: mini_card,
+    // master italiano
+    descrizione_it: descrizioneCompleta,
+    scheda_it: mini_card,
 
-  ristorante_id,
-  fingerprint,
-});
-    } catch (e) {
-      console.error("Errore salvataggio descrizioni_vini:", e);
+    ristorante_id,
+    fingerprint,
+
+    wine_id: wine_id || wineRow?.id || null,
+    catalog_wine_id: catalog_wine_id || wineRow?.catalog_wine_id || null,
+
+    sommelier_profile: persistedProfile,
+    sommelier_profile_confidence: persistedProfile.confidence ?? 0.68,
+    sommelier_profile_updated_at: new Date().toISOString(),
+  };
+
+  if (cached?.id) {
+    const { error: updErr } = await supabase
+      .from("descrizioni_vini")
+      .update(payload)
+      .eq("id", cached.id);
+
+    if (updErr) {
+      console.error("Errore update descrizioni_vini:", updErr);
     }
+  } else {
+    const { error: insErr } = await supabase
+      .from("descrizioni_vini")
+      .insert(payload);
+
+    if (insErr) {
+      console.error("Errore insert descrizioni_vini:", insErr);
+    }
+  }
+} catch (e) {
+  console.error("Errore salvataggio descrizioni_vini:", e);
+}
 
     return new Response(
       JSON.stringify({

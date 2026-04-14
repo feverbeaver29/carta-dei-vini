@@ -360,6 +360,22 @@ function pickSchedaRawForLang(row: any, lang: LangCode): any {
   return localized || row?.scheda_it || row?.scheda || null;
 }
 
+function parsePersistedProfile(raw: any): any | null {
+  if (!raw) return null;
+
+  let obj = raw;
+  if (typeof raw === "string") {
+    try {
+      obj = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  if (!obj?.core) return null;
+  return obj;
+}
+
 function hasUsefulScheda(s: WineScheda): boolean {
   return !!(s.hook || s.palate || s.notes.length || s.pairings.length);
 }
@@ -384,7 +400,7 @@ async function loadDescrizioniByFingerprint(
   ristoranteId: string,
   wines: any[],
   lang: LangCode,
-): Promise<Map<string, WineScheda>> {
+): Promise<Map<string, any>> {
   const wanted = new Set(
     (wines || [])
       .map((w) => buildDescrizioneFingerprint(w, ristoranteId))
@@ -396,6 +412,9 @@ async function loadDescrizioniByFingerprint(
   const supabaseUrl = "https://ldunvbftxhbtuyabgxwh.supabase.co";
   const selectCols = [
     "fingerprint",
+    "wine_id",
+    "catalog_wine_id",
+    "sommelier_profile",
     "scheda",
     "scheda_it",
     "scheda_en",
@@ -415,16 +434,12 @@ async function loadDescrizioniByFingerprint(
   if (!res.ok) return new Map();
 
   const rows = await res.json();
-  const map = new Map<string, WineScheda>();
+  const map = new Map<string, any>();
 
   for (const row of rows || []) {
     const fp = cleanText(row?.fingerprint);
     if (!fp || !wanted.has(fp)) continue;
-
-    const scheda = parseWineScheda(pickSchedaRawForLang(row, lang));
-    if (hasUsefulScheda(scheda)) {
-      map.set(fp, scheda);
-    }
+    map.set(fp, row);
   }
 
   return map;
@@ -3499,23 +3514,58 @@ const dish = applyDishOverrides(piatto, dishRaw);
     );
 
 const enriched: EnrichedWine[] = wines0.map((w) => {
-  const { profile, colore, ctx } = profileAndContextFromWine(
+  const fallback = profileAndContextFromWine(
     w,
     priors,
     w.colore,
   );
 
   const fp = buildDescrizioneFingerprint(w, ristorante_id);
-  const scheda = descrizioniMap.get(fp);
-  const mergedCtx = mergeSchedaIntoContext(ctx, scheda);
+  const cacheRow = descrizioniMap.get(fp);
 
-  const __tags = buildTags(mergedCtx, colore);
-  const __reasons = buildReasonCodes(profile, dish, mergedCtx);
+  const scheda = cacheRow
+    ? parseWineScheda(pickSchedaRawForLang(cacheRow, safeCode))
+    : emptyWineScheda();
+
+  const persisted = parsePersistedProfile(cacheRow?.sommelier_profile);
+
+  const mergedCtxBase = mergeSchedaIntoContext(fallback.ctx, scheda);
+
+  const mergedCtx = persisted
+    ? {
+        ...mergedCtxBase,
+        descNotes: [
+          ...mergedCtxBase.descNotes,
+          ...((persisted.signature_notes || []).map((x: any) => String(x))),
+        ],
+        descPairings: [
+          ...mergedCtxBase.descPairings,
+          ...((persisted.pairing_tags || []).map((x: any) => String(x))),
+        ],
+      }
+    : mergedCtxBase;
+
+  const finalColor = persisted?.color
+    ? coloreFromLabel(String(persisted.color))
+    : fallback.colore;
+
+  const finalProfile = persisted?.core
+    ? {
+        acid: clamp01(Number(persisted.core.acid ?? fallback.profile.acid)),
+        tannin: clamp01(Number(persisted.core.tannin ?? fallback.profile.tannin)),
+        body: clamp01(Number(persisted.core.body ?? fallback.profile.body)),
+        sweet: clamp01(Number(persisted.core.sweet ?? fallback.profile.sweet)),
+        bubbles: clamp01(Number(persisted.core.bubbles ?? fallback.profile.bubbles)),
+      }
+    : fallback.profile;
+
+  const __tags = buildTags(mergedCtx, finalColor);
+  const __reasons = buildReasonCodes(finalProfile, dish, mergedCtx);
 
   return {
     ...w,
-    colore,
-    __profile: profile,
+    colore: finalColor,
+    __profile: finalProfile,
     __ctx: mergedCtx,
     __tags,
     __reasons,
