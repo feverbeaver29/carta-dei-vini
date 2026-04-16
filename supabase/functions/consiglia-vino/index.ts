@@ -2066,11 +2066,22 @@ const isMixedSeaSpice =
 
   // su un arrosto di carne bianca premio bianchi strutturati e rossi leggeri/medi,
   // ma riduco un po' le bollicine "solo detergenti"
-  if (dish.protein === "carne_bianca") {
-    if (profile.body >= 0.48 && profile.body <= 0.72) sc += 0.05;
-    if (profile.tannin >= 0.18 && profile.tannin <= 0.58) sc += 0.05;
-    if (profile.bubbles >= 0.9 && profile.body < 0.5) sc -= 0.06;
+if (dish.protein === "carne_bianca") {
+  if (profile.body >= 0.48 && profile.body <= 0.74) sc += 0.06;
+  if (profile.tannin >= 0.18 && profile.tannin <= 0.58) sc += 0.06;
+
+  // su arrosti di carne bianca, le bollicine restano possibili
+  // ma non devono dominare solo perché "ripuliscono"
+  if (profile.bubbles >= 0.9) {
+    sc -= 0.10;
+    if (profile.body < 0.58) sc -= 0.03;
   }
+
+  // premio leggermente i vini fermi con buona spalla
+  if (profile.bubbles <= 0.2 && profile.body >= 0.52) {
+    sc += 0.04;
+  }
+}
 }
 
   if (
