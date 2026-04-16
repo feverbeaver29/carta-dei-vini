@@ -1275,24 +1275,38 @@ function resolveDishFromKnowledge(
     };
   }
 
-  let dish = dishFromBaseRow(baseRow);
-  const matchedModifiers: string[] = [];
-  const usedModifierNorms = new Set<string>();
-  const coveredModifierNorms: string[] = [];
-  const accentTags = [...(baseRow.accent_tags || [])];
+let dish = dishFromBaseRow(baseRow);
+const matchedModifiers: string[] = [];
+const usedModifierNorms = new Set<string>();
+const coveredModifierNorms: string[] = [];
+const accentTags = [...(baseRow.accent_tags || [])];
 
-  for (const mod of knowledge.modifiers) {
-    if (!includesPhrase(piattoNorm, mod.modifier_norm)) continue;
-    if (usedModifierNorms.has(mod.modifier_norm)) continue;
-    if (coveredModifierNorms.some((prev) => includesPhrase(prev, mod.modifier_norm))) continue;
-    if (!modifierAppliesToDish(mod, dish, baseRow.base_family)) continue;
+const baseText = normalizeSearchText(
+  [
+    String(baseRow.slug || "").replace(/-/g, " "),
+    baseRow.canonical_name || "",
+    baseRow.display_name || "",
+  ].join(" "),
+);
 
-    dish = applyModifierToDish(dish, mod);
-    matchedModifiers.push(mod.modifier_text);
-    usedModifierNorms.add(mod.modifier_norm);
-        coveredModifierNorms.push(mod.modifier_norm);
-    accentTags.push(...(mod.accent_tags || []));
-  }
+for (const mod of knowledge.modifiers) {
+  if (!includesPhrase(piattoNorm, mod.modifier_norm)) continue;
+  if (usedModifierNorms.has(mod.modifier_norm)) continue;
+
+  // se il modifier è già "dentro" il piatto base, non lo riapplico
+  if (includesPhrase(baseText, mod.modifier_norm)) continue;
+
+  // se è già coperto da un modifier più lungo scelto prima, non lo riapplico
+  if (coveredModifierNorms.some((prev) => includesPhrase(prev, mod.modifier_norm))) continue;
+
+  if (!modifierAppliesToDish(mod, dish, baseRow.base_family)) continue;
+
+  dish = applyModifierToDish(dish, mod);
+  matchedModifiers.push(mod.modifier_text);
+  usedModifierNorms.add(mod.modifier_norm);
+  coveredModifierNorms.push(mod.modifier_norm);
+  accentTags.push(...(mod.accent_tags || []));
+}
 
   const finalDish = enforceDishIdentity(
     piattoRaw,
@@ -2043,6 +2057,21 @@ const isMixedSeaSpice =
       sc += 0.06;
     }
   }
+
+  if (hasDishTag("arrosto")) {
+  // premio vini che dialogano con note da arrosto / erbe / spezie fini
+  if (/(arrost|erbe|balsam|nocciol|spezi|fum|affumicat)/.test(noteBag)) {
+    sc += 0.08;
+  }
+
+  // su un arrosto di carne bianca premio bianchi strutturati e rossi leggeri/medi,
+  // ma riduco un po' le bollicine "solo detergenti"
+  if (dish.protein === "carne_bianca") {
+    if (profile.body >= 0.48 && profile.body <= 0.72) sc += 0.05;
+    if (profile.tannin >= 0.18 && profile.tannin <= 0.58) sc += 0.05;
+    if (profile.bubbles >= 0.9 && profile.body < 0.5) sc -= 0.06;
+  }
+}
 
   if (
     hasDishTag("burro") ||
