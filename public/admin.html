@@ -999,6 +999,49 @@ function normalizeAndCapitalize(arr) {
 function formatText(str) {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
+
+function normalizeKey(str) {
+  return String(str || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function getCategorySubcategories(categoryValue) {
+  const wantedCategory = normalizeKey(categoryValue);
+  if (!wantedCategory) return [];
+
+  return normalizeAndCapitalize(
+    winesData
+      .filter(w => normalizeKey(w.categoria) === wantedCategory)
+      .map(w => w.sottocategoria)
+  );
+}
+
+function updateSubcategorySuggestionsForForm() {
+  const catInput = document.getElementById("categoria");
+  const subList = document.getElementById("sottocategoriaList");
+  if (!catInput || !subList) return;
+
+  const filteredSubs = getCategorySubcategories(catInput.value);
+  subList.innerHTML = "";
+
+  filteredSubs.forEach(s => {
+    subList.innerHTML += `<option value="${s}">`;
+  });
+}
+
+function bindCategorySubcategorySync() {
+  const catInput = document.getElementById("categoria");
+  if (!catInput || catInput.dataset.subcatBound === "1") return;
+
+  const sync = () => updateSubcategorySuggestionsForForm();
+  catInput.addEventListener("input", sync);
+  catInput.addEventListener("change", sync);
+  catInput.dataset.subcatBound = "1";
+}
+
 function normalizeWineNameForCatalog(nome) {
   if (!nome) return "";
   return nome
@@ -1105,12 +1148,14 @@ document.getElementById("formatPicker").style.display = "none";
   currentCatalogTemplateId = null;   // <--- QUI
   showUvaggioBadge('');              // pulisce l’etichetta sotto l’input uvaggio
   clearNomeSuggestions();            // chiude il dropdown dell’autocomplete (se aperto)
+  updateSubcategorySuggestionsForForm();
 }
 
 function fillForm(index) {
   const wine = winesData[index];
   currentCatalogTemplateId = wine.catalog_wine_id || null;
   ["annata", "categoria", "sottocategoria", "uvaggio"].forEach(id => document.getElementById(id).value = wine[id] || "");
+  updateSubcategorySuggestionsForForm();
 
 // Dividi nome in due parti (grezzo: fino al primo spazio = produttore)
 document.getElementById("nome_completo").value = wine.nome || "";
@@ -1354,68 +1399,66 @@ function fillFormById(id) {
 
 async function loadWines() {
   await fetchUserIfNeeded();
-    updateOcrImportUI();
+  updateOcrImportUI();
+
   const res = await fetch(`${SUPABASE_URL}/rest/v1/wines?ristorante_id=eq.${RESTAURANT_ID}`, {
     headers: { 'apikey': SUPABASE_API_KEY, 'Accept': 'application/json' }
   });
+
   if (!res.ok) {
-  showMessage(t("err_fetch"), false);
-  winesData = [];
-  return;
-}
+    showMessage(t("err_fetch"), false);
+    winesData = [];
+    return;
+  }
+
   winesData = await res.json();
 
   const categorie = normalizeAndCapitalize(winesData.map(w => w.categoria));
-  const sottocategorie = normalizeAndCapitalize(winesData.map(w => w.sottocategoria));
 
   const catList = document.getElementById("categoriaList");
   const subList = document.getElementById("sottocategoriaList");
   const catFilter = document.getElementById("filterCategoria");
   const subFilter = document.getElementById("filterSottocategoria");
 
-  catList.innerHTML = subList.innerHTML = catFilter.innerHTML = subFilter.innerHTML = "";
-  catFilter.innerHTML = subFilter.innerHTML = '<option value="">Tutte</option>';
+  catList.innerHTML = "";
+  subList.innerHTML = "";
+  catFilter.innerHTML = `<option value="">${t("all")}</option>`;
+  subFilter.innerHTML = `<option value="">${t("all")}</option>`;
   subFilter.disabled = true;
 
   categorie.forEach(c => {
     catList.innerHTML += `<option value="${c}">`;
     catFilter.innerHTML += `<option value="${c}">${c}</option>`;
   });
-  sottocategorie.forEach(s => {
-    subList.innerHTML += `<option value="${s}">`;
-    subFilter.innerHTML += `<option value="${s}">${s}</option>`;
-  });
 
-  renderTable();
-  // Collegamento dinamico tra categoria e sottocategoria nei filtri
-catFilter.addEventListener("change", () => {
-  const selectedCat = catFilter.value.trim().toLowerCase();
+  updateSubcategorySuggestionsForForm();
 
-  // Sottocategoria disabilitata se nessuna categoria è selezionata
-  if (!selectedCat) {
-    subFilter.disabled = true;
-    subFilter.innerHTML = '<option value="">Tutte</option>';
+  catFilter.onchange = () => {
+    const selectedCat = catFilter.value.trim();
+
+    if (!selectedCat) {
+      subFilter.disabled = true;
+      subFilter.innerHTML = `<option value="">${t("all")}</option>`;
+      subFilter.value = "";
+      currentPage = 1;
+      renderTable();
+      return;
+    }
+
+    const filteredSubs = getCategorySubcategories(selectedCat);
+
+    subFilter.disabled = false;
+    subFilter.innerHTML = `<option value="">${t("all")}</option>`;
+    filteredSubs.forEach(s => {
+      subFilter.innerHTML += `<option value="${s}">${s}</option>`;
+    });
+
+    subFilter.value = "";
+    currentPage = 1;
     renderTable();
-    return;
-  }
+  };
 
-  // Filtra le sottocategorie in base alla categoria selezionata
-  const filteredSubs = normalizeAndCapitalize(
-    winesData
-      .filter(w => (w.categoria || '').toLowerCase() === selectedCat)
-      .map(w => w.sottocategoria)
-  );
-
-  subFilter.disabled = false;
-  subFilter.innerHTML = '<option value="">Tutte</option>';
-  filteredSubs.forEach(s => {
-    subFilter.innerHTML += `<option value="${s}">${s}</option>`;
-  });
-
-  // Reset filtro sottocategoria e aggiorna tabella
-  subFilter.value = "";
   renderTable();
-});
 }
 
 async function upsertWineIntoCatalogFromForm(wine) {
@@ -1616,6 +1659,7 @@ document.body.addEventListener("click", e => {
   }
 });
 
+bindCategorySubcategorySync();
 initLanguage();
 loadWines();
 
@@ -1833,6 +1877,7 @@ function applyWineTemplateFromCatalog(wine) {
 
   if (nomeInput) nomeInput.value = wine.nome || "";
   if (catInput)  catInput.value  = wine.categoria || "";
+  updateSubcategorySuggestionsForForm();
   if (subInput)  subInput.value  = wine.sottocategoria || "";
   if (uvInput)   uvInput.value   = wine.uvaggio || "";
 
@@ -2105,7 +2150,10 @@ const fullName = alreadyHasProducer
   // ✅ categoria solo se il campo è vuoto (così non sovrascrive)
   const catEl = document.getElementById("categoria");
   const section = (it.section || "").trim();
-  if (catEl && !catEl.value.trim() && section) catEl.value = section;
+  if (catEl && !catEl.value.trim() && section) {
+    catEl.value = section;
+    updateSubcategorySuggestionsForForm();
+  }
 
   // ✅ sottocategoria solo se vuoto
 const subEl = document.getElementById("sottocategoria");
