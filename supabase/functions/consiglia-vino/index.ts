@@ -1121,7 +1121,23 @@ function pickBestDishAlias(
 ): DishAliasRow | null {
   const hits = knowledge.aliases.filter((a) => includesPhrase(piattoNorm, a.alias_norm));
   if (!hits.length) return null;
-  hits.sort((a, b) => scoreAliasHit(b) - scoreAliasHit(a));
+
+  const aliasScore = (a: DishAliasRow): number => {
+    let sc = scoreAliasHit(a);
+
+    // priorità massima al match esatto
+    if (piattoNorm === a.alias_norm) sc += 2.5;
+
+    // priorità alta se il piatto inizia con l'alias esatto
+    else if (piattoNorm.startsWith(`${a.alias_norm} `)) sc += 0.45;
+
+    // piccolo bonus generico per alias comunque contenuto
+    else if (includesPhrase(piattoNorm, a.alias_norm)) sc += 0.1;
+
+    return sc;
+  };
+
+  hits.sort((a, b) => aliasScore(b) - aliasScore(a));
   return hits[0] || null;
 }
 
@@ -1349,14 +1365,29 @@ function resolveMultiDishFromKnowledge(
   piattoRaw: string,
   knowledge: DishKnowledge,
 ): MultiDishResolution {
-  const items = splitDishes(piattoRaw);
-  const cleanItems = items.length
-    ? items
-    : [String(piattoRaw || "").trim()].filter(Boolean);
+const items = splitDishes(piattoRaw);
 
-  const itemResolutions = cleanItems.map((item) =>
-    resolveDishFromKnowledge(item, knowledge)
-  );
+const cleanItems = (items.length
+  ? items
+  : [String(piattoRaw || "")]
+)
+  .map((x) => String(x || "").trim())
+  .map((x) => x.replace(/^[,\s;:+-]+|[,\s;:+-]+$/g, ""))
+  .filter(Boolean);
+
+const itemResolutions = cleanItems.map((item) => {
+  const first = resolveDishFromKnowledge(item, knowledge);
+  if (first.source !== "fallback") return first;
+
+  // retry più pulito su versione normalizzata
+  const retryText = normalizeSearchText(item);
+  if (retryText && retryText !== normalizeSearchText(item.trim())) {
+    const second = resolveDishFromKnowledge(retryText, knowledge);
+    if (second.source !== "fallback") return second;
+  }
+
+  return first;
+});
 
   // caso normale: un solo piatto
   if (itemResolutions.length === 1) {
