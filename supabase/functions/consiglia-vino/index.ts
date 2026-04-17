@@ -260,6 +260,18 @@ type DishResolution = {
   base_family: string | null;
 };
 
+type MultiDishResolution = {
+  dish: Dish;
+  source: "knowledge" | "fallback" | "mixed";
+  items: string[];
+  item_resolutions: DishResolution[];
+  matched_base_slugs: string[];
+  matched_base_names: string[];
+  matched_aliases: string[];
+  matched_modifiers: string[];
+  accent_tags: string[];
+  base_families: string[];
+};
 /** =========================
  *  VECTORS & RANDOM
  *  ========================= */
@@ -1333,6 +1345,97 @@ for (const mod of knowledge.modifiers) {
   };
 }
 
+function resolveMultiDishFromKnowledge(
+  piattoRaw: string,
+  knowledge: DishKnowledge,
+): MultiDishResolution {
+  const items = splitDishes(piattoRaw);
+  const cleanItems = items.length
+    ? items
+    : [String(piattoRaw || "").trim()].filter(Boolean);
+
+  const itemResolutions = cleanItems.map((item) =>
+    resolveDishFromKnowledge(item, knowledge)
+  );
+
+  // caso normale: un solo piatto
+  if (itemResolutions.length === 1) {
+    const one = itemResolutions[0];
+    return {
+      dish: one.dish,
+      source: one.source,
+      items: cleanItems,
+      item_resolutions: itemResolutions,
+      matched_base_slugs: one.matched_base_slug ? [one.matched_base_slug] : [],
+      matched_base_names: one.matched_base_name ? [one.matched_base_name] : [],
+      matched_aliases: one.matched_alias ? [one.matched_alias] : [],
+      matched_modifiers: [...one.matched_modifiers],
+      accent_tags: [...one.accent_tags],
+      base_families: one.base_family ? [one.base_family] : [],
+    };
+  }
+
+  // multi-piatto vero: combina i profili dei singoli piatti
+  const combinedDish = combineDishes(itemResolutions.map((r) => r.dish));
+
+  const finalDish = enforceDishIdentity(
+    piattoRaw,
+    applyDishOverrides(piattoRaw, combinedDish),
+  );
+
+  const matched_base_slugs = Array.from(new Set(
+    itemResolutions
+      .map((r) => r.matched_base_slug)
+      .filter((x): x is string => !!x)
+  ));
+
+  const matched_base_names = Array.from(new Set(
+    itemResolutions
+      .map((r) => r.matched_base_name)
+      .filter((x): x is string => !!x)
+  ));
+
+  const matched_aliases = Array.from(new Set(
+    itemResolutions
+      .map((r) => r.matched_alias)
+      .filter((x): x is string => !!x)
+  ));
+
+  const matched_modifiers = Array.from(new Set(
+    itemResolutions.flatMap((r) => r.matched_modifiers || [])
+      .map((x) => String(x || "").trim())
+      .filter(Boolean)
+  ));
+
+  const accent_tags = Array.from(new Set(
+    itemResolutions
+      .flatMap((r) => r.accent_tags || [])
+      .map((x) => normalizeSearchText(x))
+      .filter(Boolean)
+  ));
+
+  const base_families = Array.from(new Set(
+    itemResolutions
+      .map((r) => r.base_family)
+      .filter((x): x is string => !!x)
+  ));
+
+  const allKnowledge = itemResolutions.every((r) => r.source === "knowledge");
+  const allFallback = itemResolutions.every((r) => r.source === "fallback");
+
+  return {
+    dish: finalDish,
+    source: allKnowledge ? "knowledge" : allFallback ? "fallback" : "mixed",
+    items: cleanItems,
+    item_resolutions: itemResolutions,
+    matched_base_slugs,
+    matched_base_names,
+    matched_aliases,
+    matched_modifiers,
+    accent_tags,
+    base_families,
+  };
+}
 /** =========================
  *  PRIORS LOADING
  *  ========================= */
@@ -4084,7 +4187,7 @@ const rng = mulberry32(
   hashStringToSeed(baseSeed),
 );
 
-const dishResolved = resolveDishFromKnowledge(piatto, dishKnowledge);
+const dishResolved = resolveMultiDishFromKnowledge(piatto, dishKnowledge);
 const dish = dishResolved.dish;
 const piattoNorm = normalizeSearchText(piatto);
 const dishTags = new Set(
@@ -4530,12 +4633,28 @@ console.log(
     lang: safeCode,
     seed: baseSeed,
     dish_source: dishResolved.source,
-    matched_base_slug: dishResolved.matched_base_slug,
-    matched_base_name: dishResolved.matched_base_name,
-    matched_alias: dishResolved.matched_alias,
-    matched_modifiers: dishResolved.matched_modifiers,
-    dish_tags: Array.from(dishTags),
-    dish_profile: dish,
+matched_base_slug: dishResolved.matched_base_slugs.length === 1
+  ? dishResolved.matched_base_slugs[0]
+  : null,
+matched_base_name: dishResolved.matched_base_names.length === 1
+  ? dishResolved.matched_base_names[0]
+  : null,
+matched_alias: dishResolved.matched_aliases.length === 1
+  ? dishResolved.matched_aliases[0]
+  : null,
+matched_modifiers: dishResolved.matched_modifiers,
+dish_items: dishResolved.items,
+dish_item_resolutions: dishResolved.item_resolutions.map((r) => ({
+  source: r.source,
+  matched_base_slug: r.matched_base_slug,
+  matched_base_name: r.matched_base_name,
+  matched_alias: r.matched_alias,
+  matched_modifiers: r.matched_modifiers,
+  accent_tags: r.accent_tags,
+  base_family: r.base_family,
+})),
+dish_tags: Array.from(dishTags),
+dish_profile: dish,
 picks: out.map((x) => ({
   nome: x.nome,
   colore: x.colore,
