@@ -1163,31 +1163,56 @@ function pickBestDishBaseFromName(
   return hits[0] || null;
 }
 
+async function fetchAllPostgrestRows(
+  url: string,
+  headers: Record<string, string>,
+  pageSize = 1000,
+): Promise<any[]> {
+  const out: any[] = [];
+  let from = 0;
+
+  while (true) {
+    const res = await fetch(url, {
+      headers: {
+        ...headers,
+        "Range-Unit": "items",
+        "Range": `${from}-${from + pageSize - 1}`,
+      },
+    });
+
+    if (!res.ok) {
+      throw new Error(`fetchAllPostgrestRows ${res.status}`);
+    }
+
+    const batch = await res.json();
+    if (!Array.isArray(batch) || batch.length === 0) break;
+
+    out.push(...batch);
+
+    if (batch.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return out;
+}
+
 async function loadDishKnowledge(headers: Record<string, string>): Promise<DishKnowledge> {
   const supabaseUrl = "https://ldunvbftxhbtuyabgxwh.supabase.co";
 
-  const [basesRes, aliasesRes, modifiersRes] = await Promise.all([
-    fetch(
-      `${supabaseUrl}/rest/v1/dish_bases?is_active=eq.true&select=slug,canonical_name,display_name,base_family,protein,cooking,fat,spice,sweet,intensity,succulence,sapidity,aromaticity,persistence,acid_hint,accent_tags`,
-      { headers },
-    ),
-    fetch(
-      `${supabaseUrl}/rest/v1/dish_aliases?select=alias_text,alias_norm,dish_base_slug,confidence,alias_type`,
-      { headers },
-    ),
-    fetch(
-      `${supabaseUrl}/rest/v1/dish_modifiers?select=modifier_text,modifier_norm,modifier_type,set_cooking,set_protein,delta_fat,delta_spice,delta_sweet,delta_intensity,delta_succulence,delta_sapidity,delta_aromaticity,delta_persistence,set_acid_hint,accent_tags,applies_to_proteins,applies_to_cookings,applies_to_base_families,priority`,
-      { headers },
-    ),
-  ]);
-
-  if (!basesRes.ok) throw new Error(`dish_bases ${basesRes.status}`);
-  if (!aliasesRes.ok) throw new Error(`dish_aliases ${aliasesRes.status}`);
-  if (!modifiersRes.ok) throw new Error(`dish_modifiers ${modifiersRes.status}`);
-
-  const basesJson = await basesRes.json();
-  const aliasesJson = await aliasesRes.json();
-  const modifiersJson = await modifiersRes.json();
+const [basesJson, aliasesJson, modifiersJson] = await Promise.all([
+  fetchAllPostgrestRows(
+    `${supabaseUrl}/rest/v1/dish_bases?is_active=eq.true&select=id,slug,canonical_name,display_name,base_family,protein,cooking,fat,spice,sweet,intensity,succulence,sapidity,aromaticity,persistence,acid_hint,accent_tags&order=id.asc`,
+    headers,
+  ),
+  fetchAllPostgrestRows(
+    `${supabaseUrl}/rest/v1/dish_aliases?select=alias_text,alias_norm,dish_base_slug,confidence,alias_type&order=alias_norm.asc`,
+    headers,
+  ),
+  fetchAllPostgrestRows(
+    `${supabaseUrl}/rest/v1/dish_modifiers?select=modifier_text,modifier_norm,modifier_type,set_cooking,set_protein,delta_fat,delta_spice,delta_sweet,delta_intensity,delta_succulence,delta_sapidity,delta_aromaticity,delta_persistence,set_acid_hint,accent_tags,applies_to_proteins,applies_to_cookings,applies_to_base_families,priority&order=modifier_norm.asc`,
+    headers,
+  ),
+]);
 
   const baseRows: DishBaseRow[] = (basesJson || []).map((r: any) => ({
     slug: String(r.slug || ""),
