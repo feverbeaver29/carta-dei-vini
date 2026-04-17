@@ -1249,12 +1249,15 @@ async function loadDishKnowledge(headers: Record<string, string>): Promise<DishK
       (b.modifier_norm.length - a.modifier_norm.length)
     );
 
-  const basesBySlug = new Map<string, DishBaseRow>();
-  for (const row of baseRows) {
-    if (row.slug) basesBySlug.set(row.slug, row);
-  }
+const basesBySlug = new Map<string, DishBaseRow>();
+for (const row of baseRows) {
+  if (row.slug) basesBySlug.set(row.slug, row);
+}
 
-  return { basesBySlug, aliases, modifiers };
+// tengo solo alias che puntano davvero a basi attive caricate
+const validAliases = aliases.filter((a) => basesBySlug.has(a.dish_base_slug));
+
+return { basesBySlug, aliases: validAliases, modifiers };
 }
 
 let DISH_KNOWLEDGE_CACHE: DishKnowledge | null = null;
@@ -1280,10 +1283,17 @@ function resolveDishFromKnowledge(
 ): DishResolution {
   const piattoNorm = normalizeSearchText(piattoRaw);
 
-  const aliasHit = pickBestDishAlias(piattoNorm, knowledge);
-  let baseRow = aliasHit
-    ? (knowledge.basesBySlug.get(aliasHit.dish_base_slug) || null)
-    : pickBestDishBaseFromName(piattoNorm, knowledge);
+const aliasHit = pickBestDishAlias(piattoNorm, knowledge);
+
+let baseRow = aliasHit
+  ? (knowledge.basesBySlug.get(aliasHit.dish_base_slug) || null)
+  : null;
+
+// se l'alias trovato non punta a una base valida/attiva,
+// faccio comunque fallback sul match per nome del piatto
+if (!baseRow) {
+  baseRow = pickBestDishBaseFromName(piattoNorm, knowledge);
+}
 
   if (!baseRow) {
     const fallbackDish = enforceDishIdentity(
