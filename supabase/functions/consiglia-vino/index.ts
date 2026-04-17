@@ -1732,6 +1732,74 @@ function enforceColorGuardRails(base: Profile, colore: Colore): Profile {
   };
 }
 
+function sanitizeFinalColor(
+  rawColor: Colore,
+  profile: Profile,
+  ctx: WineTextContext,
+  wineName = "",
+): Colore {
+  const hay = norm([
+    wineName,
+    ...(ctx.grapes || []),
+    ...(ctx.tastingNotes || []),
+    ...(ctx.typicalNotes || []),
+    ...(ctx.grapeStyleHints || []),
+    ...(ctx.appStyleHints || []),
+    ...(ctx.descNotes || []),
+    ...(ctx.descPairings || []),
+    ...(ctx.descHook || []),
+    ...(ctx.descPalate || []),
+  ].join(" "));
+
+  const has = (re: RegExp) => re.test(hay);
+
+  const whiteCue = has(
+    /\b(chardonnay|riesling|pinot grigio|pinot gris|sauvignon|vernaccia|trebbiano|cortese|friulano|timorasso|erbaluce|carricante|vermentino|grechetto|falanghina|fiano|glera|chenin|arneis|catarratto|grillo|pecorino|viognier|gewurztraminer|traminer|malvasia bianca)\b/,
+  );
+
+  const roseCue = has(
+    /\b(rosato|rose|rosè|rosé|cerasuolo|chiaretto)\b/,
+  );
+
+  const redCue = has(
+    /\b(nebbiolo|sangiovese|barbera|cabernet|merlot|syrah|pinot nero|aglianico|montepulciano|dolcetto|corvina|nero d avola|nerello|frappato|lambrusco|primitivo|petit verdot|cabernet franc|cabernet sauvignon)\b/,
+  );
+
+  // 1) dolce vince sempre
+  if (profile.sweet >= 0.6) return "dolce";
+
+  // 2) se è chiaramente spumante, trattiamolo da spumante
+  if (profile.bubbles >= 0.75) return "spumante";
+
+  // 3) rosato esplicito
+  if (roseCue && profile.tannin <= 0.45) return "rosato";
+
+  // 4) bianco coerente per uve/testi/profilo
+  if (whiteCue && profile.tannin <= 0.15) return "bianco";
+
+  // 5) correzione forte: se è marcato rosso ma il profilo è da bianco
+  if (
+    rawColor === "rosso" &&
+    profile.tannin <= 0.12 &&
+    profile.body <= 0.62 &&
+    !redCue
+  ) {
+    return "bianco";
+  }
+
+  // 6) se il colore dice bianco ma il profilo parla chiaramente rosso
+  if (
+    rawColor === "bianco" &&
+    redCue &&
+    profile.tannin >= 0.35 &&
+    profile.bubbles < 0.75
+  ) {
+    return "rosso";
+  }
+
+  return rawColor;
+}
+
 function buildTags(ctx: WineTextContext, colore: Colore): Set<string> {
   const tags = new Set<string>();
   const addArr = (arr: string[]) => {
@@ -4373,22 +4441,34 @@ const enriched: EnrichedWine[] = wines0.map((w) => {
       }
     : mergedCtxBase;
 
-  const finalColor = persisted?.color
-    ? coloreFromLabel(String(persisted.color))
-    : fallback.colore;
+const rawColor = persisted?.color
+  ? coloreFromLabel(String(persisted.color))
+  : fallback.colore;
 
-  const finalProfile = persisted?.core
-    ? {
-        acid: clamp01(Number(persisted.core.acid ?? fallback.profile.acid)),
-        tannin: clamp01(Number(persisted.core.tannin ?? fallback.profile.tannin)),
-        body: clamp01(Number(persisted.core.body ?? fallback.profile.body)),
-        sweet: clamp01(Number(persisted.core.sweet ?? fallback.profile.sweet)),
-        bubbles: clamp01(Number(persisted.core.bubbles ?? fallback.profile.bubbles)),
-      }
-    : fallback.profile;
+const profileBeforeColorGuard = persisted?.core
+  ? {
+      acid: clamp01(Number(persisted.core.acid ?? fallback.profile.acid)),
+      tannin: clamp01(Number(persisted.core.tannin ?? fallback.profile.tannin)),
+      body: clamp01(Number(persisted.core.body ?? fallback.profile.body)),
+      sweet: clamp01(Number(persisted.core.sweet ?? fallback.profile.sweet)),
+      bubbles: clamp01(Number(persisted.core.bubbles ?? fallback.profile.bubbles)),
+    }
+  : fallback.profile;
 
-  const __tags = buildTags(mergedCtx, finalColor);
-  const __reasons = buildReasonCodes(finalProfile, dish, mergedCtx);
+const finalColor = sanitizeFinalColor(
+  rawColor,
+  profileBeforeColorGuard,
+  mergedCtx,
+  String(w.nome || w.name || ""),
+);
+
+const finalProfile = enforceColorGuardRails(
+  profileBeforeColorGuard,
+  finalColor,
+);
+
+const __tags = buildTags(mergedCtx, finalColor);
+const __reasons = buildReasonCodes(finalProfile, dish, mergedCtx);
 
   return {
     ...w,
