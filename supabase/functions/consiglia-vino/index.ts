@@ -828,25 +828,54 @@ function combineDishes(ds: Dish[]): Dish {
   }
 
   const avg = (a: number[]) => a.reduce((x, y) => x + y, 0) / a.length;
-  const mode = (arr: (string | null)[]) => {
-    const m = new Map<string, number>();
-    for (const v of arr) if (v) m.set(v, (m.get(v) || 0) + 1);
-    return (Array.from(m.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ??
-      null) as any;
+  const max = (a: number[]) => Math.max(...a);
+
+  const blend = (values: number[], maxWeight = 0.6) => {
+    const a = avg(values);
+    const m = max(values);
+    return +(a * (1 - maxWeight) + m * maxWeight).toFixed(2);
   };
 
+  const pickByPriority = <T extends string>(
+    arr: (T | null)[],
+    priority: T[],
+  ): T | null => {
+    for (const p of priority) {
+      if (arr.includes(p)) return p;
+    }
+    return null;
+  };
+
+  const proteins = ds.map((d) => d.protein);
+  const cookings = ds.map((d) => d.cooking);
+
   return {
-    fat: +avg(ds.map((d) => d.fat)).toFixed(2),
+    fat: blend(ds.map((d) => d.fat), 0.55),
     spice: +avg(ds.map((d) => d.spice)).toFixed(2),
     sweet: +avg(ds.map((d) => d.sweet)).toFixed(2),
-    intensity: +avg(ds.map((d) => d.intensity)).toFixed(2),
-    succulence: +avg(ds.map((d) => d.succulence)).toFixed(2),
-    sapidity: +avg(ds.map((d) => d.sapidity)).toFixed(2),
-    aromaticity: +avg(ds.map((d) => d.aromaticity)).toFixed(2),
-    persistence: +avg(ds.map((d) => d.persistence)).toFixed(2),
+    intensity: blend(ds.map((d) => d.intensity), 0.6),
+    succulence: blend(ds.map((d) => d.succulence), 0.6),
+    sapidity: blend(ds.map((d) => d.sapidity), 0.45),
+    aromaticity: blend(ds.map((d) => d.aromaticity), 0.5),
+    persistence: blend(ds.map((d) => d.persistence), 0.65),
     acid_hint: ds.some((d) => d.acid_hint),
-    protein: mode(ds.map((d) => d.protein)),
-    cooking: mode(ds.map((d) => d.cooking)),
+
+    protein: pickByPriority(proteins, [
+      "carne_rossa",
+      "carne_bianca",
+      "salumi",
+      "formaggio",
+      "pesce",
+      "veg",
+    ]),
+
+    cooking: pickByPriority(cookings, [
+      "fritto",
+      "brasato",
+      "griglia",
+      "crudo",
+      "bollito",
+    ]),
   };
 }
 
