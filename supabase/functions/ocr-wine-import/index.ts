@@ -273,86 +273,369 @@ function chunkNumberedText(numberedLines: string[], maxChars: number, overlapLin
   return chunks;
 }
 
+const CURRENCY_SYMBOL_BY_CODE: Record<string, string> = {
+  EUR: "€",
+  USD: "$",
+  GBP: "£",
+  JPY: "¥",
+  CHF: "CHF",
+};
+
+function currencyCodeToSymbol(v?: string | null) {
+  const code = normalizeCurrencyCode(v);
+  return code ? (CURRENCY_SYMBOL_BY_CODE[code] || "€") : "€";
+}
+
+function normalizeCurrencyCode(v?: string | null): string | null {
+  const s = String(v || "").trim().toUpperCase();
+  if (!s) return null;
+  if (s === "€" || s === "EUR" || s === "EURO") return "EUR";
+  if (s === "$" || s === "USD") return "USD";
+  if (s === "£" || s === "GBP") return "GBP";
+  if (s === "¥" || s === "JPY" || s === "YEN") return "JPY";
+  if (s === "CHF") return "CHF";
+  return null;
+}
+
+function normalizeFormatCode(v?: string | null): string | null {
+  const s = String(v || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/,/g, ".");
+
+  if (!s) return null;
+
+  if (["glass", "calice", "bicchiere", "byglass", "alcalice", "glas", "verre"].includes(s)) {
+    return "glass";
+  }
+  if (["075", "0.75", "75cl", "750ml", "bottle", "bot", "bottiglia"].includes(s)) {
+    return "075";
+  }
+  if (["025", "0.25", "25cl", "250ml", "quarter"].includes(s)) {
+    return "025";
+  }
+  if (["0375", "0.375", "37.5cl", "375ml", "halfbottle"].includes(s)) {
+    return "0375";
+  }
+  if (["05", "0.5", "50cl", "500ml", "mezzo", "half"].includes(s)) {
+    return "05";
+  }
+  if (["15", "1.5", "150cl", "1500ml", "magnum"].includes(s)) {
+    return "15";
+  }
+  if (["3l", "3.0", "300cl", "3000ml", "jeroboam"].includes(s)) {
+    return "3l";
+  }
+
+  return null;
+}
+
+function toAdminPriceString(value: any): string {
+  if (value === null || value === undefined || value === "") return "";
+  const n = typeof value === "number"
+    ? value
+    : parseFloat(String(value).replace(",", ".").trim());
+
+  if (!Number.isFinite(n)) return "";
+
+  const fixed = Number.isInteger(n) ? String(n) : String(n).replace(".", ",");
+  return fixed;
+}
+
+function buildNomeCompletoFromRaw(raw: any): string {
+  const producer = String(raw?.producer || "").trim();
+  const wineName = String(raw?.wine_name || "").trim();
+  const denomination = String(raw?.denomination || "").trim();
+
+  let nome = [producer, wineName].filter(Boolean).join(" - ").trim();
+
+  if (!nome && denomination) nome = denomination;
+
+  if (nome && denomination) {
+    const ln = nome.toLowerCase();
+    const ld = denomination.toLowerCase();
+    if (!ln.includes(ld) && !producer && wineName) {
+      nome = `${nome} ${denomination}`.trim();
+    }
+  }
+
+  return nome.trim();
+}
+
+function buildUvaggioFromRaw(raw: any): string {
+  const grapesRaw = String(raw?.grapes_raw || "").trim();
+  if (grapesRaw) return grapesRaw;
+
+  if (!Array.isArray(raw?.grapes)) return "";
+
+  return raw.grapes
+    .map((g: any) => {
+      if (typeof g === "string") return g.trim();
+      const name = String(g?.name || "").trim();
+      const pct = g?.pct;
+      if (!name) return "";
+      return Number.isFinite(pct) ? `${name} ${pct}%` : name;
+    })
+    .filter(Boolean)
+    .join(", ");
+}
+
+function projectRawOcrItemToCandidate(raw: any) {
+  const prices = Array.isArray(raw?.prices) ? raw.prices : [];
+  const admin = {
+    nome: buildNomeCompletoFromRaw(raw),
+    annata: raw?.vintage ? String(raw.vintage) : "",
+    valuta: "€",
+    prezzo: "",
+    prezzo_bicchiere: "",
+    prezzo_025: "",
+    prezzo_0375: "",
+    prezzo_05: "",
+    prezzo_15: "",
+    prezzo_3l: "",
+    categoria: String(raw?.section || "").trim(),
+    sottocategoria: String(raw?.subcategory || "").trim(),
+    uvaggio: buildUvaggioFromRaw(raw),
+  };
+
+  let pickedCurrency: string | null = normalizeCurrencyCode(raw?.currency);
+
+  for (const p of prices) {
+    const code = normalizeFormatCode(p?.format_code ?? p?.format ?? p?.label);
+    const value = toAdminPriceString(p?.value);
+    const curr = normalizeCurrencyCode(p?.currency);
+
+    if (curr && !pickedCurrency) pickedCurrency = curr;
+    if (!code || !value) continue;
+
+    if (code === "glass" && !admin.prezzo_bicchiere) admin.prezzo_bicchiere = value;
+    if (code === "075" && !admin.prezzo) admin.prezzo = value;
+    if (code === "025" && !admin.prezzo_025) admin.prezzo_025 = value;
+    if (code === "0375" && !admin.prezzo_0375) admin.prezzo_0375 = value;
+    if (code === "05" && !admin.prezzo_05) admin.prezzo_05 = value;
+    if (code === "15" && !admin.prezzo_15) admin.prezzo_15 = value;
+    if (code === "3l" && !admin.prezzo_3l) admin.prezzo_3l = value;
+  }
+
+  // fallback compatibilità vecchio schema
+  if (!admin.prezzo && raw?.price_bottle_eur != null) {
+    admin.prezzo = toAdminPriceString(raw.price_bottle_eur);
+    if (!pickedCurrency) pickedCurrency = "EUR";
+  }
+  if (!admin.prezzo_bicchiere && raw?.price_glass_eur != null) {
+    admin.prezzo_bicchiere = toAdminPriceString(raw.price_glass_eur);
+    if (!pickedCurrency) pickedCurrency = "EUR";
+  }
+
+  if (pickedCurrency) admin.valuta = currencyCodeToSymbol(pickedCurrency);
+
+  if (!admin.nome && !admin.prezzo && !admin.prezzo_bicchiere) return null;
+
+  const confidence = typeof raw?.confidence === "number" ? raw.confidence : 0.85;
+  const sourceText = String(raw?._source_text || "").trim();
+
+  return {
+    nome: admin.nome,
+    annata: admin.annata,
+    uvaggio: admin.uvaggio,
+    prezzo: admin.prezzo,
+    prezzo_bicchiere: admin.prezzo_bicchiere,
+    prezzo_025: admin.prezzo_025,
+    prezzo_0375: admin.prezzo_0375,
+    prezzo_05: admin.prezzo_05,
+    prezzo_15: admin.prezzo_15,
+    prezzo_3l: admin.prezzo_3l,
+    valuta: admin.valuta,
+    section: admin.categoria,
+    subcategory: admin.sottocategoria,
+    produttore: String(raw?.producer || "").trim(),
+    localita: String(raw?.localita || "").trim(),
+    confidence,
+    raw_line: sourceText,
+    source_text: sourceText,
+    source_lines: Array.isArray(raw?.source_lines) ? raw.source_lines : [],
+    page_no: raw?.page_no ?? null,
+    raw_payload: raw,
+    admin_payload: admin,
+    confidence_by_field: { overall: confidence },
+  };
+}
+
+function projectRuleItemToCandidate(raw: any) {
+  const admin = {
+    nome: String(raw?.nome || "").trim(),
+    annata: String(raw?.annata || "").trim(),
+    valuta: "€",
+    prezzo: String(raw?.prezzo || "").trim(),
+    prezzo_bicchiere: String(raw?.prezzo_bicchiere || "").trim(),
+    prezzo_025: "",
+    prezzo_0375: "",
+    prezzo_05: "",
+    prezzo_15: "",
+    prezzo_3l: "",
+    categoria: String(raw?.section || "").trim(),
+    sottocategoria: String(raw?.subcategory || "").trim(),
+    uvaggio: String(raw?.uvaggio || "").trim(),
+  };
+
+  const confidence = typeof raw?.confidence === "number" ? raw.confidence : 0.75;
+  const sourceText = String(raw?.raw_line || "").trim();
+
+  return {
+    nome: admin.nome,
+    annata: admin.annata,
+    uvaggio: admin.uvaggio,
+    prezzo: admin.prezzo,
+    prezzo_bicchiere: admin.prezzo_bicchiere,
+    prezzo_025: "",
+    prezzo_0375: "",
+    prezzo_05: "",
+    prezzo_15: "",
+    prezzo_3l: "",
+    valuta: admin.valuta,
+    section: admin.categoria,
+    subcategory: admin.sottocategoria,
+    produttore: String(raw?.produttore || "").trim(),
+    localita: String(raw?.localita || "").trim(),
+    confidence,
+    raw_line: sourceText,
+    source_text: sourceText,
+    source_lines: [],
+    page_no: null,
+    raw_payload: raw,
+    admin_payload: admin,
+    confidence_by_field: { overall: confidence },
+  };
+}
+
 async function openaiExtractWinesFromText(
   ocrText: string,
   onChunk?: (done: number, total: number) => Promise<void> | void,
 ) {
   if (!OPENAI_API_KEY) return [];
+
   try {
-  const { lines, numberedText } = buildNumberedLines(ocrText);
-  const numberedLines = numberedText.split("\n");
+    const { lines, numberedText } = buildNumberedLines(ocrText);
+    const numberedLines = numberedText.split("\n");
 
-  const schema = {
-    name: "wine_import",
-    schema: {
-      type: "object",
-      additionalProperties: false,
-      properties: {
-        items: {
-          type: "array",
+    const schema = {
+      name: "wine_import_v2",
+      schema: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
           items: {
-            type: "object",
-            additionalProperties: false,
-            properties: {
-              section: { type: ["string", "null"] },
-              producer: { type: ["string", "null"] },
-              subcategory: { type: ["string", "null"] },
-              wine_name: { type: "string" },
-              vintage: { type: ["integer", "null"] },
-              grapes: { type: ["array", "null"], items: { type: "string" } },
-              price_bottle_eur: { type: ["number", "null"] },
-              price_glass_eur: { type: ["number", "null"] },
-              currency: { type: ["string", "null"] },
-              confidence: { type: "number" },
-              source_lines: { type: "array", items: { type: "integer" } },
-              notes: { type: ["string", "null"] },
-              localita: { type: ["string", "null"] },
+            type: "array",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                section: { type: ["string", "null"] },
+                producer: { type: ["string", "null"] },
+                subcategory: { type: ["string", "null"] },
+                wine_name: { type: ["string", "null"] },
+                denomination: { type: ["string", "null"] },
+                vintage: { type: ["integer", "null"] },
+                grapes_raw: { type: ["string", "null"] },
+                grapes: {
+                  type: ["array", "null"],
+                  items: { type: "string" },
+                },
+                prices: {
+                  type: ["array", "null"],
+                  items: {
+                    type: "object",
+                    additionalProperties: false,
+                    properties: {
+                      format_code: { type: ["string", "null"] },
+                      value: { type: ["number", "null"] },
+                      currency: { type: ["string", "null"] },
+                      raw: { type: ["string", "null"] },
+                    },
+                    required: ["format_code", "value", "currency", "raw"],
+                  },
+                },
+                currency: { type: ["string", "null"] },
+                confidence: { type: "number" },
+                source_lines: { type: "array", items: { type: "integer" } },
+                notes: { type: ["string", "null"] },
+                localita: { type: ["string", "null"] },
+                page_no: { type: ["integer", "null"] },
+              },
+              required: [
+                "section",
+                "producer",
+                "subcategory",
+                "wine_name",
+                "denomination",
+                "vintage",
+                "grapes_raw",
+                "grapes",
+                "prices",
+                "currency",
+                "confidence",
+                "source_lines",
+                "notes",
+                "localita",
+                "page_no"
+              ],
             },
-            required: [  "section",  "producer", "subcategory",  "wine_name",  "vintage",  "grapes",  "price_bottle_eur",  "price_glass_eur",  "currency",  "confidence",  "source_lines",  "notes",  "localita",],
-
           },
         },
+        required: ["items"],
       },
-      required: ["items"],
-    },
-  };
+    };
 
-  let chunks = chunkNumberedText(numberedLines, OPENAI_MAX_CHARS);
+    let chunks = chunkNumberedText(numberedLines, OPENAI_MAX_CHARS);
 
-// hard cap chunks per evitare WORKER_LIMIT su testi enormi
-if (chunks.length > MAX_AI_CHUNKS) {
-  chunks = chunks.slice(0, MAX_AI_CHUNKS);
-}
+    if (chunks.length > MAX_AI_CHUNKS) {
+      chunks = chunks.slice(0, MAX_AI_CHUNKS);
+    }
 
-const all: any[] = [];
-for (let idx = 0; idx < chunks.length; idx++) {
-  const c = chunks[idx];
+    const all: any[] = [];
 
-  if (onChunk) await onChunk(idx, chunks.length); // prima del chunk
+    for (let idx = 0; idx < chunks.length; idx++) {
+      const c = chunks[idx];
 
-  const prompt = `
+      if (onChunk) await onChunk(idx, chunks.length);
+
+      const prompt = `
 Ruolo:
-Sei un data extractor. Converti testo OCR di una carta vini in dati strutturati. Non interpretare creativamente.
+Sei un data extractor specializzato in carte dei vini.
+Devi leggere testo OCR sporco e restituire dati strutturati SENZA inventare nulla.
 
-Regole anti-allucinazione:
-- Non inventare produttori, annate, uvaggi, prezzi.
-- Se un campo non è presente o non sei sicuro: null.
-- Ogni item deve includere source_lines (numeri di riga Lxxxx usati).
-- Se un prezzo sembra dubbio (es. “8O” invece di “80”), metti null e spiega in notes.
-- Se vedi due prezzi consecutivi e ci sono due vini “aperti” senza prezzo subito prima, trattali come prezzi di due vini diversi (in ordine).
+Regole fondamentali:
+- Non inventare produttore, nome vino, annata, uvaggio, categoria o prezzi.
+- Se un campo non è leggibile o non sei sicuro, usa null.
+- Ogni item deve avere source_lines.
+- Ogni prezzo va messo in "prices" come oggetto.
+- "value" deve essere solo numero, senza simboli.
+- "currency" deve essere uno tra: EUR, USD, GBP, JPY, CHF oppure null.
+- "format_code" deve essere uno tra:
+  glass, 075, 025, 0375, 05, 15, 3l, unknown
 
-Regole di collegamento righe:
-- Il produttore/cantina e/o località possono stare su righe separate: restano “attivi” finché non cambiano.
-- Un vino può essere su più righe (nome, annata, uvaggio, prezzi).
-- Annata: numero 1900–2099.
-- Prezzi: se trovi due prezzi chiaramente associati allo stesso vino, mappa min->price_glass_eur e max->price_bottle_eur.
-- Se trovi prezzi su righe separate e ci sono più vini senza prezzo prima di quei prezzi, assegna i prezzi in ordine ai vini (NON calice/bottiglia).
-- section: se vedi intestazioni tipo “VINI ROSSI”, “BIANCHI”, ecc.
-- subcategory: se dentro una section trovi sotto-intestazioni tipo regione/zona/stato (es. "Emilia Romagna", "Veneto", "Champagne", "España"),
-  allora quella riga è subcategory e resta “attiva” per i vini successivi finché non cambia.
-- Una subcategory in genere è una riga breve SOLO testo, senza prezzi/annate, spesso in MAIUSCOLO o Title Case.
-- Non confondere producer con subcategory: se contiene keyword tipo Tenuta/Cantina/Azienda ecc => è producer, non subcategory.
-- Se non vedi una subcategory per quei vini: null.
+Regole prezzi / formati:
+- Se trovi un solo prezzo bottiglia generico, usa format_code = 075.
+- Se trovi "calice", "glass", "by the glass", usa format_code = glass.
+- Se trovi 0,25 / 25cl usa 025.
+- Se trovi 0,375 / 37,5cl usa 0375.
+- Se trovi 0,5 / 50cl usa 05.
+- Se trovi 1,5 / Magnum usa 15.
+- Se trovi 3L usa 3l.
+- Se trovi due prezzi chiaramente riferiti allo stesso vino, NON usare min/max come regola cieca:
+  prova a capire se sono glass e bottle oppure due formati diversi.
+- Se non riesci a capire il formato, usa unknown.
+
+Regole testo:
+- producer = cantina/produttore quando separabile
+- wine_name = nome etichetta quando separabile
+- denomination = DOC / DOCG / IGT / AOC / AOP / DO / DOP o denominazione chiaramente visibile
+- grapes_raw = uvaggio testuale come appare
+- grapes = elenco vitigni puliti se chiaramente presenti
+- section = macro categoria tipo Rossi / Bianchi / Bollicine / Champagne
+- subcategory = zona o sotto-sezione dentro la categoria, se chiaramente presente
+- localita = località, comune, provincia o zona se separabile
 
 Output:
 Restituisci SOLO JSON valido conforme allo schema.
@@ -361,81 +644,87 @@ TESTO OCR (con linee numerate):
 ${c.text}
 `;
 
-const res = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: OPENAI_MODEL,
-      input: prompt,
-      text: {
-        format: {
-          type: "json_schema",
-          name: schema.name,
-          schema: schema.schema,
-          strict: true,
+      const res = await fetch("https://api.openai.com/v1/responses", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
         },
-      },
-      temperature: 0,
-    }),
-  });
+        body: JSON.stringify({
+          model: OPENAI_MODEL,
+          input: prompt,
+          text: {
+            format: {
+              type: "json_schema",
+              name: schema.name,
+              schema: schema.schema,
+              strict: true,
+            },
+          },
+          temperature: 0,
+        }),
+      });
 
-  if (!res.ok) throw new Error(`OpenAI error: ${await res.text()}`);
-  const data = await res.json();
+      if (!res.ok) throw new Error(`OpenAI error: ${await res.text()}`);
+      const data = await res.json();
 
-  const outText =
-    data?.output?.[0]?.content?.[0]?.text ??
-    data?.output_text ??
-    "";
+      const outText =
+        data?.output?.[0]?.content?.[0]?.text ??
+        data?.output_text ??
+        "";
 
-  if (!outText) continue;
+      if (!outText) continue;
 
-  const parsed = JSON.parse(outText);
-  const items = Array.isArray(parsed?.items) ? parsed.items : [];
-  all.push(...items);
+      const parsed = JSON.parse(outText);
+      const items = Array.isArray(parsed?.items) ? parsed.items : [];
+      all.push(...items);
 
-  if (onChunk) await onChunk(idx + 1, chunks.length); // dopo il chunk
-}
+      if (onChunk) await onChunk(idx + 1, chunks.length);
+    }
 
-  // Dedup semplice
-  const norm = (s: any) => String(s ?? "").trim().toLowerCase();
-  const seen = new Set<string>();
-  const deduped: any[] = [];
-  for (const it of all) {
-    const key = [
-      norm(it.producer),
-      norm(it.wine_name),
-      String(it.vintage ?? ""),
-      String(it.price_bottle_eur ?? ""),
-      String(it.price_glass_eur ?? ""),
-    ].join("|");
-    if (seen.has(key)) continue;
-    seen.add(key);
-    deduped.push(it);
-  }
+    const norm = (s: any) => String(s ?? "").trim().toLowerCase();
 
-  // (opzionale) ordina per prima source line
-  deduped.sort((a, b) => {
-    const am = Math.min(...(a.source_lines ?? [999999]));
-    const bm = Math.min(...(b.source_lines ?? [999999]));
-    return am - bm;
-  });
+    const seen = new Set<string>();
+    const deduped: any[] = [];
 
-  // aggiungo source_text utile (non obbligatorio)
-  for (const it of deduped) {
-    const src = (it.source_lines ?? [])
-      .map((n: number) => lines[n - 1])
-      .filter(Boolean)
-      .join(" | ");
-    it._source_text = src;
-  }
+    for (const it of all) {
+      const priceKey = Array.isArray(it?.prices)
+        ? it.prices
+            .map((p: any) => `${norm(p?.format_code)}:${String(p?.value ?? "")}`)
+            .join("|")
+        : "";
 
-  return deduped;
-    } catch (e) {
+      const key = [
+        norm(it.producer),
+        norm(it.wine_name),
+        norm(it.denomination),
+        String(it.vintage ?? ""),
+        priceKey,
+      ].join("|");
+
+      if (seen.has(key)) continue;
+      seen.add(key);
+      deduped.push(it);
+    }
+
+    deduped.sort((a, b) => {
+      const am = Math.min(...(a.source_lines ?? [999999]));
+      const bm = Math.min(...(b.source_lines ?? [999999]));
+      return am - bm;
+    });
+
+    for (const it of deduped) {
+      const src = (it.source_lines ?? [])
+        .map((n: number) => lines[n - 1])
+        .filter(Boolean)
+        .join(" | ");
+      it._source_text = src;
+    }
+
+    return deduped;
+  } catch (e) {
     console.error("OpenAI extract failed:", e);
-    return []; // IMPORTANTISSIMO: fallback pulito
+    return [];
   }
 }
 
@@ -890,6 +1179,36 @@ function reanchorSectionSubcategoryFromSourceLines(aiItems: any[], ocrText: stri
   return aiItems;
 }
 
+async function insertOcrCandidates(supabase: any, jobId: string, items: any[]) {
+  const rows = items.slice(0, 500).map((it: any, idx: number) => ({
+    job_id: jobId,
+    page_no: it.page_no ?? null,
+    row_no: idx + 1,
+    source_text: it.source_text ?? it.raw_line ?? null,
+    source_lines: Array.isArray(it.source_lines) ? it.source_lines : null,
+    raw_payload: it.raw_payload ?? {},
+    admin_payload: it.admin_payload ?? {},
+    confidence_overall: typeof it.confidence === "number" ? it.confidence : null,
+    confidence_by_field: it.confidence_by_field ?? {},
+    status: "pending",
+    is_selected: true,
+    updated_at: new Date().toISOString(),
+  }));
+
+  if (!rows.length) return [];
+
+  const { data, error } = await supabase
+    .from("ocr_import_candidates")
+    .insert(rows)
+    .select("*");
+
+  if (error) {
+    console.warn("Insert candidates warning:", error.message);
+    return [];
+  }
+
+  return data ?? [];
+}
 // --------------------
 // Main
 // --------------------
@@ -1108,35 +1427,16 @@ console.log("DEBUG SUB:", aiItems.slice(0, 15).map((x:any)=>({
   lines: x.source_lines
 })));
 
-// 3) Se OpenAI ha risultati, usa quelli (più completi). Altrimenti fallback.
+// 3) Se OpenAI ha risultati, usa quelli proiettati verso l'admin.
+//    Altrimenti fallback parser -> candidato admin compatibile.
 if (aiItems.length) {
-  // Mappa ai campi del tuo frontend
-  items = aiItems.map((x: any) => {
-    const producer = (x.producer ?? "").trim();
-    const wineName = (x.wine_name ?? "").trim();
-    const nome = [producer, wineName].filter(Boolean).join(" - ");
-
-    const annata = x.vintage ? String(x.vintage) : "";
-    const uvaggio = Array.isArray(x.grapes) ? x.grapes.join(", ") : "";
-    const prezzoB = x.price_bottle_eur != null ? String(x.price_bottle_eur).replace(".", ",") : "";
-    const prezzoG = x.price_glass_eur != null ? String(x.price_glass_eur).replace(".", ",") : "";
-
-    return {
-      nome,
-      annata,
-      uvaggio,
-      prezzo: prezzoB,
-      prezzo_bicchiere: prezzoG,
-      produttore: producer,
-      localita: (x.localita ?? "").trim?.() ?? "",
-      section: x.section ?? "",
-      subcategory: (x.subcategory ?? "").trim?.() ?? "",
-      confidence: typeof x.confidence === "number" ? x.confidence : 0.85,
-      raw_line: x._source_text || "openai",
-    };
-  });
+  items = aiItems
+    .map(projectRawOcrItemToCandidate)
+    .filter(Boolean);
 } else {
-  items = ruleItems;
+  items = ruleItems
+    .map(projectRuleItemToCandidate)
+    .filter(Boolean);
 }
 
     } else {
@@ -1166,64 +1466,38 @@ if (aiItems.length) {
 }
 }
 
-// 3) Se OpenAI ha risultati, usa quelli (più completi). Altrimenti fallback.
+// 3) Se OpenAI ha risultati, usa quelli proiettati verso l'admin.
+//    Altrimenti fallback parser -> candidato admin compatibile.
 if (aiItems.length) {
-  // Mappa ai campi del tuo frontend
-  items = aiItems.map((x: any) => {
-    const producer = (x.producer ?? "").trim();
-    const wineName = (x.wine_name ?? "").trim();
-    const nome = [producer, wineName].filter(Boolean).join(" - ");
-
-    const annata = x.vintage ? String(x.vintage) : "";
-    const uvaggio = Array.isArray(x.grapes) ? x.grapes.join(", ") : "";
-    const prezzoB = x.price_bottle_eur != null ? String(x.price_bottle_eur).replace(".", ",") : "";
-    const prezzoG = x.price_glass_eur != null ? String(x.price_glass_eur).replace(".", ",") : "";
-
-    return {
-      nome,
-      annata,
-      uvaggio,
-      prezzo: prezzoB,
-      prezzo_bicchiere: prezzoG,
-      produttore: producer,
-      localita: (x.localita ?? "").trim?.() ?? "",
-      section: x.section ?? "",
-      subcategory: (x.subcategory ?? "").trim?.() ?? "",
-      confidence: typeof x.confidence === "number" ? x.confidence : 0.85,
-      raw_line: x._source_text || "openai",
-    };
-  });
+  items = aiItems
+    .map(projectRawOcrItemToCandidate)
+    .filter(Boolean);
 } else {
-  items = ruleItems;
+  items = ruleItems
+    .map(projectRuleItemToCandidate)
+    .filter(Boolean);
 }
     }
 
-    // 6) Salva items in DB (facoltativo ma utile)
-    await setJobProgress(supabase, jobId, 97, "saving");
-    if (items.length) {
-      const rows = items.slice(0, 500).map((it) => ({
-        job_id: jobId,
-        raw_line: it.raw_line ?? null,
-        name_guess: it.nome ?? null,
-        price_guess: it.prezzo ?? null,
-        grapes_guess: it.uvaggio ?? null,
-        confidence: it.confidence ?? null,
-      }));
-      const { error: itemsErr } = await supabase.from("ocr_import_items").insert(rows);
-      if (itemsErr) console.warn("Insert items warning:", itemsErr.message);
-    }
+// 6) Salva candidates in DB
+await setJobProgress(supabase, jobId, 97, "saving");
 
-    await supabase.from("ocr_import_jobs").update({
-      status: "done",
-      progress: 100,
-      file_mime: mime,
-      updated_at: new Date().toISOString(),
-    }).eq("id", jobId);
+let savedCandidates: any[] = [];
+if (items.length) {
+  savedCandidates = await insertOcrCandidates(supabase, jobId, items);
+}
+
+await supabase.from("ocr_import_jobs").update({
+  status: "done",
+  progress: 100,
+  file_mime: mime,
+  updated_at: new Date().toISOString(),
+}).eq("id", jobId);
 
 return new Response(JSON.stringify({
   job_id: jobId,
-  items,
-  raw_ocr_preview: rawOcrText.slice(0, 2000) // solo primi 2000 caratteri
+  items: savedCandidates.length ? savedCandidates : items,
+  raw_ocr_preview: rawOcrText.slice(0, 2000)
 }), {
   headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
 });

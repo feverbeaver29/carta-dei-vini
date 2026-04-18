@@ -1813,6 +1813,66 @@ function refreshPickerOptions(){
   });
 }
 
+function getCandidateAdminPayload(it) {
+  const p = (it && typeof it.admin_payload === "object" && it.admin_payload)
+    ? it.admin_payload
+    : {};
+
+  const out = {
+    nome: String(p.nome ?? it?.nome ?? "").trim(),
+    annata: String(p.annata ?? it?.annata ?? "").trim(),
+    valuta: String(p.valuta ?? it?.valuta ?? "€").trim() || "€",
+    prezzo: String(p.prezzo ?? it?.prezzo ?? "").trim(),
+    prezzo_bicchiere: String(p.prezzo_bicchiere ?? it?.prezzo_bicchiere ?? "").trim(),
+    prezzo_025: String(p.prezzo_025 ?? it?.prezzo_025 ?? "").trim(),
+    prezzo_0375: String(p.prezzo_0375 ?? it?.prezzo_0375 ?? "").trim(),
+    prezzo_05: String(p.prezzo_05 ?? it?.prezzo_05 ?? "").trim(),
+    prezzo_15: String(p.prezzo_15 ?? it?.prezzo_15 ?? "").trim(),
+    prezzo_3l: String(p.prezzo_3l ?? it?.prezzo_3l ?? "").trim(),
+    categoria: String(p.categoria ?? it?.section ?? it?.categoria ?? "").trim(),
+    sottocategoria: String(p.sottocategoria ?? it?.subcategory ?? it?.sottocategoria ?? "").trim(),
+    uvaggio: String(p.uvaggio ?? it?.uvaggio ?? "").trim(),
+  };
+
+  if (!["€", "$", "£", "¥", "CHF"].includes(out.valuta)) out.valuta = "€";
+  return out;
+}
+
+function buildCandidatePricesPreview(p) {
+  const parts = [];
+  if (p.prezzo) parts.push(`${t("bottle_lbl")}: ${escapeHtml(p.prezzo)}`);
+  if (p.prezzo_bicchiere) parts.push(`${t("glass_lbl")}: ${escapeHtml(p.prezzo_bicchiere)}`);
+  if (p.prezzo_025) parts.push(`0,25: ${escapeHtml(p.prezzo_025)}`);
+  if (p.prezzo_0375) parts.push(`0,375: ${escapeHtml(p.prezzo_0375)}`);
+  if (p.prezzo_05) parts.push(`0,5: ${escapeHtml(p.prezzo_05)}`);
+  if (p.prezzo_15) parts.push(`1,5: ${escapeHtml(p.prezzo_15)}`);
+  if (p.prezzo_3l) parts.push(`3L: ${escapeHtml(p.prezzo_3l)}`);
+  return parts.length ? parts.join(" · ") : "-";
+}
+
+function applyCandidateToForm(it) {
+  const p = getCandidateAdminPayload(it);
+
+  document.getElementById("nome_completo").value = p.nome;
+  document.getElementById("annata").value = p.annata;
+  document.getElementById("valuta").value = p.valuta;
+  document.getElementById("prezzo").value = p.prezzo;
+  document.getElementById("prezzo_bicchiere").value = p.prezzo_bicchiere;
+  document.getElementById("categoria").value = p.categoria;
+  updateSubcategorySuggestionsForForm();
+  document.getElementById("sottocategoria").value = p.sottocategoria;
+  document.getElementById("uvaggio").value = p.uvaggio;
+
+  document.getElementById("formatsRepeater").innerHTML = "";
+  if (p.prezzo_025) addFormatRow("025", p.prezzo_025);
+  if (p.prezzo_0375) addFormatRow("0375", p.prezzo_0375);
+  if (p.prezzo_05) addFormatRow("05", p.prezzo_05);
+  if (p.prezzo_15) addFormatRow("15", p.prezzo_15);
+  if (p.prezzo_3l) addFormatRow("3l", p.prezzo_3l);
+
+  document.getElementById("nome_completo")?.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
 function showUvaggioBadge(msg) {
   let b = document.getElementById('uvaggioBadge');
   if (!b) {
@@ -2096,72 +2156,51 @@ function renderOcrResults(items){
   const list  = panel.querySelector("#ocrResultsList");
 
   panel.style.display = "block";
-  meta.textContent = t("ocr_meta_found",{n: items.length})
+  meta.textContent = t("ocr_meta_found", { n: items.length });
 
   list.innerHTML = "";
 
   items.slice(0, 200).forEach((it) => {
+    const p = getCandidateAdminPayload(it);
+    const conf = Math.round(
+      Number(it?.confidence_overall ?? it?.confidence ?? 0.8) * 100
+    );
+    const sourceText = String(it?.source_text ?? it?.raw_line ?? "").trim();
+    const pricePreview = buildCandidatePricesPreview(p);
+
     const row = document.createElement("div");
     row.style = "border:1px solid #eee; border-radius:12px; padding:10px; display:flex; justify-content:space-between; gap:10px; align-items:flex-start;";
 
-    const produttore = (it.produttore || "").trim();
-const nomeVino = (it.nome || "").trim();
-
-// ✅ se nomeVino contiene già il produttore all'inizio, non lo riaggiungo
-const nomeNorm = nomeVino.toLowerCase();
-const prodNorm = produttore.toLowerCase();
-const alreadyHasProducer =
-  produttore && (nomeNorm === prodNorm || nomeNorm.startsWith(prodNorm + " - "));
-
-const fullName = alreadyHasProducer
-  ? nomeVino
-  : [produttore, nomeVino].filter(Boolean).join(" - ");
-
-    const annata = (it.annata || "").trim();
-    const prezzoB = (it.prezzo || "").trim();
-    const prezzoG = (it.prezzo_bicchiere || "").trim();
-    const uvaggio = (it.uvaggio || "").trim();
-    const conf = Math.round(((it.confidence ?? 0.8) * 100));
-
     row.innerHTML = `
-      <div style="min-width:0;">
-        <div style="font-weight:700; word-break:break-word;">${escapeHtml(fullName || "(senza nome)")}</div>
-        <div style="font-size:13px;color:#666;margin-top:3px;">
-          ${annata ? `${t("vintage_label_inline")}: ${escapeHtml(annata)} · ` : ""}
-          ${t("bottle_lbl")}: ${escapeHtml(prezzoB || "-")}
-          ${prezzoG ? ` · ${t("glass_lbl")}: ${escapeHtml(prezzoG)}` : ""}
-          ${uvaggio ? ` · ${t("blend_lbl_inline")}: ${escapeHtml(uvaggio)}` : ""}
-        · ${t("confidence_lbl")}: ${conf}%
+      <div style="min-width:0; flex:1 1 auto;">
+        <div style="font-weight:700; word-break:break-word;">
+          ${escapeHtml(p.nome || "(senza nome)")}
         </div>
+
+        <div style="font-size:13px;color:#666;margin-top:3px; line-height:1.35;">
+          ${p.annata ? `${t("vintage_label_inline")}: ${escapeHtml(p.annata)} · ` : ""}
+          ${pricePreview}
+          ${p.uvaggio ? ` · ${t("blend_lbl_inline")}: ${escapeHtml(p.uvaggio)}` : ""}
+          ${p.categoria ? ` · ${escapeHtml(p.categoria)}` : ""}
+          ${p.sottocategoria ? ` / ${escapeHtml(p.sottocategoria)}` : ""}
+          · ${t("confidence_lbl")}: ${conf}%
+        </div>
+
+        ${sourceText ? `
+          <div style="font-size:12px;color:#888;margin-top:6px;white-space:normal;word-break:break-word;">
+            ${escapeHtml(sourceText)}
+          </div>
+        ` : ""}
       </div>
+
       <button type="button" class="btn-usa" style="margin-top:0; padding:6px 10px; border-radius:10px;">
-  ${t("ocr_use_btn")}
-</button>
+        ${t("ocr_use_btn")}
+      </button>
     `;
 
     row.querySelector(".btn-usa").onclick = () => {
-      
-  document.getElementById("nome_completo").value = fullName;
-  document.getElementById("annata").value = annata;
-  document.getElementById("prezzo").value = prezzoB;
-  document.getElementById("prezzo_bicchiere").value = prezzoG;
-  document.getElementById("uvaggio").value = uvaggio;
-
-  // ✅ categoria solo se il campo è vuoto (così non sovrascrive)
-  const catEl = document.getElementById("categoria");
-  const section = (it.section || "").trim();
-  if (catEl && !catEl.value.trim() && section) {
-    catEl.value = section;
-    updateSubcategorySuggestionsForForm();
-  }
-
-  // ✅ sottocategoria solo se vuoto
-const subEl = document.getElementById("sottocategoria");
-const sub = (it.subcategory || it.sottocategoria || "").trim();
-if (subEl && !subEl.value.trim() && sub) subEl.value = sub;
-
-  document.getElementById("nome_completo")?.scrollIntoView({ behavior:"smooth", block:"center" });
-};
+      applyCandidateToForm(it);
+    };
 
     list.appendChild(row);
   });
