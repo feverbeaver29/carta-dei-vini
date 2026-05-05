@@ -281,8 +281,8 @@ function inferWineKind(wine: any, hint?: any): WineKind {
   // Priorità assoluta: se è spumante/metodo classico, deve essere letto come bollicina.
   if (hasAnyNorm(all, [
     "bollicine", "spumante", "metodo classico", "metodo ancestrale", "ancestrale",
-    "brut", "extra brut", "pas dose", "pas dosé", "dosaggio zero", "champagne", "lambrusco"
-    "franciacorta", "trentodoc", "trento doc", "prosecco", "cremant", "crémant", "pet nat", "pét nat", "dry", "extra dry", "metodo martinotti", "charmat", "champenoise"
+    "brut", "extra brut", "pas dose", "pas dosé", "dosaggio zero", "champagne", "lambrusco",
+    "franciacorta", "trentodoc", "trento doc", "prosecco", "cremant", "crémant", "pet nat", "pét nat", "dry", "extra dry", "metodo martinotti", "charmat", "champenoise",
   ])) return "sparkling";
 
   // Ramato/orange: va intercettato prima del generico bianco/rosato.
