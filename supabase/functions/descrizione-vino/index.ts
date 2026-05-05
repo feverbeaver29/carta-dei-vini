@@ -229,6 +229,289 @@ type PersistedSommelierProfile = {
   confidence: number;
 };
 
+type WineKind =
+  | "sparkling"
+  | "ramato_orange"
+  | "rosato"
+  | "bianco"
+  | "rosso"
+  | "dolce"
+  | "unknown";
+
+function hasAnyNorm(text: string, needles: string[]): boolean {
+  const t = norm(text);
+  return needles.some((n) => t.includes(norm(n)));
+}
+
+function inferWineKind(wine: any, hint?: any): WineKind {
+  const rawHint = String(hint?.wine_type || hint?.type || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[\s-]+/g, "_");
+  if (["sparkling", "ramato_orange", "rosato", "bianco", "rosso", "dolce"].includes(rawHint)) {
+    return rawHint as WineKind;
+  }
+  if (hint?.is_sparkling) return "sparkling";
+  if (hint?.is_ramato_or_orange) return "ramato_orange";
+  if (hint?.is_rose) return "rosato";
+  if (hint?.is_white) return "bianco";
+  if (hint?.is_red) return "rosso";
+
+  const cat = norm(wine?.categoria);
+  const sub = norm(wine?.sottocategoria);
+  const name = norm(wine?.nome);
+  const all = `${cat} ${sub} ${name}`;
+
+  // Priorità assoluta: se è spumante/metodo classico, deve essere letto come bollicina.
+  if (hasAnyNorm(all, [
+    "bollicine", "spumante", "metodo classico", "metodo ancestrale", "ancestrale",
+    "brut", "extra brut", "pas dose", "pas dosé", "dosaggio zero", "champagne",
+    "franciacorta", "trentodoc", "trento doc", "prosecco", "cremant", "crémant",
+    "cava", "pet nat", "pét nat",
+  ])) return "sparkling";
+
+  // Ramato/orange: va intercettato prima del generico bianco/rosato.
+  if (hasAnyNorm(all, ["ramato", "orange", "macerato", "macerazione sulle bucce", "ambrato"])) {
+    return "ramato_orange";
+  }
+
+  if (hasAnyNorm(all, ["rosato", "rosati", "rose", "rosé", "rosè", "chiaretto", "cerasuolo"])) return "rosato";
+  if (hasAnyNorm(cat, ["bianchi", "bianco"])) return "bianco";
+  if (hasAnyNorm(cat, ["rossi", "rosso"])) return "rosso";
+  if (hasAnyNorm(all, ["dolce", "dolci", "passito", "vin santo", "vinsanto", "sauternes", "vendemmia tardiva"])) return "dolce";
+
+  return "unknown";
+}
+
+function profileColorLabelForKind(kind: WineKind, fallback?: string | null): string {
+  switch (kind) {
+    case "sparkling": return "Spumante";
+    case "dolce": return "Dolce";
+    case "rosato": return "Rosato";
+    case "ramato_orange":
+    case "bianco": return "Bianco";
+    case "rosso": return "Rosso";
+    default: return fallback || "ND";
+  }
+}
+
+function visualColorLabelForKind(kind: WineKind, wine: any, fallback?: string | null): string {
+  const all = `${wine?.categoria || ""} ${wine?.sottocategoria || ""} ${wine?.nome || ""}`;
+  const isRoseSparkling = kind === "sparkling" && hasAnyNorm(all, ["rosato", "rose", "rosé", "rosè"]);
+  switch (kind) {
+    case "sparkling": return isRoseSparkling ? "Spumante rosato" : "Spumante";
+    case "ramato_orange": return "Ramato / orange";
+    case "bianco": return "Bianco";
+    case "rosato": return "Rosato";
+    case "rosso": return "Rosso";
+    case "dolce": return "Dolce";
+    default: return fallback || "ND";
+  }
+}
+
+function defaultNotesForKind(kind: WineKind, wine?: any): string[] {
+  const all = `${wine?.categoria || ""} ${wine?.sottocategoria || ""} ${wine?.nome || ""}`;
+  if (kind === "sparkling" && hasAnyNorm(all, ["rosato", "rose", "rosé", "rosè"])) {
+    return ["perlage fine", "piccoli frutti rossi", "crosta di pane"];
+  }
+  switch (kind) {
+    case "sparkling": return ["perlage fine", "agrumi", "crosta di pane"];
+    case "ramato_orange": return ["scorza d'agrumi", "erbe officinali", "lieve nota ambrata"];
+    case "bianco": return ["agrumi", "fiori bianchi", "nota sapida"];
+    case "rosato": return ["piccoli frutti rossi", "floreale delicato", "nota fresca"];
+    case "rosso": return ["frutto rosso", "spezie delicate", "nota balsamica"];
+    case "dolce": return ["frutta matura", "miele", "nota dolce"];
+    default: return ["nota fruttata", "equilibrio", "finale armonico"];
+  }
+}
+
+function noteForbiddenForKind(note: string, kind: WineKind): boolean {
+  const redTerms = [
+    "rosso rubino", "granato", "ciliegia", "marasca", "prugna", "frutti neri",
+    "sottobosco", "tabacco", "cuoio", "cacao", "espresso", "tannino", "spezie scure",
+    "pomodoro arrosto",
+  ];
+  const whiteTerms = [
+    "giallo paglierino", "limone", "mela verde", "fiori bianchi", "mandorla amara",
+    "nota citrina", "agrumi verdi",
+  ];
+
+  if (kind === "bianco") return hasAnyNorm(note, redTerms);
+  if (kind === "ramato_orange") return hasAnyNorm(note, ["rosa cerasuolo", "rosato", "rosso rubino", "granato"]);
+  if (kind === "rosato") return hasAnyNorm(note, ["rosso rubino", "granato", "giallo paglierino", "tannino fitto"]);
+  if (kind === "rosso") return hasAnyNorm(note, whiteTerms);
+  if (kind === "sparkling") return hasAnyNorm(note, ["tannino fitto", "tannini cesellati", "vino fermo", "rosso rubino intenso"]);
+  return false;
+}
+
+function guardNotesForWineKind(notes: string[], kind: WineKind, wine?: any): string[] {
+  const safe = unique(notes).filter((n) => !noteForbiddenForKind(n, kind));
+  if (safe.length >= 2) return safe.slice(0, 3);
+  return unique([...safe, ...defaultNotesForKind(kind, wine)]).slice(0, 3);
+}
+
+function applyProfileGuardrails(
+  profile: PersistedSommelierProfile,
+  kind: WineKind,
+): PersistedSommelierProfile {
+  const p: PersistedSommelierProfile = JSON.parse(JSON.stringify(profile));
+  p.source = unique([...(p.source || []), "wine_type_guardrails"]);
+
+  if (kind === "sparkling") {
+    p.color = "spumante";
+    p.family = "sparkling";
+    p.core.bubbles = Math.max(p.core.bubbles ?? 0, 0.72);
+    p.core.acid = Math.max(p.core.acid ?? 0.5, 0.55);
+    p.core.tannin = Math.min(p.core.tannin ?? 0.05, 0.18);
+    p.confidence = Math.max(p.confidence ?? 0.68, 0.78);
+    return p;
+  }
+
+  // I vini fermi non devono ereditare bollicina dai dati uva/denominazione.
+  p.core.bubbles = 0;
+
+  if (kind === "bianco") {
+    p.color = "bianco";
+    p.core.tannin = Math.min(p.core.tannin ?? 0.05, 0.12);
+    p.family = (p.core.body ?? 0.5) >= 0.58 ? "full_white" : "crisp_white";
+    p.confidence = Math.max(p.confidence ?? 0.68, 0.76);
+    return p;
+  }
+
+  if (kind === "ramato_orange") {
+    p.color = "bianco"; // enum: niente “orange”; lo gestiamo nel testo e nelle note.
+    p.core.tannin = Math.min(Math.max(p.core.tannin ?? 0.14, 0.08), 0.28);
+    p.core.body = Math.max(p.core.body ?? 0.5, 0.48);
+    p.family = (p.core.body ?? 0.5) >= 0.58 ? "full_white" : "crisp_white";
+    p.confidence = Math.max(p.confidence ?? 0.68, 0.76);
+    return p;
+  }
+
+  if (kind === "rosato") {
+    p.color = "rosato";
+    p.family = "rosato";
+    p.core.tannin = Math.min(p.core.tannin ?? 0.12, 0.25);
+    p.core.body = Math.min(p.core.body ?? 0.5, 0.68);
+    p.confidence = Math.max(p.confidence ?? 0.68, 0.76);
+    return p;
+  }
+
+  if (kind === "rosso") {
+    p.color = "rosso";
+    p.core.tannin = Math.max(p.core.tannin ?? 0.35, 0.25);
+    p.core.body = Math.max(p.core.body ?? 0.45, 0.38);
+    p.family = inferFamily("rosso", p.core);
+    p.confidence = Math.max(p.confidence ?? 0.68, 0.76);
+    return p;
+  }
+
+  if (kind === "dolce") {
+    p.color = "dolce";
+    p.family = "dessert";
+    p.core.sweet = Math.max(p.core.sweet ?? 0.55, 0.55);
+    p.confidence = Math.max(p.confidence ?? 0.68, 0.74);
+  }
+
+  return p;
+}
+
+function buildGuardedFallback(
+  kind: WineKind,
+  notes: string[],
+  struttura: any,
+  wine?: any,
+): { hook: string; palate: string } {
+  const chosen = guardNotesForWineKind(notes, kind, wine);
+  const n1 = chosen[0] || "nota fruttata";
+  const n2 = chosen[1] || "finale armonico";
+  const corpo = descrCorpo(struttura?.corpo);
+  const acid = descrAcidita(struttura?.acidita);
+  const tann = descrTannino(struttura?.tannino);
+
+  if (kind === "sparkling") {
+    return {
+      hook: clampChars(`Bollicina fine, profilo su ${n1} e ${n2}.`, 120),
+      palate: clampChars(`Perlage fine e sorso fresco, con ${corpo} e finale pulito. La chiusura resta tesa e piacevole.`, 220),
+    };
+  }
+
+  if (kind === "ramato_orange") {
+    return {
+      hook: clampChars(`Tonalità ramata, profilo su ${n1} e ${n2}.`, 120),
+      palate: clampChars(`Il sorso è materico ma scorrevole, con ${acid} e una lieve presa tannica da macerazione. Finale sapido e asciutto.`, 220),
+    };
+  }
+
+  if (kind === "bianco") {
+    return {
+      hook: clampChars(`Bianco luminoso, profilo su ${n1} e ${n2}.`, 120),
+      palate: clampChars(`Al palato mostra ${acid} e ${corpo}; il finale è pulito, sapido e continuo.`, 220),
+    };
+  }
+
+  if (kind === "rosato") {
+    return {
+      hook: clampChars(`Rosato fragrante, profilo su ${n1} e ${n2}.`, 120),
+      palate: clampChars(`Il sorso è fresco e scorrevole, con corpo misurato e finale sapido. La trama resta delicata e ben equilibrata.`, 220),
+    };
+  }
+
+  if (kind === "rosso") {
+    return {
+      hook: clampChars(`Rosso rubino, profilo su ${n1} e ${n2}.`, 120),
+      palate: clampChars(`Al palato mostra ${corpo}, ${acid} e ${tann}; il finale è coerente e persistente.`, 220),
+    };
+  }
+
+  if (kind === "dolce") {
+    return {
+      hook: clampChars(`Vino dolce, profilo su ${n1} e ${n2}.`, 120),
+      palate: clampChars(`Il sorso è morbido e avvolgente, con dolcezza bilanciata e finale armonico.`, 220),
+    };
+  }
+
+  return {
+    hook: clampChars(`Profilo centrato su ${n1} e ${n2}.`, 120),
+    palate: clampChars(`Il sorso è equilibrato, con buona continuità e finale armonico.`, 220),
+  };
+}
+
+function textViolatesWineKind(text: string, kind: WineKind): boolean {
+  const t = norm(text);
+  if (!t) return true;
+
+  if (kind === "sparkling") {
+    const hasBubble = hasAnyNorm(t, ["perlage", "bollicina", "bollicine", "spuma", "effervescenza", "cremosita", "cremosità"]);
+    return !hasBubble || hasAnyNorm(t, ["vino fermo", "tannino fitto", "tannini cesellati", "rosso rubino intenso"]);
+  }
+  if (kind === "bianco") {
+    return hasAnyNorm(t, ["rosso", "rubino", "granato", "tannino fitto", "tannini cesellati", "frutti neri", "cuoio"]);
+  }
+  if (kind === "ramato_orange") {
+    return hasAnyNorm(t, ["rosato", "rosa cerasuolo", "rosso rubino", "granato"]);
+  }
+  if (kind === "rosato") {
+    return hasAnyNorm(t, ["giallo paglierino", "rosso rubino", "granato", "tannino fitto", "tannini cesellati"]);
+  }
+  if (kind === "rosso") {
+    return hasAnyNorm(t, ["giallo paglierino", "fiori bianchi", "mela verde", "limone", "mandorla amaricante"]);
+  }
+  return false;
+}
+
+function repairDescriptionIfNeeded(
+  hook: string,
+  palate: string,
+  kind: WineKind,
+  notes: string[],
+  struttura: any,
+  wine?: any,
+): { hook: string; palate: string } {
+  const full = `${hook} ${palate}`;
+  if (!textViolatesWineKind(full, kind)) return { hook, palate };
+  return buildGuardedFallback(kind, notes, struttura, wine);
+}
+
 serve(async (req) => {
   // CORS preflight
   if (req.method === "OPTIONS") {
@@ -242,7 +525,18 @@ serve(async (req) => {
   }
 
   try {
-const {  wine_id,  catalog_wine_id,  force_regenerate,  nome,  annata,  uvaggio,  categoria,  sottocategoria,  ristorante_id} = await req.json();
+const {
+  wine_id,
+  catalog_wine_id,
+  force_regenerate,
+  nome,
+  annata,
+  uvaggio,
+  categoria,
+  sottocategoria,
+  ristorante_id,
+  wine_type_hint,
+} = await req.json();
 
 if (!nome || !ristorante_id) {
   return new Response(
@@ -352,6 +646,10 @@ if (!wineRow) {
       categoria: wineRow?.categoria ?? categoria ?? "",
       sottocategoria: wineRow?.sottocategoria ?? sottocategoria ?? "",
     };
+
+    // Guardrail principale: la categoria/admin batte uva e denominazione.
+    // Serve a evitare bianchi descritti da rossi, bollicine come vini fermi, ramati come rosati, ecc.
+    const wineKind = inferWineKind(wine, wine_type_hint);
 
     // 2) CARICA tutte le uve e denominazioni in memoria
     const [{ data: allGrapes }, { data: allAppl }] = await Promise.all([
@@ -602,6 +900,9 @@ const pairingsChosen =
       )
     : ["piatti della cucina locale"];
 
+const notesChosenGuarded = guardNotesForWineKind(notesChosen, wineKind, wine);
+const pairingsChosenGuarded = pairingsChosen;
+
     // 6) PROFILO STRUTTURALE (acid/tannin/body/sweet/bubbles) combinando uva + delta denominazione
 
     function avgProp(
@@ -662,17 +963,17 @@ const pairingsChosen =
       bollicina: livello(bubblesBase),
     };
 
-    // colore
-    const defaultColor =
-      app?.default_color ||
-      (norm(wine.categoria).includes("rosso")
-        ? "Rosso"
-        : norm(wine.categoria).includes("bianco")
-        ? "Bianco"
-        : norm(wine.categoria).includes("rosa") ||
-          norm(wine.categoria).includes("rosato")
-        ? "Rosato"
-        : "ND");
+    // colore: prima rispetta la categoria/admin, poi eventualmente la denominazione.
+    const categoryColor = norm(wine.categoria).includes("rosso")
+      ? "Rosso"
+      : norm(wine.categoria).includes("bianco")
+      ? "Bianco"
+      : norm(wine.categoria).includes("rosa") || norm(wine.categoria).includes("rosato")
+      ? "Rosato"
+      : "ND";
+
+    const defaultColor = profileColorLabelForKind(wineKind, categoryColor !== "ND" ? categoryColor : app?.default_color);
+    const visualColorHint = visualColorLabelForKind(wineKind, wine, defaultColor);
 
 // 7) COSTRUISCI CONTEXT PER GPT
 
@@ -682,7 +983,7 @@ const context = {
     annata: wine.annata,
     categoria: wine.categoria,
     sottocategoria: wine.sottocategoria,
-    colore: defaultColor,
+    colore: visualColorHint,
   },
   uvaggi: grapesDetailed.map((g) => ({
     nome: g.name,
@@ -699,6 +1000,11 @@ const context = {
       }
     : null,
   struttura,
+  wine_type_guardrail: {
+    tipo: wineKind,
+    authoritative: true,
+    note: "La categoria/nome inseriti in admin vincolano colore, bollicina e struttura. Uva e denominazione non possono sovrascriverli.",
+  },
 
   // DATI COMPLETI dalle tabelle, per aromi/abbinamenti/stile
   grape_tasting_notes: grapeNotesAll,
@@ -710,39 +1016,15 @@ const context = {
   denominazione_palate_template: appPalateTemplate,
 
   // sintesi per la mini-card (3 note + 3 abbinamenti)
-  notes_scelte: notesChosen,
-  abbinamenti_scelti: pairingsChosen,
+  notes_scelte: notesChosenGuarded,
+  abbinamenti_scelti: pairingsChosenGuarded,
+  guardrail_notes: defaultNotesForKind(wineKind, wine),
 };
 
-// fallback descrizione “template” se GPT dovesse fallire
-const mainNote = notesChosen[0] || null;
-const secondNote = notesChosen[1] || null;
-
-// colore in forma "umane"
-let coloreDescr = "";
-const catNorm = norm(defaultColor);
-if (catNorm.includes("rosso")) coloreDescr = "rosso rubino";
-else if (catNorm.includes("bianco")) coloreDescr = "giallo paglierino";
-else if (catNorm.includes("rosa")) coloreDescr = "rosa cerasuolo";
-else coloreDescr = defaultColor || "vino";
-
-const corpoDescr = descrCorpo(struttura.corpo);
-const acidDescr = descrAcidita(struttura.acidita);
-const tannDescr = descrTannino(struttura.tannino);
-
-const fallbackHook = clampChars(
-  `${coloreDescr} dal profilo ${
-    mainNote ? `centrato su ${mainNote}${secondNote ? " e " + secondNote : ""}` : "fruttato e armonico"
-  }.`,
-  120,
-);
-
-const fallbackPalate = clampChars(
-  `${corpoDescr}, ${acidDescr} e ${tannDescr}; il sorso è ${
-    secondNote ? "succoso e continuo, con richiami alle note percepite al naso." : "equilibrato e di buona bevibilità."
-  }`,
-  220,
-);
+// fallback descrizione “template” se GPT dovesse fallire o violare colore/tipologia
+const guardedFallback = buildGuardedFallback(wineKind, notesChosenGuarded, struttura, wine);
+const fallbackHook = guardedFallback.hook;
+const fallbackPalate = guardedFallback.palate;
 
 const fallbackCore: PersistedProfileCore = {
   acid: acidBase ?? 0.5,
@@ -772,11 +1054,13 @@ let persistedProfile: PersistedSommelierProfile = {
   color: fallbackColor,
   family: inferFamily(fallbackColor, fallbackCore),
   core: fallbackCore,
-  pairing_tags: pairingsChosen,
+  pairing_tags: pairingsChosenGuarded,
   avoid_tags: avoidTags,
-  signature_notes: notesChosen,
+  signature_notes: notesChosenGuarded,
   confidence: 0.68,
 };
+
+persistedProfile = applyProfileGuardrails(persistedProfile, wineKind);
 
     // 8) CHIAMATA GPT: genera hook + palate (2–3 frasi)
 
@@ -801,6 +1085,14 @@ Stile:
 - Varia anche le chiusure ("chiude con una scia", "sfuma su toni freschi", "lascia un ricordo sapido", "termina in eleganza").
 - Usa soltanto aromi e sensazioni presenti nel CONTEXT. Non inventare nulla.
 - Linguaggio professionale ma naturale, da sommelier, senza toni pubblicitari.
+
+Regole anti-errore OBBLIGATORIE:
+- CONTEXT.wine_type_guardrail.tipo è AUTORITATIVO: uva e denominazione NON possono cambiare colore/tipologia.
+- Se tipo = "bianco": vietato usare rosso, rubino, granato, tannino fitto, frutti neri, cuoio.
+- Se tipo = "rosso": vietato usare giallo paglierino, mela verde, limone dominante, fiori bianchi, mandorla amaricante come struttura da bianco.
+- Se tipo = "rosato": descrivilo come rosato, non come rosso strutturato; tannino solo basso o appena accennato.
+- Se tipo = "ramato_orange": usa ramato, rame chiaro, ambrato leggero o orange; NON chiamarlo rosato.
+- Se tipo = "sparkling": deve emergere chiaramente la bollicina. Usa parole come perlage, bollicina, spuma, effervescenza o cremosità. Non descriverlo come vino fermo.
 
 Output:
 Devi restituire SOLO un JSON con:
@@ -844,13 +1136,17 @@ Assicurati che ogni frase abbia una chiusura completa, senza lasciare sospension
       // se GPT fallisce, usiamo i fallback
     }
 
+    const repaired = repairDescriptionIfNeeded(hook, palate, wineKind, notesChosenGuarded, struttura, wine);
+    hook = repaired.hook;
+    palate = repaired.palate;
+
     const descrizioneCompleta = `${hook} ${palate}`.trim();
 
     const mini_card = {
       hook,
       palate,
-      notes: notesChosen,
-      pairings: pairingsChosen,
+      notes: notesChosenGuarded,
+      pairings: pairingsChosenGuarded,
       emojis: { notes: {}, pairings: {} },
     };
 
