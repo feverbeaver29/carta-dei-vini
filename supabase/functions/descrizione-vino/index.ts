@@ -192,11 +192,27 @@ function inferFamily(
   core: PersistedProfileCore
 ): PersistedSommelierProfile["family"] {
   const c = norm(color);
+
   if (c.includes("spum")) return "sparkling";
   if (c.includes("dolce")) return "dessert";
-  if (c.includes("ros")) return "rosato";
   if (c.includes("bianc")) return core.body >= 0.58 ? "full_white" : "crisp_white";
-  if (c.includes("ross")) return (core.tannin >= 0.55 || core.body >= 0.65) ? "structured_red" : "light_red";
+
+  // IMPORTANTE: rosso va prima di rosato, perché "rosso" contiene "ros"
+  if (c.includes("ross")) {
+    return (core.tannin >= 0.55 || core.body >= 0.65)
+      ? "structured_red"
+      : "light_red";
+  }
+
+  if (
+    c.includes("rosat") ||
+    c.includes("rose") ||
+    c.includes("rosé") ||
+    c.includes("rosè")
+  ) {
+    return "rosato";
+  }
+
   return "other";
 }
 
@@ -265,9 +281,8 @@ function inferWineKind(wine: any, hint?: any): WineKind {
   // Priorità assoluta: se è spumante/metodo classico, deve essere letto come bollicina.
   if (hasAnyNorm(all, [
     "bollicine", "spumante", "metodo classico", "metodo ancestrale", "ancestrale",
-    "brut", "extra brut", "pas dose", "pas dosé", "dosaggio zero", "champagne",
-    "franciacorta", "trentodoc", "trento doc", "prosecco", "cremant", "crémant",
-    "cava", "pet nat", "pét nat",
+    "brut", "extra brut", "pas dose", "pas dosé", "dosaggio zero", "champagne", "lambrusco"
+    "franciacorta", "trentodoc", "trento doc", "prosecco", "cremant", "crémant", "pet nat", "pét nat", "dry", "extra dry", "metodo martinotti", "charmat", "champenoise"
   ])) return "sparkling";
 
   // Ramato/orange: va intercettato prima del generico bianco/rosato.
