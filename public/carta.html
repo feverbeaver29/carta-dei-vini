@@ -1614,19 +1614,21 @@ function setHelperByKey(key){
 }
 
 async function setHelperCategoryName(category){
-  let label = String(category || "");
-  if (currentLang !== "it" && label) {
-    try {
-      const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-categoria", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: label, targetLang: currentLang })
-      });
-      const data = await res.json();
-      label = (data.text || label).trim();
-    } catch(e){ /* fallback: label originale */ }
+  const raw = String(category || "").trim();
+  if (!raw) {
+    setHelper("");
+    return;
   }
-  setHelper(label.toUpperCase());
+
+  let label = raw;
+
+  try {
+    label = await translateCatOnce(raw, currentLang);
+  } catch(e) {
+    label = raw;
+  }
+
+  setHelper(String(label || raw).toUpperCase());
 }
 
   function getContrastingTextColor(bgColor) {
@@ -3128,23 +3130,14 @@ window.closeSommelierPopup = closeSommelierPopup;
     const span = document.createElement("span");
     span.textContent = cat;
 
-    if (currentLang !== "it") {
-      try {
-        const res = await fetch("https://ldunvbftxhbtuyabgxwh.functions.supabase.co/traduci-categoria", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: cat, targetLang: currentLang })
-        });
-        const data = await res.json();
-        const translated = data.text?.trim() || cat;
-        span.textContent = translated;
-        checkbox.setAttribute("data-translated-label", translated);
-      } catch (err) {
-        checkbox.setAttribute("data-translated-label", cat);
-      }
-    } else {
-      checkbox.setAttribute("data-translated-label", cat);
-    }
+try {
+  const translated = await translateCatOnce(cat, currentLang);
+  span.textContent = translated || cat;
+  checkbox.setAttribute("data-translated-label", translated || cat);
+} catch (err) {
+  span.textContent = cat;
+  checkbox.setAttribute("data-translated-label", cat);
+}
 
     label.appendChild(checkbox);
     label.appendChild(span);
@@ -3736,7 +3729,7 @@ const originalShowCategories = window.showCategories;
 const originalShowSubcategories = window.showSubcategories;
 // --- I18N CACHE (memory + localStorage) ---
 const _catI18nCache = new Map(); // key: lang|text -> translated
-const _catI18nLSKey = "cat_i18n_cache_v1";
+const _catI18nLSKey = "cat_i18n_cache_v2";
 
 (function loadCatCache(){
   try{
@@ -3802,8 +3795,6 @@ function getTranslatedCategoryLabelSync(category){
   const raw = String(category || "").trim();
   if (!raw) return "";
 
-  if (currentLang === "it") return raw;
-
   const key = `${currentLang}|${raw}`;
   return _catI18nCache.get(key) || raw;
 }
@@ -3846,17 +3837,12 @@ if (categoriaOrder.length) {
 
   const originals = orderedKeys.map(k => seen.get(k) || k);
 
-  let labels = originals;
+let labels = await Promise.all(originals.map(txt => translateCatOnce(txt, currentLang)));
 
-  // ✅ se non IT: preparo TUTTE le traduzioni prima di renderizzare
-  if (currentLang !== "it") {
-    labels = await Promise.all(originals.map(txt => translateCatOnce(txt, currentLang)));
+// 🔥 se nel frattempo è partito un nuovo render, abortisco
+if (myToken !== _catRenderToken) return;
 
-    // 🔥 se nel frattempo è partito un nuovo render, abortisco
-    if (myToken !== _catRenderToken) return;
-
-    saveCatCache();
-  }
+saveCatCache();
 
   // 🔥 check anche prima del render (sicurezza)
   if (myToken !== _catRenderToken) return;

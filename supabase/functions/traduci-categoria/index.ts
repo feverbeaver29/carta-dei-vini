@@ -57,40 +57,90 @@ serve(async (req) => {
       return new Response(JSON.stringify({ text: existing.traduzione }), { headers: corsHeaders });
     }
 
-    // 📚 2) prompt localizzati (aggiunti KO e RU)
-    const promptByLang: Record<string, string> = {
-      en: `Translate this wine category name for a professional wine list. Return only the translation, no explanations. Category: "${text}"`,
-      fr: `Traduisez ce nom de catégorie pour une carte des vins professionnelle. Ne renvoyez que la traduction, sans explications. Catégorie : "${text}"`,
-      de: `Übersetze diesen Weinkategorienamen für eine professionelle Weinkarte. Gib nur die Übersetzung zurück, ohne Erklärungen. Kategorie: "${text}"`,
-      es: `Traduce este nombre de categoría para una carta de vinos profesional. Devuelve solo la traducción, sin explicaciones. Categoría: "${text}"`,
-      zh: `将以下葡萄酒分类名称专业地翻译成中文，用于酒单。只返回翻译，不要任何解释："${text}"`,
-      it: `Traduci il nome di questa categoria per una carta dei vini professionale. Restituisci solo la traduzione, senza spiegazioni. Categoria: "${text}"`,
-      ko: `전문 와인 리스트에 맞게 다음 와인 카테고리 이름을 한국어로 번역하세요. 설명 없이 번역만 반환하세요: "${text}"`,
-      ru: `Переведите это название категории вина для профессиональной винной карты. Верните только перевод, без пояснений. Категория: "${text}"`
-    };
+// 📚 2) prompt unico: rileva lingua originale + traduce nella lingua target
+const langNames: Record<string, string> = {
+  it: "Italian",
+  en: "English",
+  fr: "French",
+  de: "German",
+  es: "Spanish",
+  zh: "Chinese",
+  ko: "Korean",
+  ru: "Russian"
+};
 
-    const prompt = promptByLang[finalLang] || promptByLang.en;
+const targetLangName = langNames[finalLang] || "English";
 
-    // 🤖 3) chiamata a OpenAI
-    const chatResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.0
-      })
-    });
+const systemPrompt = `
+You are a professional translator for a digital wine list used by restaurants.
 
-    const result = await chatResponse.json();
-    const translation = result?.choices?.[0]?.message?.content?.trim();
+The restaurant can write category names freely in any language.
+Your job is:
+1. Detect the source language of the category.
+2. Translate the category into the requested target language.
+3. If the source language is already the target language, return the same category, only fixing capitalization if needed.
+4. Never translate into a third language.
+5. Keep wine regions, appellations and proper nouns unchanged when appropriate.
+6. Return only valid JSON.
 
-    if (!translation) {
-      throw new Error("Traduzione vuota o non valida dal modello");
-    }
+Examples:
+- Input: "RED WINES", target: "en" -> "Red wines"
+- Input: "RED WINES", target: "it" -> "Vini rossi"
+- Input: "VINS ROUGES", target: "en" -> "Red wines"
+- Input: "Champagne", target: "it" -> "Champagne"
+- Input: "Our cellar selection", target: "it" -> "La nostra selezione di cantina"
+
+Return JSON in this format:
+{
+  "source_lang": "it|en|fr|de|es|zh|ko|ru|unknown",
+  "text": "translated category",
+  "confidence": 0.0
+}
+`;
+
+const userPrompt = JSON.stringify({
+  category: text,
+  target_lang: finalLang,
+  target_language_name: targetLangName
+});
+
+// 🤖 3) chiamata a OpenAI
+const chatResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${OPENAI_API_KEY}`
+  },
+  body: JSON.stringify({
+    model: MODEL,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt }
+    ],
+    temperature: 0,
+    response_format: { type: "json_object" }
+  })
+});
+
+const result = await chatResponse.json();
+const raw = result?.choices?.[0]?.message?.content?.trim();
+
+if (!raw) {
+  throw new Error("Risposta vuota dal modello");
+}
+
+let parsed;
+try {
+  parsed = JSON.parse(raw);
+} catch {
+  throw new Error("JSON non valido dal modello: " + raw);
+}
+
+const translation = String(parsed?.text || "").trim();
+
+if (!translation) {
+  throw new Error("Traduzione vuota o non valida dal modello");
+}
 
     // 💾 4) salva in cache
     await supabase.from("traduzioni_categorie").insert({
