@@ -1899,6 +1899,20 @@ let nomeSuggestTimer = null;
  * Cerca nel catalogo globalmente per nome (case-insensitive, contiene).
  * Ritorna max 10 risultati.
  */
+function dedupeCatalogRows(rows) {
+  const seen = new Set();
+
+  return (Array.isArray(rows) ? rows : []).filter(w => {
+    const key = normalizeWineNameForCatalog(w.nome || "");
+
+    if (!key) return false;
+    if (seen.has(key)) return false;
+
+    seen.add(key);
+    return true;
+  });
+}
+
 async function searchCatalogByName(term) {
   const q = term.trim();
   if (!q || q.length < 3) return [];
@@ -1916,8 +1930,10 @@ async function searchCatalogByName(term) {
         'Accept': 'application/json'
       }
     });
-    if (!res.ok) return [];
-    return await res.json();
+if (!res.ok) return [];
+
+const rows = await res.json();
+return dedupeCatalogRows(rows);
   } catch (e) {
     console.warn("Errore catalogo vini:", e);
     return [];
