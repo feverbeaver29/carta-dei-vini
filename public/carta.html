@@ -4330,8 +4330,8 @@ let activeFormatFilterId = null; // null = mostra tutti i formati disponibili
 
 function getFormatDefinitions(){
   return {
-    bottle:     { label: "0,75",    key: "prezzo",           order: 1 },
-    threequart: { label: "0,375",   key: "prezzo_0375",      order: 3 },
+    bottle:     { label: "0,75 lt",    key: "prezzo",           order: 1 },
+    threequart: { label: "0,375 lt",   key: "prezzo_0375",      order: 3 },
     half:       { label: "1/2 lt",  key: "prezzo_05",        order: 4 },
     onehalf:    { label: "1,5 lt",  key: "prezzo_15",        order: 5 },
     quarter:    { label: "1/4 lt",  key: "prezzo_025",       order: 6 },
@@ -4377,14 +4377,8 @@ function syncFormatInputsFromActive(){
 function placeGlassButtonInFormatsRow(panel, glassBtn){
   if (!panel || !glassBtn) return;
 
-  const bottleBtn = panel.querySelector('.format-option[data-format-id="bottle"]');
-
-  // Se esiste 0,75, il calice va subito dopo: 0,75 | Al calice | 0,375...
-  if (bottleBtn) {
-    bottleBtn.insertAdjacentElement("afterend", glassBtn);
-  } else {
-    panel.insertBefore(glassBtn, panel.firstChild);
-  }
+  // Al calice sempre al primo posto: Al calice | 0,75 | 0,375 | 1/2 lt...
+  panel.insertBefore(glassBtn, panel.firstChild);
 }
 
 function createFormatOption(id, f, panel){
