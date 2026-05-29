@@ -1532,6 +1532,184 @@ sommelierBtn:      "Совет по вину",
   }
 };
 
+const winePopupTranslations = {
+  it: {
+    notes: "Note",
+    pairings: "Abbinamenti",
+    showDetails: "Mostra dettagli",
+    hideDetails: "Nascondi dettagli",
+    light: "Leggero",
+    full: "Strutturato",
+    dry: "Secco",
+    sweet: "Dolce",
+    soft: "Morbido",
+    acid: "Acido",
+    unavailable: "Descrizione momentaneamente non disponibile.",
+    error: "Errore durante il recupero della descrizione."
+  },
+  en: {
+    notes: "Notes",
+    pairings: "Pairings",
+    showDetails: "Show details",
+    hideDetails: "Hide details",
+    light: "Light",
+    full: "Full-bodied",
+    dry: "Dry",
+    sweet: "Sweet",
+    soft: "Soft",
+    acid: "Acidic",
+    unavailable: "Description temporarily unavailable.",
+    error: "Error while loading the description."
+  },
+  fr: {
+    notes: "Notes",
+    pairings: "Accords",
+    showDetails: "Afficher les détails",
+    hideDetails: "Masquer les détails",
+    light: "Léger",
+    full: "Structuré",
+    dry: "Sec",
+    sweet: "Doux",
+    soft: "Souple",
+    acid: "Acide",
+    unavailable: "Description momentanément indisponible.",
+    error: "Erreur lors du chargement de la description."
+  },
+  de: {
+    notes: "Noten",
+    pairings: "Speiseempfehlungen",
+    showDetails: "Details anzeigen",
+    hideDetails: "Details ausblenden",
+    light: "Leicht",
+    full: "Kräftig",
+    dry: "Trocken",
+    sweet: "Süß",
+    soft: "Weich",
+    acid: "Säurebetont",
+    unavailable: "Beschreibung vorübergehend nicht verfügbar.",
+    error: "Fehler beim Laden der Beschreibung."
+  },
+  es: {
+    notes: "Notas",
+    pairings: "Maridajes",
+    showDetails: "Mostrar detalles",
+    hideDetails: "Ocultar detalles",
+    light: "Ligero",
+    full: "Estructurado",
+    dry: "Seco",
+    sweet: "Dulce",
+    soft: "Suave",
+    acid: "Ácido",
+    unavailable: "Descripción temporalmente no disponible.",
+    error: "Error al cargar la descripción."
+  },
+  zh: {
+    notes: "香气与风味",
+    pairings: "餐酒搭配",
+    showDetails: "显示详情",
+    hideDetails: "隐藏详情",
+    light: "轻盈",
+    full: "饱满",
+    dry: "干型",
+    sweet: "甜型",
+    soft: "柔和",
+    acid: "酸度高",
+    unavailable: "描述暂时不可用。",
+    error: "加载描述时出错。"
+  },
+  ko: {
+    notes: "노트",
+    pairings: "페어링",
+    showDetails: "자세히 보기",
+    hideDetails: "자세히 숨기기",
+    light: "가벼움",
+    full: "구조감 있음",
+    dry: "드라이",
+    sweet: "달콤함",
+    soft: "부드러움",
+    acid: "산미 있음",
+    unavailable: "설명을 일시적으로 사용할 수 없습니다.",
+    error: "설명을 불러오는 중 오류가 발생했습니다."
+  },
+  ru: {
+    notes: "Ноты",
+    pairings: "Сочетания",
+    showDetails: "Показать детали",
+    hideDetails: "Скрыть детали",
+    light: "Лёгкое",
+    full: "Структурное",
+    dry: "Сухое",
+    sweet: "Сладкое",
+    soft: "Мягкое",
+    acid: "Кислотное",
+    unavailable: "Описание временно недоступно.",
+    error: "Ошибка при загрузке описания."
+  }
+};
+
+function popupT(key) {
+  const lang = currentLang === "gb" ? "en" : currentLang;
+  return (
+    winePopupTranslations[lang]?.[key] ||
+    winePopupTranslations.en?.[key] ||
+    translations[lang]?.[key] ||
+    translations.it?.[key] ||
+    key
+  );
+}
+
+function parseMaybeJson(value) {
+  if (!value) return value;
+  if (typeof value !== "string") return value;
+
+  const s = value.trim();
+  if (!s.startsWith("{") && !s.startsWith("[")) return value;
+
+  try {
+    return JSON.parse(s);
+  } catch {
+    return value;
+  }
+}
+
+function getLocalizedTextFromData(data, baseName, lang) {
+  const l = lang === "gb" ? "en" : lang;
+
+  const candidates = [
+    data?.[`${baseName}_${l}`],
+    data?.translations?.[l]?.[baseName],
+    data?.[baseName]
+  ];
+
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim()) return c.trim();
+  }
+
+  return "";
+}
+
+function getLocalizedWineCardFromData(data, lang) {
+  const l = lang === "gb" ? "en" : lang;
+
+  const candidates = [
+    data?.[`mini_card_${l}`],
+    data?.[`scheda_${l}`],
+    data?.mini_card?.[l],
+    data?.scheda?.[l],
+    data?.translations?.[l]?.mini_card,
+    data?.translations?.[l]?.scheda,
+    data?.mini_card,
+    data?.scheda
+  ];
+
+  for (const c of candidates) {
+    const parsed = parseMaybeJson(c);
+    if (parsed && typeof parsed === "object") return parsed;
+  }
+
+  return null;
+}
+
 function getSommelierRangePretty(){
   const r = String(ristorante?.sommelier_range || "").trim();
   if (!r) return null;
@@ -4133,22 +4311,35 @@ window.addEventListener("popstate", (event) => {
   setTimeout(() => window._manualNavigation = false, 100);
 });
 function renderSchedaInto(el, vinoNome, scheda, descrizione, lang){
-  const clamp = v => Math.max(0, Math.min(100, Number(v||0)));
+  const clamp = v => Math.max(0, Math.min(100, Number(v || 0)));
 
   const bars = `
     <div class="vino-bars">
-      <div class="bar"><span>Leggero</span><div class="track"><i class="knob" style="left:${clamp(scheda?.profile?.body)}%"></i></div><span>Strutturato</span></div>
-      <div class="bar"><span>Secco</span>  <div class="track"><i class="knob" style="left:${clamp(scheda?.profile?.sweetness)}%"></i></div><span>Dolce</span></div>
-      <div class="bar"><span>Morbido</span><div class="track"><i class="knob" style="left:${clamp(scheda?.profile?.acidity)}%"></i></div><span>Acido</span></div>
+      <div class="bar">
+        <span>${popupT("light")}</span>
+        <div class="track"><i class="knob" style="left:${clamp(scheda?.profile?.body)}%"></i></div>
+        <span>${popupT("full")}</span>
+      </div>
+      <div class="bar">
+        <span>${popupT("dry")}</span>
+        <div class="track"><i class="knob" style="left:${clamp(scheda?.profile?.sweetness)}%"></i></div>
+        <span>${popupT("sweet")}</span>
+      </div>
+      <div class="bar">
+        <span>${popupT("soft")}</span>
+        <div class="track"><i class="knob" style="left:${clamp(scheda?.profile?.acidity)}%"></i></div>
+        <span>${popupT("acid")}</span>
+      </div>
     </div>`;
 
-  const chips = (arr, icon="") =>
-    (arr||[]).map(n => {
-      const label = typeof n==="string" ? n : (n?.label || "");
+  const chips = (arr, icon = "") =>
+    (arr || []).map(n => {
+      const label = typeof n === "string" ? n : (n?.label || n?.text || "");
+      if (!label) return "";
       return `<span class="chip">${icon ? icon + " " : ""}${label}</span>`;
     }).join("");
 
-  const summary = (scheda?.summary||"").toString();
+  const summary = (scheda?.summary || "").toString();
   const pair = Array.isArray(scheda?.pairings) ? scheda.pairings : [];
   const notes = Array.isArray(scheda?.notes) ? scheda.notes : [];
 
@@ -4160,58 +4351,64 @@ function renderSchedaInto(el, vinoNome, scheda, descrizione, lang){
 
       ${notes.length ? `
         <div class="vino-section">
-          <div class="vino-section-title">✨ Note</div>
+          <div class="vino-section-title">✨ ${popupT("notes")}</div>
           <div class="vino-chips">${chips(notes)}</div>
         </div>` : ""}
 
       ${pair.length ? `
         <div class="vino-section">
-          <div class="vino-section-title">🍽️ Abbinamenti</div>
+          <div class="vino-section-title">🍽️ ${popupT("pairings")}</div>
           <div class="vino-chips">${chips(pair)}</div>
         </div>` : ""}
 
-      <button class="vino-toggle" id="vToggleBtn">Mostra dettagli</button>
-      <p id="vFullDesc" style="display:none; margin-top:6px;">${descrizione||""}</p>
+      <button class="vino-toggle" id="vToggleBtn">${popupT("showDetails")}</button>
+      <p id="vFullDesc" style="display:none; margin-top:6px;">${descrizione || ""}</p>
     </div>
   `;
 
   const btn = el.querySelector('#vToggleBtn');
-  const p   = el.querySelector('#vFullDesc');
+  const p = el.querySelector('#vFullDesc');
+
   btn.onclick = () => {
     const show = p.style.display === 'none';
     p.style.display = show ? 'block' : 'none';
-    btn.textContent = show ? 'Nascondi dettagli' : 'Mostra dettagli';
+    btn.textContent = show ? popupT("hideDetails") : popupT("showDetails");
   };
 }
 
 function renderMiniCardInto(el, vinoNome, mini, lang){
   if (!el) return;
-  const safe = (s)=> (s||"").toString();
 
-  const noteChips = (mini?.notes||[]).map(n => {
-    const emoji = mini?.emojis?.notes?.[n] || "";
-    return `<span class="chip">${emoji ? (emoji + " ") : ""}${n}</span>`;
+  const safe = (s) => (s || "").toString();
+
+  const noteChips = (mini?.notes || []).map(n => {
+    const label = typeof n === "string" ? n : (n?.label || n?.text || "");
+    const emoji = mini?.emojis?.notes?.[label] || "";
+    if (!label) return "";
+    return `<span class="chip">${emoji ? (emoji + " ") : ""}${label}</span>`;
   }).join("");
 
-  const pairChips = (mini?.pairings||[]).map(p => {
-    const emoji = mini?.emojis?.pairings?.[p] || "";
-    return `<span class="chip">${emoji ? (emoji + " ") : ""}${p}</span>`;
+  const pairChips = (mini?.pairings || []).map(p => {
+    const label = typeof p === "string" ? p : (p?.label || p?.text || "");
+    const emoji = mini?.emojis?.pairings?.[label] || "";
+    if (!label) return "";
+    return `<span class="chip">${emoji ? (emoji + " ") : ""}${label}</span>`;
   }).join("");
 
   el.innerHTML = `
     <div class="vino-card">
-      <p class="summary" style="margin-bottom:6px;"><strong>${safe(mini?.hook)}</strong></p>
-      <p class="summary" style="margin-top:0;">${safe(mini?.palate)}</p>
+      ${mini?.hook ? `<p class="summary" style="margin-bottom:6px;"><strong>${safe(mini.hook)}</strong></p>` : ""}
+      ${mini?.palate ? `<p class="summary" style="margin-top:0;">${safe(mini.palate)}</p>` : ""}
 
       ${mini?.notes?.length ? `
         <div class="vino-section">
-          <div class="vino-section-title">✨ Note</div>
+          <div class="vino-section-title">✨ ${popupT("notes")}</div>
           <div class="vino-chips">${noteChips}</div>
         </div>` : ""}
 
       ${mini?.pairings?.length ? `
         <div class="vino-section">
-          <div class="vino-section-title">🍽️ Abbinamenti</div>
+          <div class="vino-section-title">🍽️ ${popupT("pairings")}</div>
           <div class="vino-chips">${pairChips}</div>
         </div>` : ""}
     </div>
@@ -4234,7 +4431,7 @@ function mostraPopupDescrizione(vino) {
   // Kill-switch: se disabilitata, messaggio e stop
   if (DESCRIZIONE_VINO_ABILITATA === false) {
     const desc = overlay.querySelector("#descrizioneTesto");
-    if (desc) desc.textContent = "Descrizione momentaneamente non disponibile.";
+    if (desc) desc.textContent = popupT("unavailable");
     return;
   }
 
@@ -4276,11 +4473,24 @@ fetch(fnUrl, {
     return JSON.parse(raw);
   })
   .then(data => {
-    const descr = data.descrizione || translations[currentLang].noDescription || "Nessuna descrizione trovata.";
-    const card  = data.mini_card || data.scheda || null;
+  console.log("[popup descrizione vino]", currentLang, data);
 
-    if (wrapEl && card) {
-      if (descEl) descEl.textContent = "";
+  const descr =
+    getLocalizedTextFromData(data, "descrizione", currentLang) ||
+    translations[currentLang]?.noDescription ||
+    translations.it.noDescription ||
+    "Nessuna descrizione trovata.";
+
+  const card = getLocalizedWineCardFromData(data, currentLang);
+
+  if (wrapEl && card) {
+    if (descEl) descEl.textContent = "";
+
+    const isMiniCard =
+      Object.prototype.hasOwnProperty.call(card, "hook") ||
+      Object.prototype.hasOwnProperty.call(card, "palate");
+
+    if (isMiniCard) {
       renderMiniCardInto(
         wrapEl,
         vino.nome + (vino.annata ? ` (${vino.annata})` : ""),
@@ -4288,10 +4498,19 @@ fetch(fnUrl, {
         currentLang
       );
     } else {
-      if (descEl) descEl.textContent = descr;
+      renderSchedaInto(
+        wrapEl,
+        vino.nome + (vino.annata ? ` (${vino.annata})` : ""),
+        card,
+        descr,
+        currentLang
+      );
     }
+  } else {
+    if (descEl) descEl.textContent = descr;
+  }
 
-    // 🔁 se siamo in IT, dopo aver mostrato la descrizione
+  // 🔁 se siamo in IT, dopo aver mostrato la descrizione
     // chiedo in background la preparazione delle traduzioni
     if (isItalian) {
       fetch(TRAD_FN_URL, {
@@ -4307,7 +4526,7 @@ fetch(fnUrl, {
   })
   .catch(err => {
     console.error("[descrizione-vino / traduci-descrizione-vino]", err);
-    if (descEl) descEl.textContent = "Errore durante il recupero della descrizione.";
+    if (descEl) descEl.textContent = popupT("error");
   });
 
 }
