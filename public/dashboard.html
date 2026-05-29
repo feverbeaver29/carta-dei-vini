@@ -2714,18 +2714,9 @@ if (!allowedTypes.includes(file.type)) {
 
   if (!file) return;
 
-  const ext = file.name.split('.').pop();
-  const fileName = `${RESTAURANT_ID}.${ext}`;
-  const filePath = `ristoranti/${fileName}`;
-
-  const { data: existing } = await sb
-    .storage
-    .from("loghi")
-    .list("ristoranti", { search: fileName });
-
-  if (existing?.length > 0) {
-    await sb.storage.from("loghi").remove([filePath]);
-  }
+const ext = file.name.split('.').pop().toLowerCase();
+const fileName = `${RESTAURANT_ID}_${Date.now()}.${ext}`;
+const filePath = `ristoranti/${fileName}`;
 
   const { error: uploadError } = await sb.storage
     .from("loghi")
@@ -2743,10 +2734,15 @@ const { data: { publicUrl } } = sb
   .from("loghi")
   .getPublicUrl(filePath);
 
-  await sb
-    .from("ristoranti")
-    .update({ logo_url: publicUrl })
-    .eq("id", RESTAURANT_ID);
+const { error: dbError } = await sb
+  .from("ristoranti")
+  .update({ logo_url: publicUrl })
+  .eq("id", RESTAURANT_ID);
+
+if (dbError) {
+  console.error("Errore salvataggio logo_url:", dbError);
+  return alert("Logo caricato, ma non salvato nel database.");
+}
 
   alert(t("logo_upload_success"));
   toggleNameLogoOptions(true);
@@ -3097,13 +3093,13 @@ document.getElementById("sommelierLogoUpload").addEventListener("change", async 
   if (!isPro) {
     return alert(t("sommelier_pro_only_alert"));
   }
-  const file = event.target.files[0];
-  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const file = event.target.files[0];
+if (!file) return;
+
+const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 if (!allowedTypes.includes(file.type)) {
   return alert(t("unsupported_format"));
 }
-
-  if (!file) return;
 
   const ext = file.name.split('.').pop();
   const fileName = `sommelier_${RESTAURANT_ID}.${ext}`;
