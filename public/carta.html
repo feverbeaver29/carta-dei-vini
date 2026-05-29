@@ -4459,6 +4459,13 @@ const isItalian = (currentLang === "it");
 // se non IT → uso traduci-descrizione-vino
 const fnUrl = isItalian ? DESCR_FN_URL : TRAD_FN_URL;
 
+console.log("[DEBUG VINO POPUP]", {
+  vino,
+  payload,
+  fnUrl,
+  currentLang
+});
+
 fetch(fnUrl, {
   method: "POST",
   headers: {
