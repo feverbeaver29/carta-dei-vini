@@ -1523,6 +1523,36 @@ for (const mod of knowledge.modifiers) {
   };
 }
 
+function normalizeDishInput(raw: string): string {
+  let s = normalizeSearchText(raw);
+
+  const replacements: [RegExp, string][] = [
+    [/\bgirglia\b/g, "griglia"],
+    [/\bgrilled\b/g, "griglia"],
+    [/\bgrill\b/g, "griglia"],
+    [/\bchicken\b/g, "pollo"],
+    [/\bturkey\b/g, "tacchino"],
+    [/\bpork\b/g, "maiale"],
+    [/\bpulled pork\b/g, "maiale sfilacciato bbq"],
+    [/\bbeef\b/g, "manzo"],
+    [/\bsteak\b/g, "bistecca manzo"],
+    [/\bscottona\b/g, "scottona manzo"],
+    [/\bfoie gras\b/g, "fegato grasso"],
+    [/\balfredo\b/g, "panna burro parmigiano"],
+    [/\bcream\b/g, "panna"],
+    [/\bbutter\b/g, "burro"],
+    [/\bcheese\b/g, "formaggio"],
+    [/\bparmesan\b/g, "parmigiano"],
+    [/\btruffle\b/g, "tartufo"],
+  ];
+
+  for (const [rx, rep] of replacements) {
+    s = s.replace(rx, rep);
+  }
+
+  return s.replace(/\s+/g, " ").trim();
+}
+
 function resolveMultiDishFromKnowledge(
   piattoRaw: string,
   knowledge: DishKnowledge,
@@ -4466,7 +4496,8 @@ const rng = mulberry32(
   hashStringToSeed(baseSeed),
 );
 
-const dishResolved = resolveMultiDishFromKnowledge(piatto, dishKnowledge);
+const piattoLookup = normalizeDishInput(piatto);
+let dishResolved = resolveMultiDishFromKnowledge(piattoLookup, dishKnowledge);
 const dish = dishResolved.dish;
 const piattoNorm = normalizeSearchText(piatto);
 const dishTags = new Set(
